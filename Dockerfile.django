@@ -29,8 +29,9 @@ RUN pip install gunicorn
 # Copiar código Django
 COPY services/django /app
 
-# Criar usuário não-root
-RUN adduser --disabled-password --gecos '' appuser && \
+# Criar diretórios necessários e usuário não-root
+RUN mkdir -p /app/logs /app/media /app/staticfiles && \
+    adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
