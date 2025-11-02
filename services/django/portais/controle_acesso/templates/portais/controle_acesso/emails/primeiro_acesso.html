@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ canal_nome }} - Primeiro Acesso</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f8f9fa; }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
+        .button { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
+        .alert { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .logo { max-height: 50px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔑 {{ canal_nome }} - Primeiro Acesso</h1>
+        </div>
+        
+        <div class="content">
+            <p>Olá <strong>{{ usuario.nome }}</strong>,</p>
+            
+            <p>Seu acesso ao sistema {{ canal_nome }} foi criado com sucesso!</p>
+            
+            <div class="alert">
+                <p><strong>📧 Email:</strong> {{ usuario.email }}</p>
+                <p><strong>🔒 Senha Temporária:</strong> {{ senha_temporaria }}</p>
+            </div>
+            
+            <p>Para ativar sua conta, clique no link abaixo:</p>
+            
+            <p style="text-align: center;">
+                <a href="{{ link_primeiro_acesso }}" class="button">Ativar Conta</a>
+            </p>
+            
+            <p><strong>⚠️ Importante:</strong></p>
+            <ul>
+                <li>Este link é válido por {{ validade_horas }} horas</li>
+                <li>Após ativar, você deverá alterar sua senha</li>
+                <li>Mantenha suas credenciais em segurança</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Este é um email automático, não responda.</p>
+            <p>© {{ "now"|date:"Y" }} {{ canal_nome }} - Todos os direitos reservados</p>
+        </div>
+    </div>
+</body>
+</html>

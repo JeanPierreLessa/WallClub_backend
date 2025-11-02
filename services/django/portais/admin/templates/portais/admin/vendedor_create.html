@@ -1,0 +1,96 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Novo Vendedor{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:hierarquia_geral' %}" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-user-tie me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">Novo Vendedor</h1>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+            </li>
+            <li class="breadcrumb-item active">Novo Vendedor</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-tie me-2"></i>
+                        Informações do Vendedor
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nome" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    Nome do Vendedor *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="nome" 
+                                       name="nome" 
+                                       required
+                                       placeholder="Ex: João Silva"
+                                       value="{{ request.POST.nome|default:'' }}">
+                                <div class="form-text">Nome completo do vendedor</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="regional_id" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    Regional *
+                                </label>
+                                <select class="form-select" id="regional_id" name="regional_id" required>
+                                    <option value="">Selecione uma regional</option>
+                                    {% for regional in regionais %}
+                                    <option value="{{ regional.id }}" 
+                                            {% if request.POST.regional_id == regional.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ regional.nome }} ({{ regional.canal_nome }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Regional à qual o vendedor pertence</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'portais_admin:hierarquia_geral' %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-save me-1"></i>
+                                Criar Vendedor
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}

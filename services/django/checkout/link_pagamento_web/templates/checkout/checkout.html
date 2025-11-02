@@ -1,0 +1,752 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - {{ item_nome }}</title>
+    
+    <!-- Bootstrap 5.3.0 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Variáveis CSS - Paleta Azul WallClub */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0f2a5a 0%, #1a4480 100%);
+            --primary-hover-gradient: linear-gradient(135deg, #0d2348 0%, #153a6e 100%);
+            --primary-color: #1a4480;
+            --primary-dark: #0f2a5a;
+            --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            --warning-gradient: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            --danger-gradient: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+            --info-gradient: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+            
+            --shadow-light: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-heavy: 0 8px 15px rgba(0,0,0,0.2);
+            
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --border-radius-xl: 20px;
+        }
+        
+        /* Customizações específicas do checkout */
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .checkout-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-heavy);
+            overflow: hidden;
+        }
+        
+        .checkout-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .checkout-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .checkout-header .price {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .form-container {
+            padding: 2rem;
+        }
+        
+        .security-info {
+            background: #e7f3ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            font-size: 0.8rem;
+            color: #0f2a5a;
+        }
+        
+        .loading-overlay {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--primary-color);
+        }
+        
+        .success-step {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            color: #28a745;
+            margin-bottom: 1rem;
+        }
+        
+        .parcela-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .parcela-valor {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="checkout-container">
+        <div class="checkout-header">
+            <p class="mb-2" style="font-size: 0.9rem; opacity: 0.9;"><i class="fas fa-store me-2"></i>{{ loja_nome }}</p>
+            <h1><i class="fas fa-shopping-cart me-2"></i>{{ item_nome }}</h1>
+            <div class="price">R$ <span id="valor-display">{{ item_valor }}</span></div>
+        </div>
+        
+        <div class="form-container" id="form-step">
+            <div class="security-info">
+                <i class="fas fa-lock me-2"></i>
+                <strong>Pagamento Seguro:</strong> Seus dados estão protegidos. Não salvamos informações do cartão.
+            </div>
+            
+            <form id="checkout-form">
+                <input type="hidden" name="token" value="{{ token }}">
+                <input type="hidden" name="loja_id" value="{{ loja_id }}">
+                <input type="hidden" name="tipo_pagamento" value="CREDIT_ONE_INSTALLMENT">
+                
+                <h5 class="mb-3"><i class="fas fa-user me-2"></i>Dados Pessoais</h5>
+                
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Os dados abaixo foram fornecidos pelo sistema de origem e não podem ser editados.
+                </div>
+                
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome Completo</label>
+                    <input type="text" class="form-control" id="nome" name="nome" value="{{ nome_completo }}" readonly required>
+                    {% if telefone_obfuscado and telefone_ativo and not pode_alterar_telefone %}
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-phone me-1"></i>Telefone: {{ telefone_obfuscado }}
+                        </small>
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cpf" class="form-label">CPF</label>
+                        <input type="text" class="form-control" id="cpf" name="cpf" value="{{ cpf }}" readonly required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="celular" class="form-label">Celular (com DDD)</label>
+                        
+                        {% if telefone_ativo %}
+                            <!-- Cliente já tem telefone cadastrado -->
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="celular" name="celular" 
+                                       value="{{ telefone_ativo }}" 
+                                       {% if not pode_alterar_telefone %}readonly{% endif %} 
+                                       required placeholder="11999999999">
+                                
+                                {% if pode_alterar_telefone %}
+                                    <button class="btn btn-outline-secondary" type="button" id="btnAlterarTelefone" 
+                                            title="Alterar telefone">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                            
+                            {% if pode_alterar_telefone %}
+                                <small class="text-info">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Telefone cadastrado. Você pode alterá-lo antes da primeira compra.
+                                </small>
+                            {% else %}
+                                <small class="text-success">
+                                    <i class="fas fa-lock"></i> 
+                                    Telefone confirmado e bloqueado por segurança.
+                                </small>
+                            {% endif %}
+                        {% else %}
+                            <!-- Primeira vez - cadastrar telefone -->
+                            <input type="text" class="form-control" id="celular" name="celular" 
+                                   value="{{ celular }}" required placeholder="11999999999">
+                            <small class="text-info">
+                                <i class="fas fa-info-circle"></i> 
+                                Digite seu celular para receber o código de segurança via WhatsApp
+                            </small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="endereco" class="form-label">Endereço Completo</label>
+                    <textarea class="form-control" id="endereco" name="endereco" rows="2" readonly required>{{ endereco_completo }}</textarea>
+                </div>
+                
+                {% if pedido_origem_loja %}
+                <div class="mb-4">
+                    <label for="pedido_origem" class="form-label">ID do Pedido</label>
+                    <input type="text" class="form-control" id="pedido_origem" value="{{ pedido_origem_loja }}" readonly>
+                    <small class="text-muted">Referência do pedido no sistema de origem</small>
+                </div>
+                {% endif %}
+                
+                <h5 class="mb-3"><i class="fas fa-credit-card me-2"></i>Dados do Cartão</h5>
+                
+                <div class="mb-3">
+                    <label for="numero_cartao" class="form-label">Número do Cartão</label>
+                    <input type="text" class="form-control" id="numero_cartao" name="numero_cartao" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="data_validade" class="form-label">Validade</label>
+                        <input type="text" class="form-control" id="data_validade" name="data_validade" placeholder="MM/YYYY" maxlength="7" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="cvv" class="form-label">CVV</label>
+                        <input type="text" class="form-control" id="cvv" name="cvv" placeholder="000" maxlength="4" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="bandeira" class="form-label">Bandeira do Cartão</label>
+                        <select class="form-select" id="bandeira" name="bandeira" required>
+                            <option value="">Carregando...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="parcelas" class="form-label">Número de Parcelas</label>
+                    <select class="form-select" id="parcelas" name="parcelas" required>
+                        <option value="">Carregando opções...</option>
+                    </select>
+                    <span id="parcelas-loading" class="spinner-border spinner-border-sm text-primary ms-2 d-none" role="status"></span>
+                    <!-- Campo hidden para valor total da parcela selecionada -->
+                    <input type="hidden" id="valor_total" name="valor_total" value="">
+                </div>
+                
+                <!-- Checkbox Salvar Cartão -->
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="salvar_cartao" name="salvar_cartao" value="true">
+                        <label class="form-check-label" for="salvar_cartao">
+                            <i class="fas fa-save me-2"></i>Salvar cartão para compras futuras
+                        </label>
+                    </div>
+                    <small class="text-muted ms-4" style="font-size: 0.75rem;">
+                        Seu cartão será armazenado de forma segura via tokenização. Não armazenamos dados sensíveis.
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" id="submit-btn">
+                    <i class="fas fa-check-circle me-2"></i>Finalizar Pagamento
+                </button>
+            </form>
+        </div>
+        
+        <div class="loading-overlay" id="loading-step">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-3 text-muted" id="loading-message">Processando seu pagamento...</p>
+        </div>
+        
+        <div class="loading-overlay" id="otp-step" style="display: none;">
+            <div class="alert alert-success mb-4">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Código enviado via WhatsApp!</strong>
+            </div>
+            <div class="mb-3">
+                <label class="form-label d-block text-center">Digite o código de segurança (6 dígitos)</label>
+                <div class="d-flex justify-content-center gap-2 mb-3" id="otp-inputs-container">
+                    <input type="text" class="form-control form-control-lg text-center otp-input" maxlength="1" data-index="0" style="width: 60px; height: 70px; font-size: 2rem; font-weight: bold;" autofocus>
+                    <input type="text" class="form-control form-control-lg text-center otp-input" maxlength="1" data-index="1" style="width: 60px; height: 70px; font-size: 2rem; font-weight: bold;">
+                    <input type="text" class="form-control form-control-lg text-center otp-input" maxlength="1" data-index="2" style="width: 60px; height: 70px; font-size: 2rem; font-weight: bold;">
+                    <input type="text" class="form-control form-control-lg text-center otp-input" maxlength="1" data-index="3" style="width: 60px; height: 70px; font-size: 2rem; font-weight: bold;">
+                    <input type="text" class="form-control form-control-lg text-center otp-input" maxlength="1" data-index="4" style="width: 60px; height: 70px; font-size: 2rem; font-weight: bold;">
+                    <input type="text" class="form-control form-control-lg text-center otp-input" maxlength="1" data-index="5" style="width: 60px; height: 70px; font-size: 2rem; font-weight: bold;">
+                </div>
+                <small class="text-muted d-block mt-2 text-center">Válido por 5 minutos</small>
+            </div>
+            <button type="button" class="btn btn-primary btn-lg w-100" id="btn-validar-otp" disabled>
+                <i class="fas fa-check me-2"></i>Confirmar Pagamento
+            </button>
+        </div>
+        
+        <div class="success-step" id="success-step">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-success">Pagamento Aprovado!</h2>
+            <p id="success-message" class="text-muted">Sua transação foi processada com sucesso.</p>
+            <p id="transaction-id" class="fw-bold mt-3"></p>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Configuração global
+        const CONFIG = {
+            token: '{{ token }}',
+            lojaId: parseInt('{{ loja_id }}'),
+            valorOriginal: parseFloat('{{ item_valor }}'.replace(',', '.'))
+        };
+        
+        // Estado do fluxo 2FA
+        let dadosFormulario = null;
+        
+        // Carregar parcelas ao iniciar página
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarOpcoesParcelas();
+        });
+        
+        // Função para carregar opções de parcelas via AJAX
+        function carregarOpcoesParcelas() {
+            const selectParcelas = document.getElementById('parcelas');
+            const loadingIcon = document.getElementById('parcelas-loading');
+            
+            // Mostrar loading
+            loadingIcon.classList.remove('d-none');
+            selectParcelas.disabled = true;
+            
+            // Fazer requisição para simular parcelas
+            fetch('/api/v1/checkout/simular_parcelas/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    valor: CONFIG.valorOriginal,
+                    loja_id: CONFIG.lojaId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingIcon.classList.add('d-none');
+                selectParcelas.disabled = false;
+                
+                if (data.sucesso && data.todas_bandeiras) {
+                    // Armazenar todas bandeiras
+                    window.todasBandeiras = data.todas_bandeiras;
+                    
+                    // Popular select de bandeiras com apenas as disponíveis
+                    const selectBandeira = document.getElementById('bandeira');
+                    selectBandeira.innerHTML = '';
+                    
+                    const nomesBandeiras = {
+                        'MASTERCARD': 'Mastercard',
+                        'VISA': 'Visa',
+                        'ELO': 'Elo'
+                    };
+                    
+                    for (const bandeira in data.todas_bandeiras) {
+                        const option = document.createElement('option');
+                        option.value = bandeira;
+                        option.textContent = nomesBandeiras[bandeira] || bandeira;
+                        selectBandeira.appendChild(option);
+                    }
+                    
+                    // Atualizar parcelas para primeira bandeira
+                    const primeiraBandeira = Object.keys(data.todas_bandeiras)[0];
+                    atualizarParcelasPorBandeira(primeiraBandeira);
+                    
+                    // Event listener para mudar bandeira (remover duplicados primeiro)
+                    // Clonar elemento para remover todos os listeners antigos
+                    const novoSelectBandeira = selectBandeira.cloneNode(true);
+                    selectBandeira.parentNode.replaceChild(novoSelectBandeira, selectBandeira);
+                    
+                    // Adicionar event listener ao novo elemento
+                    novoSelectBandeira.addEventListener('change', function() {
+                        console.log('Bandeira mudou para:', this.value);
+                        atualizarParcelasPorBandeira(this.value);
+                    });
+                    
+                    // Garantir que valor_total está preenchido logo após carregar
+                    setTimeout(() => {
+                        const selectParcelas = document.getElementById('parcelas');
+                        if (selectParcelas.options.length > 0 && selectParcelas.selectedIndex >= 0) {
+                            const firstOption = selectParcelas.options[selectParcelas.selectedIndex];
+                            if (firstOption.dataset.valorTotal) {
+                                document.getElementById('valor_total').value = firstOption.dataset.valorTotal;
+                            }
+                        }
+                    }, 100);
+                } else {
+                    // Fallback: opções estáticas
+                    selectParcelas.innerHTML = `
+                        <option value="1">1x de R$ ${CONFIG.valorOriginal.toFixed(2)}</option>
+                        <option value="2">2x de R$ ${(CONFIG.valorOriginal/2).toFixed(2)}</option>
+                        <option value="3">3x de R$ ${(CONFIG.valorOriginal/3).toFixed(2)}</option>
+                        <option value="6">6x de R$ ${(CONFIG.valorOriginal/6).toFixed(2)}</option>
+                        <option value="12">12x de R$ ${(CONFIG.valorOriginal/12).toFixed(2)}</option>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar parcelas:', error);
+                loadingIcon.classList.add('d-none');
+                selectParcelas.disabled = false;
+                
+                // Fallback em caso de erro
+                selectParcelas.innerHTML = `
+                    <option value="1">1x de R$ ${CONFIG.valorOriginal.toFixed(2)}</option>
+                    <option value="2">2x de R$ ${(CONFIG.valorOriginal/2).toFixed(2)}</option>
+                    <option value="3">3x de R$ ${(CONFIG.valorOriginal/3).toFixed(2)}</option>
+                    <option value="6">6x de R$ ${(CONFIG.valorOriginal/6).toFixed(2)}</option>
+                    <option value="12">12x de R$ ${(CONFIG.valorOriginal/12).toFixed(2)}</option>
+                `;
+            });
+        }
+        
+        // Função para atualizar parcelas quando bandeira muda
+        function atualizarParcelasPorBandeira(bandeira) {
+            const selectParcelas = document.getElementById('parcelas');
+            const valorTotalInput = document.getElementById('valor_total');
+            
+            if (!window.todasBandeiras || !window.todasBandeiras[bandeira]) {
+                console.warn('Bandeira não encontrada:', bandeira);
+                return;
+            }
+            
+            // Limpar valor_total anterior
+            valorTotalInput.value = '';
+            
+            // Limpar e adicionar opções da bandeira selecionada
+            selectParcelas.innerHTML = '';
+            window.todasBandeiras[bandeira].forEach(opcao => {
+                const option = document.createElement('option');
+                option.value = opcao.parcelas;
+                option.textContent = opcao.texto;
+                option.dataset.valorTotal = opcao.valor_total;
+                selectParcelas.appendChild(option);
+            });
+            
+            // Definir automaticamente o valor_total da primeira opção
+            if (selectParcelas.options.length > 0) {
+                const firstOption = selectParcelas.options[0];
+                if (firstOption.dataset.valorTotal) {
+                    valorTotalInput.value = firstOption.dataset.valorTotal;
+                }
+            }
+        }
+        
+        // Preencher valor_total quando selecionar parcela
+        document.getElementById('parcelas').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const valorTotal = selectedOption.dataset.valorTotal;
+            if (valorTotal) {
+                document.getElementById('valor_total').value = valorTotal;
+            }
+        });
+        
+        // Máscaras para os campos
+        document.getElementById('cpf').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        });
+        
+        document.getElementById('celular').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                if (value.length > 6) {
+                    value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                } else if (value.length > 2) {
+                    value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                }
+            }
+            e.target.value = value;
+        });
+        
+        // Botão para alterar telefone
+        const btnAlterarTelefone = document.getElementById('btnAlterarTelefone');
+        if (btnAlterarTelefone) {
+            btnAlterarTelefone.addEventListener('click', function() {
+                const celularInput = document.getElementById('celular');
+                celularInput.removeAttribute('readonly');
+                celularInput.focus();
+                celularInput.select();
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-check"></i>';
+                this.title = 'Telefone em edição';
+            });
+        }
+        
+        
+        document.getElementById('numero_cartao').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(\d{4})(\d)/, '$1 $2');
+            value = value.replace(/(\d{4})(\d)/, '$1 $2');
+            value = value.replace(/(\d{4})(\d)/, '$1 $2');
+            e.target.value = value;
+        });
+        
+        document.getElementById('data_validade').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            // Limitar a 6 dígitos (MMYYYY)
+            if (value.length > 6) {
+                value = value.substring(0, 6);
+            }
+            value = value.replace(/(\d{2})(\d)/, '$1/$2');
+            e.target.value = value;
+        });
+        
+        // Gerenciar inputs OTP (6 caixinhas)
+        const otpInputs = document.querySelectorAll('.otp-input');
+        
+        // Limpar todos os campos OTP
+        function limparOTP() {
+            otpInputs.forEach(input => {
+                input.value = '';
+            });
+            otpInputs[0].focus();
+        }
+        
+        // Obter código OTP completo
+        function getCodigoOTP() {
+            let codigo = '';
+            otpInputs.forEach(input => {
+                codigo += input.value;
+            });
+            return codigo;
+        }
+        
+        // Verificar se OTP está completo e habilitar botão
+        function verificarOTPCompleto() {
+            const codigo = getCodigoOTP();
+            document.getElementById('btn-validar-otp').disabled = codigo.length !== 6;
+        }
+        
+        // Configurar eventos para cada input OTP
+        otpInputs.forEach((input, index) => {
+            // Apenas números
+            input.addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '');
+                
+                // Auto-focus no próximo
+                if (this.value.length === 1 && index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+                
+                verificarOTPCompleto();
+            });
+            
+            // Backspace para voltar
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+            
+            // Paste: distribuir dígitos
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 6);
+                
+                pastedData.split('').forEach((digit, idx) => {
+                    if (otpInputs[idx]) {
+                        otpInputs[idx].value = digit;
+                    }
+                });
+                
+                // Focar no último preenchido ou no último campo
+                const nextEmptyIndex = Math.min(pastedData.length, otpInputs.length - 1);
+                otpInputs[nextEmptyIndex].focus();
+                
+                verificarOTPCompleto();
+            });
+        });
+        
+        // Submit do formulário - ETAPA 1: Solicitar OTP
+        document.getElementById('checkout-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Validar celular
+            const celular = document.getElementById('celular').value.replace(/\D/g, '');
+            if (celular.length < 10 || celular.length > 11) {
+                alert('Por favor, informe um celular válido com DDD (ex: 11999999999)');
+                return;
+            }
+            
+            // Coletar dados do formulário
+            const formData = new FormData(this);
+            dadosFormulario = Object.fromEntries(formData);
+            
+            // Limpar máscaras
+            dadosFormulario.cpf = dadosFormulario.cpf.replace(/\D/g, '');
+            dadosFormulario.telefone = celular;  // API espera 'telefone', não 'celular'
+            dadosFormulario.numero_cartao = dadosFormulario.numero_cartao.replace(/\D/g, '');
+            dadosFormulario.salvar_cartao = document.getElementById('salvar_cartao').checked;
+            dadosFormulario.token = CONFIG.token;
+            
+            // Últimos 4 dígitos do cartão (para mensagem WhatsApp)
+            const ultimos4 = dadosFormulario.numero_cartao.slice(-4);
+            
+            // Mostrar loading
+            document.getElementById('form-step').style.display = 'none';
+            document.getElementById('loading-step').style.display = 'block';
+            document.getElementById('loading-message').textContent = 'Enviando código de segurança...';
+            
+            try {
+                // ETAPA 1: Solicitar OTP
+                const respOtp = await fetch('/api/v1/checkout/2fa/solicitar-otp/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        token: CONFIG.token,
+                        cpf: dadosFormulario.cpf,
+                        telefone: celular,
+                        valor: CONFIG.valorOriginal,
+                        ultimos_4_digitos_cartao: ultimos4
+                    })
+                });
+                
+                const dataOtp = await respOtp.json();
+                
+                if (!dataOtp.sucesso) {
+                    // Erro ao solicitar OTP
+                    document.getElementById('loading-step').style.display = 'none';
+                    document.getElementById('form-step').style.display = 'block';
+                    alert('Erro: ' + dataOtp.mensagem);
+                    return;
+                }
+                
+                // OTP enviado com sucesso - LIMPAR e mostrar campos OTP
+                document.getElementById('loading-step').style.display = 'none';
+                document.getElementById('otp-step').style.display = 'block';
+                limparOTP(); // Limpar campos antes de mostrar
+                
+            } catch (error) {
+                console.error('Erro ao solicitar OTP:', error);
+                document.getElementById('loading-step').style.display = 'none';
+                document.getElementById('form-step').style.display = 'block';
+                alert('Erro ao enviar código. Tente novamente.');
+            }
+        });
+        
+        // BOTÃO VALIDAR OTP - ETAPA 2: Processar pagamento
+        document.getElementById('btn-validar-otp').addEventListener('click', async function() {
+            const codigoOtp = getCodigoOTP();
+            
+            if (!codigoOtp || codigoOtp.length !== 6) {
+                alert('Código deve ter 6 dígitos');
+                return;
+            }
+            
+            // Adicionar OTP aos dados
+            dadosFormulario.codigo_otp = codigoOtp;
+            
+            // Mostrar loading
+            document.getElementById('otp-step').style.display = 'none';
+            document.getElementById('loading-step').style.display = 'block';
+            document.getElementById('loading-message').textContent = 'Processando seu pagamento...';
+            
+            // ETAPA 2: Validar OTP + processar pagamento
+            fetch('/api/v1/checkout/2fa/validar-otp/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(dadosFormulario)
+            })
+            .then(response => {
+                if (!response.ok && response.status !== 400) {
+                    throw new Error('Erro na requisição');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loading-step').style.display = 'none';
+                
+                if (data.sucesso) {
+                    // Mostrar tela de sucesso
+                    document.getElementById('success-step').style.display = 'block';
+                    document.getElementById('success-message').textContent = data.mensagem;
+                    document.getElementById('transaction-id').textContent = 'ID da Transação: ' + data.transacao_id;
+                } else {
+                    // Montar mensagem de erro com tentativas
+                    let mensagemErro = data.mensagem || 'Pagamento não autorizado';
+                    
+                    if (data.tentativas_restantes !== undefined) {
+                        if (data.pode_tentar_novamente) {
+                            mensagemErro += `\n\nVocê ainda tem ${data.tentativas_restantes} tentativa(s) restante(s).\nVerifique os dados do cartão e tente novamente.`;
+                        } else {
+                            mensagemErro += '\n\nLimite de tentativas atingido (3/3).\nEste link de pagamento foi bloqueado por segurança.\nEntre em contato com a loja para gerar um novo link.';
+                        }
+                    }
+                    
+                    alert(mensagemErro);
+                    
+                    // Só permite nova tentativa se ainda houver tentativas disponíveis
+                    if (data.pode_tentar_novamente) {
+                        document.getElementById('form-step').style.display = 'block';
+                    } else {
+                        // Bloquear formulário
+                        document.getElementById('submit-btn').disabled = true;
+                        document.getElementById('submit-btn').innerHTML = '<i class="fas fa-ban me-2"></i>Link Bloqueado - Limite de Tentativas Atingido';
+                        document.getElementById('form-step').style.display = 'block';
+                    }
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading-step').style.display = 'none';
+                alert('Erro de conexão');
+                document.getElementById('form-step').style.display = 'block';
+            });
+        });
+        
+        // Função para obter CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

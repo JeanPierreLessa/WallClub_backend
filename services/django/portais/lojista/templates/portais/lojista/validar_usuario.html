@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Senha - Portal Lojista {{ canal.nome }}</title>
+    
+    <!-- Bootstrap 5.3.0 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Portal Lojista CSS -->
+    <link href="{% static 'css/lojista.css' %}" rel="stylesheet">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <img src="{% static 'images/' %}{{ logo_filename }}" alt="{{ canal.nome }}">
+            <h4 class="mb-0">Recuperar Senha</h4>
+            <p class="mb-0 opacity-75">Digite seu e-mail para recuperar</p>
+        </div>
+        
+        <div class="login-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-mail</label>
+                    <input type="email" class="form-control" id="email" name="email" required 
+                           placeholder="Digite seu e-mail cadastrado">
+                </div>
+                
+                <button type="submit" class="btn btn-login">
+                    Enviar Link de Recuperação
+                </button>
+            </form>
+            
+            <div class="forgot-password">
+                {% if request.resolver_match.kwargs.marca %}
+                    <a href="{% url 'lojista_marca:login' marca=request.resolver_match.kwargs.marca %}">
+                        Voltar ao Login
+                    </a>
+                {% else %}
+                    <a href="{% url 'lojista:login' %}">
+                        Voltar ao Login
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3.0 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

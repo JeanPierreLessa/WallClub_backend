@@ -1,0 +1,190 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+{% load lojista_filters %}
+
+{% block title %}Resumo de Vendas - Portal Lojista{% endblock %}
+
+{% block page_header_compact %}
+<!-- Sem header na home -->
+{% endblock %}
+
+{% block navbar_actions %}
+<!-- Sem ações específicas no dashboard -->
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Dashboard
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="loja_id" class="form-label">
+                                <i class="fas fa-store me-1"></i>Filtrar por Loja:
+                            </label>
+                            <select name="loja_id" id="loja_id" class="form-select">
+                                <option value="">Todas as lojas</option>
+                                <!-- Opções serão preenchidas via JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas Principais -->
+                    <div class="row mb-4">
+                        <div class="col-12 col-md-6 mb-3">
+                            <div class="stats-card stats-card-hoje">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="stats-value">{{ transacoes_hoje|format_number }}</div>
+                                        <p class="stats-label">Transações<br><small>Hoje</small></p>
+                                    </div>
+                                    <div class="text-success stats-icon">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 col-md-6 mb-3">
+                            <div class="stats-card stats-card-valor-hoje">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="stats-value">{{ valor_hoje|format_currency }}</div>
+                                        <p class="stats-label">Volume Financeiro<br><small>Hoje</small></p>
+                                    </div>
+                                    <div class="text-warning stats-icon">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12 col-md-6 mb-3">
+                            <div class="stats-card stats-card-mes">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="stats-value">{{ transacoes_mes|format_number }}</div>
+                                        <p class="stats-label">Transações<br><small>Mês</small></p>
+                                    </div>
+                                    <div class="text-primary stats-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 col-md-6 mb-3">
+                            <div class="stats-card stats-card-valor-mes">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="stats-value">{{ valor_mes|format_currency }}</div>
+                                        <p class="stats-label">Volume Financeiro<br><small>Mês</small></p>
+                                    </div>
+                                    <div class="text-info stats-icon">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações do Usuário -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h5 class="mb-2">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    Bem-vindo, {{ nome_usuario }}!
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Lojas acessíveis:</strong><br>
+                                        <span class="text-muted">{{ lojas_acessiveis|length }} loja{{ lojas_acessiveis|length|pluralize:"s" }}</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Status:</strong><br>
+                                        <span class="badge bg-success">Ativo</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Filtro atual:</strong><br>
+                                        <span class="text-muted">
+                                            {% if filtro_id %}
+                                                {{ filtro_tipo|title }} específico
+                                            {% else %}
+                                                Todas as lojas
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block extra_js %}
+<script id="dados-lojas" type="application/json">
+{{ lojas_acessiveis|to_json_safe }}
+</script>
+<script>
+// Carregar dados das lojas
+const lojas = JSON.parse(document.getElementById('dados-lojas').textContent);
+const lojaAtual = '{{ loja_id }}';
+
+function carregarLojas() {
+    const lojaSelect = document.getElementById('loja_id');
+    
+    // Limpar opções
+    lojaSelect.innerHTML = '<option value="">Todas as lojas</option>';
+    
+    // Adicionar lojas
+    lojas.forEach(function(loja) {
+        const option = document.createElement('option');
+        option.value = loja.id;
+        option.textContent = loja.nome || 'Loja ' + loja.id;
+        if (lojaAtual == loja.id) {
+            option.selected = true;
+        }
+        lojaSelect.appendChild(option);
+    });
+}
+
+function atualizarDashboard() {
+    const lojaId = document.getElementById('loja_id').value;
+    
+    if (lojaId) {
+        // Redirecionar com loja específica
+        window.location.href = '{% url "lojista:home" %}?loja_id=' + lojaId;
+    } else {
+        // Redirecionar para home sem parâmetros
+        window.location.href = '{% url "lojista:home" %}';
+    }
+}
+
+// Inicializar ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    carregarLojas();
+    
+    // Adicionar evento de mudança
+    document.getElementById('loja_id').addEventListener('change', atualizarDashboard);
+});
+</script>
+{% endblock %}

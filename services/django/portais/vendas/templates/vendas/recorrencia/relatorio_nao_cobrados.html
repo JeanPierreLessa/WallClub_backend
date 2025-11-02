@@ -1,0 +1,227 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Recorrências em Hold - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fas fa-exclamation-triangle text-danger me-2"></i>Recorrências em Hold</h2>
+        <p class="text-muted mb-0">Cobranças bloqueadas por múltiplas falhas - Requer ação manual</p>
+    </div>
+    <a href="{% url 'vendas:recorrencia_listar' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<!-- Alerta Informativo -->
+<div class="alert alert-danger" role="alert">
+    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>O que são recorrências em HOLD?</h5>
+    <p>São cobranças que falharam 3 vezes consecutivas e foram bloqueadas automaticamente pelo sistema.</p>
+    <hr>
+    <p class="mb-0">
+        <strong>Ações necessárias:</strong>
+        <ul class="mb-0">
+            <li>Verificar dados do cartão com o cliente</li>
+            <li>Atualizar cartão tokenizado se necessário</li>
+            <li>Verificar se há limite disponível</li>
+            <li>Reativar manualmente após correção</li>
+        </ul>
+    </p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-5">
+                <label for="cliente_id" class="form-label">ID do Cliente</label>
+                <input type="number" class="form-control" id="cliente_id" name="cliente_id" 
+                       placeholder="Filtrar por cliente">
+            </div>
+            <div class="col-md-5">
+                <label for="loja_id" class="form-label">Loja</label>
+                <input type="number" class="form-control" id="loja_id" name="loja_id" 
+                       placeholder="Filtrar por loja">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatística -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="stat-card bg-danger text-white">
+            <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-value">{{ nao_cobrados|length }}</div>
+            <div class="stat-label">Recorrências em Hold Aguardando Ação</div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Recorrências em Hold -->
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recorrências Bloqueadas ({{ nao_cobrados|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if nao_cobrados %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Valor</th>
+                            <th>Periodicidade</th>
+                            <th>Tentativas</th>
+                            <th>Última Tentativa</th>
+                            <th>Cartão</th>
+                            <th>Loja</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rec in nao_cobrados %}
+                        <tr>
+                            <td><strong>#{{ rec.id }}</strong></td>
+                            <td>
+                                <div>{{ rec.cliente_nome }}</div>
+                                <small class="text-muted">{{ rec.cliente_cpf }}</small>
+                            </td>
+                            <td><strong class="text-danger">R$ {{ rec.valor|floatformat:2 }}</strong></td>
+                            <td>
+                                <span class="badge bg-info">{{ rec.periodicidade }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">{{ rec.tentativas }} falhas</span>
+                            </td>
+                            <td>
+                                <small>{{ rec.ultima_tentativa }}</small>
+                            </td>
+                            <td>
+                                <small><i class="fas fa-credit-card me-1"></i>{{ rec.cartao_mascarado }}</small>
+                            </td>
+                            <td>
+                                <small>{{ rec.loja_nome }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'vendas:recorrencia_detalhe' rec.id %}" 
+                                   class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                                    <i class="fas fa-eye me-1"></i>Detalhes
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5 class="text-success">Nenhuma recorrência em hold!</h5>
+                <p class="text-muted">Todas as cobranças recorrentes estão funcionando normalmente.</p>
+                <a href="{% url 'vendas:recorrencia_listar' %}" class="btn btn-primary">
+                    <i class="fas fa-list me-2"></i>Ver Todas Recorrências
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Informações Adicionais -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="text-primary"><i class="fas fa-lightbulb me-2"></i>Como resolver recorrências em hold?</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="mt-3"><i class="fas fa-phone me-2"></i>1. Contate o Cliente</h6>
+                <ul>
+                    <li>Informe sobre as falhas nas cobranças</li>
+                    <li>Verifique se o cartão está válido</li>
+                    <li>Confirme se há limite disponível</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="mt-3"><i class="fas fa-sync me-2"></i>2. Atualize os Dados</h6>
+                <ul>
+                    <li>Solicite novo cartão se necessário</li>
+                    <li>Atualize o cartão tokenizado no sistema</li>
+                    <li>Verifique a validade e bandeira</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="mt-3"><i class="fas fa-play me-2"></i>3. Reative Manualmente</h6>
+                <ul>
+                    <li>Acesse os detalhes da recorrência</li>
+                    <li>Clique em "Reativar Recorrência"</li>
+                    <li>Monitore a próxima tentativa de cobrança</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="mt-3"><i class="fas fa-times me-2"></i>4. Cancele se Necessário</h6>
+                <ul>
+                    <li>Se o cliente não deseja mais o serviço</li>
+                    <li>Cancele permanentemente a recorrência</li>
+                    <li>Documente o motivo do cancelamento</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas por Motivo -->
+{% if nao_cobrados %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Resumo Executivo</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center p-3 border rounded">
+                    <h3 class="text-danger">{{ nao_cobrados|length }}</h3>
+                    <p class="text-muted mb-0">Total em Hold</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-3 border rounded">
+                    <h3 class="text-warning">
+                        {% widthratio nao_cobrados|length 1 1 %}
+                    </h3>
+                    <p class="text-muted mb-0">Requer Ação Imediata</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-3 border rounded">
+                    <h3 class="text-info">
+                        R$ {% widthratio nao_cobrados|length 1 0 as total_valor %}
+                        {% for rec in nao_cobrados %}
+                            {% if forloop.first %}{{ rec.valor|floatformat:2 }}{% endif %}
+                        {% endfor %}
+                    </h3>
+                    <p class="text-muted mb-0">Valor Médio</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table td {
+    vertical-align: middle;
+}
+.bg-danger .stat-icon,
+.bg-danger .stat-value,
+.bg-danger .stat-label {
+    color: white !important;
+}
+</style>
+{% endblock %}

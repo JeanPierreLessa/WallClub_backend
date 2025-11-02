@@ -1,0 +1,150 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Grupo: {{ grupo.nome }}{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-users me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">{{ grupo.nome }}</h1>
+        </div>
+    </div>
+
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:canal_detail' grupo.vendedor.regional.canal.id %}">{{ grupo.vendedor.regional.canal.nome }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:regional_detail' grupo.vendedor.regional.id %}">{{ grupo.vendedor.regional.nome }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:vendedor_detail' grupo.vendedor.id %}">{{ grupo.vendedor.nome }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ grupo.nome }}</li>
+    </ol>
+</nav>
+
+<!-- Informações Hierárquicas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="alert alert-info">
+            <i class="fas fa-building me-2"></i>
+            <strong>Canal:</strong> {{ grupo.vendedor.regional.canal.nome }}
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="alert alert-primary">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            <strong>Regional:</strong> {{ grupo.vendedor.regional.nome }}
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="alert alert-warning">
+            <i class="fas fa-user-tie me-2"></i>
+            <strong>Vendedor:</strong> {{ grupo.vendedor.nome }}
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ estatisticas.lojas }}</h4>
+                        <small>Lojas no Grupo</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-store fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Lojas -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-store me-2"></i>
+            Lojas do Grupo Econômico
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if lojas %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Razão Social</th>
+                            <th>CNPJ</th>
+                            <th>Localização</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loja in lojas %}
+                        <tr>
+                            <td>{{ loja.id }}</td>
+                            <td>
+                                <strong>{{ loja.razao_social }}</strong>
+                            </td>
+                            <td>
+                                <code>{{ loja.cnpj }}</code>
+                            </td>
+                            <td>
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                <span class="text-muted">Não informado</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'portais_admin:loja_edit' loja.id %}" 
+                                       class="btn btn-outline-warning" title="Editar Loja">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'portais_admin:parametros_list' %}?search={{ loja.id }}" 
+                                       class="btn btn-outline-primary" title="Parâmetros">
+                                        <i class="fas fa-cogs"></i>
+                                    </a>
+                                    <a href="{% url 'portais_admin:loja_detail' loja.id %}" 
+                                       class="btn btn-outline-info" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhuma loja encontrada</h5>
+                <p class="text-muted">Este grupo econômico ainda não possui lojas cadastradas.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+</div>
+{% endblock %}

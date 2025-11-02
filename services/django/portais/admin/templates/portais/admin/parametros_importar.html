@@ -1,0 +1,349 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Importar Parâmetros{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-upload me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Importar Parâmetros</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Instruções -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Instruções para Importação
+                    </h5>
+                </div>
+                <div class="card-body">
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-download fa-2x text-primary mb-2"></i>
+                                <h6>1. Baixar Template</h6>
+                                <p class="text-muted small">Baixe o arquivo CSV modelo</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-edit fa-2x text-warning mb-2"></i>
+                                <h6>2. Preencher Dados</h6>
+                                <p class="text-muted small">Complete com os parâmetros</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-upload fa-2x text-success mb-2"></i>
+                                <h6>3. Fazer Upload</h6>
+                                <p class="text-muted small">Envie o arquivo preenchido</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-check fa-2x" style="color: var(--primary-color);"></i>
+                                <h6>4. Verificar</h6>
+                                <p class="text-muted small">Aguarde o processamento</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upload -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>
+                        Upload do Arquivo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'portais_admin:processar_importacao_csv' %}" 
+                          enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="vigencia_inicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    Data de Início da Vigência
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="vigencia_inicio" 
+                                       name="vigencia_inicio"
+                                       placeholder="Se vazio, usa data atual">
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Se não informada, será usada a data atual
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-file-csv fa-3x text-muted mb-3"></i>
+                            <h5>Arraste o arquivo CSV aqui</h5>
+                            <p class="text-muted">ou clique para selecionar</p>
+                            
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('arquivo_csv').click()">
+                                <i class="fas fa-folder-open me-1"></i>
+                                Selecionar Arquivo
+                            </button>
+                            
+                            <!-- Área de exibição do arquivo selecionado - sempre visível dentro do card -->
+                            <div id="fileInfo" style="margin-top: 1rem;">
+                                <div class="info-box d-flex justify-content-between align-items-center" style="display: none !important;" id="fileInfoContent">
+                                    <div>
+                                        <i class="fas fa-file-check me-2"></i>
+                                        <strong>Arquivo selecionado:</strong> 
+                                        <span id="fileName" style="font-weight: bold;"></span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearFile()">
+                                        <i class="fas fa-times"></i> Remover
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <input type="file" 
+                               name="arquivo_csv" 
+                               id="arquivo_csv" 
+                               accept=".csv"
+                               style="display: none;" 
+                               required>
+                        
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-success" id="submitBtn" disabled>
+                                <i class="fas fa-upload me-1"></i>
+                                Processar Importação
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Histórico -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Últimas Importações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if ultimas_importacoes %}
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            {% for importacao in ultimas_importacoes %}
+                            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                <div>
+                                    <strong>{{ importacao.nome_arquivo|truncatechars:20 }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ importacao.created_at|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    {% if importacao.status == 'SUCESSO' %}
+                                        <span class="badge bg-success status-badge">Sucesso</span>
+                                        <br>
+                                        <small class="text-muted">{{ importacao.linhas_importadas }} linhas</small>
+                                    {% elif importacao.status == 'ERRO' %}
+                                        <span class="badge bg-danger status-badge">Erro</span>
+                                    {% else %}
+                                        <span class="badge bg-warning status-badge">{{ importacao.status }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>Nenhuma importação realizada ainda</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, iniciando JavaScript...');
+    
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('arquivo_csv');
+    
+    console.log('Elementos básicos encontrados:', {
+        uploadArea: !!uploadArea,
+        fileInput: !!fileInput
+    });
+    
+    if (!uploadArea || !fileInput) {
+        console.error('❌ Elementos HTML básicos não encontrados!');
+        return;
+    }
+    
+    // Verificar se outros elementos existem (podem ser criados dinamicamente)
+    console.log('Verificando elementos dinâmicos:', {
+        fileInfo: !!document.getElementById('fileInfo'),
+        fileName: !!document.getElementById('fileName'),
+        submitBtn: !!document.getElementById('submitBtn')
+    });
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            showFileInfo(files[0]);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+        console.log('Evento change disparado:', e.target.files);
+        console.log('Valor do input:', e.target.value);
+        
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            console.log('Nome do arquivo:', file.name);
+            showFileInfo(file);
+        } else {
+            console.log('Nenhum arquivo selecionado - NÃO chamando clearFile()');
+            // Removido clearFile() para evitar limpeza automática
+        }
+    });
+
+    function showFileInfo(file) {
+        console.log('Mostrando info do arquivo:', file.name, file.size);
+        console.log('HTML completo da página:', document.documentElement.outerHTML.substring(0, 1000));
+        
+        // Listar todos os elementos com ID na página
+        const allElements = document.querySelectorAll('[id]');
+        console.log('Todos os IDs encontrados na página:', Array.from(allElements).map(el => el.id));
+        
+        // Aguardar um pouco para garantir que o DOM foi atualizado
+        setTimeout(() => {
+            const fileNameEl = document.getElementById('fileName');
+            const fileInfoEl = document.getElementById('fileInfo');
+            const submitBtnEl = document.getElementById('submitBtn');
+            
+            console.log('Elementos encontrados:', {
+                fileName: !!fileNameEl,
+                fileInfo: !!fileInfoEl, 
+                submitBtn: !!submitBtnEl
+            });
+            
+            if (fileNameEl && fileInfoEl && submitBtnEl) {
+                fileNameEl.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+                const fileInfoContent = document.getElementById('fileInfoContent');
+                if (fileInfoContent) {
+                    fileInfoContent.style.display = 'flex';
+                }
+                submitBtnEl.disabled = false;
+                
+                console.log('✅ Arquivo exibido com sucesso!');
+                
+            } else {
+                console.error('❌ Elementos não encontrados após timeout');
+                
+                // Criar elementos se não existirem
+                console.log('Tentando criar elementos dinamicamente...');
+                
+                let fileInfoDiv = document.getElementById('fileInfo');
+                if (!fileInfoDiv) {
+                    fileInfoDiv = document.createElement('div');
+                    fileInfoDiv.id = 'fileInfo';
+                    fileInfoDiv.style.cssText = 'display: block; margin-top: 1rem; padding: 1rem; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 0.375rem; color: #155724;';
+                    fileInfoDiv.innerHTML = `
+                        <div style="display: flex; justify-content: between; align-items: center;">
+                            <div>
+                                <i class="fas fa-file-check" style="margin-right: 0.5rem;"></i>
+                                <strong>Arquivo selecionado:</strong> 
+                                <span id="fileName" style="font-weight: bold;">${file.name} (${formatFileSize(file.size)})</span>
+                            </div>
+                            <button type="button" onclick="clearFile()" style="background: #dc3545; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; cursor: pointer;">
+                                <i class="fas fa-times"></i> Remover
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Inserir após o input de arquivo
+                    const fileInput = document.getElementById('arquivo_csv');
+                    if (fileInput && fileInput.parentNode) {
+                        fileInput.parentNode.insertBefore(fileInfoDiv, fileInput.nextSibling);
+                    }
+                }
+                
+                // Habilitar botão de submit
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+                
+                console.log('✅ Elementos criados dinamicamente!');
+            }
+        }, 100);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    window.clearFile = function() {
+        console.log('clearFile() chamado - rastreando origem:', new Error().stack);
+        
+        const fileInputEl = document.getElementById('arquivo_csv');
+        const fileInfoEl = document.getElementById('fileInfo');
+        const submitBtnEl = document.getElementById('submitBtn');
+        
+        if (fileInputEl) fileInputEl.value = '';
+        const fileInfoContent = document.getElementById('fileInfoContent');
+        if (fileInfoContent) {
+            fileInfoContent.style.display = 'none';
+        }
+        if (submitBtnEl) submitBtnEl.disabled = true;
+        
+        console.log('Arquivo limpo');
+    };
+});
+</script>
+{% endblock %}

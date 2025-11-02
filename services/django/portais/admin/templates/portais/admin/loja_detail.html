@@ -1,0 +1,183 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Loja: {{ loja.razao_social }}{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:loja_edit' loja.id %}" class="btn btn-warning btn-sm me-2">
+    <i class="fas fa-edit me-1"></i>
+    Editar Loja
+</a>
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-store me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">{{ loja.razao_social }}</h1>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:canal_detail' loja.grupo.vendedor.regional.canal.id %}">
+                    {{ loja.grupo.vendedor.regional.canal.nome }}
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:regional_detail' loja.grupo.vendedor.regional.id %}">
+                    {{ loja.grupo.vendedor.regional.nome }}
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:vendedor_detail' loja.grupo.vendedor.id %}">
+                    {{ loja.grupo.vendedor.nome }}
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:grupo_detail' loja.grupo.id %}">
+                    {{ loja.grupo.nome }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active">{{ loja.razao_social }}</li>
+        </ol>
+    </nav>
+
+    <!-- Informações da Loja -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Informações Básicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th width="40%">ID:</th>
+                                <td>
+                                    <span class="badge bg-primary">#{{ loja.id }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Razão Social:</th>
+                                <td><strong>{{ loja.razao_social }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>CNPJ:</th>
+                                <td>{{ loja.cnpj|default:"-" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sitemap me-2"></i>
+                        Hierarquia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th width="40%">Canal:</th>
+                                <td>
+                                    <a href="{% url 'portais_admin:canal_detail' loja.grupo.vendedor.regional.canal.id %}" 
+                                       class="text-decoration-none">
+                                        <i class="fas fa-building text-primary me-1"></i>
+                                        {{ loja.grupo.vendedor.regional.canal.nome }}
+                                    </a>
+                                    {% if loja.grupo.vendedor.regional.canal.marca %}
+                                        <span class="badge bg-info ms-1">{{ loja.grupo.vendedor.regional.canal.marca }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Regional:</th>
+                                <td>
+                                    <a href="{% url 'portais_admin:regional_detail' loja.grupo.vendedor.regional.id %}" 
+                                       class="text-decoration-none">
+                                        <i class="fas fa-map-marker-alt text-success me-1"></i>
+                                        {{ loja.grupo.vendedor.regional.nome }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Vendedor:</th>
+                                <td>
+                                    <a href="{% url 'portais_admin:vendedor_detail' loja.grupo.vendedor.id %}" 
+                                       class="text-decoration-none">
+                                        <i class="fas fa-user-tie text-info me-1"></i>
+                                        {{ loja.grupo.vendedor.nome }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Grupo Econômico:</th>
+                                <td>
+                                    <a href="{% url 'portais_admin:grupo_detail' loja.grupo.id %}" 
+                                       class="text-decoration-none">
+                                        <i class="fas fa-building text-warning me-1"></i>
+                                        {{ loja.grupo.nome }}
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>
+                        Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'portais_admin:parametros_list' %}?loja={{ loja.id }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-cogs me-1"></i>
+                            Ver Parâmetros
+                        </a>
+                        <a href="{% url 'portais_admin:pagamentos_list' %}?loja={{ loja.id }}" 
+                           class="btn btn-outline-success">
+                            <i class="fas fa-money-bill-wave me-1"></i>
+                            Ver Pagamentos
+                        </a>
+                        <a href="{% url 'portais_admin:terminais_list' %}?loja={{ loja.id }}" 
+                           class="btn btn-outline-info">
+                            <i class="fas fa-credit-card me-1"></i>
+                            Ver Terminais
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

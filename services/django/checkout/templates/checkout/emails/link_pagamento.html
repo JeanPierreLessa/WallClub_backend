@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link de Pagamento</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #0f2a5a 0%, #1a4480 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0f2a5a;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .info-box .label {
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        .info-box .value {
+            font-size: 18px;
+            color: #0f2a5a;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        .info-row {
+            margin-bottom: 15px;
+        }
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white !important;
+            padding: 18px 50px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            transform: translateY(-2px);
+        }
+        .alert {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .alert-icon {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        .security-note {
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 13px;
+            border-top: 1px solid #dee2e6;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .divider {
+            height: 1px;
+            background-color: #dee2e6;
+            margin: 30px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .header {
+                padding: 30px 20px;
+            }
+            .button {
+                padding: 16px 40px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔐 Link de Pagamento Seguro</h1>
+            <p>Finalize seu pagamento de forma rápida e segura</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Olá <strong>{{ cliente_nome }}</strong>,</p>
+            
+            <p>Você recebeu um link de pagamento de <strong>{{ loja_nome }}</strong>.</p>
+            
+            <!-- Info Box -->
+            <div class="info-box">
+                <div class="info-row">
+                    <div class="label">Produto/Serviço</div>
+                    <div class="value">{{ item_nome }}</div>
+                </div>
+                <div class="divider"></div>
+                <div class="info-row">
+                    <div class="label">Valor Total</div>
+                    <div class="value">R$ {{ valor|floatformat:2 }}</div>
+                </div>
+            </div>
+            
+            <!-- Disclaimer Bandeira -->
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px; font-size: 13px;">
+                <strong>⚠️ Importante:</strong> As opções de parcelamento na página de pagamento são calculadas com base na <strong>bandeira do cartão escolhida</strong>. Valores podem variar conforme Mastercard, Visa, Elo, etc.
+            </div>
+            
+            <!-- Button -->
+            <div class="button-container">
+                <a href="{{ checkout_url }}" class="button">
+                    💳 Finalizar Pagamento
+                </a>
+            </div>
+            
+            <!-- Alert -->
+            <div class="alert">
+                <span class="alert-icon">⏱️</span>
+                <strong>Atenção:</strong> Este link é válido por <strong>{{ validade_minutos }} minutos</strong>.
+            </div>
+            
+            <!-- Security Note -->
+            <div class="security-note">
+                <span class="alert-icon">🔒</span>
+                <strong>Pagamento 100% Seguro:</strong> Seus dados de cartão não são compartilhados com o vendedor. Todas as informações são criptografadas e processadas através de gateway de pagamento certificado.
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                Ao clicar no botão acima, você será redirecionado para nossa página segura de pagamento, onde poderá inserir os dados do seu cartão e escolher a forma de parcelamento.
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>{{ loja_nome }}</strong></p>
+            <p>Sistema WallClub - Plataforma de Pagamentos</p>
+            <p style="margin-top: 15px;">Este é um email automático. Por favor, não responda.</p>
+            <p style="font-size: 11px; color: #999; margin-top: 10px;">
+                Se você não solicitou este pagamento, ignore este email ou entre em contato com {{ loja_nome }}.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

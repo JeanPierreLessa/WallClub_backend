@@ -1,0 +1,197 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Canal: {{ canal.nome }}{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-building me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">{{ canal.nome }}</h1>
+        </div>
+    </div>
+
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+        </li>
+        <li class="breadcrumb-item active">{{ canal.nome }}</li>
+    </ol>
+</nav>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ estatisticas.regionais }}</h4>
+                        <small>Regionais</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-map-marker-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ estatisticas.vendedores }}</h4>
+                        <small>Vendedores</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-tie fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ estatisticas.grupos }}</h4>
+                        <small>Grupos</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ estatisticas.lojas }}</h4>
+                        <small>Lojas</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-store fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comissão do Canal -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-percentage me-2"></i>
+            Comissão do Canal
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'portais_admin:canal_edit_comissao' canal.id %}" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-4">
+                <label for="comissao" class="form-label">Comissão Atual (%)</label>
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           id="comissao" 
+                           name="comissao" 
+                           value="{% if canal.comissao_vigente %}{{ canal.comissao_vigente|floatformat:2 }}{% endif %}"
+                           placeholder="Ex: 2.50"
+                           step="0.01"
+                           min="0"
+                           max="100">
+                    <span class="input-group-text">%</span>
+                </div>
+                <small class="form-text text-muted">
+                    {% if canal.comissao_vigente %}
+                        Comissão vigente: {{ canal.comissao_vigente|floatformat:2 }}%
+                    {% else %}
+                        Nenhuma comissão configurada
+                    {% endif %}
+                </small>
+            </div>
+            <div class="col-md-8 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>
+                    Alterar Comissão
+                </button>
+                <small class="text-muted ms-3">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Ao alterar, a vigência anterior será encerrada e uma nova será iniciada hoje.
+                </small>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Regionais -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            Regionais do Canal
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if regionais %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Total de Lojas</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for regional in regionais %}
+                        <tr>
+                            <td>{{ regional.id }}</td>
+                            <td>
+                                <strong>{{ regional.nome }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ regional.total_lojas }} lojas</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'portais_admin:regional_detail' regional.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>
+                                    Ver Detalhes
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhuma regional encontrada</h5>
+                <p class="text-muted">Este canal ainda não possui regionais cadastradas.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+</div>
+{% endblock %}

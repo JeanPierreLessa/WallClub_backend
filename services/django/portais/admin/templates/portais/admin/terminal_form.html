@@ -1,0 +1,115 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Novo Terminal{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-credit-card me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Novo Terminal</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-plus me-2"></i>
+                    Cadastrar Terminal
+                </h5>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="loja_id" class="form-label">Loja *</label>
+                                <select class="form-select" id="loja_id" name="loja_id" required>
+                                    <option value="">Selecione uma loja</option>
+                                    {% for loja in lojas %}
+                                        <option value="{{ loja.id }}">{{ loja.razao_social }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="terminal" class="form-label">Nr. Série Terminal *</label>
+                                <input type="text" class="form-control" id="terminal" name="terminal" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="idterminal" class="form-label">ID do Terminal</label>
+                                <input type="text" class="form-control" id="idterminal" name="idterminal">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="contato" class="form-label">Contato</label>
+                                <input type="text" class="form-control" id="contato" name="contato">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="endereco" class="form-label">Endereço</label>
+                        <textarea class="form-control" id="endereco" name="endereco" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="inicio" class="form-label">Início Operação</label>
+                                <input type="date" class="form-control" id="inicio" name="inicio">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fim" class="form-label">Fim Operação</label>
+                                <input type="date" class="form-control" id="fim" name="fim">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i>
+                            Salvar Terminal
+                        </button>
+                        <a href="{% url 'portais_admin:terminais_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

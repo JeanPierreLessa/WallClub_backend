@@ -1,0 +1,51 @@
+{% comment %}
+Template para renderizar botões baseado em permissões
+Usado pelo template tag botoes_funcionalidade
+{% endcomment %}
+
+{% for funcionalidade in botoes_permitidos %}
+    {% if funcionalidade == 'usuarios_create' %}
+        <a href="{% url 'admin:usuarios_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Criar Usuário
+    {% elif funcionalidade == 'usuarios_edit' %}
+        <button class="btn btn-warning btn-sm" onclick="editarUsuario({{ usuario.id }})">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    {% elif funcionalidade == 'usuarios_delete' %}
+        <button class="btn btn-danger btn-sm" onclick="excluirUsuario({{ usuario.id }})">
+            <i class="fas fa-trash"></i> Excluir
+        </button>
+    {% elif funcionalidade == 'usuarios_manage_portals' %}
+        <button class="btn btn-info btn-sm" onclick="gerenciarPortais({{ usuario.id }})">
+            <i class="fas fa-cog"></i> Gerenciar Portais
+        </button>
+    {% elif funcionalidade == 'parametros_list' %}
+        <a href="{% url 'admin:parametros_list' %}" class="btn btn-primary">
+            <i class="fas fa-list"></i> Parâmetros
+        </a>
+    {% elif funcionalidade == 'parametros_copy' %}
+        <button class="btn btn-secondary btn-sm" onclick="copiarParametros({{ item.id }})">
+            <i class="fas fa-copy"></i> Copiar
+        </button>
+    {% elif funcionalidade == 'rpr_export' %}
+        <button class="btn btn-success" onclick="exportarRPR()">
+            <i class="fas fa-download"></i> Exportar
+        </button>
+    {% elif funcionalidade == 'rpr_manual_transactions' %}
+        <button class="btn btn-info" onclick="verLancamentosManuais()">
+            <i class="fas fa-list-alt"></i> Ver lançamentos manuais
+        </button>
+    {% elif funcionalidade == 'hierarquia_create' %}
+        <a href="{% url 'admin:hierarquia_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Criar Hierarquia
+        </a>
+    {% elif funcionalidade == 'terminais_create' %}
+        <a href="{% url 'admin:terminais_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Criar Terminal
+        </a>
+    {% elif funcionalidade == 'pagamentos_create' %}
+        <a href="{% url 'admin:pagamentos_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Adicionar Pagamento
+        </a>
+    {% endif %}
+{% endfor %}

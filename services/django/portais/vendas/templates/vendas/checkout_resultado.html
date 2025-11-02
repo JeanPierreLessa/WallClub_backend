@@ -1,0 +1,217 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Resultado da Transação - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        {% if transacao.status == 'APROVADA' %}
+        <div class="card border-success">
+            <div class="card-header bg-success text-white text-center">
+                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                <h3>Pagamento Aprovado!</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>NSU:</strong><br>
+                        <span class="fs-5">{{ transacao.nsu }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Código de Autorização:</strong><br>
+                        <span class="fs-5">{{ transacao.codigo_autorizacao }}</span>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Dados do Cliente -->
+                <h6 class="text-muted mb-3"><i class="fas fa-user me-2"></i>Dados do Cliente</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Nome:</strong><br>
+                        {% if transacao.cliente %}
+                            {{ transacao.cliente.nome }}
+                        {% elif transacao.session %}
+                            {{ transacao.session.nome }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>CPF:</strong><br>
+                        {% if transacao.cliente and transacao.cliente.cpf %}
+                            {{ transacao.cliente.cpf }}
+                        {% elif transacao.session and transacao.session.cpf %}
+                            {{ transacao.session.cpf }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>E-mail:</strong><br>
+                        {% if transacao.cliente and transacao.cliente.email %}
+                            {{ transacao.cliente.email }}
+                        {% elif transacao.session and transacao.session.email %}
+                            {{ transacao.session.email }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Celular:</strong><br>
+                        {% if transacao.session and transacao.session.celular %}
+                            {{ transacao.session.celular }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <strong>Endereço:</strong><br>
+                        {% if transacao.cliente and transacao.cliente.endereco %}
+                            {{ transacao.cliente.endereco }}
+                        {% elif transacao.session and transacao.session.endereco %}
+                            {{ transacao.session.endereco }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Dados da Transação -->
+                <h6 class="text-muted mb-3"><i class="fas fa-receipt me-2"></i>Dados da Transação</h6>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Valor:</strong><br>
+                        <span class="text-success fs-4">R$ {{ transacao.valor_transacao|floatformat:2 }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Parcelas:</strong><br>
+                        {{ transacao.parcelas }}x
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Forma:</strong><br>
+                        {{ transacao.forma_pagamento }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <strong>Data/Hora:</strong><br>
+                        {{ transacao.processed_at|date:"d/m/Y H:i:s" }}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{% url 'vendas:checkout' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-plus-circle me-2"></i>Nova Venda
+                    </a>
+                    <a href="{% url 'vendas:dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-2"></i>Voltar ao Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white text-center">
+                <i class="fas fa-times-circle fa-3x mb-3"></i>
+                <h3>Pagamento Negado</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <strong>Motivo:</strong><br>
+                    {{ transacao.erro_pinbank|default:"Transação não aprovada pela operadora" }}
+                </div>
+                
+                <!-- Dados do Cliente -->
+                <h6 class="text-muted mb-3"><i class="fas fa-user me-2"></i>Dados do Cliente</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Nome:</strong><br>
+                        {% if transacao.cliente %}
+                            {{ transacao.cliente.nome }}
+                        {% elif transacao.session %}
+                            {{ transacao.session.nome }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>CPF:</strong><br>
+                        {% if transacao.cliente and transacao.cliente.cpf %}
+                            {{ transacao.cliente.cpf }}
+                        {% elif transacao.session and transacao.session.cpf %}
+                            {{ transacao.session.cpf }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>E-mail:</strong><br>
+                        {% if transacao.cliente and transacao.cliente.email %}
+                            {{ transacao.cliente.email }}
+                        {% elif transacao.session and transacao.session.email %}
+                            {{ transacao.session.email }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Celular:</strong><br>
+                        {% if transacao.session and transacao.session.celular %}
+                            {{ transacao.session.celular }}
+                        {% else %}
+                            <span class="text-muted">Não disponível</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Dados da Transação -->
+                <h6 class="text-muted mb-3"><i class="fas fa-receipt me-2"></i>Dados da Transação</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Valor:</strong><br>
+                        R$ {{ transacao.valor_transacao|floatformat:2 }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Parcelas:</strong><br>
+                        {{ transacao.parcelas }}x
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <strong>Data/Hora:</strong><br>
+                        {{ transacao.processed_at|date:"d/m/Y H:i:s" }}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{% url 'vendas:checkout' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-redo me-2"></i>Tentar Novamente
+                    </a>
+                    <a href="{% url 'vendas:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Voltar ao Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

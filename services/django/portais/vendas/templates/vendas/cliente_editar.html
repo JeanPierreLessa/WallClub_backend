@@ -1,0 +1,113 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Editar Cliente - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-user-edit me-2"></i>Editar Cliente</h2>
+    <p class="text-muted mb-0">Atualize os dados cadastrais</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados do Cliente</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Documento (não editável) -->
+                    <div class="mb-3">
+                        <label class="form-label">CPF/CNPJ</label>
+                        <input type="text" class="form-control" value="{% if cliente.cpf %}{{ cliente.cpf }}{% else %}{{ cliente.cnpj }}{% endif %}" disabled>
+                        <small class="text-muted">Documento não pode ser alterado</small>
+                    </div>
+                    
+                    <!-- Nome (não editável - fonte Bureau) -->
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome Completo / Razão Social *</label>
+                        <input type="text" class="form-control bg-light" id="nome" name="nome" value="{{ cliente.nome }}" readonly>
+                        <small class="text-muted">Nome vem do Bureau e não pode ser editado aqui.</small>
+                    </div>
+                    
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail *</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ cliente.email }}" required>
+                    </div>
+                    
+                    <!-- CEP -->
+                    <div class="mb-3">
+                        <label for="cep" class="form-label">CEP</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="cep" name="cep" value="{{ cliente.cep|default:'' }}" placeholder="00000-000" maxlength="9">
+                            <button class="btn btn-outline-secondary" type="button" id="btnBuscarCEP">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Endereço -->
+                    <div class="mb-3">
+                        <label for="endereco" class="form-label">Endereço Completo</label>
+                        <textarea class="form-control" id="endereco" name="endereco" rows="2">{{ cliente.endereco|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'vendas:cliente_busca' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Máscaras
+function mascaraCEP(value) {
+    return value
+        .replace(/\D/g, '')
+        .replace(/(\d{5})(\d)/, '$1-$2')
+        .replace(/(-\d{3})\d+?$/, '$1');
+}
+
+document.getElementById('cep').addEventListener('input', function(e) {
+    e.target.value = mascaraCEP(e.target.value);
+});
+
+// Buscar CEP
+document.getElementById('btnBuscarCEP').addEventListener('click', function() {
+    const cep = document.getElementById('cep').value.replace(/\D/g, '');
+    
+    if (cep.length !== 8) {
+        alert('CEP inválido');
+        return;
+    }
+    
+    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.erro) {
+                alert('CEP não encontrado');
+                return;
+            }
+            
+            const endereco = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+            document.getElementById('endereco').value = endereco;
+        })
+        .catch(error => {
+            console.error('Erro ao buscar CEP:', error);
+            alert('Erro ao buscar CEP');
+        });
+});
+</script>
+{% endblock %}

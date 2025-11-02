@@ -1,0 +1,132 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Buscar Cliente - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-search me-2"></i>Buscar Clientes</h2>
+    <p class="text-muted mb-0">Encontre e gerencie seus clientes cadastrados</p>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Filtros de Busca</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'vendas:cliente_busca' %}">
+                    <div class="row">
+                        <div class="col-md-10">
+                            <input type="text" class="form-control" name="q" placeholder="Busque por nome, CPF, CNPJ ou email..." value="{{ busca }}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Resultados</h5>
+                <a href="{% url 'vendas:cliente_novo' %}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-2"></i>Novo Cliente
+                </a>
+            </div>
+            <div class="card-body">
+                {% if clientes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>CPF/CNPJ</th>
+                                <th>Email</th>
+                                <th>Celular</th>
+                                <th>Cartões</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cliente in clientes %}
+                            <tr>
+                                <td>{{ cliente.id }}</td>
+                                <td>{{ cliente.nome }}</td>
+                                <td>
+                                    {% if cliente.cpf %}
+                                        {{ cliente.cpf }}
+                                    {% else %}
+                                        {{ cliente.cnpj }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ cliente.email }}</td>
+                                <td>
+                                    {% if cliente.celular_ultimos_4 %}
+                                        <span class="text-muted">****{{ cliente.celular_ultimos_4 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ cliente.total_cartoes_validos }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if cliente.ativo %}
+                                    <span class="badge bg-success">Ativo</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'vendas:cliente_editar' cliente.id %}" class="btn btn-outline-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if cliente.ativo %}
+                                        <form method="post" action="{% url 'vendas:cliente_inativar' cliente.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger" title="Inativar" onclick="return confirm('Deseja inativar este cliente?')">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <form method="post" action="{% url 'vendas:cliente_reativar' cliente.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-success" title="Reativar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhum cliente encontrado.</p>
+                    <a href="{% url 'vendas:cliente_novo' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Cadastrar Primeiro Cliente
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

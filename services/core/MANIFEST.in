@@ -1,0 +1,9 @@
+include README.md
+include requirements.txt
+include LICENSE
+recursive-include wallclub_core *.py
+recursive-include wallclub_core/integracoes/apn_configs *
+recursive-include wallclub_core/integracoes/firebase_configs *
+recursive-include wallclub_core/templates *
+recursive-exclude wallclub_core *.pyc
+recursive-exclude wallclub_core __pycache__

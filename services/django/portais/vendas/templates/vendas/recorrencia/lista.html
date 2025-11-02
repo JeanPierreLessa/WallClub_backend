@@ -1,0 +1,212 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Recorrências Agendadas - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fas fa-sync-alt me-2"></i>{{ titulo }}</h2>
+        <p class="text-muted mb-0">Gerencie suas cobranças recorrentes</p>
+    </div>
+    <a href="{% url 'vendas:recorrencia_agendar' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Nova Recorrência
+    </a>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-list"></i></div>
+            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon text-success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-value text-success">{{ ativas }}</div>
+            <div class="stat-label">Ativas</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon text-warning"><i class="fas fa-pause-circle"></i></div>
+            <div class="stat-value text-warning">{{ pausadas }}</div>
+            <div class="stat-label">Pausadas</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon text-danger"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-value text-danger">{{ hold }}</div>
+            <div class="stat-label">Em Hold</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_escolhido == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="cliente_id" class="form-label">ID do Cliente</label>
+                <input type="number" class="form-control" id="cliente_id" name="cliente_id" 
+                       placeholder="Filtrar por cliente">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter me-2"></i>Filtrar
+                </button>
+                <a href="{% url 'vendas:recorrencia_listar' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Recorrências -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recorrências ({{ total }})</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if recorrencias %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Valor</th>
+                            <th>Periodicidade</th>
+                            <th>Próxima Cobrança</th>
+                            <th>Status</th>
+                            <th>Tentativas</th>
+                            <th>Total Cobrado</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rec in recorrencias %}
+                        <tr>
+                            <td><strong>#{{ rec.id }}</strong></td>
+                            <td>
+                                <div>{{ rec.cliente_nome }}</div>
+                                <small class="text-muted">{{ rec.cliente_cpf }}</small>
+                            </td>
+                            <td><strong>R$ {{ rec.valor|floatformat:2 }}</strong></td>
+                            <td>
+                                <span class="badge bg-info">{{ rec.periodicidade }}</span>
+                            </td>
+                            <td>{{ rec.proxima_cobranca }}</td>
+                            <td>
+                                {% if 'Ativo' in rec.status %}
+                                    <span class="badge bg-success">{{ rec.status }}</span>
+                                {% elif 'Pausado' in rec.status %}
+                                    <span class="badge bg-warning">{{ rec.status }}</span>
+                                {% elif 'Hold' in rec.status %}
+                                    <span class="badge bg-danger">{{ rec.status }}</span>
+                                {% elif 'Cancelado' in rec.status %}
+                                    <span class="badge bg-secondary">{{ rec.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-dark">{{ rec.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if rec.tentativas_falhas > 0 %}
+                                    <span class="badge bg-danger">{{ rec.tentativas_falhas }} falhas</span>
+                                {% else %}
+                                    <span class="text-muted">Nenhuma</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div><strong>R$ {{ rec.total_cobrado|floatformat:2 }}</strong></div>
+                                <small class="text-muted">{{ rec.total_execucoes }} cobrança(s)</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'vendas:recorrencia_detalhe' rec.id %}" 
+                                       class="btn btn-outline-primary" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    {% if 'Ativo' in rec.status %}
+                                        <form method="POST" action="{% url 'vendas:recorrencia_pausar' rec.id %}" 
+                                              style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-warning" 
+                                                    title="Pausar" onclick="return confirm('Pausar esta recorrência?')">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                        </form>
+                                    {% elif 'Pausado' in rec.status %}
+                                        <form method="POST" action="{% url 'vendas:recorrencia_reativar' rec.id %}" 
+                                              style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-success" 
+                                                    title="Reativar" onclick="return confirm('Reativar esta recorrência?')">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                    {% if 'Ativo' in rec.status or 'Pausado' in rec.status %}
+                                        <form method="POST" action="{% url 'vendas:recorrencia_cancelar' rec.id %}" 
+                                              style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger" 
+                                                    title="Cancelar" onclick="return confirm('Cancelar permanentemente esta recorrência?')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Nenhuma recorrência encontrada.</p>
+                <a href="{% url 'vendas:recorrencia_agendar' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Agendar Primeira Recorrência
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Links Úteis -->
+<div class="mt-3">
+    <a href="{% url 'vendas:recorrencia_nao_cobrados' %}" class="btn btn-outline-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>Ver Recorrências em Hold
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

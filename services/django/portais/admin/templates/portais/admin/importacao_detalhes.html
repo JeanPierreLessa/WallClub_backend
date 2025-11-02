@@ -1,0 +1,210 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block navbar_actions %}
+<a href="#" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar às Importações
+</a>
+{% endblock %}
+
+{% block title %}Detalhes da Importação{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="importacao-header text-center">
+    <div class="container">
+        <h2 class="mb-2">
+            <i class="fas fa-file-alt me-2"></i>
+            Detalhes da Importação
+        </h2>
+        <p class="mb-0">{{ importacao.arquivo_nome }}</p>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Informações Gerais -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card status-card {% if importacao.status == 'SUCESSO' %}status-sucesso{% elif importacao.status == 'ERRO' %}status-erro{% else %}status-processando{% endif %}">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <strong>Status:</strong><br>
+                            {% if importacao.status == 'SUCESSO' %}
+                                <span class="badge bg-success">Sucesso</span>
+                            {% elif importacao.status == 'ERRO' %}
+                                <span class="badge bg-danger">Erro</span>
+                            {% elif importacao.status == 'PROCESSANDO' %}
+                                <span class="badge bg-warning">Processando</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ importacao.status }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Arquivo:</strong><br>
+                            <span class="text-muted">{{ importacao.arquivo_nome }}</span>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Tamanho:</strong><br>
+                            <span class="text-muted">{{ importacao.arquivo_tamanho|filesizeformat }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Processado em:</strong><br>
+                            <span class="text-muted">
+                                {% if importacao.processado_em %}
+                                    {{ importacao.processado_em|date:"d/m/Y H:i:s" }}
+                                {% else %}
+                                    Em processamento...
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Usuário:</strong><br>
+                            <span class="text-muted">{{ importacao.usuario.username|default:"Sistema" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-list fa-2x text-primary mb-2"></i>
+                    <h4 class="card-title">{{ importacao.total_linhas|default:0 }}</h4>
+                    <p class="card-text text-muted">Total de Linhas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h4 class="card-title text-success">{{ importacao.linhas_importadas|default:0 }}</h4>
+                    <p class="card-text text-muted">Importadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                    <h4 class="card-title text-danger">{{ importacao.linhas_erro|default:0 }}</h4>
+                    <p class="card-text text-muted">Com Erro</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                    <h4 class="card-title text-info">
+                        {% if importacao.total_linhas and importacao.total_linhas > 0 %}
+                            {{ importacao.linhas_importadas|default:0|mul:100|div:importacao.total_linhas|floatformat:1 }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </h4>
+                    <p class="card-text text-muted">Taxa de Sucesso</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Relatório de Erros -->
+    {% if importacao.relatorio_erros %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bug me-2"></i>
+                        Relatório de Erros
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="relatorio-erros">{{ importacao.relatorio_erros }}</div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard()">
+                            <i class="fas fa-copy me-1"></i>
+                            Copiar Relatório
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timeline -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        Timeline do Processamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6>Arquivo Enviado</h6>
+                                <p class="text-muted">{{ importacao.criado_em|date:"d/m/Y H:i:s" }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if importacao.processado_em %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if importacao.status == 'SUCESSO' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6>Processamento Concluído</h6>
+                                <p class="text-muted">{{ importacao.processado_em|date:"d/m/Y H:i:s" }}</p>
+                                <small class="text-muted">
+                                    Duração: 
+                                    {% widthratio importacao.processado_em|timeuntil:importacao.criado_em 1 1 %} segundos
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard() {
+    const relatorio = document.querySelector('.relatorio-erros');
+    const text = relatorio.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        // Mostrar feedback
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Vendedor: {{ vendedor.nome }}{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-user-tie me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">{{ vendedor.nome }}</h1>
+        </div>
+    </div>
+
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:canal_detail' vendedor.regional.canal.id %}">{{ vendedor.regional.canal.nome }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'portais_admin:regional_detail' vendedor.regional.id %}">{{ vendedor.regional.nome }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ vendedor.nome }}</li>
+    </ol>
+</nav>
+
+<!-- Informações Hierárquicas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="alert alert-info">
+            <i class="fas fa-building me-2"></i>
+            <strong>Canal:</strong> {{ vendedor.regional.canal.nome }} ({{ vendedor.regional.canal.marca }})
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="alert alert-primary">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            <strong>Regional:</strong> {{ vendedor.regional.nome }}
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-6 col-sm-6 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ estatisticas.grupos }}</h4>
+                        <small>Grupos Econômicos</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ estatisticas.lojas }}</h4>
+                        <small>Lojas</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-store fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Grupos Econômicos -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-users me-2"></i>
+            Grupos Econômicos do Vendedor
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if grupos %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Total de Lojas</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grupo in grupos %}
+                        <tr>
+                            <td>{{ grupo.id }}</td>
+                            <td>
+                                <strong>{{ grupo.nome }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ grupo.total_lojas }} lojas</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'portais_admin:grupo_detail' grupo.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>
+                                    Ver Detalhes
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum grupo econômico encontrado</h5>
+                <p class="text-muted">Este vendedor ainda não possui grupos econômicos cadastrados.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+</div>
+{% endblock %}

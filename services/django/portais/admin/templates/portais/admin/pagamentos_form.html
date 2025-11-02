@@ -1,0 +1,439 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:pagamentos_list' %}" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .parametros-header {
+        background: linear-gradient(135deg, #65C97A 0%, #4CAF50 100%);
+        color: white;
+        padding: 1rem 0;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control:focus {
+        border-color: #65C97A;
+        box-shadow: 0 0 0 0.2rem rgba(101, 201, 122, 0.25);
+    }
+    
+    .btn-save {
+        background: #65C97A;
+        border-color: #65C97A;
+        color: white;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+    }
+    
+    .btn-save:hover {
+        background: #4CAF50;
+        border-color: #4CAF50;
+        color: white;
+    }
+    
+    .sticky-save {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 1rem 0;
+        border-top: 1px solid #e9ecef;
+        margin-top: 2rem;
+        z-index: 100;
+    }
+    
+    .currency-input {
+        position: relative;
+    }
+    
+    .currency-input::before {
+        content: 'R$';
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-weight: 500;
+        z-index: 10;
+    }
+    
+    .currency-input input {
+        padding-left: 35px;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .required-field::after {
+        content: ' *';
+        color: #dc3545;
+    }
+    
+    .nsu-check {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    .nsu-check.text-success {
+        color: #28a745 !important;
+    }
+    
+    .nsu-check.text-danger {
+        color: #dc3545 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="parametros-header text-center">
+    <div class="container">
+        <h4 class="mb-1">
+            <i class="fas fa-money-bill-wave me-2"></i>
+            {{ title }}
+        </h4>
+        <p class="mb-0 small">
+            {% if action == 'create' %}
+                Criar novo registro de pagamento
+            {% else %}
+                Editar informações do pagamento
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <form method="post" id="pagamentoForm">
+        {% csrf_token %}
+        
+        <!-- Informações Básicas -->
+        <div class="form-section">
+            <h5 class="section-title">
+                <i class="fas fa-info-circle me-2"></i>
+                Informações Básicas
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="nsu" class="form-label required-field">NSU</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="nsu" 
+                               name="nsu" 
+                               value="{% if pagamento %}{{ pagamento.nsu }}{% endif %}"
+                               {% if action == 'edit' %}readonly{% endif %}
+                               pattern="[0-9]+"
+                               required>
+                        {% if action == 'create' %}
+                        <div id="nsuCheck" class="nsu-check"></div>
+                        {% endif %}
+                        <div class="help-text">Número Sequencial Único da transação</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valores Monetários -->
+        <div class="form-section">
+            <h5 class="section-title">
+                <i class="fas fa-dollar-sign me-2"></i>
+                Valores Monetários
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="var44" class="form-label">Valor pago Repasse Loja (R$)</label>
+                        <div class="currency-input">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="var44" 
+                                   name="var44" 
+                                   value="{% if pagamento.var44 %}{{ pagamento.var44|floatformat:2 }}{% endif %}"
+                                   placeholder="0,00">
+                        </div>
+                        <div class="help-text">Valor efetivamente pago no repasse para a loja</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="var58" class="form-label">Valor Rebate Total Wall Pago (R$)</label>
+                        <div class="currency-input">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="var58" 
+                                   name="var58" 
+                                   value="{% if pagamento.var58 %}{{ pagamento.var58|floatformat:2 }}{% endif %}"
+                                   placeholder="0,00">
+                        </div>
+                        <div class="help-text">Valor total do rebate Wall efetivamente pago</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="var111" class="form-label">Despesa Charge Back / Fraude Realizada (R$)</label>
+                        <div class="currency-input">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="var111" 
+                                   name="var111" 
+                                   value="{% if pagamento.var111 %}{{ pagamento.var111|floatformat:2 }}{% endif %}"
+                                   placeholder="0,00">
+                        </div>
+                        <div class="help-text">Valor de despesas com chargeback ou fraude</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="var112" class="form-label">Outras Despesas / Ajustes Financeiros Wall (R$)</label>
+                        <div class="currency-input">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="var112" 
+                                   name="var112" 
+                                   value="{% if pagamento.var112 %}{{ pagamento.var112|floatformat:2 }}{% endif %}"
+                                   placeholder="0,00">
+                        </div>
+                        <div class="help-text">Outros ajustes financeiros realizados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datas de Pagamento -->
+        <div class="form-section">
+            <h5 class="section-title">
+                <i class="fas fa-calendar me-2"></i>
+                Datas de Pagamento
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="var45" class="form-label">Data Realiz. Pagto Repasse Loja</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="var45" 
+                               name="var45" 
+                               value="{% if pagamento.var45 %}{{ pagamento.var45 }}{% endif %}"
+                               placeholder="DD/MM/YYYY">
+                        <div class="help-text">Data de realização do pagamento do repasse</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="var59" class="form-label">Data Realiz Pagto Rebate Total</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="var59" 
+                               name="var59" 
+                               value="{% if pagamento.var59 %}{{ pagamento.var59 }}{% endif %}"
+                               placeholder="DD/MM/YYYY">
+                        <div class="help-text">Data de realização do pagamento do rebate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Motivos e Observações -->
+        <div class="form-section">
+            <h5 class="section-title">
+                <i class="fas fa-comment me-2"></i>
+                Motivos e Observações
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="var66" class="form-label">Motivo Difer.Pagto Rebate Wall</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="var66" 
+                               name="var66" 
+                               value="{% if pagamento.var66 %}{{ pagamento.var66 }}{% endif %}"
+                               maxlength="20">
+                        <div class="help-text">Motivo da diferença no pagamento do rebate</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="var71" class="form-label">Motivo Cancelamento</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="var71" 
+                               name="var71" 
+                               value="{% if pagamento.var71 %}{{ pagamento.var71 }}{% endif %}"
+                               maxlength="20">
+                        <div class="help-text">Motivo do cancelamento da transação</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="var100" class="form-label">Motivo Dif. Valor a Rec x Valor Recebido</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="var100" 
+                               name="var100" 
+                               value="{% if pagamento.var100 %}{{ pagamento.var100 }}{% endif %}"
+                               maxlength="20">
+                        <div class="help-text">Motivo da diferença entre valor a receber e recebido</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="sticky-save">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {% if pagamento %}
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Criado em {{ pagamento.created_at|date:"d/m/Y H:i" }} por {{ pagamento.user.username }}
+                    </small>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="{% url 'portais_admin:pagamentos_list' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-times me-1"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-save" id="saveBtn">
+                        <i class="fas fa-save me-1"></i>
+                        {% if action == 'create' %}Criar Pagamento{% else %}Salvar Alterações{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para campos monetários
+    const currencyInputs = document.querySelectorAll('#var44, #var58, #var111, #var112');
+    currencyInputs.forEach(input => {
+        input.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value) {
+                value = (value / 100).toFixed(2);
+                value = value.replace('.', ',');
+                value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+            e.target.value = value;
+        });
+        
+        input.addEventListener('blur', function(e) {
+            if (e.target.value && !e.target.value.includes(',')) {
+                e.target.value = e.target.value + ',00';
+            }
+        });
+    });
+    
+    // Verificação de NSU duplicado (apenas na criação)
+    {% if action == 'create' %}
+    const nsuInput = document.getElementById('nsu');
+    const nsuCheck = document.getElementById('nsuCheck');
+    const saveBtn = document.getElementById('saveBtn');
+    
+    let checkTimeout;
+    
+    nsuInput.addEventListener('input', function() {
+        clearTimeout(checkTimeout);
+        const nsu = this.value.trim();
+        
+        if (!nsu) {
+            nsuCheck.innerHTML = '';
+            saveBtn.disabled = false;
+            return;
+        }
+        
+        nsuCheck.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Verificando...';
+        nsuCheck.className = 'nsu-check text-muted';
+        
+        checkTimeout = setTimeout(() => {
+            fetch(`{% url 'portais_admin:pagamentos_ajax_check_nsu' %}?nsu=${nsu}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        nsuCheck.innerHTML = '<i class="fas fa-times me-1"></i>NSU já existe';
+                        nsuCheck.className = 'nsu-check text-danger';
+                        saveBtn.disabled = true;
+                    } else {
+                        nsuCheck.innerHTML = '<i class="fas fa-check me-1"></i>NSU disponível';
+                        nsuCheck.className = 'nsu-check text-success';
+                        saveBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    nsuCheck.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Erro na verificação';
+                    nsuCheck.className = 'nsu-check text-warning';
+                    saveBtn.disabled = false;
+                });
+        }, 500);
+    });
+    {% endif %}
+    
+    // Validação do formulário
+    document.getElementById('pagamentoForm').addEventListener('submit', function(e) {
+        const nsu = document.getElementById('nsu').value.trim();
+        
+        if (!nsu) {
+            e.preventDefault();
+            alert('NSU é obrigatório');
+            document.getElementById('nsu').focus();
+            return false;
+        }
+        
+        // Converter valores monetários para formato correto antes do envio
+        currencyInputs.forEach(input => {
+            if (input.value) {
+                input.value = input.value.replace(/\./g, '').replace(',', '.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

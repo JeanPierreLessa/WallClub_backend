@@ -1,0 +1,96 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Novo Grupo Econômico{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-users me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">Novo Grupo Econômico</h1>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+            </li>
+            <li class="breadcrumb-item active">Novo Grupo Econômico</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        Informações do Grupo Econômico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nome" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>
+                                    Nome do Grupo *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="nome" 
+                                       name="nome" 
+                                       required
+                                       placeholder="Ex: Grupo ABC Ltda"
+                                       value="{{ request.POST.nome|default:'' }}">
+                                <div class="form-text">Nome identificador do grupo econômico</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="vendedor_id" class="form-label">
+                                    <i class="fas fa-user-tie me-1"></i>
+                                    Vendedor *
+                                </label>
+                                <select class="form-select" id="vendedor_id" name="vendedor_id" required>
+                                    <option value="">Selecione um vendedor</option>
+                                    {% for vendedor in vendedores %}
+                                    <option value="{{ vendedor.id }}" 
+                                            {% if request.POST.vendedor_id == vendedor.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ vendedor.nome }} ({{ vendedor.regional_nome }} - {{ vendedor.canal_nome }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Vendedor responsável pelo grupo</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'portais_admin:hierarquia_geral' %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-save me-1"></i>
+                                Criar Grupo Econômico
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends "portais/admin/base.html" %}
+{% load static %}
+
+{% block title %}Hierarquia Organizacional{% endblock %}
+
+{% block extra_css %}
+<style>
+.hierarchy-tree {
+    font-family: 'Courier New', monospace;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.tree-node {
+    margin: 8px 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.tree-canal {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin: 15px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tree-regional {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    margin-left: 20px;
+    color: #1565c0;
+    font-weight: 600;
+}
+
+.tree-vendedor {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+    margin-left: 40px;
+    color: #e65100;
+    font-weight: 500;
+}
+
+.tree-grupo {
+    background: #fce4ec;
+    border-left: 4px solid #e91e63;
+    margin-left: 60px;
+    color: #ad1457;
+    font-size: 0.9em;
+}
+
+.tree-icon {
+    margin-right: 8px;
+}
+
+.badge-lojas {
+    background: #17a2b8;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+.parametros-header {
+    background: linear-gradient(135deg, #65C97A 0%, #4CAF50 100%);
+    color: white;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-hierarchy {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.9em;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-hierarchy:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-canal { background: #28a745; color: white; }
+.btn-regional { background: #2196f3; color: white; }
+.btn-vendedor { background: #ff9800; color: white; }
+.btn-grupo { background: #e91e63; color: white; }
+.btn-loja { background: #6f42c1; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-sitemap me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Hierarquia Organizacional</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+
+<!-- Filtros e Ações -->
+<div class="row mb-3">
+    <div class="col-md-8">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary btn-sm active" data-filter="all">
+                <i class="fas fa-list me-1"></i>Todos
+            </button>
+            <button type="button" class="btn btn-outline-success btn-sm" data-filter="canal">
+                <i class="fas fa-building me-1"></i>Canais
+            </button>
+            <button type="button" class="btn btn-outline-info btn-sm" data-filter="regional">
+                <i class="fas fa-map-marker-alt me-1"></i>Regionais
+            </button>
+            <button type="button" class="btn btn-outline-warning btn-sm" data-filter="vendedor">
+                <i class="fas fa-user-tie me-1"></i>Vendedores
+            </button>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-plus me-1"></i>Adicionar
+            </button>
+            <ul class="dropdown-menu">
+                {% load controle_acesso_tags %}
+                {% if request.portal_usuario|nivel_portal:'admin' == 'admin_total' %}
+                    <li><a class="dropdown-item" href="{% url 'portais_admin:canal_create' %}"><i class="fas fa-building me-2"></i>Novo Canal</a></li>
+                {% endif %}
+                <li><a class="dropdown-item" href="{% url 'portais_admin:regional_create' %}"><i class="fas fa-map-marker-alt me-2"></i>Nova Regional</a></li>
+                <li><a class="dropdown-item" href="{% url 'portais_admin:vendedor_create' %}"><i class="fas fa-user-tie me-2"></i>Novo Vendedor</a></li>
+                <li><a class="dropdown-item" href="{% url 'portais_admin:grupo_create' %}"><i class="fas fa-users me-2"></i>Novo Grupo</a></li>
+                <li><a class="dropdown-item" href="{% url 'portais_admin:loja_create' %}"><i class="fas fa-store me-2"></i>Nova Loja</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Árvore Hierárquica -->
+<div class="hierarchy-tree">
+        {% for canal_id, canal in hierarquia.items %}
+            <div class="tree-node tree-canal">
+                <i class="fas fa-building tree-icon"></i>
+                <a href="{% url 'portais_admin:canal_detail' canal.id %}" class="text-white text-decoration-none">
+                    <strong>{{ canal.nome }}</strong> ({{ canal.marca }})
+                </a>
+                <span class="badge-lojas">{{ canal.total_lojas }} lojas</span>
+            </div>
+
+            {% for regional_id, regional in canal.regionais.items %}
+                <div class="tree-node tree-regional">
+                    <i class="fas fa-map-marker-alt tree-icon"></i>
+                    <a href="{% url 'portais_admin:regional_detail' regional.id %}" class="text-decoration-none" style="color: #1565c0;">
+                        {{ regional.nome }}
+                    </a>
+                    <span class="badge-lojas">{{ regional.total_lojas }} lojas</span>
+                </div>
+
+                {% for vendedor_id, vendedor in regional.vendedores.items %}
+                    <div class="tree-node tree-vendedor">
+                        <i class="fas fa-user-tie tree-icon"></i>
+                        <a href="{% url 'portais_admin:vendedor_detail' vendedor.id %}" class="text-decoration-none" style="color: #e65100;">
+                            {{ vendedor.nome }}
+                        </a>
+                        <span class="badge-lojas">{{ vendedor.total_lojas }} lojas</span>
+                    </div>
+
+                    {% for grupo_id, grupo in vendedor.grupos.items %}
+                        <div class="tree-node tree-grupo">
+                            <i class="fas fa-users tree-icon"></i>
+                            <a href="{% url 'portais_admin:grupo_detail' grupo.id %}" class="text-decoration-none" style="color: #ad1457;">
+                                {{ grupo.nome }}
+                            </a>
+                            <span class="badge-lojas">{{ grupo.total_lojas }} lojas</span>
+                        </div>
+                    {% empty %}
+                        <div class="tree-node tree-grupo" style="opacity: 0.6;">
+                            <i class="fas fa-exclamation-triangle tree-icon"></i>
+                            <em>Nenhum grupo econômico</em>
+                        </div>
+                    {% endfor %}
+                {% empty %}
+                    <div class="tree-node tree-vendedor" style="opacity: 0.6;">
+                        <i class="fas fa-exclamation-triangle tree-icon"></i>
+                        <em>Nenhum vendedor</em>
+                    </div>
+                {% endfor %}
+            {% empty %}
+                <div class="tree-node tree-regional" style="opacity: 0.6;">
+                    <i class="fas fa-exclamation-triangle tree-icon"></i>
+                    <em>Nenhuma regional</em>
+                </div>
+            {% endfor %}
+        {% empty %}
+            <div class="tree-node tree-canal" style="opacity: 0.6;">
+                <i class="fas fa-exclamation-triangle tree-icon"></i>
+                <em>Nenhum canal cadastrado</em>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Legenda -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Legenda da Hierarquia</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="tree-node tree-canal" style="display: inline-block; padding: 4px 8px; margin-right: 10px;">
+                                    <i class="fas fa-building"></i> Canal
+                                </div>
+                                <small>Nível mais alto da hierarquia (WALL, A CLUB)</small>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="tree-node tree-regional" style="display: inline-block; padding: 4px 8px; margin-right: 10px;">
+                                    <i class="fas fa-map-marker-alt"></i> Regional
+                                </div>
+                                <small>Divisão geográfica do canal</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="tree-node tree-vendedor" style="display: inline-block; padding: 4px 8px; margin-right: 10px;">
+                                    <i class="fas fa-user-tie"></i> Vendedor
+                                </div>
+                                <small>Responsável comercial da regional</small>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="tree-node tree-grupo" style="display: inline-block; padding: 4px 8px; margin-right: 10px;">
+                                    <i class="fas fa-users"></i> Grupo Econômico
+                                </div>
+                                <small>Agrupamento de lojas relacionadas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtros da hierarquia
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const treeNodes = document.querySelectorAll('.tree-node');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Atualizar botões ativos
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filtrar nós
+            treeNodes.forEach(node => {
+                if (filter === 'all') {
+                    node.style.display = 'block';
+                } else {
+                    const shouldShow = node.classList.contains(`tree-${filter}`);
+                    node.style.display = shouldShow ? 'block' : 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

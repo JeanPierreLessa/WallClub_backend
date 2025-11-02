@@ -1,0 +1,274 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Gestão de Usuários{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:dashboard' %}" class="btn btn-outline-light me-2">
+    <i class="fas fa-arrow-left me-1"></i>
+    Dashboard
+</a>
+{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-users me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Gestão de Usuários</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Mensagens -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show">
+                <i class="fas fa-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+        <!-- Filtros -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-outline-secondary btn-sm filter-btn active" data-filter="todos">
+                        <i class="fas fa-users"></i> Todos ({{ usuarios.count }})
+                    </button>
+                    <button class="btn btn-outline-success btn-sm filter-btn" data-filter="validados">
+                        <i class="fas fa-check-circle"></i> Validados ({{ usuarios_validados }})
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm filter-btn" data-filter="pendentes">
+                        <i class="fas fa-clock"></i> Pendentes ({{ usuarios_pendentes }})
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm filter-btn" data-filter="inativos">
+                        <i class="fas fa-times-circle"></i> Inativos ({{ usuarios_inativos }})
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <!-- Formulário -->
+            <div class="col-lg-4">
+                <div class="card loja-info-card">
+                    <div class="card-body">
+                    <h3 class="section-title">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Cadastro/Edição
+                    </h3>
+                    
+                    <form id="userForm" method="POST" action="">
+                        {% csrf_token %}
+                        <input type="hidden" id="id" name="ID" value="">
+                        <input type="hidden" id="acao" name="acao" value="inserir">
+                        
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">
+                                <i class="fas fa-user me-1"></i>Nome Completo
+                            </label>
+                            <input type="text" class="form-control" id="nome" name="NOME" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>E-mail
+                            </label>
+                            <input type="email" class="form-control" id="email" name="EMAIL" required>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Salvar
+                            </button>
+                            <button type="button" id="btnClear" class="btn btn-secondary">
+                                <i class="fas fa-eraser me-1"></i>Limpar
+                            </button>
+                            <button type="button" id="btnResetPassword" class="btn btn-warning">
+                                <i class="fas fa-key me-1"></i>Reset Senha
+                            </button>
+                            <button type="button" id="btnRemove" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i>Remover
+                            </button>
+                        </div>
+                    </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de Usuários -->
+            <div class="col-lg-8">
+                <div class="card loja-info-card">
+                    <div class="card-body">
+                    <h3 class="section-title">
+                        <i class="fas fa-list me-2"></i>
+                        Lista de Usuários
+                    </h3>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuário</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in usuarios %}
+                                <tr onclick="ref('{{ u.id }}', '{{ u.nome|escapejs }}', '{{ u.email|escapejs }}');" style="cursor: pointer;" 
+                                    data-status="{% if u.is_usuario_valido %}validados{% elif u.senha_temporaria %}pendentes{% elif not u.ativo %}inativos{% else %}indefinidos{% endif %}">
+                                    <td>
+                                        <span class="badge bg-primary">#{{ u.id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar">
+                                                {{ u.nome|first|upper }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ u.nome }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ u.email }}</td>
+                                    <td>
+                                        {% if u.is_usuario_valido %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Validado
+                                            </span>
+                                        {% elif u.senha_temporaria %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>Pendente
+                                            </span>
+                                        {% elif not u.ativo %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Inativo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-question-circle me-1"></i>Indefinido
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button onclick="event.stopPropagation(); ref('{{ u.id }}', '{{ u.nome|escapejs }}', '{{ u.email|escapejs }}');" 
+                                                class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Nenhum usuário encontrado</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Filtros de usuário
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const userRows = document.querySelectorAll('tbody tr[data-status]');
+            
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active de todos os botões
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    // Adiciona active no botão clicado
+                    this.classList.add('active');
+                    
+                    const filter = this.dataset.filter;
+                    
+                    userRows.forEach(row => {
+                        if (filter === 'todos') {
+                            row.style.display = '';
+                        } else {
+                            const status = row.dataset.status;
+                            row.style.display = status === filter ? '' : 'none';
+                        }
+                    });
+                });
+            });
+        });
+
+        // Função para preencher o formulário quando um usuário é selecionado
+        function ref(id, nome, email) {
+            document.getElementById("id").value = id;
+            document.getElementById("nome").value = nome;
+            document.getElementById("email").value = email;
+            
+            // Alterar a ação para editar
+            document.getElementById("acao").value = "editar";
+            
+            // Scroll para o formulário
+            document.querySelector('.modern-card').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Limpar formulário
+        document.getElementById("btnClear").addEventListener("click", function() {
+            document.getElementById("userForm").reset();
+            document.getElementById("id").value = "";
+            document.getElementById("acao").value = "inserir";
+        });
+        
+        // Resetar senha
+        document.getElementById("btnResetPassword").addEventListener("click", function() {
+            const id = document.getElementById("id").value;
+            if (id) {
+                if (confirm("🔑 Tem certeza que deseja resetar a senha deste usuário?")) {
+                    document.getElementById("acao").value = "resetar_senha";
+                    document.getElementById("userForm").submit();
+                }
+            } else {
+                alert("⚠️ Selecione um usuário para resetar a senha!");
+            }
+        });
+        
+        // Remover usuário
+        document.getElementById("btnRemove").addEventListener("click", function() {
+            const id = document.getElementById("id").value;
+            if (id) {
+                if (confirm("🗑️ Tem certeza que deseja remover este usuário?\n\nEsta ação não pode ser desfeita!")) {
+                    document.getElementById("acao").value = "remover";
+                    document.getElementById("userForm").submit();
+                }
+            } else {
+                alert("⚠️ Selecione um usuário para remover!");
+            }
+        });
+        
+        // Animações de entrada
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.modern-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+{% endblock %}

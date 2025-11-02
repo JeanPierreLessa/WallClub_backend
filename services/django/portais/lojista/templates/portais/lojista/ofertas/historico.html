@@ -1,0 +1,171 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Histórico de Disparos - Portal Lojista{% endblock %}
+
+{% block page_header_compact %}
+<div class="page-header-compact">
+    <h1 class="page-title">
+        <i class="fas fa-history"></i>
+        Histórico de Disparos
+    </h1>
+    <p class="page-subtitle">{{ oferta.titulo }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Informações da Oferta -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-gift me-2"></i>Detalhes da Oferta
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>ID:</strong> #{{ oferta.id }}</p>
+                    <p class="mb-2"><strong>Título:</strong> {{ oferta.titulo }}</p>
+                    <p class="mb-2">
+                        <strong>Status:</strong>
+                        {% if oferta.ativo %}
+                            <span class="badge bg-success">Ativa</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inativa</span>
+                        {% endif %}
+                        {% if oferta.is_vigente %}
+                            <span class="badge bg-info">Vigente</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2">
+                        <strong>Vigência:</strong><br>
+                        <i class="fas fa-calendar-alt"></i> {{ oferta.vigencia_inicio|date:"d/m/Y H:i" }}<br>
+                        <i class="fas fa-calendar-check"></i> {{ oferta.vigencia_fim|date:"d/m/Y H:i" }}
+                    </p>
+                </div>
+            </div>
+            {% if oferta.descricao %}
+            <hr>
+            <p class="mb-0"><strong>Descrição:</strong><br>{{ oferta.descricao }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="mb-3">
+        <a href="{% url 'lojista:ofertas_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+        <a href="{% url 'lojista:ofertas_edit' oferta.id %}" class="btn btn-warning">
+            <i class="fas fa-edit me-2"></i>Editar Oferta
+        </a>
+    </div>
+
+    <!-- Histórico de Disparos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-paper-plane me-2"></i>Histórico de Disparos
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if disparos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Data/Hora</th>
+                                <th>Status</th>
+                                <th>Total Clientes</th>
+                                <th>Enviados</th>
+                                <th>Falhas</th>
+                                <th>Taxa Sucesso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for disparo in disparos %}
+                            <tr>
+                                <td><strong>#{{ disparo.id }}</strong></td>
+                                <td>
+                                    <i class="fas fa-clock"></i> {{ disparo.data_disparo|date:"d/m/Y H:i:s" }}
+                                </td>
+                                <td>
+                                    {% if disparo.status == 'processando' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-spinner fa-spin"></i> Processando
+                                        </span>
+                                    {% elif disparo.status == 'concluido' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Concluído
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> Erro
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">{{ disparo.total_clientes }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success">{{ disparo.total_enviados }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if disparo.total_falhas > 0 %}
+                                        <span class="badge bg-danger">{{ disparo.total_falhas }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if disparo.total_clientes > 0 %}
+                                        <strong>{{ disparo.taxa_sucesso }}%</strong>
+                                        <div class="progress" style="height: 5px;">
+                                            <div class="progress-bar bg-success" 
+                                                 style="width: {{ disparo.taxa_sucesso }}%">
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totais Gerais -->
+                <hr>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stats-card stats-card-hoje">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="stats-value">{{ disparos|length }}</div>
+                                    <div class="stats-label">Total Disparos</div>
+                                </div>
+                                <div class="stats-icon text-success">
+                                    <i class="fas fa-paper-plane"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-paper-plane fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhum disparo realizado ainda para esta oferta.</p>
+                    <a href="{% url 'lojista:ofertas_list' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar para Ofertas
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

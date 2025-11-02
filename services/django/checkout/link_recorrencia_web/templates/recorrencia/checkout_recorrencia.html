@@ -1,0 +1,357 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastre seu Cartão - Recorrência</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .checkout-container {
+            max-width: 600px;
+            margin: 40px auto;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            background: white;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #0f2a5a 0%, #1a4480 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 25px;
+        }
+        .valor-destaque {
+            font-size: 32px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .btn-cadastrar {
+            background: linear-gradient(135deg, #0f2a5a 0%, #1a4480 100%);
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .otp-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .otp-box {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            border: 2px solid #ced4da;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .otp-box:focus {
+            border-color: #0f2a5a;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(15, 42, 90, 0.25);
+        }
+        .seguranca-badge {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="checkout-container">
+    <div class="card">
+        <div class="card-header text-center">
+            <h4 class="mb-0"><i class="fas fa-credit-card me-2"></i>Cadastro de Cartão</h4>
+            <p class="mb-0 mt-2" style="font-size: 14px; opacity: 0.9;">Cobrança Recorrente</p>
+        </div>
+        
+        <div class="card-body p-4">
+            
+            <!-- Informações da Recorrência -->
+            <div class="alert alert-info">
+                <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Detalhes da Recorrência</h6>
+                <p class="mb-1"><strong>Cliente:</strong> {{ cliente_nome }}</p>
+                <p class="mb-1"><strong>CPF:</strong> {{ cliente_cpf }}</p>
+                <p class="mb-2"><strong>Descrição:</strong> {{ descricao }}</p>
+                <p class="valor-destaque mb-0">R$ {{ valor|floatformat:2 }}</p>
+            </div>
+            
+            <!-- Formulário de Cartão -->
+            <form id="formCartao">
+                <input type="hidden" id="token" value="{{ token }}">
+                
+                <div class="mb-3">
+                    <label for="telefone" class="form-label">Celular (com DDD) *</label>
+                    <input type="text" class="form-control form-control-lg" id="telefone" 
+                           placeholder="11999999999" maxlength="15" required>
+                    <small class="text-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Digite seu celular para receber o código de segurança via WhatsApp
+                    </small>
+                </div>
+                
+                <div class="mb-3" id="div-otp" style="display: none;">
+                    <label class="form-label text-center d-block">Código de Verificação *</label>
+                    <div class="otp-container">
+                        <input type="text" class="otp-box" id="otp1" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" id="otp2" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" id="otp3" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" id="otp4" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" id="otp5" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="otp-box" id="otp6" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    </div>
+                    <small class="text-success text-center d-block" id="otp-enviado" style="display: none;">
+                        <i class="fas fa-check-circle"></i> Código enviado para seu WhatsApp
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="numero_cartao" class="form-label">Número do Cartão *</label>
+                    <input type="text" class="form-control form-control-lg" id="numero_cartao" 
+                           placeholder="0000 0000 0000 0000" maxlength="19" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="nome_cartao" class="form-label">Nome no Cartão *</label>
+                    <input type="text" class="form-control form-control-lg" id="nome_cartao" 
+                           placeholder="NOME COMO ESTÁ NO CARTÃO" style="text-transform: uppercase;" required>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="validade" class="form-label">Validade *</label>
+                        <input type="text" class="form-control form-control-lg" id="validade" 
+                               placeholder="MM/AAAA" maxlength="7" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cvv" class="form-label">CVV *</label>
+                        <input type="text" class="form-control form-control-lg" id="cvv" 
+                               placeholder="000" maxlength="4" required>
+                    </div>
+                </div>
+                
+                <div class="seguranca-badge">
+                    <p class="mb-2"><i class="fas fa-shield-alt text-primary me-2"></i><strong>Segurança Garantida</strong></p>
+                    <ul class="mb-0" style="font-size: 14px;">
+                        <li>Dados criptografados ponta-a-ponta</li>
+                        <li>Certificação PCI-DSS Level 1</li>
+                        <li>Tokenização via Pinbank</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção:</strong> Este cartão será usado para todas as cobranças recorrentes de <strong>{{ descricao }}</strong>.
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-cadastrar w-100" id="btnCadastrar">
+                    <i class="fas fa-check me-2"></i>Cadastrar Cartão
+                </button>
+            </form>
+            
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara telefone
+    document.getElementById('telefone').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            if (value.length > 6) {
+                value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+            } else if (value.length > 2) {
+                value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+            }
+        }
+        e.target.value = value;
+    });
+    
+    // Lógica das 6 caixinhas de OTP
+    const otpBoxes = document.querySelectorAll('.otp-box');
+    
+    otpBoxes.forEach((box, index) => {
+        // Aceitar apenas números
+        box.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+            
+            // Auto-focus próximo campo
+            if (e.target.value && index < 5) {
+                otpBoxes[index + 1].focus();
+            }
+        });
+        
+        // Backspace volta para campo anterior
+        box.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                otpBoxes[index - 1].focus();
+            }
+        });
+        
+        // Colar código completo
+        box.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 6);
+            pasteData.split('').forEach((char, i) => {
+                if (otpBoxes[i]) {
+                    otpBoxes[i].value = char;
+                }
+            });
+            if (pasteData.length > 0) {
+                otpBoxes[Math.min(pasteData.length - 1, 5)].focus();
+            }
+        });
+    });
+    
+    // Máscara número do cartão
+    document.getElementById('numero_cartao').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+        e.target.value = value;
+    });
+    
+    // Máscara validade
+    document.getElementById('validade').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 2) {
+            value = value.substring(0, 2) + '/' + value.substring(2, 6);
+        }
+        e.target.value = value;
+    });
+    
+    // Máscara CVV
+    document.getElementById('cvv').addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+    
+    // Submit do formulário
+    document.getElementById('formCartao').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnCadastrar');
+        const originalText = btn.innerHTML;
+        
+        // Validar telefone
+        const telefone = document.getElementById('telefone').value.replace(/\D/g, '');
+        if (telefone.length < 10 || telefone.length > 11) {
+            alert('Por favor, informe um celular válido com DDD');
+            return;
+        }
+        
+        // Se OTP não foi enviado ainda, enviar
+        const divOtp = document.getElementById('div-otp');
+        if (divOtp.style.display === 'none') {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando código...';
+            
+            try {
+                const respOtp = await fetch('/api/v1/checkout/recorrencia/enviar-otp/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: document.getElementById('token').value,
+                        telefone: telefone
+                    })
+                });
+                
+                const dataOtp = await respOtp.json();
+                
+                if (dataOtp.sucesso) {
+                    divOtp.style.display = 'block';
+                    document.getElementById('otp-enviado').style.display = 'block';
+                    document.getElementById('otp1').focus();
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    return;
+                } else {
+                    alert('Erro ao enviar código: ' + dataOtp.mensagem);
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    return;
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao enviar código. Tente novamente.');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
+        }
+        
+        // Validar OTP - coletar dos 6 campos
+        const otp = Array.from(otpBoxes).map(box => box.value).join('');
+        if (otp.length !== 6) {
+            alert('Por favor, informe o código completo de 6 dígitos');
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+        
+        const dados = {
+            token: document.getElementById('token').value,
+            telefone: telefone,
+            otp_code: otp,
+            numero_cartao: document.getElementById('numero_cartao').value.replace(/\s/g, ''),
+            nome_cartao: document.getElementById('nome_cartao').value.toUpperCase(),
+            validade: document.getElementById('validade').value,
+            cvv: document.getElementById('cvv').value
+        };
+        
+        fetch('/api/v1/checkout/recorrencia/processar/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dados)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                // Sucesso - redirecionar para página de sucesso
+                window.location.href = '/api/v1/checkout/recorrencia/sucesso/?msg=' + encodeURIComponent(data.mensagem);
+            } else {
+                alert('Erro: ' + data.mensagem);
+                
+                // Permitir regenerar OTP - limpar campos e ocultar div
+                otpBoxes.forEach(box => box.value = '');
+                divOtp.style.display = 'none';
+                document.getElementById('otp-enviado').style.display = 'none';
+                
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao processar. Tente novamente.');
+            
+            // Permitir regenerar OTP - limpar campos e ocultar div
+            otpBoxes.forEach(box => box.value = '');
+            divOtp.style.display = 'none';
+            document.getElementById('otp-enviado').style.display = 'none';
+            
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    });
+});
+</script>
+
+</body>
+</html>

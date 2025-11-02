@@ -1,0 +1,308 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Usuários WallClub{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:dashboard' %}" class="btn btn-outline-light me-2">
+    <i class="fas fa-arrow-left me-1"></i>
+    Dashboard
+</a>
+{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-users me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Gestão de Usuários</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Token CSRF para operações AJAX -->
+    {% csrf_token %}
+    
+    <!-- Filtros no topo -->
+    <div class="filters-top">
+        <div class="filters-form">
+            <div class="form-group">
+                <label>Filtrar por Status</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="#" class="btn btn-success btn-colorido filter-btn active" data-filter="todos">
+                        <i class="fas fa-users me-1"></i> Todos
+                    </a>
+                    <a href="#" class="btn btn-info btn-colorido filter-btn" data-filter="validados">
+                        <i class="fas fa-check-circle me-1"></i> Validados
+                    </a>
+                    <a href="#" class="btn btn-warning btn-colorido filter-btn" data-filter="pendentes">
+                        <i class="fas fa-clock me-1"></i> Pendentes
+                    </a>
+                    <a href="#" class="btn btn-danger btn-colorido filter-btn" data-filter="inativos">
+                        <i class="fas fa-times-circle me-1"></i> Inativos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Lista de Usuários -->
+        <div class="col-12">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-list me-2"></i>
+                    Lista de Usuários
+                    <a href="{% url 'portais_admin:usuario_novo' %}" class="btn btn-sm btn-success ms-2">
+                        <i class="fas fa-user-plus me-1"></i>Novo Usuário
+                    </a>
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuário</th>
+                                <th>E-mail</th>
+                                <th>Portais</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in usuarios %}
+                            <tr onclick="ref('{{ u.id }}', '{{ u.nome|escapejs }}', '{{ u.email|escapejs }}');" style="cursor: pointer;" 
+                                data-status="{% if u.is_usuario_valido %}validados{% elif u.senha_temporaria %}pendentes{% elif not u.ativo %}inativos{% else %}indefinidos{% endif %}">
+                                <td class="align-middle">
+                                    <span class="badge bg-primary">#{{ u.id }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <small><strong>{{ u.nome }}</strong></small>
+                                </td>
+                                <td class="align-middle"><small>{{ u.email }}</small></td>
+                                <td class="align-middle">
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for portal in u.portais_acesso %}
+                                            <span class="badge bg-secondary" style="font-size: 0.65rem;">{{ portal }}</span>
+                                        {% empty %}
+                                            <span class="text-muted" style="font-size: 0.7rem;">Nenhum</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    {% if u.is_usuario_valido %}
+                                        <span class="badge bg-success" style="font-size: 0.7rem;">
+                                            <i class="fas fa-check-circle me-1"></i>Validado
+                                        </span>
+                                    {% elif u.senha_temporaria %}
+                                        <span class="badge bg-warning" style="font-size: 0.7rem;">
+                                            <i class="fas fa-clock me-1"></i>Pendente
+                                        </span>
+                                    {% elif not u.ativo %}
+                                        <span class="badge bg-danger" style="font-size: 0.7rem;">
+                                            <i class="fas fa-times-circle me-1"></i>Inativo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">
+                                            <i class="fas fa-question-circle me-1"></i>Indefinido
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle text-center">
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <a href="{% url 'portais_admin:usuario_editar' u.id %}" class="btn btn-sm btn-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-warning" data-action="reset-senha" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" title="Reset Senha">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" data-action="remover-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" title="Remover">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Gerenciar Portais -->
+<div class="modal fade" id="modalGerenciarPortais" tabindex="-1" aria-labelledby="modalGerenciarPortaisLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalGerenciarPortaisLabel">
+                    <i class="fas fa-door-open me-2"></i>
+                    Gerenciar Portais - <span id="modalUserName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formGerenciarPortais" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="gerenciar_portais">
+                    <input type="hidden" name="usuario_id" id="modalUserId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Selecione os portais que o usuário pode acessar:</label>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="portais" value="admin" id="portalAdmin">
+                            <label class="form-check-label" for="portalAdmin">
+                                <i class="fas fa-cogs me-2"></i>
+                                <strong>Portal Administrativo</strong>
+                                <small class="text-muted d-block">Gestão completa do sistema</small>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="portais" value="lojista" id="portalLojista">
+                            <label class="form-check-label" for="portalLojista">
+                                <i class="fas fa-store me-2"></i>
+                                <strong>Portal Lojista</strong>
+                                <small class="text-muted d-block">Gestão de vendas e transações</small>
+                            </label>
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> As permissões serão aplicadas além do tipo de usuário básico.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnSalvarPortais">
+                    <i class="fas fa-save me-1"></i>Salvar Permissões
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtros de usuário
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const userRows = document.querySelectorAll('tbody tr[data-status]');
+    
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            
+            userRows.forEach(row => {
+                if (filter === 'todos') {
+                    row.style.display = '';
+                } else {
+                    const status = row.dataset.status;
+                    row.style.display = status === filter ? '' : 'none';
+                }
+            });
+        });
+    });
+});
+
+// Função para preencher o formulário
+function ref(id, nome, email) {
+    document.getElementById("id").value = id;
+    document.getElementById("nome").value = nome;
+    document.getElementById("email").value = email;
+    document.getElementById("acao").value = "editar";
+    document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Funções para ações dos usuários
+// Event listeners para ações dos usuários
+document.addEventListener('DOMContentLoaded', function() {
+    // Resetar senha
+    document.querySelectorAll('[data-action="reset-senha"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const userName = this.getAttribute('data-user-name');
+            
+            if (confirm(`🔑 Tem certeza que deseja resetar a senha de ${userName}?`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{% url "portais_admin:usuarios_list" %}';
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                form.innerHTML = `
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="acao" value="resetar_senha">
+                    <input type="hidden" name="usuario_id" value="${userId}">
+                `;
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+    
+    // Gerenciar portais
+    document.querySelectorAll('[data-action="gerenciar-portais"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const userName = this.getAttribute('data-user-name');
+            
+            document.getElementById('modalUserId').value = userId;
+            document.getElementById('modalUserName').textContent = userName;
+            
+            // Carregar permissões atuais via AJAX
+            fetch(`/portal_admin/usuarios/${userId}/portais/`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Limpar checkboxes
+                document.querySelectorAll('input[name="portais"]').forEach(cb => cb.checked = false);
+                
+                // Marcar portais atuais
+                data.portais.forEach(portal => {
+                    const checkbox = document.getElementById(`portal${portal.charAt(0).toUpperCase() + portal.slice(1)}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            })
+            .catch(error => console.error('Erro ao carregar permissões:', error));
+            
+            // Mostrar modal
+            new bootstrap.Modal(document.getElementById('modalGerenciarPortais')).show();
+        });
+    });
+    
+    // Salvar permissões de portais
+    document.getElementById('btnSalvarPortais').addEventListener('click', function() {
+        document.getElementById('formGerenciarPortais').submit();
+    });
+    
+    // Remover usuário
+    document.querySelectorAll('[data-action="remover-usuario"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const userName = this.getAttribute('data-user-name');
+            
+            if (confirm(`🗑️ Tem certeza que deseja remover ${userName}?\n\nEsta ação não pode ser desfeita!`)) {
+                window.location.href = `/portal_admin/usuarios/${userId}/deletar/`;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

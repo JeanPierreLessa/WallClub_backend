@@ -1,0 +1,148 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Meu Perfil - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Meu Perfil
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nome" class="form-label">
+                                        <i class="fas fa-user me-1"></i>Nome Completo
+                                    </label>
+                                    <input type="text" class="form-control" id="nome" name="nome" 
+                                           value="{{ usuario.nome|default:'' }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>E-mail
+                                    </label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ usuario.email|default:'' }}" readonly>
+                                    <small class="text-muted">O e-mail não pode ser alterado</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informações da Conta -->
+                        <hr class="my-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Informações da Conta
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de Acesso</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{ request.session.lojista_usuario_tipo|title|default:'Lojista' }}" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Status</label>
+                                    <input type="text" class="form-control text-success fw-bold" value="Ativo" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lojas Vinculadas -->
+                        {% if lojas_vinculadas %}
+                        <hr class="my-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-store me-2"></i>Lojas Vinculadas
+                        </h5>
+                        
+                        <div class="row">
+                            {% for loja in lojas_vinculadas %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-left-primary">
+                                    <div class="card-body p-3">
+                                        <h6 class="card-title mb-1">{{ loja.nome }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-id-card me-1"></i>
+                                            CNPJ: {{ loja.cnpj|default:"Não informado" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Botões -->
+                        <div class="d-flex gap-3 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar Alterações
+                            </button>
+                            
+                            <a href="{% url 'lojista:trocar_senha' %}" class="btn btn-warning">
+                                <i class="fas fa-key me-2"></i>Trocar Senha
+                            </a>
+                            
+                            <a href="{% url 'lojista:home' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-left-primary {
+    border-left: 4px solid var(--primary-color) !important;
+}
+
+.card-title {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+}
+
+.text-success.fw-bold {
+    color: #28a745 !important;
+    font-weight: 700 !important;
+}
+</style>
+{% endblock %}

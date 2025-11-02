@@ -1,0 +1,37 @@
+/* Estilos adicionais para botões */
+.btn-primary {
+    background-color: #3498db; /* Azul */
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-warning {
+    background-color: #f39c12; /* Amarelo */
+}
+
+.btn-warning:hover {
+    background-color: #e67e22;
+}
+
+.btn-secondary {
+    background-color: #95a5a6; /* Cinza */
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.btn-danger {
+    background-color: #e74c3c; /* Vermelho */
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-sm {
+    padding: 2px 5px !important;
+    font-size: 10px !important;
+}

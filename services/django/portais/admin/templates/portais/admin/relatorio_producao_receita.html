@@ -1,0 +1,532 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+{% load rpr_filters %}
+
+{% block title %}Relatório de Produção e Receita (RPR){% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-chart-bar me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Relatório de Produção e Receita (RPR)</h1>
+    </div>
+</div>
+
+<!-- Filtros no topo -->
+<div class="filters-top">
+    <form method="GET" class="filters-form" id="form-filtro-header">
+        <div class="form-group">
+            <label for="data_inicial">Data Inicial</label>
+            <input type="date" name="data_inicial" id="data_inicial" value="{{ filtros.data_inicial }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="data_final">Data Final</label>
+            <input type="date" name="data_final" id="data_final" value="{{ filtros.data_final }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="canal">Canal</label>
+            <select name="canal" id="canal">
+                <option value="">Todos os canais</option>
+                {% for canal in canais %}
+                    <option value="{{ canal }}" {% if filtros.canal == canal %}selected{% endif %}>
+                        {{ canal }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="loja">Lojas</label>
+            <select name="loja" id="loja">
+                <option value="">Todas as lojas</option>
+                {% for loja in lojas %}
+                    <option value="{{ loja.id }}" {% if filtros.loja == loja.id|stringformat:"s" %}selected{% endif %}>
+                        {{ loja.razao_social }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-success btn-colorido" id="btn-filtrar-header">
+                <i class="fas fa-search me-1"></i> Filtrar
+            </button>
+            <button type="button" class="btn btn-info btn-colorido ms-2" id="btn-ver-lancamentos">
+                <i class="fas fa-hand-holding-usd me-1"></i> Ver lançamentos manuais
+            </button>
+        </div>
+        
+        <div class="form-group" style="width: 100%; flex-basis: 100%;">
+            <div class="checkbox-group">
+                <input type="checkbox" name="incluir_tef" id="incluir_tef" value="1" {% if filtros.incluir_tef %}checked{% endif %}>
+                <label for="incluir_tef" style="font-size: 0.85em;">Incluir transações TEF</label>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Dashboard com Cards -->
+<div class="container-fluid">
+    <div class="dashboard-grid">
+        <!-- Card 1: Volume Total -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Volume Total de Pagamentos</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value large">R$ {{ dados_metricas.volume_total|add_thousands_separator }}</div>
+                <div class="metric-detail">
+                    <span class="detail-label">Transações:</span>
+                    <span class="detail-value">{{ dados_metricas.total_transacoes|floatformat:0 }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Ticket Médio:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.ticket_medio|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Lançamentos Manuais:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.total_lancamentos_manuais|add_thousands_separator }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Receita Financeira Total -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Receita Financeira Total</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value large">R$ {{ dados_metricas.receita_financeira_total|add_thousands_separator }}</div>
+                <div class="metric-detail">
+                    <span class="detail-label">Receita MDR:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.receita_mdr_total|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Receita Ant./Parc.:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.receita_antecipacao_parcelamentos|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Receita Outras Tarifas:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.receita_outras_tarifas|add_thousands_separator }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Custo Direto Total -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Custo Direto Total</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value large">R$ {{ dados_metricas.custo_direto_total|add_thousands_separator }}</div>
+                <div class="metric-detail">
+                    <span class="detail-label">Custo MDR Total:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.custo_mdr_total|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Custo Antecipação Total:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.custo_antecipacao_total|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Custos POS / Equip.:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.custos_pos_equip|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Impostos:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.impostos_total|add_thousands_separator }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Resultado Financeiro -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Resultado Financeiro</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value large">R$ {{ dados_metricas.resultado_financeiro|add_thousands_separator }}</div>
+                <div class="metric-detail">
+                    <span class="detail-label">Percentual de Comissão:</span>
+                    <span class="detail-value medium">{{ dados_metricas.percentual_comissao|floatformat:2 }}%</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Comissão Total a pagar:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.comissao_total_pagar|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Lançamentos Manuais:</span>
+                    <span class="detail-value medium">
+                        <a href="#" id="link-lancamentos-manuais" class="text-decoration-none" style="color: inherit;">
+                            R$ {{ dados_metricas.total_lancamentos_manuais|add_thousands_separator }}
+                        </a>
+                    </span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Comissão Total Líquida a Pagar:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.comissao_liquida_pagar|add_thousands_separator }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Seção da Tabela RPR -->
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3><i class="fas fa-table me-2"></i>Detalhamento das Transações</h3>
+        </div>
+        <div class="card-body">
+            <!-- Filtros adicionais da tabela -->
+            <div class="row mb-3" style="font-size: 11px;">
+                <div class="col-md-3">
+                    <label for="filtro-nsu" class="form-label" style="font-size: 10px;">NSU contém:</label>
+                    <input type="text" id="filtro-nsu" class="form-control form-control-sm" placeholder="Digite o NSU..." style="font-size: 11px;">
+                </div>
+                <div class="col-md-2">
+                    <label for="linhas-por-pagina" class="form-label" style="font-size: 10px;">Linhas por página:</label>
+                    <select id="linhas-por-pagina" class="form-select form-select-sm" style="font-size: 11px;">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" style="font-size: 10px;">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="button" id="btn-filtrar-tabela" class="btn btn-primary btn-sm" style="font-size: 11px;">
+                            <i class="fas fa-search me-1"></i> Filtrar
+                        </button>
+                        <button type="button" id="btn-limpar-filtros" class="btn btn-outline-secondary btn-sm" style="font-size: 11px;">
+                            <i class="fas fa-times me-1"></i> Limpar
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <label class="form-label" style="font-size: 10px;">&nbsp;</label>
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" id="btn-export-excel" class="btn btn-success btn-colorido btn-sm" style="font-size: 11px;">
+                            <i class="fas fa-file-excel me-1"></i> Excel
+                        </button>
+                        <button type="button" id="btn-export-csv" class="btn btn-secondary btn-colorido btn-sm" style="font-size: 11px;">
+                            <i class="fas fa-file-csv me-1"></i> CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading-tabela" class="text-center py-4" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando dados...</p>
+            </div>
+
+            <!-- Tabela -->
+            <div id="container-tabela-rpr">
+                <div class="table-responsive">
+                    <table id="tabela-rpr" class="data-table">
+                        <thead>
+                            <tr id="cabecalho-tabela">
+                                <!-- Cabeçalhos serão preenchidos via JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody id="corpo-tabela">
+                            <!-- Dados serão preenchidos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginação -->
+                <div id="paginacao-container" class="d-flex justify-content-between align-items-center mt-3">
+                    <div id="info-paginacao">
+                        <!-- Info da paginação será preenchida via JavaScript -->
+                    </div>
+                    <nav>
+                        <ul id="paginacao" class="pagination">
+                            <!-- Paginação será preenchida via JavaScript -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variáveis globais
+let paginaAtual = 1;
+let totalPaginas = 1;
+let filtrosAtuais = {};
+
+// Carregar dados da tabela ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    // Capturar filtros da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    filtrosAtuais = {
+        data_inicial: urlParams.get('data_inicial') || '',
+        data_final: urlParams.get('data_final') || '',
+        canal: urlParams.get('canal') || '',
+        loja: urlParams.get('loja') || '',
+        incluir_tef: urlParams.get('incluir_tef') || '',
+        nsu: ''
+    };
+    
+    carregarTabelaRPR();
+});
+
+function carregarTabelaRPR(pagina = 1) {
+    mostrarLoading(true);
+    paginaAtual = pagina;
+    
+    // Preparar parâmetros
+    const params = new URLSearchParams({
+        page: pagina,
+        per_page: document.getElementById('linhas-por-pagina').value,
+        ...filtrosAtuais
+    });
+    
+    fetch(`{% url 'portais_admin:tabela_rpr_ajax' %}?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            preencherTabelaRPR(data);
+            atualizarPaginacao(data.paginacao);
+            mostrarLoading(false);
+        })
+        .catch(error => {
+            console.error('Erro ao carregar tabela:', error);
+            mostrarLoading(false);
+            alert('Erro ao carregar dados da tabela');
+        });
+}
+
+function preencherTabelaRPR(data) {
+    const cabecalho = document.getElementById('cabecalho-tabela');
+    const corpo = document.getElementById('corpo-tabela');
+    
+    // Limpar tabela
+    cabecalho.innerHTML = '';
+    corpo.innerHTML = '';
+    
+    if (data.dados.length === 0) {
+        corpo.innerHTML = '<tr><td colspan="100%" class="text-center">Nenhum registro encontrado</td></tr>';
+        return;
+    }
+    
+    // Criar cabeçalhos (mesmo estilo do Gestão Admin)
+    const primeiroRegistro = data.dados[0];
+    Object.keys(primeiroRegistro).forEach(campo => {
+        const th = document.createElement('th');
+        const label = data.colunas[campo] || campo;
+        th.textContent = label.length > 15 ? label.substring(0, 15) + '...' : label;
+        th.title = label; // Tooltip com texto completo
+        cabecalho.appendChild(th);
+    });
+    
+    // Adicionar linha totalizadora no topo (se existir)
+    if (data.linha_totalizadora) {
+        const trTotal = document.createElement('tr');
+        trTotal.className = 'linha-totalizadora';
+        trTotal.style.backgroundColor = '#f8f9fa';
+        trTotal.style.fontWeight = 'bold';
+        trTotal.style.borderBottom = '2px solid #dee2e6';
+        
+        Object.keys(data.linha_totalizadora).forEach(campo => {
+            const td = document.createElement('td');
+            const valor = data.linha_totalizadora[campo];
+            
+            // Formatação especial para campos monetários
+            if (data.campos_monetarios.includes(campo)) {
+                td.className = 'monetary';
+                td.textContent = valor || '-';
+            } else {
+                td.textContent = valor || '-';
+            }
+            
+            trTotal.appendChild(td);
+        });
+        
+        corpo.appendChild(trTotal);
+    }
+    
+    // Criar linhas de dados (mesmo estilo do Gestão Admin)
+    data.dados.forEach(registro => {
+        const tr = document.createElement('tr');
+        
+        Object.keys(registro).forEach(campo => {
+            const td = document.createElement('td');
+            const valor = registro[campo];
+            
+            // Formatação especial para campos monetários (mesmo estilo do Gestão Admin)
+            if (data.campos_monetarios.includes(campo)) {
+                td.className = 'monetary';
+                td.textContent = valor || '-';
+            } else {
+                td.textContent = valor || '-';
+            }
+            
+            tr.appendChild(td);
+        });
+        
+        corpo.appendChild(tr);
+    });
+}
+
+function atualizarPaginacao(paginacao) {
+    totalPaginas = paginacao.total_paginas;
+    
+    // Atualizar info
+    const info = document.getElementById('info-paginacao');
+    info.innerHTML = `
+        Mostrando página ${paginacao.pagina_atual} de ${paginacao.total_paginas} 
+        (${paginacao.total_registros} registros)
+    `;
+    
+    // Atualizar botões de paginação
+    const paginacaoUl = document.getElementById('paginacao');
+    paginacaoUl.innerHTML = '';
+    
+    // Botão anterior
+    const liAnterior = document.createElement('li');
+    liAnterior.className = `page-item ${!paginacao.tem_anterior ? 'disabled' : ''}`;
+    liAnterior.innerHTML = `
+        <a class="page-link" href="#" onclick="carregarTabelaRPR(${paginacao.pagina_atual - 1})">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+    `;
+    paginacaoUl.appendChild(liAnterior);
+    
+    // Páginas numeradas (mostrar até 5 páginas)
+    const inicio = Math.max(1, paginacao.pagina_atual - 2);
+    const fim = Math.min(totalPaginas, inicio + 4);
+    
+    for (let i = inicio; i <= fim; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === paginacao.pagina_atual ? 'active' : ''}`;
+        li.innerHTML = `
+            <a class="page-link" href="#" onclick="carregarTabelaRPR(${i})">${i}</a>
+        `;
+        paginacaoUl.appendChild(li);
+    }
+    
+    // Botão próximo
+    const liProximo = document.createElement('li');
+    liProximo.className = `page-item ${!paginacao.tem_proxima ? 'disabled' : ''}`;
+    liProximo.innerHTML = `
+        <a class="page-link" href="#" onclick="carregarTabelaRPR(${paginacao.pagina_atual + 1})">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    `;
+    paginacaoUl.appendChild(liProximo);
+}
+
+function aplicarFiltrosTabela() {
+    // Atualizar filtros
+    filtrosAtuais.nsu = document.getElementById('filtro-nsu').value;
+    
+    // Recarregar tabela na primeira página
+    carregarTabelaRPR(1);
+}
+
+function mostrarLoading(mostrar) {
+    const loading = document.getElementById('loading-tabela');
+    const tabela = document.getElementById('container-tabela-rpr');
+    
+    if (mostrar) {
+        loading.style.display = 'block';
+        tabela.style.display = 'none';
+    } else {
+        loading.style.display = 'none';
+        tabela.style.display = 'block';
+    }
+}
+
+function exportarRPR(formato) {
+    // Preparar parâmetros com filtros atuais
+    const params = new URLSearchParams(filtrosAtuais);
+    
+    let url;
+    if (formato === 'excel') {
+        url = `{% url 'portais_admin:exportar_rpr_excel' %}?${params}`;
+    } else if (formato === 'csv') {
+        url = `{% url 'portais_admin:exportar_rpr_csv' %}?${params}`;
+    }
+    
+    // Abrir em nova janela para download
+    window.open(url, '_blank');
+}
+
+// Event listeners
+document.getElementById('linhas-por-pagina').addEventListener('change', function() {
+    carregarTabelaRPR(1);
+});
+
+document.getElementById('filtro-nsu').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        aplicarFiltrosTabela();
+    }
+});
+
+// Event listener para botão filtrar da tabela (apenas NSU - AJAX)
+document.getElementById('btn-filtrar-tabela').addEventListener('click', function() {
+    aplicarFiltrosTabela();
+});
+
+// Event listener para formulário do header (recarrega página inteira)
+document.getElementById('form-filtro-header').addEventListener('submit', function(e) {
+    // Permitir submit normal do formulário para recarregar página inteira
+    // Não prevenir o comportamento padrão
+});
+
+// Event listeners para botões de export
+document.getElementById('btn-export-excel').addEventListener('click', function() {
+    window.location.href = '{% url "portais_admin:exportar_rpr_excel" %}?' + new URLSearchParams(filtrosAtuais).toString();
+});
+    
+document.getElementById('btn-export-csv').addEventListener('click', function() {
+    window.location.href = '{% url "portais_admin:exportar_rpr_csv" %}?' + new URLSearchParams(filtrosAtuais).toString();
+});
+
+// Event listener para botão de lançamentos manuais
+document.getElementById('btn-ver-lancamentos').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Construir URL com filtros aplicados
+    const params = new URLSearchParams();
+    
+    // Adicionar filtros de data
+    const dataInicial = document.getElementById('data_inicial').value;
+    const dataFinal = document.getElementById('data_final').value;
+    
+    if (dataInicial) {
+        params.append('data_inicio', dataInicial);
+    }
+    if (dataFinal) {
+        params.append('data_fim', dataFinal);
+    }
+    
+    // Adicionar filtro de loja
+    const loja = document.getElementById('loja').value;
+    if (loja) {
+        params.append('loja_id', loja);
+    }
+    
+    // Filtrar apenas débitos processados
+    params.append('tipo_lancamento', 'D');
+    params.append('status', 'processado');
+    
+    // Redirecionar para listagem de lançamentos manuais
+    const url = '{% url "portais_admin:lancamentos_manuais_list" %}?' + params.toString();
+    window.location.href = url;
+});
+</script>
+
+{% endblock %}

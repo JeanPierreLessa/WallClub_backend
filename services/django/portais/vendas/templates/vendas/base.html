@@ -1,0 +1,363 @@
+{% load static %}
+{% load controle_acesso_tags %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Portal de Vendas - WallClub{% endblock %}</title>
+    
+    <!-- Bootstrap 5.3.0 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Portal Vendas CSS -->
+    <style>
+        :root {
+            --primary-color: #0f2a5a;
+            --secondary-color: #1a4480;
+            --accent-color: #2563eb;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        /* Layout Desktop: Sidebar + Content */
+        @media (min-width: 992px) {
+            body {
+                display: flex;
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .offcanvas {
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .logout-link {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        
+        /* Sidebar Desktop */
+        .sidebar-desktop {
+            width: 280px;
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            padding: 20px;
+            z-index: 1000;
+        }
+        
+        .sidebar-desktop .sidebar-header {
+            color: white;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-desktop .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            margin-bottom: 8px;
+        }
+        
+        .sidebar-desktop .nav-link:hover,
+        .sidebar-desktop .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        /* Content Area Desktop */
+        .main-content {
+            padding: 20px;
+        }
+        
+        @media (min-width: 992px) {
+            .main-content {
+                margin-left: 280px;
+                width: calc(100% - 280px);
+                height: 100vh;
+                overflow-y: auto;
+                padding: 30px;
+            }
+        }
+        
+        /* Mobile: Ocultar sidebar desktop */
+        @media (max-width: 991px) {
+            .sidebar-desktop {
+                display: none;
+            }
+            body {
+                padding-top: 70px;
+            }
+        }
+        
+        /* Desktop: Ocultar navbar mobile */
+        @media (min-width: 992px) {
+            .navbar-mobile {
+                display: none;
+            }
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 15px 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .page-header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar Desktop (telas grandes) -->
+    <aside class="sidebar-desktop d-none d-lg-block">
+        <div class="sidebar-header">
+            <h4 class="mb-2"><i class="fas fa-store me-2"></i>Portal de Vendas</h4>
+            <small class="text-white-50">
+                <i class="fas fa-user-circle me-1"></i>{{ request.session.vendedor_nome }}
+            </small>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'dashboard' %}active{% endif %}" href="{% url 'vendas:dashboard' %}">
+                    <i class="fas fa-home me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'cliente_novo' %}active{% endif %}" href="{% url 'vendas:cliente_novo' %}">
+                    <i class="fas fa-user-plus me-2"></i>Novo Cliente
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'cliente_busca' %}active{% endif %}" href="{% url 'vendas:cliente_busca' %}">
+                    <i class="fas fa-search me-2"></i>Buscar Cliente
+                </a>
+            </li>
+            {% tem_permissao_recurso 'checkout' as pode_checkout %}
+            {% if pode_checkout %}
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'checkout' %}active{% endif %}" href="{% url 'vendas:checkout' %}">
+                    <i class="fas fa-shopping-cart me-2"></i>Fazer Pedido
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'buscar_pedido' %}active{% endif %}" href="{% url 'vendas:buscar_pedido' %}">
+                    <i class="fas fa-search me-2"></i>Buscar Pedido
+                </a>
+            </li>
+            {% endif %}
+            
+            {% tem_permissao_recurso 'recorrencia' as pode_recorrencia %}
+            {% if pode_recorrencia %}
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'recorrencia_listar' %}active{% endif %}" href="{% url 'vendas:recorrencia_listar' %}">
+                    <i class="fas fa-list me-2"></i>Listar Recorrências
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'recorrencia_agendar' %}active{% endif %}" href="{% url 'vendas:recorrencia_agendar' %}">
+                    <i class="fas fa-plus-circle me-2"></i>Nova Recorrência
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_page == 'recorrencia_nao_cobrados' %}active{% endif %}" href="{% url 'vendas:recorrencia_nao_cobrados' %}">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Recorrências em HOLD
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a class="nav-link logout-link" href="{% url 'vendas:logout' %}">
+                    <i class="fas fa-sign-out-alt me-2"></i>Sair
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Navbar Mobile (apenas mobile) -->
+    <nav class="navbar navbar-dark fixed-top navbar-mobile d-lg-none">
+        <div class="container-fluid">
+            <!-- Menu hambúrguer -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuLateral">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Logo e informações do vendedor -->
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="fas fa-user-circle me-2"></i>{{ request.session.vendedor_nome }}
+                </span>
+                {% block navbar_actions %}{% endblock %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Menu Lateral Mobile (Offcanvas) -->
+    <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="menuLateral">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title text-white">Portal de Vendas</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'dashboard' %}active{% endif %}" href="{% url 'vendas:dashboard' %}">
+                        <i class="fas fa-home me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'cliente_novo' %}active{% endif %}" href="{% url 'vendas:cliente_novo' %}">
+                        <i class="fas fa-user-plus me-2"></i>Novo Cliente
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'cliente_busca' %}active{% endif %}" href="{% url 'vendas:cliente_busca' %}">
+                        <i class="fas fa-search me-2"></i>Buscar Cliente
+                    </a>
+                </li>
+                {% tem_permissao_recurso 'checkout' as pode_checkout %}
+                {% if pode_checkout %}
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'checkout' %}active{% endif %}" href="{% url 'vendas:checkout' %}">
+                        <i class="fas fa-shopping-cart me-2"></i>Fazer Pedido
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'buscar_pedido' %}active{% endif %}" href="{% url 'vendas:buscar_pedido' %}">
+                        <i class="fas fa-search me-2"></i>Buscar Pedido
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% tem_permissao_recurso 'recorrencia' as pode_recorrencia %}
+                {% if pode_recorrencia %}
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'recorrencia_listar' %}active{% endif %}" href="{% url 'vendas:recorrencia_listar' %}">
+                        <i class="fas fa-list me-2"></i>Listar Recorrências
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'recorrencia_agendar' %}active{% endif %}" href="{% url 'vendas:recorrencia_agendar' %}">
+                        <i class="fas fa-plus-circle me-2"></i>Nova Recorrência
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'recorrencia_nao_cobrados' %}active{% endif %}" href="{% url 'vendas:recorrencia_nao_cobrados' %}">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Recorrências em HOLD
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link logout-link" href="{% url 'vendas:logout' %}">
+                        <i class="fas fa-sign-out-alt me-2"></i>Sair
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="main-content">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

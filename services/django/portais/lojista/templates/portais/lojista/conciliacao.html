@@ -1,0 +1,271 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Conciliação - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-balance-scale me-2"></i>
+                        Conciliação
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form id="filtroForm" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="data_inicio" class="form-label">Data Inicial</label>
+                                <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="data_fim" class="form-label">Data Final</label>
+                                <input type="date" class="form-control" id="data_fim" name="data_fim">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="nsu" class="form-label">NSU</label>
+                                <input type="text" class="form-control" id="nsu" name="nsu" placeholder="Digite o NSU">
+                            </div>
+                            {% if mostrar_filtro_loja %}
+                            <div class="col-md-3">
+                                <label for="loja" class="form-label">Loja</label>
+                                <select class="form-select" id="loja" name="loja">
+                                    <option value="todas">Todas as lojas</option>
+                                    {% for loja in lojas_acessiveis %}
+                                        <option value="{{ loja.id }}">{{ loja.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-search me-2">
+                                    <i class="fas fa-search me-1"></i>
+                                    Pesquisar
+                                </button>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <div class="form-check d-inline-block">
+                                    <input class="form-check-input" type="checkbox" id="incluir_tef" name="incluir_tef">
+                                    <label class="form-check-label" for="incluir_tef">
+                                        Incluir transações TEF
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resultados -->
+    <div class="row mt-4 d-none" id="resultados">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Resultados da Consulta
+                        <span id="totalRegistros" class="badge bg-light text-dark ms-2"></span>
+                    </h5>
+                    <div class="btn-group d-none" id="exportGroup">
+                        <button type="button" class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="true">
+                            <i class="fas fa-download me-1"></i>
+                            Exportar
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-formato="excel">
+                                <i class="fas fa-file-excel me-2 text-success"></i>Excel
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-formato="csv">
+                                <i class="fas fa-file-csv me-2 text-info"></i>CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-formato="pdf">
+                                <i class="fas fa-file-pdf me-2 text-danger"></i>PDF
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="resultadosConciliacao"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading -->
+    <div class="row mt-4 d-none" id="loading">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2">Carregando dados...</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+
+.table th {
+    background-color: #343a40 !important;
+    color: white !important;
+    font-size: 0.75rem;
+    padding: 8px 4px;
+    text-align: center;
+    vertical-align: middle;
+    background-color: #343a40 !important;
+    color: white !important;
+    font-size: 0.75rem;
+    padding: 8px 4px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.table td {
+    font-size: 0.70rem;
+    padding: 6px 4px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filtroForm');
+    const resultados = document.getElementById('resultados');
+    const loading = document.getElementById('loading');
+    
+    // Definir data padrão (mês atual)
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    
+    document.getElementById('data_inicio').value = primeiroDia.toISOString().split('T')[0];
+    document.getElementById('data_fim').value = ultimoDia.toISOString().split('T')[0];
+    
+    function executarPesquisa() {
+        // Mostrar loading
+        loading.classList.remove('d-none');
+        resultados.classList.add('d-none');
+        
+        // Preparar dados do formulário
+        const formData = new FormData(form);
+        
+        // Fazer requisição AJAX
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            loading.classList.add('d-none');
+            
+            if (data.success && data.html) {
+                // Inserir HTML diretamente
+                document.getElementById('resultadosConciliacao').innerHTML = data.html;
+                document.getElementById('totalRegistros').textContent = data.total + ' registros';
+                resultados.classList.remove('d-none');
+                
+                // Mostrar botões de exportação se houver resultados
+                if (data.total > 0) {
+                    document.getElementById('exportGroup').classList.remove('d-none');
+                }
+            } else if (data.error) {
+                alert('Erro: ' + data.error);
+            }
+        })
+        .catch(error => {
+            loading.classList.add('d-none');
+            console.error('Erro:', error);
+            alert('Erro na consulta. Tente novamente.');
+        });
+    }
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        executarPesquisa();
+    });
+    
+    // Executar pesquisa automaticamente ao carregar a página
+    executarPesquisa();
+    
+    // Adicionar event listeners para exportação
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[data-formato]') || e.target.closest('[data-formato]')) {
+            e.preventDefault();
+            const formato = e.target.getAttribute('data-formato') || e.target.closest('[data-formato]').getAttribute('data-formato');
+            
+            // Preparar dados do formulário para exportação
+            const formData = new FormData(form);
+            formData.append('export_format', formato);
+            
+            // Fazer requisição AJAX para exportação
+            fetch('{% url "lojista:conciliacao_export" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    // Resposta JSON (export grande)
+                    return response.json().then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                        } else {
+                            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    });
+                } else {
+                    // Resposta de arquivo (export pequeno)
+                    const contentDisposition = response.headers.get('content-disposition');
+                    const filename = contentDisposition ? 
+                        contentDisposition.split('filename=')[1].replace(/"/g, '') : 
+                        `conciliacao_${formato}.${formato === 'excel' ? 'xlsx' : formato}`;
+                    
+                    return response.blob().then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro na exportação:', error);
+                alert('Erro na exportação. Tente novamente.');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

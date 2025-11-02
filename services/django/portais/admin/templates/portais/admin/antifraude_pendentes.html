@@ -1,0 +1,310 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Transações Pendentes - Antifraude{% endblock %}
+
+{% block extra_css %}
+<style>
+    .transaction-card {
+        border-left: 4px solid #ffc107;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    .transaction-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    .score-badge {
+        font-size: 1.2rem;
+        padding: 8px 12px;
+    }
+    .score-high {
+        background-color: #dc3545;
+    }
+    .score-medium {
+        background-color: #ffc107;
+        color: #000;
+    }
+    .score-low {
+        background-color: #28a745;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .rule-badge {
+        margin: 2px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:antifraude_dashboard' %}" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i> Voltar ao Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <i class="fas fa-clipboard-list me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0 d-inline">Transações Pendentes de Revisão</h1>
+        </div>
+        <span class="badge bg-warning text-dark" style="font-size: 1.2rem;">
+            {{ total }} Pendente{{ total|pluralize }}
+        </span>
+    </div>
+</div>
+
+<div class="container-fluid mt-4">
+    {% if erro_conexao %}
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Erro de Conexão:</strong> Não foi possível conectar ao Risk Engine.
+    </div>
+    {% endif %}
+
+    {% if total == 0 %}
+    <div class="alert alert-success" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <strong>Nenhuma transação pendente!</strong> Todas as transações foram revisadas.
+    </div>
+    {% else %}
+    <!-- Lista de Transações -->
+    <div class="row">
+        {% for transacao in pendentes %}
+        <div class="col-md-12">
+            <div class="card transaction-card">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Info Principal -->
+                        <div class="col-md-8">
+                            <h5 class="card-title">
+                                <i class="fas fa-credit-card me-2"></i>
+                                Transação #{{ transacao.transacao_id }}
+                            </h5>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <span class="detail-label">Cliente ID:</span> {{ transacao.cliente_id }}
+                                    </p>
+                                    <p class="mb-2">
+                                        <span class="detail-label">CPF:</span> {{ transacao.cpf }}
+                                    </p>
+                                    <p class="mb-2">
+                                        <span class="detail-label">Origem:</span> 
+                                        <span class="badge bg-info">{{ transacao.origem }}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <span class="detail-label">Valor:</span> 
+                                        <strong>R$ {{ transacao.valor }}</strong>
+                                    </p>
+                                    <p class="mb-2">
+                                        <span class="detail-label">Modalidade:</span> {{ transacao.modalidade }}
+                                    </p>
+                                    <p class="mb-2">
+                                        <span class="detail-label">Data:</span> {{ transacao.data_transacao|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Motivo -->
+                            <div class="mt-3">
+                                <span class="detail-label">Motivo da Retenção:</span>
+                                <p class="text-muted mb-2">{{ transacao.motivo }}</p>
+                            </div>
+
+                            <!-- Regras Acionadas -->
+                            {% if transacao.regras_acionadas %}
+                            <div class="mt-2">
+                                <span class="detail-label">Regras Acionadas:</span><br>
+                                {% for regra in transacao.regras_acionadas %}
+                                <span class="badge bg-secondary rule-badge">{{ regra }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Score e Ações -->
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <small class="text-muted">Score de Risco</small>
+                                <div>
+                                    {% if transacao.score_risco >= 80 %}
+                                    <span class="badge score-badge score-high">{{ transacao.score_risco }}</span>
+                                    {% elif transacao.score_risco >= 60 %}
+                                    <span class="badge score-badge score-medium">{{ transacao.score_risco }}</span>
+                                    {% else %}
+                                    <span class="badge score-badge score-low">{{ transacao.score_risco }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Botões de Ação -->
+                            <div class="d-grid gap-2 mt-4">
+                                <button class="btn btn-success btn-lg" 
+                                        onclick="abrirModalAprovar({{ transacao.id }}, '{{ transacao.transacao_id }}')">
+                                    <i class="fas fa-check me-2"></i>
+                                    Aprovar
+                                </button>
+                                <button class="btn btn-danger btn-lg" 
+                                        onclick="abrirModalReprovar({{ transacao.id }}, '{{ transacao.transacao_id }}')">
+                                    <i class="fas fa-times me-2"></i>
+                                    Reprovar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Aprovar -->
+<div class="modal fade" id="modalAprovar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Aprovar Transação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Você está aprovando a transação <strong id="aprovar-transacao-id"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label">Observação (opcional)</label>
+                    <textarea class="form-control" id="aprovar-observacao" rows="3" 
+                              placeholder="Ex: Cliente verificado por telefone, documentação OK"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="confirmarAprovacao()">
+                    <i class="fas fa-check me-1"></i>
+                    Confirmar Aprovação
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reprovar -->
+<div class="modal fade" id="modalReprovar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-times-circle me-2"></i>
+                    Reprovar Transação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Você está reprovando a transação <strong id="reprovar-transacao-id"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label">Motivo da Reprovação *</label>
+                    <textarea class="form-control" id="reprovar-observacao" rows="3" 
+                              placeholder="Ex: CPF em blacklist, dados inconsistentes" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarReprovacao()">
+                    <i class="fas fa-times me-1"></i>
+                    Confirmar Reprovação
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let decisaoAtual = null;
+
+function abrirModalAprovar(decisaoId, transacaoId) {
+    decisaoAtual = decisaoId;
+    document.getElementById('aprovar-transacao-id').textContent = '#' + transacaoId;
+    document.getElementById('aprovar-observacao').value = '';
+    new bootstrap.Modal(document.getElementById('modalAprovar')).show();
+}
+
+function abrirModalReprovar(decisaoId, transacaoId) {
+    decisaoAtual = decisaoId;
+    document.getElementById('reprovar-transacao-id').textContent = '#' + transacaoId;
+    document.getElementById('reprovar-observacao').value = '';
+    new bootstrap.Modal(document.getElementById('modalReprovar')).show();
+}
+
+function confirmarAprovacao() {
+    const observacao = document.getElementById('aprovar-observacao').value;
+    
+    fetch('{% url "portais_admin:antifraude_aprovar" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            decisao_id: decisaoAtual,
+            observacao: observacao
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sucesso) {
+            alert('✓ Transação aprovada com sucesso!');
+            window.location.reload();
+        } else {
+            alert('Erro: ' + data.mensagem);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao processar aprovação: ' + error);
+    });
+}
+
+function confirmarReprovacao() {
+    const observacao = document.getElementById('reprovar-observacao').value;
+    
+    if (!observacao.trim()) {
+        alert('É obrigatório informar o motivo da reprovação');
+        return;
+    }
+    
+    fetch('{% url "portais_admin:antifraude_reprovar" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            decisao_id: decisaoAtual,
+            observacao: observacao
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sucesso) {
+            alert('✓ Transação reprovada');
+            window.location.reload();
+        } else {
+            alert('Erro: ' + data.mensagem);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao processar reprovação: ' + error);
+    });
+}
+</script>
+{% endblock %}

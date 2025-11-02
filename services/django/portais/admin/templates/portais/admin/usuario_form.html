@@ -1,0 +1,618 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Editar Usuário{% else %}Novo Usuário{% endif %} - WallClub Admin{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-user-{% if is_edit %}edit{% else %}plus{% endif %} me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">{% if is_edit %}Editar Usuário{% else %}Novo Usuário{% endif %}</h1>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card loja-info-card">
+                <div class="card-body">
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="nome" class="form-label required-field">Nome Completo</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="nome" 
+                                           name="nome" 
+                                           value="{% if usuario %}{{ usuario.nome }}{% else %}{{ nome|default:'' }}{% endif %}"
+                                           required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label required-field">E-mail</label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="email" 
+                                           name="email" 
+                                           value="{% if usuario %}{{ usuario.email }}{% else %}{{ email|default:'' }}{% endif %}"
+                                           required>
+                                </div>
+                            </div>
+                            
+                            <!-- Seleção de Acessos do Usuário -->
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Permissões do Usuário <small class="text-muted">(pode selecionar múltiplos portais)</small></label>
+                                    {% if is_admin_canal %}
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Restrição:</strong> Você só pode criar usuários lojistas.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Card Portal Administrativo -->
+                            {% if not is_admin_canal and not is_admin_superusuario %}
+                            <div class="card mb-3{% if 'admin' in permissoes_atuais %} border-primary{% endif %}">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check_portal" name="acessos" value="portal" 
+                                               {% if 'admin' in permissoes_atuais %}checked{% endif %} onchange="togglePortalCard()">
+                                        <label class="form-check-label" for="check_portal">
+                                            <i class="fas fa-cogs text-primary me-2"></i>
+                                            <strong>Portal Administrativo</strong>
+                                            <small class="text-muted ms-2">Gestão e administração</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="portal-section" style="{% if 'admin' in permissoes_atuais %}display: block{% else %}display: none{% endif %}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="tipo_portal" class="form-label">Tipo de Acesso</label>
+                                            <select class="form-select" id="tipo_portal" name="tipo_portal" onchange="togglePortalReferenceField()">
+                                                <option value="">Selecione o tipo</option>
+                                                <option value="admin" {% if permissoes_atuais.admin == 'admin_total' or permissoes_atuais.admin == 'admin' %}selected{% endif %}>
+                                                    👑 Admin Total
+                                                </option>
+                                                <option value="admin_superusuario" {% if permissoes_atuais.admin == 'admin_superusuario' %}selected{% endif %}>
+                                                    👤 Super Usuário
+                                                </option>
+                                                <option value="admin_canal" {% if permissoes_atuais.admin == 'admin_canal' %}selected{% endif %}>
+                                                    🏢 Admin Canal
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="portal-reference-field" style="display: none;">
+                                            <label for="referencia_portal" class="form-label required-field" id="portal-reference-label">Referência Portal</label>
+                                            {% if is_edit and acessos_atuais.admin.canal %}
+                                            <div class="alert alert-info mb-2">
+                                                <small><strong>Vínculo atual:</strong> Canal ID {{ acessos_atuais.admin.canal }}</small>
+                                            </div>
+                                            {% endif %}
+                                            <select class="form-select" id="referencia_portal" name="referencia_portal" 
+                                                    data-current-value="{{ acessos_atuais.admin.canal|default:'' }}">
+                                                <option value="">Carregando...</option>
+                                            </select>
+                                            <small class="form-text text-muted" id="portal-reference-help">
+                                                Selecione a referência para o portal administrativo.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Card Portal de Recorrência -->
+                            {% if not is_admin_canal %}
+                            <div class="card mb-3{% if 'recorrencia' in permissoes_atuais %} border-warning{% endif %}">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check_recorrencia" name="acessos" value="recorrencia" 
+                                               {% if 'recorrencia' in permissoes_atuais %}checked{% endif %} onchange="toggleRecorrenciaCard()">
+                                        <label class="form-check-label" for="check_recorrencia">
+                                            <i class="fas fa-sync-alt text-warning me-2"></i>
+                                            <strong>Portal de Recorrência</strong>
+                                            <small class="text-muted ms-2">Pagamentos recorrentes</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="recorrencia-section" style="{% if 'recorrencia' in permissoes_atuais %}display: block{% else %}display: none{% endif %}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="tipo_recorrencia" class="form-label">Tipo de Acesso</label>
+                                            <select class="form-select" id="tipo_recorrencia" name="tipo_recorrencia" onchange="toggleRecorrenciaReferenceField()">
+                                                <option value="">Selecione o tipo</option>
+                                                <option value="operador" {% if permissoes_atuais.recorrencia == 'operador' %}selected{% endif %}>
+                                                    👤 Operador
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="recorrencia-reference-field" style="display: none;">
+                                            <label for="referencia_recorrencia" class="form-label required-field">🏬 Loja</label>
+                                            {% if is_edit and acessos_atuais.recorrencia.loja %}
+                                            <div class="alert alert-info mb-2">
+                                                <small><strong>Vínculo atual:</strong> Loja ID {{ acessos_atuais.recorrencia.loja }}</small>
+                                            </div>
+                                            {% endif %}
+                                            <select class="form-select" id="referencia_recorrencia" name="referencia_recorrencia"
+                                                    data-current-value="{{ acessos_atuais.recorrencia.loja|default:'' }}">
+                                                <option value="">Carregando...</option>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Selecione a loja para este operador de recorrência.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Card Portal Lojista -->
+                            <div class="card mb-3{% if 'lojista' in permissoes_atuais %} border-success{% endif %}">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check_lojista" name="acessos" value="lojista" 
+                                               {% if 'lojista' in permissoes_atuais %}checked{% endif %} onchange="toggleLojistaCard()">
+                                        <label class="form-check-label" for="check_lojista">
+                                            <i class="fas fa-store text-success me-2"></i>
+                                            <strong>Portal Lojista</strong>
+                                            <small class="text-muted ms-2">Vendas e operações</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="lojista-section" style="{% if 'lojista' in permissoes_atuais %}display: block{% else %}display: none{% endif %}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="tipo_lojista" class="form-label">Tipo de Acesso</label>
+                                            <select class="form-select" id="tipo_lojista" name="tipo_lojista" onchange="toggleLojistaReferenceField()">
+                                                <option value="">Selecione o tipo</option>
+                                                {% if not is_admin_canal %}
+                                                <option value="lojista_admin" {% if permissoes_atuais.lojista == 'lojista_admin' %}selected{% endif %}>
+                                                    👑 Admin Lojista
+                                                </option>
+                                                {% endif %}
+                                                <option value="grupo_economico" {% if permissoes_atuais.lojista == 'grupo_economico' %}selected{% endif %}>
+                                                    🏛️ Grupo Econômico
+                                                </option>
+                                                <option value="lojista" {% if permissoes_atuais.lojista == 'lojista' %}selected{% endif %}>
+                                                    🏬 Lojista
+                                                </option>
+                                                <option value="admin_canal" {% if permissoes_atuais.lojista == 'admin_canal' %}selected{% endif %}>
+                                                    🌐 Admin Canal
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="lojista-reference-field" style="display: none;">
+                                            <label for="referencia_lojista" class="form-label required-field" id="lojista-reference-label">Referência Lojista</label>
+                                            {% if is_edit and acessos_atuais.lojista.grupo_economico %}
+                                            <div class="alert alert-info mb-2">
+                                                <small><strong>Vínculo atual:</strong> Grupo Econômico ID {{ acessos_atuais.lojista.grupo_economico }}</small>
+                                            </div>
+                                            {% endif %}
+                                            {% if is_edit and acessos_atuais.lojista.loja %}
+                                            <div class="alert alert-info mb-2">
+                                                <small><strong>Vínculo atual:</strong> Loja ID {{ acessos_atuais.lojista.loja }}</small>
+                                            </div>
+                                            {% endif %}
+                                            {% if is_edit and acessos_atuais.lojista.canal %}
+                                            <div class="alert alert-info mb-2">
+                                                <small><strong>Vínculo atual:</strong> Canal ID {{ acessos_atuais.lojista.canal }}</small>
+                                            </div>
+                                            {% endif %}
+                                            {% if is_edit and acessos_atuais.lojista.admin_loja %}
+                                            <div class="alert alert-info mb-2">
+                                                <small><strong>Vínculo atual:</strong> Loja Admin ID {{ acessos_atuais.lojista.admin_loja }}</small>
+                                            </div>
+                                            {% endif %}
+                                            <select class="form-select" id="referencia_lojista" name="referencia_lojista"
+                                                    data-current-grupo="{{ acessos_atuais.lojista.grupo_economico|default:'' }}"
+                                                    data-current-loja="{{ acessos_atuais.lojista.loja|default:'' }}"
+                                                    data-current-admin-canal="{{ acessos_atuais.lojista.canal|default:'' }}"
+                                                    data-current-admin-loja="{{ acessos_atuais.lojista.admin_loja|default:'' }}">
+                                                <option value="">Carregando...</option>
+                                            </select>
+                                            <small class="form-text text-muted" id="lojista-reference-help">
+                                                Selecione a referência para o portal lojista.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Card Portal de Vendas -->
+                            {% if not is_admin_canal %}
+                            <div class="card mb-3{% if 'vendas' in permissoes_atuais %} border-info{% endif %}">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check_vendas" name="acessos" value="vendas" 
+                                               {% if 'vendas' in permissoes_atuais %}checked{% endif %} onchange="toggleVendasCard()">
+                                        <label class="form-check-label" for="check_vendas">
+                                            <i class="fas fa-shopping-cart text-info me-2"></i>
+                                            <strong>Portal de Vendas</strong>
+                                            <small class="text-muted ms-2">Operações de venda</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="vendas-section" style="{% if 'vendas' in permissoes_atuais %}display: block{% else %}display: none{% endif %}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="tipo_vendas" class="form-label">Tipo de Acesso</label>
+                                            <select class="form-select" id="tipo_vendas" name="tipo_vendas" onchange="toggleVendasReferenceField()">
+                                                <option value="">Selecione o tipo</option>
+                                                <option value="operador" {% if permissoes_atuais.vendas == 'operador' %}selected{% endif %}>
+                                                    👤 Operador
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="vendas-reference-field" style="display: none;">
+                                            <label for="referencia_vendas" class="form-label required-field">🏬 Loja</label>
+                                            {% if is_edit and acessos_atuais.vendas.loja %}
+                                            <div class="alert alert-info mb-2">
+                                                <small><strong>Vínculo atual:</strong> Loja ID {{ acessos_atuais.vendas.loja }}</small>
+                                            </div>
+                                            {% endif %}
+                                            <select class="form-select" id="referencia_vendas" name="referencia_vendas"
+                                                    data-current-value="{{ acessos_atuais.vendas.loja|default:'' }}">
+                                                <option value="">Carregando...</option>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Selecione a loja para este operador de vendas.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Permissões de Recursos (Checkout vs Recorrência) -->
+                                    <div class="row" id="vendas-recursos-field" style="display: none;">
+                                        <div class="col-12 mb-3">
+                                            <label class="form-label"><i class="fas fa-key me-2"></i>Recursos Permitidos</label>
+                                            <div class="card bg-light">
+                                                <div class="card-body">
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" id="recurso_checkout" name="recurso_checkout" value="1"
+                                                               {% if permissoes_atuais.vendas_recursos.checkout %}checked{% endif %}>
+                                                        <label class="form-check-label" for="recurso_checkout">
+                                                            <i class="fas fa-shopping-cart text-primary me-2"></i>
+                                                            <strong>Checkout</strong>
+                                                            <small class="text-muted d-block ms-4">Fazer pedido, buscar pedido</small>
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="recurso_recorrencia" name="recurso_recorrencia" value="1"
+                                                               {% if permissoes_atuais.vendas_recursos.recorrencia %}checked{% endif %}>
+                                                        <label class="form-check-label" for="recurso_recorrencia">
+                                                            <i class="fas fa-sync-alt text-warning me-2"></i>
+                                                            <strong>Recorrência</strong>
+                                                            <small class="text-muted d-block ms-4">Listar, agendar, gerenciar recorrências</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                Selecione os recursos que este vendedor poderá acessar.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if is_edit %}
+                            <div class="info-box">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Informações adicionais:</strong><br>
+                                <small>
+                                    <strong>Criado em:</strong> {{ usuario.data_criacao|date:"d/m/Y H:i" }}<br>
+                                    {% if usuario.ultimo_login %}
+                                    <strong>Último acesso:</strong> {{ usuario.ultimo_login|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                    <strong>Status:</strong> Primeiro acesso pendente
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if not is_edit %}
+                            <div class="info-box mb-3">
+                                <i class="fas fa-envelope"></i>
+                                <strong>Primeiro Acesso:</strong> Após criar o usuário, será enviado um email com instruções para o primeiro acesso.
+                            </div>
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <a href="{% url 'portais_admin:usuarios_list' %}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-save me-1"></i>
+                                    {% if is_edit %}Atualizar{% else %}Criar{% endif %} Usuário
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.categoria-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+.categoria-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.categoria-card.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+.categoria-section {
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+<script>
+function togglePortalCard() {
+    const checkbox = document.getElementById('check_portal');
+    const section = document.getElementById('portal-section');
+    
+    if (checkbox.checked) {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+        document.getElementById('tipo_portal').value = '';
+    }
+}
+
+function toggleRecorrenciaCard() {
+    const checkbox = document.getElementById('check_recorrencia');
+    const section = document.getElementById('recorrencia-section');
+    
+    if (checkbox.checked) {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+        document.getElementById('tipo_recorrencia').value = '';
+    }
+}
+
+function toggleLojistaCard() {
+    const checkbox = document.getElementById('check_lojista');
+    const section = document.getElementById('lojista-section');
+    
+    if (checkbox.checked) {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+        document.getElementById('tipo_lojista').value = '';
+    }
+}
+
+function toggleVendasCard() {
+    const checkbox = document.getElementById('check_vendas');
+    const section = document.getElementById('vendas-section');
+    
+    if (checkbox.checked) {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+        document.getElementById('tipo_vendas').value = '';
+    }
+}
+
+function togglePortalReferenceField() {
+    const tipoPortal = document.getElementById('tipo_portal').value;
+    const referenceField = document.getElementById('portal-reference-field');
+    const referenceLabel = document.getElementById('portal-reference-label');
+    const referenceHelp = document.getElementById('portal-reference-help');
+    const referenciaSelect = document.getElementById('referencia_portal');
+    
+    // Tipos Portal que precisam de referência
+    const tiposPortalComReferencia = {
+        'admin_canal': {
+            label: '🏢 Canal',
+            help: 'Selecione o canal que este usuário irá administrar.',
+            endpoint: 'ajax_canais'
+        }
+    };
+    
+    if (tiposPortalComReferencia[tipoPortal]) {
+        const config = tiposPortalComReferencia[tipoPortal];
+        referenceField.style.display = 'block';
+        referenceLabel.textContent = config.label;
+        referenceHelp.textContent = config.help;
+        
+        referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
+        
+        fetch(`/portal_admin/${config.endpoint}/`)
+            .then(response => response.json())
+            .then(data => {
+                referenciaSelect.innerHTML = '<option value="">Selecione...</option>';
+                const currentValue = referenciaSelect.dataset.currentValue;
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nome;
+                    if (currentValue && item.id == currentValue) {
+                        option.selected = true;
+                    }
+                    referenciaSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar opções:', error);
+                referenciaSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+            });
+    } else {
+        referenceField.style.display = 'none';
+    }
+}
+
+function toggleLojistaReferenceField() {
+    const tipoLojista = document.getElementById('tipo_lojista').value;
+    const referenceField = document.getElementById('lojista-reference-field');
+    const referenceLabel = document.getElementById('lojista-reference-label');
+    const referenceHelp = document.getElementById('lojista-reference-help');
+    const referenciaSelect = document.getElementById('referencia_lojista');
+    
+    // Tipos Lojista que precisam de referência
+    const tiposLojistaComReferencia = {
+        'lojista': {
+            label: '🏬 Loja',
+            help: 'Selecione a loja que este lojista irá gerenciar.',
+            endpoint: 'ajax_lojas'
+        },
+        'grupo_economico': {
+            label: '🏛️ Grupo Econômico', 
+            help: 'Selecione o grupo econômico que este usuário irá representar.',
+            endpoint: 'ajax_grupos_economicos'
+        },
+        'admin_canal': {
+            label: '🌐 Canal',
+            help: 'Selecione o canal que este admin irá gerenciar.',
+            endpoint: 'ajax_canais'
+        }
+    };
+    
+    if (tiposLojistaComReferencia[tipoLojista]) {
+        const config = tiposLojistaComReferencia[tipoLojista];
+        referenceField.style.display = 'block';
+        referenceLabel.textContent = config.label;
+        referenceHelp.textContent = config.help;
+        
+        referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
+        
+        fetch(`/portal_admin/${config.endpoint}/`)
+            .then(response => response.json())
+            .then(data => {
+                referenciaSelect.innerHTML = '<option value="">Selecione...</option>';
+                // Determinar qual valor atual usar baseado no tipo
+                let currentValue = '';
+                if (tipoLojista === 'grupo_economico') {
+                    currentValue = referenciaSelect.dataset.currentGrupo;
+                } else if (tipoLojista === 'lojista') {
+                    currentValue = referenciaSelect.dataset.currentLoja;
+                } else if (tipoLojista === 'admin_canal') {
+                    currentValue = referenciaSelect.dataset.currentAdminCanal;
+                } else if (tipoLojista === 'lojista_admin') {
+                    currentValue = referenciaSelect.dataset.currentAdminLoja;
+                }
+                
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nome;
+                    if (currentValue && item.id == currentValue) {
+                        option.selected = true;
+                    }
+                    referenciaSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar opções:', error);
+                referenciaSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+            });
+    } else {
+        referenceField.style.display = 'none';
+    }
+}
+
+function toggleRecorrenciaReferenceField() {
+    const tipoRecorrencia = document.getElementById('tipo_recorrencia').value;
+    const referenceField = document.getElementById('recorrencia-reference-field');
+    const referenciaSelect = document.getElementById('referencia_recorrencia');
+    
+    if (tipoRecorrencia === 'operador') {
+        referenceField.style.display = 'block';
+        referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
+        
+        fetch('/portal_admin/ajax_lojas/')
+            .then(response => response.json())
+            .then(data => {
+                referenciaSelect.innerHTML = '<option value="">Selecione...</option>';
+                const currentValue = referenciaSelect.dataset.currentValue;
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nome;
+                    if (currentValue && item.id == currentValue) {
+                        option.selected = true;
+                    }
+                    referenciaSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar opções:', error);
+                referenciaSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+            });
+    } else {
+        referenceField.style.display = 'none';
+    }
+}
+
+function toggleVendasReferenceField() {
+    const tipoVendas = document.getElementById('tipo_vendas').value;
+    const referenceField = document.getElementById('vendas-reference-field');
+    const recursosField = document.getElementById('vendas-recursos-field');
+    const referenciaSelect = document.getElementById('referencia_vendas');
+    
+    if (tipoVendas === 'operador') {
+        referenceField.style.display = 'block';
+        recursosField.style.display = 'block';  // ← Mostrar recursos
+        referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
+        
+        fetch('/portal_admin/ajax_lojas/')
+            .then(response => response.json())
+            .then(data => {
+                referenciaSelect.innerHTML = '<option value="">Selecione...</option>';
+                const currentValue = referenciaSelect.dataset.currentValue;
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nome;
+                    if (currentValue && item.id == currentValue) {
+                        option.selected = true;
+                    }
+                    referenciaSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar opções:', error);
+                referenciaSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+            });
+    } else {
+        referenceField.style.display = 'none';
+        recursosField.style.display = 'none';  // ← Ocultar recursos
+    }
+}
+
+// Inicializar campo se já houver tipo selecionado
+document.addEventListener('DOMContentLoaded', function() {
+    togglePortalReferenceField();
+    toggleLojistaReferenceField();
+    toggleRecorrenciaReferenceField();
+    toggleVendasReferenceField();
+});
+</script>
+{% endblock %}

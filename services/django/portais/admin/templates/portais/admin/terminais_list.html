@@ -1,0 +1,226 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load controle_acesso_tags %}
+
+{% block title %}Terminais WallClub{% endblock %}
+
+{% block navbar_actions %}
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-credit-card me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Gestão de Terminais</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+        <!-- Token CSRF para operações AJAX -->
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="form-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-list me-2"></i>
+                        Lista de Terminais
+                        {% tem_acesso 'terminais_create' as pode_criar %}
+                        {% if pode_criar %}
+                        <a href="{% url 'portais_admin:terminal_novo' %}" class="btn btn-sm btn-success ms-2">
+                            <i class="fas fa-plus me-1"></i>Novo Terminal
+                        </a>
+                        {% endif %}
+                    </h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-success">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Canal</th>
+                                    <th>Loja</th>
+                                    <th>Nr.Série Terminal</th>
+                                    <th>Id do Terminal</th>
+                                    <th>Endereço</th>
+                                    <th>Contato</th>
+                                    <th>Início operação</th>
+                                    <th>Fim operação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for terminal in terminais %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">#{{ terminal.id }}</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ terminal.canal_nome|default:"-" }}</small>
+                                    </td>
+                                    <td>
+                                        <small><strong>{{ terminal.loja_nome|default:"-" }}</strong></small>
+                                    </td>
+                                    <td>
+                                        <small>{{ terminal.terminal|default:"-" }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ terminal.idterminal|default:"-" }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ terminal.endereco|default:"-"|truncatechars:30 }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ terminal.contato|default:"-" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if terminal.inicio %}
+                                            <span class="editable-date" data-terminal-id="{{ terminal.id }}" data-field="inicio" data-value="{{ terminal.inicio|timestamp_to_date }}">
+                                                <small class="text-success">{{ terminal.inicio|timestamp_to_display }}</small>
+                                                <i class="fas fa-edit ms-1" style="font-size: 0.7rem; opacity: 0.7;"></i>
+                                            </span>
+                                        {% else %}
+                                            <span class="editable-date" data-terminal-id="{{ terminal.id }}" data-field="inicio" data-value="">
+                                                <small class="text-muted">-</small>
+                                                <i class="fas fa-edit ms-1" style="font-size: 0.7rem; opacity: 0.7;"></i>
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if terminal.fim %}
+                                            <span class="editable-date" data-terminal-id="{{ terminal.id }}" data-field="fim" data-value="{{ terminal.fim|timestamp_to_date }}">
+                                                <small class="text-danger">{{ terminal.fim|timestamp_to_display }}</small>
+                                                <i class="fas fa-edit ms-1" style="font-size: 0.7rem; opacity: 0.7;"></i>
+                                            </span>
+                                        {% else %}
+                                            <span class="editable-date" data-terminal-id="{{ terminal.id }}" data-field="fim" data-value="">
+                                                <small class="text-muted">-</small>
+                                                <i class="fas fa-edit ms-1" style="font-size: 0.7rem; opacity: 0.7;"></i>
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% tem_acesso 'terminais_edit' as pode_editar %}
+                                        {% if pode_editar %}
+                                        <div class="btn-group" role="group">
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="acao" value="encerrar_agora">
+                                                <input type="hidden" name="terminal_id" value="{{ terminal.id }}">
+                                                <button type="submit" class="btn btn-outline-warning btn-terminal" 
+                                                        onclick="return confirm('Tem certeza que deseja encerrar este terminal agora?')"
+                                                        title="Encerrar agora">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">
+                                        <i class="fas fa-inbox me-2"></i>
+                                        Nenhum terminal cadastrado
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Edição inline de datas
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adicionar evento de clique para edição de datas
+        document.querySelectorAll('.editable-date').forEach(function(element) {
+            element.addEventListener('click', function() {
+                const terminalId = this.dataset.terminalId;
+                const field = this.dataset.field;
+                const currentValue = this.dataset.value;
+                
+                // Criar input de data
+                const input = document.createElement('input');
+                input.type = 'date';
+                input.value = currentValue;
+                input.className = 'form-control date-input';
+                
+                // Substituir o conteúdo
+                const originalContent = this.innerHTML;
+                this.innerHTML = '';
+                this.appendChild(input);
+                mostrarBotaoSalvar();
+                input.focus();
+                
+                // Função para salvar
+                function salvar() {
+                    const novoValor = input.value;
+                    
+                    // Criar formulário para envio
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.style.display = 'none';
+                    
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    form.innerHTML = `
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                        <input type="hidden" name="acao" value="editar_datas">
+                        <input type="hidden" name="terminal_id" value="${terminalId}">
+                        <input type="hidden" name="${field}" value="${novoValor}">
+                    `;
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+                
+                // Função para mostrar botão salvar
+                function mostrarBotaoSalvar() {
+                    // Criar botão salvar
+                    const btnSalvar = document.createElement('button');
+                    btnSalvar.type = 'button';
+                    btnSalvar.className = 'btn btn-success btn-sm ms-1';
+                    btnSalvar.innerHTML = '<i class="fas fa-save"></i>';
+                    btnSalvar.title = 'Salvar alteração';
+                    btnSalvar.onclick = salvar;
+                    
+                    // Criar botão cancelar
+                    const btnCancelar = document.createElement('button');
+                    btnCancelar.type = 'button';
+                    btnCancelar.className = 'btn btn-secondary btn-sm ms-1';
+                    btnCancelar.innerHTML = '<i class="fas fa-times"></i>';
+                    btnCancelar.title = 'Cancelar';
+                    btnCancelar.onclick = cancelar;
+                    
+                    element.appendChild(btnSalvar);
+                    element.appendChild(btnCancelar);
+                }
+                
+                // Função para cancelar
+                function cancelar() {
+                    element.innerHTML = originalContent;
+                }
+                
+                // Eventos
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        salvar();
+                    } else if (e.key === 'Escape') {
+                        cancelar();
+                    }
+                });
+            });
+        });
+    });
+    </script>
+</div>
+{% endblock %}

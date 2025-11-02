@@ -1,0 +1,305 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Ofertas - Portal Admin{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:dashboard' %}" class="btn btn-outline-light me-2">
+    <i class="fas fa-arrow-left me-1"></i>
+    Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-gift me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Gestão de Ofertas</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-list me-2"></i>
+                    Lista de Ofertas
+                    <a href="{% url 'portais_admin:ofertas_create' %}" class="btn btn-sm btn-success ms-2">
+                        <i class="fas fa-plus me-1"></i>Nova Oferta
+                    </a>
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th style="width: 60px;">ID</th>
+                                <th>Título</th>
+                                <th>Canal</th>
+                                <th>Vigência</th>
+                                <th>Segmentação</th>
+                                <th>Disparos</th>
+                                <th>Status</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ofertas_com_disparos %}
+                            <tr>
+                                <td class="align-middle">
+                                    <span class="badge bg-primary">#{{ item.oferta.id }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <strong>{{ item.oferta.titulo }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ item.oferta.texto_push|truncatewords:10 }}</small>
+                                </td>
+                                <td class="align-middle">
+                                    <span class="badge bg-info">Canal {{ item.oferta.canal_id }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <small>
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        {{ item.oferta.vigencia_inicio|date:"d/m/Y H:i" }}<br>
+                                        até {{ item.oferta.vigencia_fim|date:"d/m/Y H:i" }}
+                                    </small>
+                                </td>
+                                <td class="align-middle">
+                                    {% if item.oferta.tipo_segmentacao == 'todos_canal' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-users me-1"></i>Todos do Canal
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-user-friends me-1"></i>Grupo {{ item.oferta.grupo_id }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle text-center">
+                                    {% if item.total_disparos > 0 %}
+                                        <a href="{% url 'portais_admin:ofertas_historico' item.oferta.id %}" 
+                                           class="badge bg-info" style="text-decoration: none;">
+                                            <i class="fas fa-history me-1"></i>{{ item.total_disparos }}
+                                        </a>
+                                        {% if item.ultimo_disparo %}
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ item.ultimo_disparo.data_disparo|date:"d/m H:i" }}
+                                        </small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle">
+                                    {% if item.oferta.ativo %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Ativo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Inativo
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle text-center">
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <a href="{% url 'portais_admin:ofertas_edit' item.oferta.id %}" 
+                                           class="btn btn-sm btn-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if item.oferta.ativo %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-success btn-disparar" 
+                                                data-oferta-id="{{ item.oferta.id }}"
+                                                data-oferta-titulo="{{ item.oferta.titulo|escapejs }}"
+                                                title="Disparar Push">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                        {% endif %}
+                                        <a href="{% url 'portais_admin:ofertas_historico' item.oferta.id %}" 
+                                           class="btn btn-sm btn-info" title="Histórico">
+                                            <i class="fas fa-history"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>Nenhuma oferta cadastrada</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Disparar Push -->
+<div class="modal fade" id="modalDisparar" tabindex="-1" aria-labelledby="modalDispararLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDispararLabel">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Confirmar Disparo de Push
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja disparar push notification para a oferta:</p>
+                <p class="fw-bold text-center" id="modal-oferta-titulo"></p>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção:</strong> O push será enviado para todos os clientes elegíveis conforme a segmentação definida.
+                </div>
+                
+                <div id="disparo-loading" style="display: none;" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Processando...</span>
+                    </div>
+                    <p class="mt-2">Processando disparo...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn-confirmar-disparo">
+                    <i class="fas fa-check me-2"></i>Confirmar Disparo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Script para disparar ofertas
+document.addEventListener('DOMContentLoaded', function() {
+    const modalDisparar = new bootstrap.Modal(document.getElementById('modalDisparar'));
+    const btnDisparar = document.querySelectorAll('.btn-disparar');
+    const btnConfirmar = document.getElementById('btn-confirmar-disparo');
+    const modalTitulo = document.getElementById('modal-oferta-titulo');
+    const disparoLoading = document.getElementById('disparo-loading');
+    
+    let ofertaIdSelecionada = null;
+    
+    // Abrir modal de confirmação
+    btnDisparar.forEach(btn => {
+        btn.addEventListener('click', function() {
+            ofertaIdSelecionada = this.getAttribute('data-oferta-id');
+            const ofertaTitulo = this.getAttribute('data-oferta-titulo');
+            
+            modalTitulo.textContent = ofertaTitulo;
+            disparoLoading.style.display = 'none';
+            btnConfirmar.disabled = false;
+            
+            modalDisparar.show();
+        });
+    });
+    
+    // Confirmar disparo
+    btnConfirmar.addEventListener('click', function() {
+        if (!ofertaIdSelecionada) return;
+        
+        // Mostrar loading
+        disparoLoading.style.display = 'block';
+        btnConfirmar.disabled = true;
+        
+        // Enviar requisição
+        fetch(`/portal_admin/ofertas/${ofertaIdSelecionada}/disparar/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            // Verificar se é erro de autenticação
+            if (response.status === 401) {
+                return response.json().then(data => {
+                    // Sessão expirada - redirecionar para login
+                    alert(data.mensagem || 'Sessão expirada. Redirecionando para login...');
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.href = '/portal_admin/';
+                    }
+                    throw new Error('Sessão expirada');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            disparoLoading.style.display = 'none';
+            
+            if (data.sucesso) {
+                modalDisparar.hide();
+                
+                // Mostrar mensagem de sucesso
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show';
+                alert.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${data.mensagem}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.querySelector('.container-fluid').insertBefore(
+                    alert, 
+                    document.querySelector('.container-fluid').firstChild
+                );
+                
+                // Auto-fechar após 5 segundos
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
+                
+                // Recarregar após 2 segundos
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                alert('Erro: ' + data.mensagem);
+                btnConfirmar.disabled = false;
+            }
+        })
+        .catch(error => {
+            disparoLoading.style.display = 'none';
+            btnConfirmar.disabled = false;
+            
+            // Não mostrar alerta se for erro de sessão expirada (já foi tratado)
+            if (error.message !== 'Sessão expirada') {
+                alert('Erro ao processar requisição: ' + error.message);
+            }
+        });
+    });
+    
+    // Função para pegar CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

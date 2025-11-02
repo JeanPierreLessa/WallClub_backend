@@ -1,0 +1,154 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}{% if grupo %}Editar{% else %}Novo{% endif %} Grupo - Portal Admin{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:grupos_list' %}" class="btn btn-outline-light me-2">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-{% if grupo %}edit{% else %}plus{% endif %} me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">{% if grupo %}Editar Grupo{% else %}Novo Grupo{% endif %}</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="form-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-file-alt me-2"></i>Dados do Grupo
+                    </h5>
+                    
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">
+                            Nome do Grupo *
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="nome" 
+                               name="nome" 
+                               value="{{ grupo.nome|default:'' }}"
+                               required
+                               maxlength="255"
+                               placeholder="Ex: Clientes Premium">
+                        <small class="form-text text-muted">Nome identificador do grupo</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">
+                            Descrição
+                        </label>
+                        <textarea class="form-control" 
+                                  id="descricao" 
+                                  name="descricao" 
+                                  rows="3"
+                                  placeholder="Descreva o critério ou objetivo deste grupo...">{{ grupo.descricao|default:'' }}</textarea>
+                        <small class="form-text text-muted">Descrição opcional do grupo</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="canal_id" class="form-label">
+                            Canal *
+                        </label>
+                        <select class="form-select" id="canal_id" name="canal_id" required {% if grupo %}disabled{% endif %}>
+                            <option value="">Selecione o canal</option>
+                            {% for canal in canais %}
+                            <option value="{{ canal.id }}" {% if grupo and grupo.canal_id == canal.id %}selected{% endif %}>
+                                {{ canal.nome }} {% if canal.marca %}({{ canal.marca }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if grupo %}
+                        <input type="hidden" name="canal_id" value="{{ grupo.canal_id }}">
+                        <small class="form-text text-muted">Canal não pode ser alterado após criação</small>
+                        {% else %}
+                        <small class="form-text text-muted">Selecione o canal deste grupo</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Critério *</label>
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="radio" 
+                                   name="criterio_tipo" 
+                                   id="tipo_manual" 
+                                   value="manual"
+                                   {% if not grupo or grupo.criterio_tipo == 'manual' %}checked{% endif %}>
+                            <label class="form-check-label" for="tipo_manual">
+                                <strong>Manual</strong>
+                                <br><small class="text-muted">Adicionar clientes manualmente</small>
+                            </label>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" 
+                                   type="radio" 
+                                   name="criterio_tipo" 
+                                   id="tipo_automatico" 
+                                   value="regra_automatica"
+                                   {% if grupo and grupo.criterio_tipo == 'regra_automatica' %}checked{% endif %}
+                                   disabled>
+                            <label class="form-check-label" for="tipo_automatico">
+                                <strong>Regra Automática</strong> <span class="badge bg-warning">Em breve</span>
+                                <br><small class="text-muted">Adicionar por regras automáticas (futura implementação)</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               id="ativo" 
+                               name="ativo"
+                               {% if not grupo or grupo.ativo %}checked{% endif %}>
+                        <label class="form-check-label" for="ativo">
+                            <strong>Grupo Ativo</strong>
+                            <br><small class="text-muted">Grupos inativos não podem ser usados em ofertas</small>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section mt-3">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i>
+                            {% if grupo %}Atualizar{% else %}Criar{% endif %} Grupo
+                        </button>
+                        <a href="{% url 'portais_admin:grupos_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="form-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Ajuda
+                    </h5>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Dicas</h6>
+                        <ul class="mb-0 small">
+                            <li>Use nomes descritivos para os grupos</li>
+                            <li>A descrição ajuda a documentar o objetivo do grupo</li>
+                            <li>Após criar, você pode adicionar clientes manualmente</li>
+                            <li>Grupos inativos não aparecem nas ofertas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

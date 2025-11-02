@@ -1,0 +1,197 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Detalhes dos Recebimentos - Portal Lojista{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-money-check-alt me-2"></i>
+                        Detalhes dos Recebimentos - {{ data_recebimento }}
+                    </h4>
+                    <a href="{% url 'lojista:recebimentos' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Voltar
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Formulário oculto para CSRF token -->
+                    <form style="display: none;">
+                        {% csrf_token %}
+                    </form>
+                    
+                    <!-- Loading -->
+                    <div id="loading" class="">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                            <p class="mt-3 fw-bold">Carregando transações...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Resultados -->
+                    <div id="resultados" class="d-none">
+                        <!-- Conteúdo será carregado via AJAX -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Loading Overlay -->
+<div class="position-fixed top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center" 
+     id="loadingOverlay" style="background: rgba(255, 255, 255, 0.8); z-index: 9999;">
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-2 text-muted">Carregando detalhes dos recebimentos...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar dados automaticamente ao abrir a página
+    const urlParams = new URLSearchParams(window.location.search);
+    const data = urlParams.get('data');
+    
+    console.log('Data do parâmetro URL:', data);
+    
+    if (data) {
+        // Aguardar um pouco para garantir que a página carregou completamente
+        setTimeout(() => {
+            carregarDetalhes(data);
+        }, 100);
+    } else {
+        // Se não há data, esconder loading
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('resultados').innerHTML = '<div class="alert alert-warning">Nenhuma data especificada.</div>';
+        document.getElementById('resultados').classList.remove('d-none');
+    }
+});
+
+function carregarDetalhes(data) {
+    const loading = document.getElementById('loading');
+    const resultados = document.getElementById('resultados');
+    
+    // Mostrar loading
+    loading.classList.remove('d-none');
+    resultados.classList.add('d-none');
+    
+    // Fazer requisição AJAX
+    const formData = new FormData();
+    formData.append('data_recebimento', data);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch('{% url "lojista:recebimentos_detalhes" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loading.classList.add('d-none');
+        
+        if (data.success) {
+            resultados.innerHTML = data.html;
+            resultados.classList.remove('d-none');
+            
+            // Configurar eventos de exportação após carregar o conteúdo
+            configurarExportacao();
+        } else {
+            resultados.innerHTML = `<div class="alert alert-danger">${data.error || 'Erro ao carregar dados'}</div>`;
+            resultados.classList.remove('d-none');
+        }
+    })
+    .catch(error => {
+        loading.classList.add('d-none');
+        console.error('Erro:', error);
+        resultados.innerHTML = '<div class="alert alert-danger">Erro na consulta</div>';
+        resultados.classList.remove('d-none');
+    });
+}
+
+function configurarExportacao() {
+    // Remover listeners anteriores para evitar duplicação
+    document.removeEventListener('click', handleExportClick);
+    document.addEventListener('click', handleExportClick);
+}
+
+function handleExportClick(e) {
+    if (e.target.matches('[data-formato][data-tipo]') || e.target.closest('[data-formato][data-tipo]')) {
+        e.preventDefault();
+        
+        const target = e.target.matches('[data-formato][data-tipo]') ? e.target : e.target.closest('[data-formato][data-tipo]');
+        const formato = target.getAttribute('data-formato');
+        const tipo = target.getAttribute('data-tipo');
+        
+        // Obter a data do recebimento da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataRecebimento = urlParams.get('data');
+        
+        if (!dataRecebimento) {
+            alert('Data de recebimento não encontrada');
+            return;
+        }
+        
+        // Determinar URL de exportação baseada no tipo
+        let exportUrl;
+        if (tipo === 'transacoes') {
+            exportUrl = '{% url "lojista:recebimentos_detalhes_transacoes_export" %}';
+        } else if (tipo === 'lancamentos') {
+            exportUrl = '{% url "lojista:recebimentos_detalhes_lancamentos_export" %}';
+        } else {
+            alert('Tipo de exportação inválido');
+            return;
+        }
+        
+        // Criar form temporário para download
+        const tempForm = document.createElement('form');
+        tempForm.method = 'POST';
+        tempForm.action = exportUrl;
+        
+        // Adicionar CSRF token
+        const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (!csrfTokenElement) {
+            alert('Token CSRF não encontrado. Recarregue a página.');
+            return;
+        }
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfTokenElement.value;
+        tempForm.appendChild(csrfInput);
+        
+        // Adicionar formato
+        const formatoInput = document.createElement('input');
+        formatoInput.type = 'hidden';
+        formatoInput.name = 'formato';
+        formatoInput.value = formato;
+        tempForm.appendChild(formatoInput);
+        
+        // Adicionar data de recebimento
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'data_recebimento';
+        dataInput.value = dataRecebimento;
+        tempForm.appendChild(dataInput);
+        
+        document.body.appendChild(tempForm);
+        tempForm.submit();
+        document.body.removeChild(tempForm);
+    }
+}
+</script>
+{% endblock %}

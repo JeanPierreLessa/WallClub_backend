@@ -1,0 +1,285 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Novo Cliente - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Cliente</h2>
+    <p class="text-muted mb-0">Preencha os dados do cliente</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados do Cliente</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="formCliente">
+                    {% csrf_token %}
+
+                    <!-- Loja (hidden) -->
+                    {% if lojas|length == 1 %}
+                    <input type="hidden" name="loja_id" value="{{ lojas.0.id }}">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-store me-2"></i><strong>Loja:</strong> {{ lojas.0.razao_social }}
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label for="loja_id" class="form-label">Loja *</label>
+                        <select class="form-select" id="loja_id" name="loja_id" required>
+                            <option value="">Selecione a loja</option>
+                            {% for loja in lojas %}
+                            <option value="{{ loja.id }}">{{ loja.razao_social }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <!-- Tipo de Documento -->
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Documento *</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo_documento" id="tipoCPF"
+                                    value="cpf" checked>
+                                <label class="form-check-label" for="tipoCPF">CPF</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="tipo_documento" id="tipoCNPJ"
+                                    value="cnpj">
+                                <label class="form-check-label" for="tipoCNPJ">CNPJ</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CPF -->
+                    <div class="mb-3" id="campoCPF">
+                        <label for="cpf" class="form-label">CPF *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="cpf" name="cpf" placeholder="000.000.000-00"
+                                maxlength="14">
+                            <button class="btn btn-outline-primary" type="button" id="btnPesquisarCPF">
+                                <i class="fas fa-search"></i> BUSCAR CPF/CNPJ
+                            </button>
+                        </div>
+                        <div class="form-text">Ao pesquisar, o nome será carregado do app e ficará bloqueado para
+                            edição.</div>
+                    </div>
+
+                    <!-- CNPJ -->
+                    <div class="mb-3" id="campoCNPJ" style="display: none;">
+                        <label for="cnpj" class="form-label">CNPJ *</label>
+                        <input type="text" class="form-control" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00"
+                            maxlength="18">
+                    </div>
+
+                    <!-- Nome (somente preenchido pela busca) -->
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome Completo / Razão Social *</label>
+                        <input type="text" class="form-control bg-light" id="nome" name="nome" required readonly>
+                        <small class="text-muted">Preenchido automaticamente pela busca de CPF/CNPJ.</small>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+
+                    <!-- CEP -->
+                    <div class="mb-3">
+                        <label for="cep" class="form-label">CEP</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000"
+                                maxlength="9">
+                            <button class="btn btn-outline-secondary" type="button" id="btnBuscarCEP">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Endereço -->
+                    <div class="mb-3">
+                        <label for="endereco" class="form-label">Endereço Completo</label>
+                        <textarea class="form-control" id="endereco" name="endereco" rows="2"
+                            placeholder="Rua, Número, Complemento, Bairro, Cidade - UF"></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'vendas:dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Máscaras
+    function mascaraCPF(value) {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+            .replace(/(-\d{2})\d+?$/, '$1');
+    }
+
+    function mascaraCNPJ(value) {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1/$2')
+            .replace(/(\d{4})(\d)/, '$1-$2')
+            .replace(/(-\d{2})\d+?$/, '$1');
+    }
+
+    function mascaraCEP(value) {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{5})(\d)/, '$1-$2')
+            .replace(/(-\d{3})\d+?$/, '$1');
+    }
+
+    // Aplicar máscaras
+    document.getElementById('cpf').addEventListener('input', function (e) {
+        e.target.value = mascaraCPF(e.target.value);
+    });
+
+    document.getElementById('cnpj').addEventListener('input', function (e) {
+        e.target.value = mascaraCNPJ(e.target.value);
+    });
+
+    document.getElementById('cep').addEventListener('input', function (e) {
+        e.target.value = mascaraCEP(e.target.value);
+    });
+
+    // Trocar tipo de documento
+    document.querySelectorAll('input[name="tipo_documento"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            if (this.value === 'cpf') {
+                document.getElementById('campoCPF').style.display = 'block';
+                document.getElementById('campoCNPJ').style.display = 'none';
+                document.getElementById('cpf').required = true;
+                document.getElementById('cnpj').required = false;
+                document.getElementById('cnpj').value = '';
+            } else {
+                document.getElementById('campoCPF').style.display = 'none';
+                document.getElementById('campoCNPJ').style.display = 'block';
+                document.getElementById('cpf').required = false;
+                document.getElementById('cnpj').required = true;
+                document.getElementById('cpf').value = '';
+            }
+        });
+    });
+
+    // Buscar CEP (ViaCEP)
+    document.getElementById('btnBuscarCEP').addEventListener('click', function () {
+        const cep = document.getElementById('cep').value.replace(/\D/g, '');
+
+        if (cep.length !== 8) {
+            alert('CEP inválido');
+            return;
+        }
+
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.erro) {
+                    alert('CEP não encontrado');
+                    return;
+                }
+
+                const endereco = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+                document.getElementById('endereco').value = endereco;
+            })
+            .catch(error => {
+                console.error('Erro ao buscar CEP:', error);
+                alert('Erro ao buscar CEP');
+            });
+    });
+
+    // CSRF Helper
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // Pesquisar CPF e carregar nome do apps/cliente
+    document.getElementById('btnPesquisarCPF').addEventListener('click', async function () {
+        const tipoDoc = document.querySelector('input[name="tipo_documento"]:checked').value;
+
+        const cpf = (document.getElementById('cpf').value || '').trim();
+        const lojaInput = document.querySelector('input[name="loja_id"]');
+        const lojaSelect = document.getElementById('loja_id');
+        const loja_id = lojaInput ? lojaInput.value : (lojaSelect ? lojaSelect.value : '');
+
+        if (!loja_id) {
+            alert('Selecione a loja antes de pesquisar.');
+            return;
+        }
+        const cpfNum = cpf.replace(/\D/g, '');
+        if (tipoDoc === 'cpf') {
+            if (cpfNum.length !== 11) {
+                alert('CPF inválido.');
+                return;
+            }
+        } else {
+            // CNPJ ainda não suportado no backend nesta busca
+            alert('Busca por CNPJ não está disponível nesta tela. Use CPF.');
+            return;
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Pesquisando...';
+
+        try {
+            const resp = await fetch('{% url "vendas:ajax_pesquisar_cpf" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ cpf: cpf, loja_id: loja_id })
+            });
+            const data = await resp.json();
+            if (data.sucesso) {
+                // Se cliente já existe em checkout_cliente, redirecionar para edição
+                if (data.cliente_existe && data.cliente_id) {
+                    alert(data.mensagem);
+                    window.location.href = '{% url "vendas:cliente_editar" 0 %}'.replace('0', data.cliente_id);
+                    return;
+                }
+                
+                // Cliente não existe, preencher nome do app/Bureau
+                const nome = data.cliente && data.cliente.nome ? data.cliente.nome : '';
+                if (nome) {
+                    const nomeInput = document.getElementById('nome');
+                    nomeInput.value = nome;
+                    nomeInput.readOnly = true; // não pode ser editado
+                    nomeInput.classList.add('bg-light');
+                }
+            } else {
+                alert(data.mensagem || 'Não foi possível obter o nome do cliente.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao pesquisar CPF.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search"></i> Pesquisar CPF';
+        }
+    });
+</script>
+{% endblock %}

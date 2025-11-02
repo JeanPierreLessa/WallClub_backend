@@ -1,0 +1,182 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+{% load controle_acesso_tags %}
+
+{% block title %}Parâmetros WallClub{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-cogs me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Parâmetros WallClub</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Filtros no topo -->
+    <div class="filters-top">
+        <form method="get" class="filters-form">
+            <div class="form-group">
+                <label for="search">Buscar Loja</label>
+                <input type="text" 
+                       id="search"
+                       name="search" 
+                       value="{{ search }}" 
+                       placeholder="Razão social, CNPJ ou ID..."
+                       style="width: 400px;">
+            </div>
+            <div class="form-group">
+                <div class="buttons-group">
+                    <button type="submit" class="btn btn-success btn-colorido">
+                        <i class="fas fa-search me-1"></i> Buscar
+                    </button>
+                    {% tem_acesso 'parametros_edit' as pode_importar %}
+                    {% if pode_importar %}
+                    <a href="{% url 'portais_admin:importacao_parametros' %}" class="btn btn-info btn-colorido">
+                        <i class="fas fa-upload me-1"></i> Importar
+                    </a>
+                    <a href="{% url 'portais_admin:parametros_template' %}" class="btn btn-danger btn-colorido">
+                        <i class="fas fa-download me-1"></i> Template
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Lojas -->
+    <div class="row">
+        {% for loja in lojas %}
+        <div class="col-md-6 col-lg-4 mb-2">
+            <div class="card loja-card h-100">
+                <div class="card-body">
+                    <div class="loja-info mb-3">
+                        <h5 class="card-title">{{ loja.razao_social|default:"Loja sem nome" }}</h5>
+                        <div class="loja-meta">
+                            <div class="mb-1">
+                                <i class="fas fa-id-card me-1"></i>
+                                <strong>ID:</strong> {{ loja.id }}
+                            </div>
+                            {% if loja.cnpj %}
+                            <div class="mb-1">
+                                <i class="fas fa-file-alt me-1"></i>
+                                <strong>CNPJ:</strong> {{ loja.cnpj_formatado }}
+                            </div>
+                            {% endif %}
+                            {% if loja.email %}
+                            <div class="mb-1">
+                                <i class="fas fa-envelope me-1"></i>
+                                {{ loja.email }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Modalidades -->
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Modalidades:</small>
+                        {% for modalidade in loja.modalidades %}
+                            <span class="badge modalidade-badge {% if modalidade == 'Wall S' %}wall-s{% else %}wall-n{% endif %}">
+                                {{ modalidade }}
+                            </span>
+                        {% empty %}
+                            <span class="text-muted">Nenhuma modalidade</span>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Informações dos parâmetros -->
+                    {% if loja.ultima_atualizacao %}
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            Última atualização: {{ loja.ultima_atualizacao|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Botão dentro do card-body -->
+                    <div class="mt-auto">
+                        <div class="d-grid gap-2">
+                            {% tem_acesso 'parametros_copy' as pode_copiar %}
+                            {% if pode_copiar %}
+                            <a href="{% url 'portais_admin:parametros_download_csv' loja.id %}" 
+                               class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-download me-1"></i>
+                                Baixar Params. Ativos CSV
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Nenhuma loja encontrada</h4>
+                {% if search %}
+                <p class="text-muted">Tente ajustar os filtros de busca.</p>
+                <a href="{% url 'portais_admin:parametros_list' %}" class="btn btn-outline-success">
+                    Limpar Filtros
+                </a>
+                {% else %}
+                <p class="text-muted">Não há lojas com parâmetros configurados.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginação -->
+    {% if lojas.has_other_pages %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination justify-content-center">
+                    {% if lojas.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ lojas.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in lojas.paginator.page_range %}
+                        {% if lojas.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > lojas.number|add:'-3' and num < lojas.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if lojas.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ lojas.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ lojas.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

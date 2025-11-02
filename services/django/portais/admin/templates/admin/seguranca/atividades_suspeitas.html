@@ -1,0 +1,325 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Atividades Suspeitas - Portal Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .badge-severidade-1 { background-color: #28a745; }
+    .badge-severidade-2 { background-color: #17a2b8; }
+    .badge-severidade-3 { background-color: #ffc107; color: #000; }
+    .badge-severidade-4 { background-color: #fd7e14; }
+    .badge-severidade-5 { background-color: #dc3545; }
+    
+    .status-pendente { color: #6c757d; }
+    .status-investigado { color: #17a2b8; }
+    .status-bloqueado { color: #dc3545; }
+    .status-falso_positivo { color: #28a745; }
+    .status-ignorado { color: #6c757d; }
+    
+    .detalhes-json {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .filtros-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-box h3 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: bold;
+    }
+    
+    .stats-box p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">🔍 Atividades Suspeitas Detectadas</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if erro_conexao or erro_api or erro_timeout or erro_geral %}
+                <div class="alert alert-danger">
+                    <h4>❌ Erro ao conectar com Risk Engine</h4>
+                    <p>Não foi possível conectar ao sistema de detecção de fraudes.</p>
+                    <p>Verifique se o container Risk Engine está rodando e tente novamente.</p>
+                </div>
+            {% else %}
+                
+                <!-- Estatísticas -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stats-box">
+                            <h3>{{ total|default:0 }}</h3>
+                            <p>Total de Atividades (últimos {{ filtros.dias }} dias)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <h3>{{ pendentes|default:0 }}</h3>
+                            <p>Atividades Pendentes de Análise</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <h3>{{ atividades.paginator.count|default:0 }}</h3>
+                            <p>Resultados da Busca Atual</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="filtros-card">
+                    <h4>🔎 Filtros</h4>
+                    <form method="GET" class="form-inline">
+                        <div class="form-group mr-3 mb-2">
+                            <label for="status" class="mr-2">Status:</label>
+                            <select name="status" id="status" class="form-control">
+                                {% for value, label in status_disponiveis %}
+                                    <option value="{{ value }}" {% if filtros.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mr-3 mb-2">
+                            <label for="tipo" class="mr-2">Tipo:</label>
+                            <select name="tipo" id="tipo" class="form-control">
+                                <option value="">Todos</option>
+                                {% for value, label in tipos_disponiveis %}
+                                    <option value="{{ value }}" {% if filtros.tipo == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mr-3 mb-2">
+                            <label for="portal" class="mr-2">Portal:</label>
+                            <select name="portal" id="portal" class="form-control">
+                                <option value="">Todos</option>
+                                {% for value, label in portais_disponiveis %}
+                                    <option value="{{ value }}" {% if filtros.portal == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mr-3 mb-2">
+                            <label for="dias" class="mr-2">Período:</label>
+                            <select name="dias" id="dias" class="form-control">
+                                <option value="1" {% if filtros.dias == '1' %}selected{% endif %}>Últimas 24h</option>
+                                <option value="3" {% if filtros.dias == '3' %}selected{% endif %}>Últimos 3 dias</option>
+                                <option value="7" {% if filtros.dias == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                                <option value="30" {% if filtros.dias == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary mb-2">🔍 Filtrar</button>
+                        <a href="{% url 'portais_admin:atividades_suspeitas' %}" class="btn btn-secondary mb-2 ml-2">🔄 Limpar</a>
+                    </form>
+                </div>
+                
+                <!-- Tabela de Atividades -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tipo</th>
+                                        <th>CPF</th>
+                                        <th>IP</th>
+                                        <th>Portal</th>
+                                        <th>Severidade</th>
+                                        <th>Status</th>
+                                        <th>Detectado Em</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for atividade in atividades %}
+                                    <tr>
+                                        <td>#{{ atividade.id }}</td>
+                                        <td>
+                                            <span class="badge badge-info">{{ atividade.tipo_label }}</span>
+                                        </td>
+                                        <td><code>{{ atividade.cpf_mascarado }}</code></td>
+                                        <td><code>{{ atividade.ip }}</code></td>
+                                        <td><span class="badge badge-secondary">{{ atividade.portal|upper }}</span></td>
+                                        <td>
+                                            <span class="badge badge-severidade-{{ atividade.severidade }}">
+                                                Nível {{ atividade.severidade }}
+                                            </span>
+                                        </td>
+                                        <td class="status-{{ atividade.status }}">
+                                            <strong>{{ atividade.status_label }}</strong>
+                                        </td>
+                                        <td>{{ atividade.detectado_em|slice:":19"|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modalDetalhes{{ atividade.id }}">
+                                                📋 Detalhes
+                                            </button>
+                                            {% if atividade.status == 'pendente' %}
+                                            <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#modalInvestigar{{ atividade.id }}">
+                                                🔍 Investigar
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Modal Detalhes -->
+                                    <div class="modal fade" id="modalDetalhes{{ atividade.id }}" tabindex="-1" role="dialog">
+                                        <div class="modal-dialog modal-lg" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Detalhes da Atividade #{{ atividade.id }}</h5>
+                                                    <button type="button" class="close" data-dismiss="modal">
+                                                        <span>&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <h6><strong>Tipo:</strong> {{ atividade.tipo_label }}</h6>
+                                                    <p><strong>CPF:</strong> {{ atividade.cpf_mascarado }}</p>
+                                                    <p><strong>IP:</strong> {{ atividade.ip }}</p>
+                                                    <p><strong>Portal:</strong> {{ atividade.portal }}</p>
+                                                    <p><strong>Severidade:</strong> Nível {{ atividade.severidade }} de 5</p>
+                                                    <p><strong>Status:</strong> {{ atividade.status_label }}</p>
+                                                    <p><strong>Detectado em:</strong> {{ atividade.detectado_em|slice:":19"|date:"d/m/Y H:i:s" }}</p>
+                                                    
+                                                    {% if atividade.observacoes %}
+                                                    <hr>
+                                                    <h6><strong>Observações:</strong></h6>
+                                                    <p>{{ atividade.observacoes }}</p>
+                                                    {% endif %}
+                                                    
+                                                    <hr>
+                                                    <h6><strong>Detalhes Técnicos:</strong></h6>
+                                                    <div class="detalhes-json">
+                                                        <pre>{{ atividade.detalhes|safe }}</pre>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Modal Investigar -->
+                                    {% if atividade.status == 'pendente' %}
+                                    <div class="modal fade" id="modalInvestigar{{ atividade.id }}" tabindex="-1" role="dialog">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-warning">
+                                                    <h5 class="modal-title">🔍 Investigar Atividade #{{ atividade.id }}</h5>
+                                                    <button type="button" class="close" data-dismiss="modal">
+                                                        <span>&times;</span>
+                                                    </button>
+                                                </div>
+                                                <form method="POST" action="{% url 'portais_admin:investigar_atividade' atividade.id %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body">
+                                                        <p><strong>Tipo:</strong> {{ atividade.tipo_label }}</p>
+                                                        <p><strong>CPF:</strong> {{ atividade.cpf_mascarado }}</p>
+                                                        <p><strong>IP:</strong> {{ atividade.ip }}</p>
+                                                        
+                                                        <hr>
+                                                        
+                                                        <div class="form-group">
+                                                            <label for="acao{{ atividade.id }}"><strong>Ação:</strong></label>
+                                                            <select name="acao" id="acao{{ atividade.id }}" class="form-control" required>
+                                                                <option value="">Selecione...</option>
+                                                                <option value="marcar_investigado">✅ Marcar como Investigado</option>
+                                                                <option value="bloquear_ip">🚫 Bloquear IP</option>
+                                                                <option value="bloquear_cpf">🚫 Bloquear CPF</option>
+                                                                <option value="falso_positivo">✓ Falso Positivo</option>
+                                                                <option value="ignorar">⚪ Ignorar</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div class="form-group">
+                                                            <label for="observacoes{{ atividade.id }}">Observações:</label>
+                                                            <textarea name="observacoes" id="observacoes{{ atividade.id }}" class="form-control" rows="3" placeholder="Opcional: adicione observações sobre sua análise..."></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-warning">🔍 Executar Ação</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">
+                                            Nenhuma atividade suspeita encontrada com os filtros selecionados.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Paginação -->
+                        {% if atividades.has_other_pages %}
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                {% if atividades.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ atividades.previous_page_number }}&status={{ filtros.status }}&tipo={{ filtros.tipo }}&portal={{ filtros.portal }}&dias={{ filtros.dias }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item disabled">
+                                    <span class="page-link">Página {{ atividades.number }} de {{ atividades.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if atividades.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ atividades.next_page_number }}&status={{ filtros.status }}&tipo={{ filtros.tipo }}&portal={{ filtros.portal }}&dias={{ filtros.dias }}">Próxima</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

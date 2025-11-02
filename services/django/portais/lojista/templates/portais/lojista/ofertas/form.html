@@ -1,0 +1,313 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}{% if oferta %}Editar{% else %}Nova{% endif %} Oferta - Portal Lojista{% endblock %}
+
+{% block page_header_compact %}
+<div class="page-header-compact">
+    <h1 class="page-title">
+        <i class="fas fa-{% if oferta %}edit{% else %}plus{% endif %}"></i>
+        {% if oferta %}Editar Oferta{% else %}Nova Oferta{% endif %}
+    </h1>
+    <p class="page-subtitle">Preencha os dados da oferta abaixo</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Dados da Oferta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="form-oferta" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">
+                                <i class="fas fa-heading text-primary me-2"></i>Título *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="titulo" 
+                                   name="titulo" 
+                                   value="{{ oferta.titulo|default:'' }}"
+                                   required
+                                   maxlength="255"
+                                   placeholder="Ex: Black Friday - 50% de desconto">
+                            <small class="form-text text-muted">Título exibido no app do cliente</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="texto_push" class="form-label">
+                                <i class="fas fa-mobile-alt text-primary me-2"></i>Texto do Push *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="texto_push" 
+                                   name="texto_push" 
+                                   value="{{ oferta.texto_push|default:'' }}"
+                                   required
+                                   maxlength="255"
+                                   placeholder="Ex: Aproveite 50% OFF na Black Friday!">
+                            <small class="form-text text-muted">Texto curto enviado na notificação push</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">
+                                <i class="fas fa-align-left text-primary me-2"></i>Descrição
+                            </label>
+                            <textarea class="form-control" 
+                                      id="descricao" 
+                                      name="descricao" 
+                                      rows="4"
+                                      placeholder="Descreva os detalhes da oferta...">{{ oferta.descricao|default:'' }}</textarea>
+                            <small class="form-text text-muted">Descrição detalhada exibida na página do app</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="imagem" class="form-label">
+                                <i class="fas fa-image text-primary me-2"></i>Imagem da Oferta
+                            </label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="imagem" 
+                                   name="imagem" 
+                                   accept="image/*">
+                            <small class="form-text text-muted">Envie uma imagem para a oferta (JPG, PNG ou GIF - opcional)</small>
+                            {% if oferta and oferta.imagem_url %}
+                            <div class="mt-2">
+                                <img src="{{ oferta.imagem_url }}" alt="Imagem atual" class="img-thumbnail" style="max-width: 200px;">
+                                <p class="small text-muted mt-1">Imagem atual</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="vigencia_inicio" class="form-label">
+                                    <i class="fas fa-calendar-alt text-primary me-2"></i>Início da Vigência *
+                                </label>
+                                <input type="datetime-local" 
+                                       class="form-control" 
+                                       id="vigencia_inicio" 
+                                       name="vigencia_inicio" 
+                                       value="{{ vigencia_inicio_formatted }}"
+                                       required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="vigencia_fim" class="form-label">
+                                    <i class="fas fa-calendar-check text-primary me-2"></i>Fim da Vigência *
+                                </label>
+                                <input type="datetime-local" 
+                                       class="form-control" 
+                                       id="vigencia_fim" 
+                                       name="vigencia_fim" 
+                                       value="{{ vigencia_fim_formatted }}"
+                                       required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h6 class="mb-3"><i class="fas fa-users text-primary me-2"></i>Segmentação</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Quem deve receber esta oferta? *</label>
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="tipo_segmentacao" 
+                                       id="tipo_todos" 
+                                       value="todos_canal"
+                                       {% if not oferta or oferta.tipo_segmentacao == 'todos_canal' %}checked{% endif %}>
+                                <label class="form-check-label" for="tipo_todos">
+                                    <i class="fas fa-broadcast-tower text-success me-2"></i>
+                                    <strong>Todos os clientes do canal</strong>
+                                    <br><small class="text-muted">Enviar para todos os clientes ativos com token de push</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="tipo_segmentacao" 
+                                       id="tipo_grupo" 
+                                       value="grupo_customizado"
+                                       {% if oferta and oferta.tipo_segmentacao == 'grupo_customizado' %}checked{% endif %}>
+                                <label class="form-check-label" for="tipo_grupo">
+                                    <i class="fas fa-user-tag text-warning me-2"></i>
+                                    <strong>Grupo customizado</strong>
+                                    <br><small class="text-muted">Enviar apenas para clientes de um grupo específico</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="grupo-select-container" style="display: none;">
+                            <label for="grupo_id" class="form-label">
+                                <i class="fas fa-layer-group text-primary me-2"></i>Selecione o Grupo *
+                            </label>
+                            <select class="form-select" id="grupo_id" name="grupo_id">
+                                <option value="">Selecione um grupo...</option>
+                                {% for grupo in grupos %}
+                                <option value="{{ grupo.id }}" {% if oferta and oferta.grupo_id == grupo.id %}selected{% endif %}>
+                                    {{ grupo.nome }} {% if grupo.descricao %}({{ grupo.descricao|truncatewords:5 }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                {% if not grupos %}
+                                <span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Nenhum grupo disponível. Crie grupos no portal admin.</span>
+                                {% else %}
+                                Oferta será enviada apenas para clientes deste grupo
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="ativo" 
+                                       name="ativo"
+                                       {% if not oferta or oferta.ativo %}checked{% endif %}>
+                                <label class="form-check-label" for="ativo">
+                                    <i class="fas fa-toggle-on text-success me-2"></i>Oferta Ativa
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Somente ofertas ativas podem ser disparadas
+                            </small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar
+                            </button>
+                            <a href="{% url 'lojista:ofertas_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Instruções
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Título e datas são obrigatórios
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Data fim deve ser posterior à data início
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Ofertas inativas não podem ser disparadas
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            O disparo envia push para todos os clientes
+                        </li>
+                        <li>
+                            <i class="fas fa-check text-success me-2"></i>
+                            Você pode editar ofertas já criadas
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if oferta %}
+            <div class="card mt-3">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Informações
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>ID:</strong> #{{ oferta.id }}
+                    </p>
+                    <p class="mb-2">
+                        <strong>Criado em:</strong><br>
+                        {{ oferta.created_at|date:"d/m/Y H:i" }}
+                    </p>
+                    {% if oferta.updated_at %}
+                    <p class="mb-0">
+                        <strong>Atualizado em:</strong><br>
+                        {{ oferta.updated_at|date:"d/m/Y H:i" }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-oferta');
+    const vigenciaInicio = document.getElementById('vigencia_inicio');
+    const vigenciaFim = document.getElementById('vigencia_fim');
+    const radioTodos = document.getElementById('tipo_todos');
+    const radioGrupo = document.getElementById('tipo_grupo');
+    const grupoContainer = document.getElementById('grupo-select-container');
+    const grupoSelect = document.getElementById('grupo_id');
+    
+    // Função para mostrar/ocultar select de grupos
+    function toggleGrupoSelect() {
+        if (radioGrupo.checked) {
+            grupoContainer.style.display = 'block';
+            grupoSelect.required = true;
+        } else {
+            grupoContainer.style.display = 'none';
+            grupoSelect.required = false;
+        }
+    }
+    
+    // Executar ao carregar
+    toggleGrupoSelect();
+    
+    // Listeners nos radios
+    radioTodos.addEventListener('change', toggleGrupoSelect);
+    radioGrupo.addEventListener('change', toggleGrupoSelect);
+    
+    // Validação de datas
+    form.addEventListener('submit', function(e) {
+        const inicio = new Date(vigenciaInicio.value);
+        const fim = new Date(vigenciaFim.value);
+        
+        if (fim <= inicio) {
+            e.preventDefault();
+            alert('A data de fim deve ser posterior à data de início!');
+            vigenciaFim.focus();
+            return;
+        }
+        
+        // Validar grupo se segmentação customizada
+        if (radioGrupo.checked && !grupoSelect.value) {
+            e.preventDefault();
+            alert('Selecione um grupo para segmentação customizada!');
+            grupoSelect.focus();
+        }
+    });
+});
+</script>
+{% endblock %}

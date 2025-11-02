@@ -1,0 +1,197 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Histórico de Revisões - Antifraude{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-table {
+        font-size: 0.9rem;
+    }
+    .decision-aprovado {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .decision-reprovado {
+        color: #dc3545;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:antifraude_dashboard' %}" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i> Voltar ao Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <i class="fas fa-history me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0 d-inline">Histórico de Revisões</h1>
+        </div>
+        <span class="badge bg-info" style="font-size: 1.1rem;">
+            {{ total }} Revisõe{{ total|pluralize }}
+        </span>
+    </div>
+</div>
+
+<div class="container-fluid mt-4">
+    {% if erro_conexao %}
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Erro de Conexão:</strong> Não foi possível conectar ao Risk Engine.
+    </div>
+    {% endif %}
+
+    <!-- Filtros -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <i class="fas fa-filter me-2"></i>
+            <strong>Filtros</strong>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{% url 'portais_admin:antifraude_historico' %}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Registros por página</label>
+                        <select name="limit" class="form-select" onchange="this.form.submit()">
+                            <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+                            <option value="200" {% if limit == 200 %}selected{% endif %}>200</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-secondary w-100" onclick="window.location.reload()">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if total == 0 %}
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        Nenhuma revisão encontrada.
+    </div>
+    {% else %}
+    <!-- Tabela de Histórico -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-table me-2"></i>
+            <strong>Revisões Realizadas</strong>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped history-table mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Transação</th>
+                            <th>CPF</th>
+                            <th>Valor</th>
+                            <th>Score</th>
+                            <th>Decisão Final</th>
+                            <th>Revisado Por</th>
+                            <th>Data Revisão</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for revisao in revisoes %}
+                        <tr>
+                            <td>{{ revisao.id }}</td>
+                            <td>
+                                <code>{{ revisao.transacao_id }}</code>
+                            </td>
+                            <td>{{ revisao.cpf }}</td>
+                            <td class="text-end">
+                                <strong>R$ {{ revisao.valor }}</strong>
+                            </td>
+                            <td class="text-center">
+                                {% if revisao.score_risco >= 80 %}
+                                <span class="badge bg-danger">{{ revisao.score_risco }}</span>
+                                {% elif revisao.score_risco >= 60 %}
+                                <span class="badge bg-warning text-dark">{{ revisao.score_risco }}</span>
+                                {% else %}
+                                <span class="badge bg-success">{{ revisao.score_risco }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if revisao.decisao_final == 'APROVADO' %}
+                                <span class="decision-aprovado">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    APROVADO
+                                </span>
+                                {% else %}
+                                <span class="decision-reprovado">
+                                    <i class="fas fa-times-circle me-1"></i>
+                                    REPROVADO
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <i class="fas fa-user me-1"></i>
+                                ID: {{ revisao.revisado_por }}
+                            </td>
+                            <td>
+                                <small>{{ revisao.revisado_em|date:"d/m/Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ revisao.observacao|default:"-"|truncatewords:10 }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <small>
+                <i class="fas fa-info-circle me-1"></i>
+                Exibindo {{ revisoes|length }} de {{ total }} revisões
+            </small>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estatísticas Rápidas -->
+    {% if total > 0 %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    <strong>Estatísticas</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h3 class="text-success">{{ revisoes|length }}</h3>
+                            <small class="text-muted">Revisões nesta página</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h3 class="text-info">{{ total }}</h3>
+                            <small class="text-muted">Total de revisões</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h3 class="text-warning">{{ limit }}</h3>
+                            <small class="text-muted">Limite por página</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

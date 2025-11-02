@@ -1,0 +1,160 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+{% load dashboard_filters %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block navbar_actions %}
+<span class="navbar-text text-light">
+    <i class="fas fa-clock me-1"></i>
+    {{ "now"|date:"d/m/Y H:i" }}
+</span>
+{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-tachometer-alt me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Dashboard</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+
+    <!-- Estatísticas Principais -->
+    <div class="row mb-4">
+        <div class="col-12 col-md-6 mb-3">
+            <div class="stats-card stats-card-hoje">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="stats-value">{{ transacoes_hoje|format_number }}</div>
+                        <p class="stats-label">Transações<br><small>Hoje</small></p>
+                    </div>
+                    <div class="text-success stats-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 mb-3">
+            <div class="stats-card stats-card-valor-hoje">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="stats-value">{{ valor_hoje|format_currency }}</div>
+                        <p class="stats-label">Volume Financeiro<br><small>Hoje</small></p>
+                    </div>
+                    <div class="text-warning stats-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12 col-md-6 mb-3">
+            <div class="stats-card stats-card-mes">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="stats-value">{{ transacoes_mes|format_number }}</div>
+                        <p class="stats-label">Transações<br><small>Mês</small></p>
+                    </div>
+                    <div class="text-primary stats-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 mb-3">
+            <div class="stats-card stats-card-valor-mes">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="stats-value">{{ valor_mes|format_currency }}</div>
+                        <p class="stats-label">Volume Financeiro<br><small>Mês</small></p>
+                    </div>
+                    <div class="text-info stats-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações do Usuário -->
+    <div class="row">
+        <div class="col-12">
+            <div class="welcome-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-2">
+                            <i class="fas fa-user-circle me-2 text-success"></i>
+                            Bem-vindo, {{ usuario.nome }}!
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Status:</strong><br>
+                                <span class="badge bg-success">Ativo</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Último acesso:</strong><br>
+                                {% if usuario.ultimo_login %}
+                                    <span class="text-muted">{{ usuario.ultimo_login|date:"d/m/Y H:i" }}</span>
+                                {% else %}
+                                    <span class="text-muted">Primeiro acesso</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Exibir Permissões Dinâmicas -->
+                        <div class="mt-3">
+                            <h6><i class="fas fa-key me-1"></i> Suas Permissões:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Portais:</strong><br>
+                                    {% for portal, info in resumo_permissoes.portais.items %}
+                                        <span class="badge bg-primary me-1">{{ portal|title }} ({{ info.nivel_acesso }})</span>
+                                    {% empty %}
+                                        <span class="text-muted">Nenhum portal configurado</span>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Vínculos de Acesso:</strong><br>
+                                    {% for tipo, ids in resumo_permissoes.vinculos.items %}
+                                        <div class="mb-1">
+                                            <small class="text-muted">{{ tipo|title }}:</small>
+                                            {% for id in ids %}
+                                                <span class="badge bg-secondary me-1">{{ id }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% empty %}
+                                        <span class="text-muted">Acesso global</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if eh_admin_total %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="fas fa-crown me-1"></i>
+                            Você tem acesso total ao sistema, incluindo parâmetros e configurações avançadas.
+                        </div>
+                        {% elif eh_admin_canal %}
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <i class="fas fa-building me-1"></i>
+                            Seu acesso está restrito aos canais configurados acima.
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-success" style="font-size: 4rem; opacity: 0.1;">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Grupos de Segmentação - Portal Admin{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:dashboard' %}" class="btn btn-outline-light me-2">
+    <i class="fas fa-arrow-left me-1"></i>
+    Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-layer-group me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Grupos de Segmentação</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-list me-2"></i>
+                    Lista de Grupos
+                    <a href="{% url 'portais_admin:grupos_create' %}" class="btn btn-sm btn-success ms-2">
+                        <i class="fas fa-plus me-1"></i>Novo Grupo
+                    </a>
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th style="width: 60px;">ID</th>
+                                <th>Nome</th>
+                                <th>Canal</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Clientes</th>
+                                <th>Status</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in grupos_com_total %}
+                            <tr>
+                                <td class="align-middle">
+                                    <span class="badge bg-primary">#{{ item.grupo.id }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <strong>{{ item.grupo.nome }}</strong>
+                                </td>
+                                <td class="align-middle">
+                                    <span class="badge bg-info">Canal {{ item.grupo.canal_id }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <small class="text-muted">{{ item.grupo.descricao|default:"-"|truncatewords:10 }}</small>
+                                </td>
+                                <td class="align-middle">
+                                    {% if item.grupo.criterio_tipo == 'manual' %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-hand-pointer me-1"></i>Manual
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-robot me-1"></i>Automático
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle text-center">
+                                    <a href="{% url 'portais_admin:grupos_clientes' item.grupo.id %}" 
+                                       class="badge bg-info" style="text-decoration: none;">
+                                        <i class="fas fa-users me-1"></i>{{ item.total_clientes }}
+                                    </a>
+                                </td>
+                                <td class="align-middle">
+                                    {% if item.grupo.ativo %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Ativo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Inativo
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle text-center">
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <a href="{% url 'portais_admin:grupos_edit' item.grupo.id %}" 
+                                           class="btn btn-sm btn-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'portais_admin:grupos_clientes' item.grupo.id %}" 
+                                           class="btn btn-sm btn-info" title="Gerenciar Clientes">
+                                            <i class="fas fa-users"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>Nenhum grupo cadastrado</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

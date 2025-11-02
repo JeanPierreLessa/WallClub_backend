@@ -1,0 +1,246 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Novo Canal{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-building me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">Novo Canal</h1>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+            </li>
+            <li class="breadcrumb-item active">Novo Canal</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building me-2"></i>
+                        Informações do Canal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nome" class="form-label">
+                                    <i class="fas fa-building me-1"></i>
+                                    Nome do Canal *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="nome" 
+                                       name="nome" 
+                                       required
+                                       placeholder="Ex: WALL, A CLUB"
+                                       value="{{ request.POST.nome|default:'' }}">
+                                <div class="form-text">Nome identificador do canal</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="cnpj" class="form-label">
+                                    <i class="fas fa-id-card me-1"></i>
+                                    CNPJ
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="cnpj" 
+                                       name="cnpj" 
+                                       placeholder="00.000.000/0000-00"
+                                       value="{{ request.POST.cnpj|default:'' }}">
+                                <div class="form-text">CNPJ do canal</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="descricao" class="form-label">
+                                    <i class="fas fa-align-left me-1"></i>
+                                    Descrição
+                                </label>
+                                <textarea class="form-control" 
+                                          id="descricao" 
+                                          name="descricao" 
+                                          rows="3"
+                                          placeholder="Descrição detalhada do canal">{{ request.POST.descricao|default:'' }}</textarea>
+                                <div class="form-text">Descrição opcional do canal</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    Username
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="username" 
+                                       name="username" 
+                                       placeholder="usuário do sistema"
+                                       value="{{ request.POST.username|default:'' }}">
+                                <div class="form-text">Nome de usuário para acesso</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="keyvalue" class="form-label">
+                                    <i class="fas fa-key me-1"></i>
+                                    Key Value
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="keyvalue" 
+                                       name="keyvalue" 
+                                       placeholder="chave de acesso"
+                                       value="{{ request.POST.keyvalue|default:'' }}">
+                                <div class="form-text">Chave de autenticação</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="canal" class="form-label">
+                                    <i class="fas fa-broadcast-tower me-1"></i>
+                                    Canal
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="canal" 
+                                       name="canal" 
+                                       placeholder="identificador do canal"
+                                       value="{{ request.POST.canal|default:'' }}">
+                                <div class="form-text">Identificador técnico</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="codigo_cliente" class="form-label">
+                                    <i class="fas fa-barcode me-1"></i>
+                                    Código Cliente
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="codigo_cliente" 
+                                       name="codigo_cliente" 
+                                       placeholder="código do cliente"
+                                       value="{{ request.POST.codigo_cliente|default:'' }}">
+                                <div class="form-text">Código identificador do cliente</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="marca" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>
+                                    Marca
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="marca" 
+                                       name="marca" 
+                                       placeholder="Ex: WALL, ACLUB"
+                                       maxlength="10"
+                                       value="{{ request.POST.marca|default:'' }}">
+                                <div class="form-text">Marca do canal (máx. 10 caracteres)</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="logo_pos" class="form-label">
+                                    <i class="fas fa-image me-1"></i>
+                                    Logo POS
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="logo_pos" 
+                                       name="logo_pos" 
+                                       placeholder="posição do logo"
+                                       maxlength="30"
+                                       value="{{ request.POST.logo_pos|default:'' }}">
+                                <div class="form-text">Posição do logo no POS</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="json_firebase" class="form-label">
+                                    <i class="fab fa-google me-1"></i>
+                                    JSON Firebase
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="json_firebase" 
+                                       name="json_firebase" 
+                                       placeholder="configuração firebase"
+                                       maxlength="100"
+                                       value="{{ request.POST.json_firebase|default:'' }}">
+                                <div class="form-text">Configuração Firebase</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="facebook_url" class="form-label">
+                                    <i class="fab fa-facebook me-1"></i>
+                                    Facebook URL
+                                </label>
+                                <input type="url" 
+                                       class="form-control" 
+                                       id="facebook_url" 
+                                       name="facebook_url" 
+                                       placeholder="https://facebook.com/..."
+                                       maxlength="100"
+                                       value="{{ request.POST.facebook_url|default:'' }}">
+                                <div class="form-text">URL da página no Facebook</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="facebook_token" class="form-label">
+                                    <i class="fab fa-facebook-square me-1"></i>
+                                    Facebook Token
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="facebook_token" 
+                                       name="facebook_token" 
+                                       placeholder="token de acesso do facebook"
+                                       value="{{ request.POST.facebook_token|default:'' }}">
+                                <div class="form-text">Token de acesso à API do Facebook</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'portais_admin:hierarquia_geral' %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-save me-1"></i>
+                                Criar Canal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}

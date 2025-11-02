@@ -1,0 +1,228 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Clientes - {{ grupo.nome }} - Portal Admin{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:grupos_list' %}" class="btn btn-outline-light me-2">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-users me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Gerenciar Clientes</h1>
+    </div>
+    <p class="text-muted mb-0">Grupo: <strong>{{ grupo.nome }}</strong> (Canal {{ grupo.canal_id }})</p>
+</div>
+
+<div class="container-fluid">
+    {% csrf_token %}
+    
+    <div class="row">
+        <!-- Adicionar Clientes -->
+        <div class="col-md-6">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Adicionar Cliente
+                </h5>
+                
+                <div class="mb-3">
+                    <label for="cliente_add" class="form-label">Selecione um cliente</label>
+                    <select class="form-select" id="cliente_add">
+                        <option value="">Selecione...</option>
+                        {% for cliente in clientes_disponiveis %}
+                        <option value="{{ cliente.id }}">
+                            {{ cliente.nome }} - CPF: {{ cliente.cpf }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">
+                        Mostrando até 100 clientes disponíveis do canal
+                    </small>
+                </div>
+                
+                <button type="button" class="btn btn-success" id="btn-adicionar">
+                    <i class="fas fa-plus me-2"></i>Adicionar
+                </button>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="col-md-6">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Estatísticas
+                </h5>
+                
+                <div class="alert alert-info">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">{{ total_clientes }}</h3>
+                            <small>Cliente(s) no grupo</small>
+                        </div>
+                        <div>
+                            <i class="fas fa-users fa-3x text-primary opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Clientes -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-list me-2"></i>
+                    Clientes no Grupo
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-success">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Email</th>
+                                <th>Adicionado em</th>
+                                <th style="width: 100px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientes-tbody">
+                            {% for item in clientes_grupo %}
+                            <tr data-cliente-id="{{ item.cliente.id }}">
+                                <td class="align-middle">
+                                    <span class="badge bg-primary">#{{ item.cliente.id }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <strong>{{ item.cliente.nome }}</strong>
+                                </td>
+                                <td class="align-middle">
+                                    {{ item.cliente.cpf }}
+                                </td>
+                                <td class="align-middle">
+                                    <small class="text-muted">{{ item.cliente.email|default:"-" }}</small>
+                                </td>
+                                <td class="align-middle">
+                                    <small>{{ item.vinculo.adicionado_em|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger btn-remover" 
+                                            data-cliente-id="{{ item.cliente.id }}"
+                                            data-cliente-nome="{{ item.cliente.nome }}"
+                                            title="Remover">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr id="empty-row">
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>Nenhum cliente no grupo</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnAdicionar = document.getElementById('btn-adicionar');
+    const selectCliente = document.getElementById('cliente_add');
+    const tbody = document.getElementById('clientes-tbody');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Adicionar cliente
+    btnAdicionar.addEventListener('click', function() {
+        const clienteId = selectCliente.value;
+        const clienteNome = selectCliente.options[selectCliente.selectedIndex].text;
+        
+        if (!clienteId) {
+            alert('Selecione um cliente');
+            return;
+        }
+        
+        fetch(`/portal_admin/grupos-segmentacao/{{ grupo.id }}/adicionar-cliente/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({cliente_id: clienteId})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                // Remover linha vazia se existir
+                const emptyRow = document.getElementById('empty-row');
+                if (emptyRow) emptyRow.remove();
+                
+                // Remover opção do select
+                selectCliente.remove(selectCliente.selectedIndex);
+                selectCliente.value = '';
+                
+                // Recarregar página para mostrar novo cliente
+                location.reload();
+            } else {
+                alert('Erro: ' + data.mensagem);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao adicionar cliente: ' + error.message);
+        });
+    });
+    
+    // Remover cliente
+    document.querySelectorAll('.btn-remover').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const clienteId = this.getAttribute('data-cliente-id');
+            const clienteNome = this.getAttribute('data-cliente-nome');
+            
+            if (!confirm(`Tem certeza que deseja remover ${clienteNome} do grupo?`)) {
+                return;
+            }
+            
+            fetch(`/portal_admin/grupos-segmentacao/{{ grupo.id }}/remover-cliente/${clienteId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    // Remover linha da tabela
+                    const row = this.closest('tr');
+                    row.remove();
+                    
+                    // Recarregar para atualizar lista
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.mensagem);
+                }
+            })
+            .catch(error => {
+                alert('Erro ao remover cliente: ' + error.message);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

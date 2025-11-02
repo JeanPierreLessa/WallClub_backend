@@ -1,0 +1,128 @@
+{% extends "portais/admin/base.html" %}
+{% load static %}
+{% load formatacao_tags %}
+
+{% block title %}Adicionar Lançamento Manual{% endblock %}
+
+{% block extra_css %}
+<!-- CSS específico da página -->
+{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-hand-holding-usd me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Adicionar Lançamento Manual</h1>
+    </div>
+</div>
+
+<!-- Mensagens -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Formulário -->
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="loja-info-card">
+                <div class="card-body">
+                    <form id="formLancamentoManual" method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="loja_id" class="form-label required-field">Loja</label>
+                                    <select class="form-select" id="loja_id" name="loja_id" required>
+                                        <option value="">Selecione uma loja...</option>
+                                        {% for loja in lojas %}
+                                            <option value="{{ loja.id }}">{{ loja.razao_social|default:"Loja sem nome" }} (ID: {{ loja.id }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="tipo_lancamento" class="form-label required-field">Tipo de Lançamento</label>
+                                    <select class="form-select" id="tipo_lancamento" name="tipo_lancamento" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="C">Crédito</option>
+                                        <option value="D">Débito</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="valor" class="form-label required-field">Valor</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control" id="valor" name="valor" required 
+                                               pattern="[0-9]+([,\.][0-9]{1,2})?" 
+                                               placeholder="0,00">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="motivo" class="form-label">Motivo</label>
+                                    <input type="text" class="form-control" id="motivo" name="motivo" maxlength="100" 
+                                           placeholder="Ex: Ajuste de saldo, Correção de erro...">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label required-field">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required 
+                                      placeholder="Descreva detalhadamente o motivo do lançamento manual..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacoes" name="observacoes" rows="3" 
+                                      placeholder="Observações adicionais (opcional)..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="referencia_externa" class="form-label">Referência Externa</label>
+                            <input type="text" class="form-control" id="referencia_externa" name="referencia_externa" 
+                                   maxlength="50" placeholder="Ex: Ticket #123, Protocolo ABC...">
+                            <div class="form-text">Referência para rastreabilidade (opcional)</div>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <a href="{% url 'portais_admin:lancamentos_manuais_list' %}" class="btn btn-secondary btn-colorido">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-colorido">
+                                <i class="fas fa-save me-1"></i> Salvar Lançamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/lancamento_manual_form.js' %}"></script>
+{% endblock %}

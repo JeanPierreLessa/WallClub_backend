@@ -1,0 +1,250 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Recebimentos - Portal Lojista{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        Recebimentos
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form id="filtroForm" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="data_inicio" class="form-label">Data Inicial</label>
+                                <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="data_fim" class="form-label">Data Final</label>
+                                <input type="date" class="form-control" id="data_fim" name="data_fim">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="nsu" class="form-label">NSU</label>
+                                <input type="text" class="form-control" id="nsu" name="nsu" placeholder="Digite o NSU">
+                            </div>
+                            {% if mostrar_filtro_loja %}
+                            <div class="col-md-3">
+                                <label for="loja" class="form-label">Loja</label>
+                                <select class="form-select" id="loja" name="loja">
+                                    <option value="todas">Todas as lojas</option>
+                                    {% for loja in lojas_acessiveis %}
+                                        <option value="{{ loja.id }}">{{ loja.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-search me-2">
+                                    <i class="fas fa-search me-1"></i>
+                                    Pesquisar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="d-none">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-3 fw-bold">Carregando recebimentos...</p>
+        </div>
+    </div>
+    
+    <!-- Resultados -->
+    <div class="row mt-4 d-none" id="resultados">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Resultados da Consulta
+                        <span id="totalRegistros" class="badge bg-light text-dark ms-2"></span>
+                    </h5>
+                    <div class="btn-group d-none" id="exportGroup">
+                        <button type="button" class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="true">
+                            <i class="fas fa-download me-1"></i>
+                            Exportar
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-formato="excel">
+                                <i class="fas fa-file-excel me-2 text-success"></i>Excel
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-formato="csv">
+                                <i class="fas fa-file-csv me-2 text-info"></i>CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-formato="pdf">
+                                <i class="fas fa-file-pdf me-2 text-danger"></i>PDF
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="resultadosRecebimentos">
+                        <!-- Conteúdo carregado via AJAX -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-3 mb-0">Exportando dados...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filtroForm');
+    const resultados = document.getElementById('resultados');
+    const loading = document.getElementById('loading');
+    const exportGroup = document.getElementById('exportGroup');
+    
+    // Definir datas do mês corrente
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    
+    // Formatar datas para YYYY-MM-DD
+    const dataInicio = primeiroDia.toISOString().split('T')[0];
+    const dataFim = ultimoDia.toISOString().split('T')[0];
+    
+    // Definir valores padrão nos campos
+    document.getElementById('data_inicio').value = dataInicio;
+    document.getElementById('data_fim').value = dataFim;
+    
+    // Carregar dados automaticamente após definir as datas
+    setTimeout(() => {
+        form.dispatchEvent(new Event('submit'));
+    }, 500);
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Mostrar loading
+        loading.classList.remove('d-none');
+        resultados.classList.add('d-none');
+        exportGroup.classList.add('d-none');
+        
+        const formData = new FormData(form);
+        
+        fetch('{% url "lojista:recebimentos" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            loading.classList.add('d-none');
+            
+            if (data.success && data.html) {
+                // Inserir HTML diretamente
+                document.getElementById('resultadosRecebimentos').innerHTML = data.html;
+                document.getElementById('totalRegistros').textContent = data.total + ' registros';
+                resultados.classList.remove('d-none');
+                
+                // Mostrar botão exportar se há dados
+                console.log('Total de registros:', data.total);
+                if (data.total > 0) {
+                    exportGroup.classList.remove('d-none');
+                } else {
+                    exportGroup.classList.add('d-none');
+                }
+            } else {
+                document.getElementById('resultadosRecebimentos').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${data.error || 'Erro ao carregar os dados. Tente novamente.'}
+                    </div>
+                `;
+                resultados.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            loading.classList.add('d-none');
+            console.error('Erro:', error);
+            document.getElementById('resultadosRecebimentos').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Erro ao carregar os dados. Tente novamente.
+                </div>
+            `;
+            resultados.classList.remove('d-none');
+        });
+    });
+    
+    // Exportação
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[data-formato]')) {
+            e.preventDefault();
+            
+            const formato = e.target.getAttribute('data-formato');
+            const formData = new FormData(form);
+            formData.append('formato', formato);
+            
+            // Criar form temporário para download
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.action = '{% url "lojista:recebimentos_export" %}';
+            
+            // Adicionar CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            tempForm.appendChild(csrfInput);
+            
+            // Adicionar dados do formulário
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'csrfmiddlewaretoken') {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    tempForm.appendChild(input);
+                }
+            }
+            
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            document.body.removeChild(tempForm);
+        }
+    });
+});
+</script>
+{% endblock %}

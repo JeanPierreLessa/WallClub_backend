@@ -1,0 +1,108 @@
+{% extends 'portais/admin/base_auth.html' %}
+
+{% block title %}Primeiro Acesso - WallClub{% endblock %}
+
+{% block content %}
+<div class="auth-header">
+    <div class="wallclub-logo">
+        <i class="fas fa-key"></i>
+    </div>
+    <h1>Primeiro Acesso</h1>
+    <p>Defina sua nova senha para ativar sua conta</p>
+</div>
+
+<div class="auth-body">
+    <p class="text-muted mb-4">
+        Para completar seu cadastro, digite sua senha temporária e defina uma nova senha.
+    </p>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label for="senha_temporaria" class="form-label">
+                <i class="fas fa-lock me-1"></i>
+                Senha Temporária
+            </label>
+            <input type="password" 
+                   class="form-control" 
+                   id="senha_temporaria" 
+                   name="senha_temporaria" 
+                   required
+                   placeholder="Digite a senha temporária recebida por email">
+        </div>
+        
+        <div class="mb-4">
+            <label for="nova_senha" class="form-label">
+                <i class="fas fa-key me-1"></i>
+                Nova Senha
+            </label>
+            <input type="password" 
+                   class="form-control" 
+                   id="nova_senha" 
+                   name="nova_senha" 
+                   required
+                   minlength="8"
+                   placeholder="Mínimo 8 caracteres">
+            <div class="form-text">
+                <small>A senha deve conter:<br>
+                • Mínimo 8 caracteres<br>
+                • Pelo menos 1 letra maiúscula<br>
+                • Pelo menos 1 letra minúscula<br>
+                • Pelo menos 1 número<br>
+                • Pelo menos 1 símbolo (!@#$%^&*()_+-=[]{}|;:,.<>?)</small>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label for="confirmar_senha" class="form-label">
+                <i class="fas fa-check me-1"></i>
+                Confirmar Nova Senha
+            </label>
+            <input type="password" 
+                   class="form-control" 
+                   id="confirmar_senha" 
+                   name="confirmar_senha" 
+                   required
+                   minlength="8"
+                   placeholder="Digite novamente a nova senha">
+        </div>
+        
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-save me-2"></i>
+                Definir Senha e Ativar Conta
+            </button>
+        </div>
+    </form>
+    
+    <div class="text-center mt-3">
+        <small class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Após definir sua senha, você poderá fazer login normalmente
+        </small>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const novaSenha = document.getElementById('nova_senha');
+    const confirmarSenha = document.getElementById('confirmar_senha');
+    
+    function validarSenhas() {
+        if (novaSenha.value && confirmarSenha.value) {
+            if (novaSenha.value !== confirmarSenha.value) {
+                confirmarSenha.setCustomValidity('As senhas não coincidem');
+            } else {
+                confirmarSenha.setCustomValidity('');
+            }
+        }
+    }
+    
+    novaSenha.addEventListener('input', validarSenhas);
+    confirmarSenha.addEventListener('input', validarSenhas);
+});
+</script>
+{% endblock %}
+{% endblock %}

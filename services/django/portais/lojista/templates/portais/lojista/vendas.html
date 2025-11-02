@@ -1,0 +1,282 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Vendas - Portal Lojista{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Vendas
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form id="filtroForm" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="data_inicio" class="form-label">Data Inicial</label>
+                                <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="data_fim" class="form-label">Data Final</label>
+                                <input type="date" class="form-control" id="data_fim" name="data_fim">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="nsu" class="form-label">NSU</label>
+                                <input type="text" class="form-control" id="nsu" name="nsu" placeholder="Digite o NSU">
+                            </div>
+                            {% if mostrar_filtro_loja %}
+                            <div class="col-md-3">
+                                <label for="loja" class="form-label">Loja</label>
+                                <select class="form-select" id="loja" name="loja">
+                                    <option value="todas">Todas as lojas</option>
+                                    {% for loja in lojas_acessiveis %}
+                                        <option value="{{ loja.id }}">{{ loja.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-search me-2">
+                                    <i class="fas fa-search me-1"></i>
+                                    Pesquisar
+                                </button>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <div class="form-check d-inline-block">
+                                    <input class="form-check-input" type="checkbox" id="incluir_tef" name="incluir_tef">
+                                    <label class="form-check-label" for="incluir_tef">
+                                        Incluir transações TEF
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resultados -->
+    <div class="row mt-4 d-none" id="resultados">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Resultados da Consulta
+                        <span id="totalRegistros" class="badge bg-light text-dark ms-2"></span>
+                    </h5>
+                    <div class="btn-group d-none" id="exportGroup">
+                        <button type="button" class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="true">
+                            <i class="fas fa-download me-1"></i>
+                            Exportar
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-formato="excel">
+                                <i class="fas fa-file-excel me-2 text-success"></i>Excel
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-formato="csv">
+                                <i class="fas fa-file-csv me-2 text-info"></i>CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-formato="pdf">
+                                <i class="fas fa-file-pdf me-2 text-danger"></i>PDF
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="resultadosVendas">
+                        <!-- Conteúdo carregado via AJAX -->
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading -->
+    <div class="row mt-4 d-none" id="loading">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2">Carregando dados...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Footer com observação -->
+<footer class="mt-4 text-center">
+    <small class="text-muted">Considera apenas transações aprovadas - var68 TRANS. APROVADO</small>
+</footer>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Garantir que o dropdown do botão exportar apareça por cima de tudo */
+#exportGroup {
+    position: relative !important;
+    z-index: 1060 !important;
+}
+
+#exportGroup .dropdown-menu {
+    z-index: 1061 !important;
+    position: absolute !important;
+}
+
+/* Garantir que a tabela não sobreponha o dropdown */
+.table-responsive {
+    position: relative;
+    z-index: 1;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filtroForm');
+    const resultados = document.getElementById('resultados');
+    const loading = document.getElementById('loading');
+    const exportGroup = document.getElementById('exportGroup');
+    
+    // Definir datas do mês corrente
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    
+    // Formatar datas para YYYY-MM-DD
+    const dataInicio = primeiroDia.toISOString().split('T')[0];
+    const dataFim = ultimoDia.toISOString().split('T')[0];
+    
+    // Definir valores padrão nos campos
+    document.getElementById('data_inicio').value = dataInicio;
+    document.getElementById('data_fim').value = dataFim;
+    
+    // Carregar dados automaticamente após definir as datas
+    setTimeout(() => {
+        form.dispatchEvent(new Event('submit'));
+    }, 500);
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Mostrar loading
+        loading.classList.remove('d-none');
+        resultados.classList.add('d-none');
+        exportGroup.classList.add('d-none');
+        
+        const formData = new FormData(form);
+        
+        fetch('{% url "lojista:vendas" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            loading.classList.add('d-none');
+            
+            if (data.success && data.html) {
+                // Inserir HTML diretamente
+                document.getElementById('resultadosVendas').innerHTML = data.html;
+                
+                // Atualizar informações de paginação
+                let textoRegistros = data.total + ' registros';
+                if (data.total_paginas > 1) {
+                    textoRegistros += ` (Página ${data.pagina_atual} de ${data.total_paginas})`;
+                }
+                document.getElementById('totalRegistros').textContent = textoRegistros;
+                
+                resultados.classList.remove('d-none');
+                
+                // Mostrar botão exportar se há dados
+                if (data.total > 0) {
+                    exportGroup.classList.remove('d-none');
+                    exportGroup.style.display = 'block';
+                } else {
+                    exportGroup.classList.add('d-none');
+                }
+            } else {
+                alert('Erro: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            loading.classList.add('d-none');
+            console.error('Erro:', error);
+            alert('Erro na consulta');
+        });
+    });
+    
+});
+
+// Função global para navegar entre páginas
+function navegarPagina(pagina) {
+    const form = document.getElementById('filtroForm');
+    const formData = new FormData(form);
+    formData.append('pagina', pagina);
+    
+    // Mostrar loading
+    const loading = document.getElementById('loading');
+    const resultados = document.getElementById('resultados');
+    loading.classList.remove('d-none');
+    resultados.classList.add('d-none');
+    
+    fetch('{% url "lojista:vendas" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loading.classList.add('d-none');
+        
+        if (data.success && data.html) {
+            document.getElementById('resultadosVendas').innerHTML = data.html;
+            
+            let textoRegistros = data.total + ' registros';
+            if (data.total_paginas > 1) {
+                textoRegistros += ` (Página ${data.pagina_atual} de ${data.total_paginas})`;
+            }
+            document.getElementById('totalRegistros').textContent = textoRegistros;
+            
+            resultados.classList.remove('d-none');
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        loading.classList.add('d-none');
+        console.error('Erro:', error);
+        alert('Erro na consulta');
+    });
+}
+
+// Função global para exportar dados (usa função comum)
+function exportarDados(formato) {
+    exportarDadosComum(formato, '{% url "lojista:vendas_export" %}');
+}
+
+// Event listener para botões de exportação
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar eventos de exportação usando função comum
+    inicializarEventosExportacao('{% url "lojista:vendas_export" %}');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Bloqueios de Segurança - Portal Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .badge-ativo-true { background-color: #dc3545; }
+    .badge-ativo-false { background-color: #6c757d; }
+    
+    .filtros-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-box {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-box h3 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: bold;
+    }
+    
+    .stats-box p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
+    }
+    
+    .form-criar-bloqueio {
+        background: #f8f9fa;
+        border: 2px solid #dc3545;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">🚫 Bloqueios de Segurança</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if erro_conexao or erro_api or erro_geral %}
+                <div class="alert alert-danger">
+                    <h4>❌ Erro ao conectar com Risk Engine</h4>
+                    <p>Não foi possível conectar ao sistema de bloqueios.</p>
+                    <p>Verifique se o container Risk Engine está rodando e tente novamente.</p>
+                </div>
+            {% else %}
+                
+                <!-- Estatísticas -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="stats-box">
+                            <h3>{{ total|default:0 }}</h3>
+                            <p>Total de Bloqueios (últimos {{ filtros.dias }} dias)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stats-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <h3>{{ bloqueios.paginator.count|default:0 }}</h3>
+                            <p>Resultados da Busca Atual</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formulário Criar Bloqueio -->
+                <div class="form-criar-bloqueio">
+                    <h4>➕ Criar Novo Bloqueio Manual</h4>
+                    <p class="text-muted">Use este formulário para bloquear manualmente um IP ou CPF suspeito.</p>
+                    
+                    <form method="POST" action="{% url 'portais_admin:criar_bloqueio' %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="tipo"><strong>Tipo *</strong></label>
+                                    <select name="tipo" id="tipo" class="form-control" required>
+                                        <option value="ip">🌐 IP</option>
+                                        <option value="cpf">👤 CPF</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="valor"><strong>Valor *</strong></label>
+                                    <input type="text" name="valor" id="valor" class="form-control" placeholder="Ex: 192.168.1.100 ou 12345678901" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="portal"><strong>Portal</strong></label>
+                                    <select name="portal" id="portal" class="form-control">
+                                        <option value="">Todos</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="lojista">Lojista</option>
+                                        <option value="vendas">Vendas</option>
+                                        <option value="app">App</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="motivo"><strong>Motivo *</strong></label>
+                                    <input type="text" name="motivo" id="motivo" class="form-control" placeholder="Ex: Tentativas de ataque" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-1">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-danger btn-block">🚫 Bloquear</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="filtros-card">
+                    <h4>🔎 Filtros</h4>
+                    <form method="GET" class="form-inline">
+                        <div class="form-group mr-3 mb-2">
+                            <label for="tipo_filtro" class="mr-2">Tipo:</label>
+                            <select name="tipo" id="tipo_filtro" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="ip" {% if filtros.tipo == 'ip' %}selected{% endif %}>IP</option>
+                                <option value="cpf" {% if filtros.tipo == 'cpf' %}selected{% endif %}>CPF</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mr-3 mb-2">
+                            <label for="ativo_filtro" class="mr-2">Status:</label>
+                            <select name="ativo" id="ativo_filtro" class="form-control">
+                                <option value="true" {% if filtros.ativo == 'true' %}selected{% endif %}>Ativos</option>
+                                <option value="false" {% if filtros.ativo == 'false' %}selected{% endif %}>Inativos</option>
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mr-3 mb-2">
+                            <label for="dias_filtro" class="mr-2">Período:</label>
+                            <select name="dias" id="dias_filtro" class="form-control">
+                                <option value="7" {% if filtros.dias == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                                <option value="30" {% if filtros.dias == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                                <option value="90" {% if filtros.dias == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                                <option value="365" {% if filtros.dias == '365' %}selected{% endif %}>Último ano</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary mb-2">🔍 Filtrar</button>
+                        <a href="{% url 'portais_admin:bloqueios_seguranca' %}" class="btn btn-secondary mb-2 ml-2">🔄 Limpar</a>
+                    </form>
+                </div>
+                
+                <!-- Tabela de Bloqueios -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Motivo</th>
+                                        <th>Portal</th>
+                                        <th>Bloqueado Por</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bloqueio in bloqueios %}
+                                    <tr>
+                                        <td>#{{ bloqueio.id }}</td>
+                                        <td>
+                                            {% if bloqueio.tipo == 'ip' %}
+                                                <span class="badge badge-info">🌐 IP</span>
+                                            {% else %}
+                                                <span class="badge badge-warning">👤 CPF</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><code>{{ bloqueio.valor }}</code></td>
+                                        <td>
+                                            <span title="{{ bloqueio.motivo }}">
+                                                {{ bloqueio.motivo|truncatewords:10 }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if bloqueio.portal %}
+                                                <span class="badge badge-secondary">{{ bloqueio.portal|upper }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Todos</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ bloqueio.bloqueado_por }}</td>
+                                        <td>
+                                            {% if bloqueio.ativo %}
+                                                <span class="badge badge-ativo-true">🔴 ATIVO</span>
+                                            {% else %}
+                                                <span class="badge badge-ativo-false">⚪ INATIVO</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>
+                                                <strong>Bloqueado:</strong> {{ bloqueio.bloqueado_em|slice:":19"|date:"d/m/Y H:i" }}<br>
+                                                {% if bloqueio.desbloqueado_em %}
+                                                    <strong>Desbloqueado:</strong> {{ bloqueio.desbloqueado_em|slice:":19"|date:"d/m/Y H:i" }}<br>
+                                                    <strong>Por:</strong> {{ bloqueio.desbloqueado_por }}
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">
+                                            Nenhum bloqueio encontrado com os filtros selecionados.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Paginação -->
+                        {% if bloqueios.has_other_pages %}
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                {% if bloqueios.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ bloqueios.previous_page_number }}&tipo={{ filtros.tipo }}&ativo={{ filtros.ativo }}&dias={{ filtros.dias }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item disabled">
+                                    <span class="page-link">Página {{ bloqueios.number }} de {{ bloqueios.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if bloqueios.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ bloqueios.next_page_number }}&tipo={{ filtros.tipo }}&ativo={{ filtros.ativo }}&dias={{ filtros.dias }}">Próxima</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

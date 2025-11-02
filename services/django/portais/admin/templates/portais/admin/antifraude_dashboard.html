@@ -1,0 +1,372 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Antifraude{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .metric-icon {
+        font-size: 2rem;
+        opacity: 0.3;
+        float: right;
+    }
+    .badge-pendente {
+        background-color: #ffc107;
+        color: #000;
+    }
+    .badge-aprovado {
+        background-color: #28a745;
+    }
+    .badge-reprovado {
+        background-color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block navbar_actions %}{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-shield-alt me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Dashboard Antifraude</h1>
+    </div>
+</div>
+
+<div class="container-fluid mt-4">
+    {% if metricas.erro_conexao %}
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Erro de Conexão:</strong> Não foi possível conectar ao Risk Engine. Verifique se o serviço está rodando na porta 8004.
+    </div>
+    {% endif %}
+
+    <!-- Período -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="btn-group" role="group">
+                <a href="?dias=1" class="btn btn-sm {% if dias_selecionado == 1 %}btn-primary{% else %}btn-outline-primary{% endif %}">Hoje</a>
+                <a href="?dias=7" class="btn btn-sm {% if dias_selecionado == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">7 dias</a>
+                <a href="?dias=30" class="btn btn-sm {% if dias_selecionado == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">30 dias</a>
+                <a href="?dias=90" class="btn btn-sm {% if dias_selecionado == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">90 dias</a>
+            </div>
+            <small class="text-muted ms-3">
+                Período: {{ metricas.periodo.data_inicio }} a {{ metricas.periodo.data_fim }}
+            </small>
+        </div>
+    </div>
+
+    <!-- Métricas Principais -->
+    <div class="row">
+        <!-- Pendentes -->
+        <div class="col-md-3">
+            <div class="metric-card bg-warning bg-gradient text-dark">
+                <i class="fas fa-clock metric-icon"></i>
+                <div class="metric-label">Pendentes Revisão</div>
+                <div class="metric-value">{{ metricas.pendentes.total }}</div>
+                <a href="{% url 'portais_admin:antifraude_pendentes' %}" class="btn btn-sm btn-dark mt-2">
+                    <i class="fas fa-eye me-1"></i> Ver Pendentes
+                </a>
+            </div>
+        </div>
+
+        <!-- Total Transações -->
+        <div class="col-md-3">
+            <div class="metric-card bg-info bg-gradient text-white">
+                <i class="fas fa-exchange-alt metric-icon"></i>
+                <div class="metric-label">Transações Analisadas</div>
+                <div class="metric-value">{{ metricas.transacoes.total }}</div>
+                <small class="text-white-50">
+                    Últimos {{ metricas.periodo.dias }} dias
+                </small>
+            </div>
+        </div>
+
+        <!-- Taxa Aprovação -->
+        <div class="col-md-3">
+            <div class="metric-card bg-success bg-gradient text-white">
+                <i class="fas fa-percentage metric-icon"></i>
+                <div class="metric-label">Taxa Aprovação</div>
+                <div class="metric-value">{{ metricas.decisoes.taxa_aprovacao }}%</div>
+                <small class="text-white-50">
+                    {{ metricas.decisoes.aprovadas }} de {{ metricas.decisoes.total }} aprovadas
+                </small>
+            </div>
+        </div>
+
+        <!-- Score Médio -->
+        <div class="col-md-3">
+            <div class="metric-card bg-danger bg-gradient text-white">
+                <i class="fas fa-chart-line metric-icon"></i>
+                <div class="metric-label">Score Médio de Risco</div>
+                <div class="metric-value">{{ metricas.scores.medio }}</div>
+                <small class="text-white-50">
+                    Mínimo: {{ metricas.scores.minimo }} | Máximo: {{ metricas.scores.maximo }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decisões e Performance -->
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    <strong>Decisões do Período</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h3 class="text-success">{{ metricas.decisoes.aprovadas }}</h3>
+                            <small class="text-muted">Aprovadas</small>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-danger">{{ metricas.decisoes.reprovadas }}</h3>
+                            <small class="text-muted">Reprovadas</small>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-warning">{{ metricas.decisoes.revisao }}</h3>
+                            <small class="text-muted">Revisão</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    <strong>Performance do Sistema</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-info">{{ metricas.performance.tempo_medio_ms }}ms</h3>
+                            <small class="text-muted">Tempo Médio</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-secondary">{{ metricas.performance.tempo_p95_ms }}ms</h3>
+                            <small class="text-muted">P95 (Percentil 95)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blacklist/Whitelist -->
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-ban me-2"></i>
+                    <strong>Blacklist</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4>{{ metricas.blacklist.total }}</h4>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col-4">
+                            <h4>{{ metricas.blacklist.ativos }}</h4>
+                            <small class="text-muted">Ativos</small>
+                        </div>
+                        <div class="col-4">
+                            <h4>{{ metricas.blacklist.bloqueios_periodo }}</h4>
+                            <small class="text-muted">Bloqueios</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Whitelist</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <h4>{{ metricas.whitelist.total }}</h4>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col-3">
+                            <h4>{{ metricas.whitelist.automaticas }}</h4>
+                            <small class="text-muted">Auto</small>
+                        </div>
+                        <div class="col-3">
+                            <h4>{{ metricas.whitelist.manuais }}</h4>
+                            <small class="text-muted">Manual</small>
+                        </div>
+                        <div class="col-3">
+                            <h4>{{ metricas.whitelist.vip }}</h4>
+                            <small class="text-muted">VIP</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transações por Origem e Top Regras -->
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-sitemap me-2"></i>
+                    <strong>Transações por Origem</strong>
+                </div>
+                <div class="card-body">
+                    {% if metricas.transacoes.por_origem %}
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for origem, total in metricas.transacoes.por_origem.items %}
+                                <tr>
+                                    <td><strong>{{ origem }}</strong></td>
+                                    <td class="text-end">{{ total }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted mb-0">Nenhuma transação no período</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Top Regras Acionadas</strong>
+                </div>
+                <div class="card-body">
+                    {% if metricas.regras_top %}
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for regra in metricas.regras_top %}
+                                <tr>
+                                    <td><strong>{{ regra.nome }}</strong></td>
+                                    <td class="text-end">
+                                        <span class="badge bg-warning text-dark">{{ regra.acionamentos }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted mb-0">Nenhuma regra acionada no período</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-bolt me-2"></i>
+                    <strong>Ações Rápidas</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <a href="{% url 'portais_admin:antifraude_pendentes' %}" class="btn btn-warning btn-lg">
+                                    <i class="fas fa-clipboard-list me-2"></i>
+                                    Revisar Pendentes ({{ metricas.total_pendentes }})
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <a href="{% url 'portais_admin:antifraude_historico' %}" class="btn btn-info btn-lg">
+                                    <i class="fas fa-history me-2"></i>
+                                    Ver Histórico
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <button class="btn btn-secondary btn-lg" onclick="window.location.reload()">
+                                    <i class="fas fa-sync-alt me-2"></i>
+                                    Atualizar Métricas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações do Sistema -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Informações do Risk Engine</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Status da Conexão</h6>
+                            {% if metricas.erro_conexao %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i>
+                                    Desconectado
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Conectado
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Endpoint</h6>
+                            <code>http://localhost:8004/api/antifraude</code>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <h6>Sobre o Sistema</h6>
+                            <p class="text-muted mb-0">
+                                O Risk Engine analisa transações em tempo real usando 5 regras antifraude configuráveis.
+                                Transações com score entre 60-79 são marcadas para revisão manual.
+                                Você pode aprovar ou reprovar essas transações diretamente neste portal.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

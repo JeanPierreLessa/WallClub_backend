@@ -1,0 +1,193 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Django Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .info-conta {
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border-left: 4px solid #417690;
+    }
+    .info-conta p {
+        margin: 5px 0;
+        font-size: 14px;
+    }
+    .info-conta strong {
+        color: #333;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+    .btn-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-primary {
+        background: #417690;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #356070;
+        color: white;
+    }
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background: #5a6268;
+        color: white;
+    }
+    .alert {
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+    .alert-warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+    }
+    .saldo-display {
+        font-size: 18px;
+        font-weight: bold;
+        color: #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{{ titulo }}</h1>
+    
+    <div class="info-conta">
+        <p><strong>Cliente ID:</strong> {{ conta.cliente_id }}</p>
+        <p><strong>CPF:</strong> {{ conta.cpf }}</p>
+        <p><strong>Canal:</strong> {{ conta.canal_id }}</p>
+        <p><strong>Saldo Atual:</strong> <span class="saldo-display">R$ {{ conta.saldo_atual|floatformat:2 }}</span></p>
+        <p><strong>Saldo Bloqueado:</strong> R$ {{ conta.saldo_bloqueado|floatformat:2 }}</p>
+        <p><strong>Saldo Disponível:</strong> <span class="saldo-display">R$ {{ conta.get_saldo_disponivel|floatformat:2 }}</span></p>
+    </div>
+    
+    {% if operacao == 'debitar' %}
+    <div class="alert alert-warning">
+        ⚠️ Atenção: Esta operação irá debitar o saldo da conta. Verifique o saldo disponível antes de continuar.
+    </div>
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="tipo_operacao">Tipo de Movimentação:</label>
+            <select name="tipo_operacao" id="tipo_operacao" required>
+                {% if operacao == 'creditar' %}
+                    {% for tipo in tipos_credito %}
+                    <option value="{{ tipo.codigo }}">{{ tipo.nome }} ({{ tipo.categoria }})</option>
+                    {% endfor %}
+                {% else %}
+                    {% for tipo in tipos_debito %}
+                    <option value="{{ tipo.codigo }}">{{ tipo.nome }} ({{ tipo.categoria }})</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="valor">Valor (R$):</label>
+            <input 
+                type="text" 
+                name="valor" 
+                id="valor" 
+                placeholder="0.00" 
+                required
+                pattern="^\d+([.,]\d{1,2})?$"
+                title="Digite um valor válido (ex: 100.00 ou 100,00)"
+            >
+            <small style="color: #666;">Use ponto ou vírgula para separar decimais</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="descricao">Descrição:</label>
+            <textarea 
+                name="descricao" 
+                id="descricao" 
+                placeholder="Motivo da operação manual"
+                required
+            ></textarea>
+        </div>
+        
+        <div class="btn-container">
+            <button type="submit" class="btn btn-primary">
+                {% if operacao == 'creditar' %}
+                💰 Confirmar Crédito
+                {% else %}
+                💸 Confirmar Débito
+                {% endif %}
+            </button>
+            <a href="/admin/conta_digital/contadigital/" class="btn btn-secondary">
+                ← Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Formatar input de valor
+    const valorInput = document.getElementById('valor');
+    valorInput.addEventListener('blur', function() {
+        let valor = this.value.replace(',', '.');
+        if (valor && !isNaN(valor)) {
+            this.value = parseFloat(valor).toFixed(2).replace('.', ',');
+        }
+    });
+    
+    // Converter vírgula para ponto antes de enviar
+    document.querySelector('form').addEventListener('submit', function() {
+        valorInput.value = valorInput.value.replace(',', '.');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,201 @@
+"""
+Mapeamentos de colunas compartilhados entre diferentes views do portal admin.
+Centraliza os nomes das colunas para evitar duplicação.
+"""
+
+def obter_mapeamento_colunas_completo():
+    """Retorna mapeamento completo de todas as colunas (mesmo do views_transacoes.py)"""
+    return {
+        "data_transacao": "Data da Transação",
+        "var0": "(0) Data da Transação",
+        "var1": "(1) Hora da Transação",
+        "var2": "(2) Cod Terminal",
+        "var3": "(3) Nome Terminal",
+        "var4": "(4) Cod Canal",
+        "var5": "(5) Nome Canal",
+        "var6": "(6) Cod Loja - Wall",
+        "var7": "(7) CPF Sócio WALL",
+        "var8": "(8) Forma de Pgto",
+        "var9": "(9) NSU Loja Uptal - Wall",
+        "var10": "(10) NOP Wall",
+        "var11": "(11) Valor da Venda Normal Loja (s/ Desconto - R$)",
+        "var12": "(12) Bandeira",
+        "var13": "(13) Núm. de Parcelas da Transação (para pagto cartão)",
+        "var14": "(14) Desconto / Acréscimo Cliente à Vista Wall (na Nota Fiscal) (%)",
+        "var15": "(15) Desconto / Acréscimo Wall p/ Clientes - Pgto. a Vista à Loja (R$)",
+        "var16": "(16) Valor da NF de Venda c/Desconto Wall (R$)",
+        "var17": "(17) Desconto /Acréscimo Wall p/ Clientes (Pgto. Parcelado) (%)",
+        "var18": "(18) Desconto/Acréscimo Wall p/ Clientes (Pagto Parcelado - R$)",
+        "var19": "(19) Valor da Venda c/ Cartão com Desconto / Acréscimo Wall (R$)",
+        "var20": "(20) Valor Parcela - Operação WaLL (R$)",
+        "var21": "(21) Tarifas Wall Cobradas Cliente (%)",
+        "var22": "(22) Tarifas Wall Cobradas Cliente (R$)",
+        "var23": "(23) Valor Pagto via PIX pela Wall - R$)",
+        "var24": "(24) Custo Loja p/Antecip. Pagto da Wall (em D+2 - % periodo)",
+        "var25": "(25) Custo Loja p/Antecip. Pagto da Wall (em D+2 - R$)",
+        "var26": "(26) Valor Total Debitado do Cliente Wall (no Cartão ou Pix - R$)",
+        "var27": "(27) Valor Normal de Venda (-) MDR - Custo Antecip. (R$)",
+        "var28": "(28) Taxa de Retenção Total no Perído - Venda Normal (%)",
+        "var29": "(29) Prazo Máximo Venda (Base Preço Atual)",
+        "var30": "(30) Recebido Líquido Base sem Wall (após Impostos R$)",
+        "var31": "(31) Alíquota Imposto Pago Venda (%)",
+        "var32": "(32) Imposto Devido sem Wall (R$)",
+        "var33": "(33) Imposto a Ser Pago c/ Wall (R$)",
+        "var34": "(34) Dif. Imposto Pago Normal x Wall (R$)",
+        "var35": "(35) Dif. Imposto Pago Normal x Wall (% s/ TPV))",
+        "var36": "(36) Valor MDR Wall (pago Loja) - %",
+        "var37": "(37) Valor MDR Wall (pago Loja) - R$",
+        "var38": "(38) Valor Venda c/ Wall deduzido MDR Wall (R$)",
+        "var39": "(39) Taxa Antec. Wall (%a.m.)",
+        "var40": "(40) Taxa Antec. Wall Período (%)",
+        "var41": "(41) Custo Antec. Wall Período (R$)",
+        "var42": "(42) Valor Previsto Repasse Loja (R$)",
+        "var43": "(43) Data Prev. Pgto. Repasse",
+        "var44": "(44) Valor pago Repasse Loja (R$)",
+        "var45": "(45) Data Realiz. Pagto Repasse Loja",
+        "var46": "(46) Valor Repasse p/ Equal. Mínimo Loja (R$)",
+        "var47": "(47) Divisão Ganho tributario (% loja)",
+        "var48": "(48) Divisão resultado Wall (% Loja)",
+        "var49": "(49) Valor Rebate Tipo 1 (Desp. Equaliz. Valor Mínimo_R$)",
+        "var50": "(50) Valor Rebate Wall - Tipo 1 (%)",
+        "var51": "(51) Valor Rebate Wall - Tipo 2 (R$)",
+        "var52": "(52) Valor Rebate Wall - Tipo 2 (%)",
+        "var53": "(53) Valor Rebate Wall - Tipo 3 (%)",
+        "var54": "(54) Valor Rebate Wall - Tipo 3 (R$)",
+        "var55": "(55) Valor Rebate Total Wall a Pagar (R$)",
+        "var56": "(56) Valor Rebate Total Wall a Pagar (%)",
+        "var57": "(57) Data Prev Pagto Rebate Total",
+        "var58": "(58) Valor Rebate Total Wall Pago (R$)",
+        "var59": "(59) Data Realiz Pagto Rebate Total",
+        "var60": "(60) Valor Total a Receber Loja (Repasse + Rebate - R$)",
+        "var60_A": "(60A) Valor Total Recebido Loja (Repasse + Rebate - R$)",
+        "var61": "(61) Valor Líquido Total a Receber Loja (c/ rebate Wall após impostos) - R$",
+        "var61_A": "(61A) Valor Líquido Total Recebido Loja (c/ rebate Wall após impostos) - R$",
+        "var62": "(62) Dif. A Receber Líquido c/Wall x a Receber Liq s/Wall (R$)",
+        "var63": "(63) Dif. A Receber Líquido c/Wall x a Receber Liq s/Wall (% s/ Valor Venda Normal)",
+        "var64": "(64) Dif. A Receber Líquido c/Wall x a Receber Liq s/Wall (% s/ Valor a Receber Líquido s/ wall)",
+        "var65": "(65) Dif. Valor Pago Rebate (Prev. X Real - R$)",
+        "var66": "(66) Motivo Difer.Pagto Rebate Wall",
+        "var67": "(67) Split",
+        "var68": "(68) Status da Transação Uptal",
+        "var69": "(69) Status do Pagamento Uptal",
+        "var70": "(70) Data de Cancelamento Uptal",
+        "var71": "(71) Motivo Cancelamento",
+        "var72": "(72) Taxa de Serviço Wall (%)",
+        "var73": "(73) Taxa de Serviço Wall (R$)",
+        "var74": "(74) Taxa de Risco Wall (%)",
+        "var75": "(75) Taxa de Risco (R$)",
+        "var76": "(76) Total Tarifas Wall (%)",
+        "var77": "(77) Total Tarifas Wall (R$)",
+        "var78": "(78) Repasse de Custo Operadora Cartão - Antecipação (% a.m.)",
+        "var79": "(79) Repasse de Custo Operadora Cartão - Antecipação (% período)",
+        "var80": "(80) Repasse de Custo Operadora Cartão - (R$)",
+        "var81": "(81) Valor do Pagto à Loja Solicitado p/Cliente à Wall (Valor NF - R$)",
+        "var82": "(82) Valor Total débitado Cliente c/ taxas Wall (no Pix ou Cartão - R$)",
+        "var83": "(83) Desconto/Acréscimo Cliente pagto a Vista (%)",
+        "var84": "(84) Desconto/Acréscimo Cliente pagto a Vista (R$)",
+        "var85": "(85) Desconto Cliente pagto Parcelado (%)",
+        "var86": "(86) Desconto Cliente pagto Parcelado (R$)",
+        "var87": "(87) MDR a Pagar Uptal (%)",
+        "var88": "(88) MDR a Pagar Uptal (R$)",
+        "var89": "(89) MDR Pago Uptal (%)",
+        "var90": "(90) MDR Pago Uptal (R$)",
+        "var91": "(91) Taxa Antecipaçãoa pagar Uptal (%a.m.)",
+        "var92": "(92) Taxa Antecipação paga Uptal (%a.m.)",
+        "var93": "(93) Taxa Antecipação a pagar Uptal (% Período)",
+        "var93_A": "(93A) Taxa Antecipação paga à Uptal (% Período)",
+        "var94": "(94) Custo Antecipação a pagar Uptal(R$)",
+        "var94_A": "(94A) Custo Antecipação pago à Uptal(R$)",
+        "var94_B": "(94B) Dif. Custo Antecipação pago x a pagar Uptal(R$)",
+        "var95": "(95) Valor a Receber Uptal (após MDR-e Antec. (R$)",
+        "var96": "(96) Data Prevista Recebimento p/ Wall",
+        "var97": "(97) Data Realizado recebimento",
+        "var98": "(98) Valor Recebido Uptal (após MDR-e Antec. (R$)",
+        "var99": "(99) Dif. Valor Recebido x Valor a Receber (R$)",
+        "var100": "(100) Motivo Dif. Valor a Rec x Valor Recebido",
+        "var101": "(101) Valor Repassado à Loja (R$)",
+        "var102": "(102) Dif. Valor recebido x Valor Repassado a Loja (R$):",
+        "var103": "(103) Receita Gestão de Pagamentos Prevista (R$)",
+        "var103_A": "(103A) Receita Gestão de Pagamentos Realizada (R$)",
+        "var104": "(104) Receita MDR Cobrado Loja(R$)",
+        "var105": "(105) Receita Serviços Cliente (R$)",
+        "var106": "(106) Receita Provisão Fraudes (R$):",
+        "var107": "(107) Receita Total Wall Prevista(R$)",
+        "var107_A": "(107A) Receita Total Wall Realizada(R$)",
+        "var108": "(108) Impostos a Pagar Wall (%)",
+        "var109": "(109) Impostos a Pagar Wall (R$)",
+        "var109_A": "(109A) Impostos Pagos Wall (R$)",
+        "var110": "(110) Despesa Provisão Charge Back / Fraude (%)",
+        "var111": "(111) Despesa Charge Back / Fraude Prevista (R$)",
+        "var111_A": "(111A) Despesa Charge Back / Fraude Realizada (R$)",
+        "var111_B": "(111B) Dif. Previsão x Realizado Chargeback (R$)",
+        "var112": "(112) Ajuste Cobrado Uptal (R$)",
+        "var112_A": "(112A) Total Despesas Previstas (R$)",
+        "var112_B": "(112B) Total Despesas Realizadas (R$)",
+        "var113": "(113) Resultado Operacional Wall Previsto (R$)",
+        "var113_A": "(113A) Resultado Operacional Wall Realizado (R$)",
+        "var114": "(114) Resultado Operação - Wall Previsto após impostos (R$)",
+        "var114_A": "(114A) Resultado Operação - Wall Realizado - após impostos (R$)",
+        "var115": "(115) Rebate Total Previsto (R$)",
+        "var115_A": "(115A) Rebate Total Pago (R$)",
+        "var116": "(116) Resultado Final - Wall - Previsto (após Rebate Loja - R$)",
+        "var116_A": "(116A) Resultado Final - Wall - Realizado (após Rebate Loja - R$)",
+        "var117": "(117) Resultado Final - Wall Previsto (% s/ Líquido antes Wall)",
+        "var117_A": "(117A) Resultado Final - Wall Realizado (% s/ Líquido antes Wall)",
+        "var118": "(118) Resultado Final - Wall Previsto (% s/ Valor Original Venda)",
+        "var118_A": "(118A) Resultado Final - Wall Realizado (% s/ Valor Original Venda)",
+        "var119": "(119) Conciliação pgto. Uptal",
+        "var120": "(120) Autorizacão pgto. repasse",
+        "var121": "(121) Status pgto. repasse EC",
+        "var122": "(122) Status pgto. Cashback a loja",
+        "var123": "(123) Autorizacão pgto. Cashback",
+        "var124": "(124) Valor Bruto Uptal (Oper. / Parcela)",
+        "var125": "(125) Diferença Valor Bruto (Uptal - Wall R$)",
+        "var126": "(126) Diferença MDR Cobrado Uptal x Prev Wall (R$)",
+        "var127": "(127) Diferença Taxa Antec. Cobrada Per. (%)",
+        "var128": "(128) Diferença Recebido Uptal x Valor a pagar EC (R$)",
+        "var129": "(129) CET",
+        "var130": "(130) Tipo Operação"
+    }
+
+def obter_mapeamento_colunas_rpr():
+    """Retorna mapeamento específico para tabela RPR"""
+    mapeamento_completo = obter_mapeamento_colunas_completo()
+    
+    # Campos específicos da tabela RPR
+    campos_rpr = [
+        'data_transacao', 'var68', 'var5', 'var6', 'var4', 'var11', 'var26', 
+        'var36', 'var37', 'var90', 'var39', 'var92', 'var40', 'var93_A', 
+        'var41', 'var15', 'var98', 'var101', 'var58', 'var111_A', 'var9', 
+        'var10', 'var8', 'var12', 'var13', 'var43'
+    ]
+    
+    return {campo: mapeamento_completo[campo] for campo in campos_rpr if campo in mapeamento_completo}
+
+def obter_colunas_monetarias_rpr():
+    """Retorna lista de colunas monetárias específicas da tabela RPR"""
+    return [
+        'var11', 'var26', 'var37', 'var90', 'var41', 'var15', 'var98', 
+        'var101', 'var58', 'var111_A'
+    ]
+
+def obter_colunas_monetarias_gestao_financeira():
+    """Retorna lista de colunas monetárias para gestão financeira (mesmo do views_transacoes.py)"""
+    return [
+        'var11', 'var15', 'var16', 'var18', 'var19', 'var20', 'var22', 'var23', 'var25', 'var26',
+        'var27', 'var30', 'var32', 'var33', 'var34', 'var37', 'var38', 'var41', 'var42', 'var44',
+        'var46', 'var49', 'var51', 'var54', 'var55', 'var58', 'var60_A', 'var61', 'var61_A',
+        'var62', 'var65', 'var73', 'var75', 'var77', 'var80', 'var81', 'var82', 'var84', 'var86',
+        'var88', 'var90', 'var94', 'var94_A', 'var94_B', 'var95', 'var98', 'var99', 'var101',
+        'var102', 'var103', 'var103_A', 'var104', 'var105', 'var106', 'var107', 'var107_A',
+        'var109', 'var109_A', 'var111_A', 'var111_B', 'var112', 'var112_A', 'var112_B',
+        'var113', 'var113_A', 'var114', 'var114_A', 'var115', 'var115_A', 'var116', 'var116_A',
+        'var124', 'var125', 'var126', 'var128'
+    ]
+
+def obter_colunas_percentuais_rpr():
+    """Retorna lista de colunas percentuais específicas da tabela RPR"""
+    return [
+        'variavel_nova_6', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 
+        'variavel_nova_14', 'variavel_nova_16'
+    ]

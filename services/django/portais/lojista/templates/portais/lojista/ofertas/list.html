@@ -1,0 +1,165 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Ofertas - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-gift me-2"></i>
+                            Ofertas e Promoções
+                            {% if ofertas_com_disparos %}
+                                <span class="badge bg-light text-dark ms-2">{{ ofertas_com_disparos|length }} oferta{{ ofertas_com_disparos|length|pluralize }}</span>
+                            {% endif %}
+                        </h4>
+                        <a href="{% url 'lojista:ofertas_create' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-2"></i>Nova Oferta
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if ofertas_com_disparos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center">ID</th>
+                                    <th>Título</th>
+                                    <th class="text-center">Vigência</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Disparos</th>
+                                    <th class="text-center">Último Disparo</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in ofertas_com_disparos %}
+                                <tr>
+                                    <td class="text-center"><strong>#{{ item.oferta.id }}</strong></td>
+                                    <td>
+                                        <strong>{{ item.oferta.titulo }}</strong>
+                                        {% if item.oferta.descricao %}
+                                        <br><small class="text-muted">{{ item.oferta.descricao|truncatewords:10 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                    <small>
+                                        <i class="fas fa-calendar-alt"></i> {{ item.oferta.vigencia_inicio|date:"d/m/Y H:i" }}<br>
+                                        <i class="fas fa-calendar-check"></i> {{ item.oferta.vigencia_fim|date:"d/m/Y H:i" }}
+                                    </small>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.oferta.ativo %}
+                                        <span class="badge bg-success">Ativa</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inativa</span>
+                                    {% endif %}
+                                    
+                                    {% if item.oferta.is_vigente %}
+                                        <br><span class="badge bg-info mt-1">Vigente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                    {% if item.total_disparos > 0 %}
+                                        <span class="badge bg-primary">{{ item.total_disparos }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.ultimo_disparo %}
+                                        <small>
+                                            {{ item.ultimo_disparo.data_disparo|date:"d/m/Y H:i" }}<br>
+                                            <span class="badge bg-{{ item.ultimo_disparo.status|yesno:'success,warning,danger' }}">
+                                                {{ item.ultimo_disparo.get_status_display }}
+                                            </span>
+                                        </small>
+                                    {% else %}
+                                        <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'lojista:ofertas_edit' item.oferta.id %}" 
+                                           class="btn btn-sm btn-warning" 
+                                           title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        {% if item.oferta.ativo %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-success btn-disparar" 
+                                                data-oferta-id="{{ item.oferta.id }}"
+                                                data-oferta-titulo="{{ item.oferta.titulo }}"
+                                                title="Disparar Push">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'lojista:ofertas_historico' item.oferta.id %}" 
+                                           class="btn btn-sm btn-info" 
+                                           title="Histórico">
+                                            <i class="fas fa-history"></i>
+                                        </a>
+                                    </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Nenhuma oferta cadastrada. <a href="{% url 'lojista:ofertas_create' %}" class="alert-link">Clique aqui</a> para criar a primeira oferta.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Disparo -->
+<div class="modal fade" id="modalDisparar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-paper-plane me-2"></i>Disparar Oferta
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja disparar a oferta <strong id="modal-oferta-titulo"></strong>?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    O push será enviado para todos os clientes elegíveis desta 
+                    <strong>{{ entidade_tipo|default:"loja" }}</strong>.
+                </div>
+                <div id="disparo-loading" class="text-center" style="display: none;">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Processando...</span>
+                    </div>
+                    <p class="mt-2">Processando disparo...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn-confirmar-disparo">
+                    <i class="fas fa-check me-2"></i>Confirmar Disparo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/ofertas-list.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Troca de Senha - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Confirmar Troca de Senha
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Token enviado por email!</strong><br>
+                        Verifique sua caixa de entrada e digite o token de confirmação abaixo.
+                        <br><small class="text-muted">O token é válido por 30 minutos.</small>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="token" class="form-label">
+                                <i class="fas fa-key me-1"></i>Token de Confirmação
+                            </label>
+                            <input type="text" class="form-control form-control-lg text-center" 
+                                   id="token" name="token" required 
+                                   placeholder="Digite o token recebido por email"
+                                   style="letter-spacing: 2px; font-family: monospace;">
+                            <small class="text-muted">
+                                Copie e cole o token exatamente como recebido no email
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check me-2"></i>
+                                Confirmar Alteração
+                            </button>
+                            
+                            <a href="{% url 'lojista:trocar_senha' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Voltar para Trocar Senha
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-question-circle me-1"></i>
+                            Não recebeu o email? Verifique sua pasta de spam ou 
+                            <a href="{% url 'lojista:trocar_senha' %}" class="text-decoration-none">
+                                solicite um novo token
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card-header.bg-warning {
+    border-bottom: 3px solid #ffc107;
+}
+
+.form-control-lg {
+    font-size: 1.25rem;
+    padding: 0.75rem 1rem;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+</style>
+{% endblock %}

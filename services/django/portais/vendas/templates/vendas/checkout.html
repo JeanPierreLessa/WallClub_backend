@@ -1,0 +1,476 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Fazer Pedido - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-shopping-cart me-2"></i>Fazer Pedido</h2>
+    <p class="text-muted mb-0">Realize vendas usando cartões salvos ou enviando link de pagamento</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados da Venda</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'vendas:checkout_processar' %}" id="formCheckout">
+                    {% csrf_token %}
+                    
+                    <!-- Loja (hidden) -->
+                    {% if lojas|length == 1 %}
+                        <input type="hidden" id="loja_id" name="loja_id" value="{{ lojas.0.id }}">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-store me-2"></i><strong>Loja:</strong> {{ lojas.0.razao_social }}
+                        </div>
+                    {% else %}
+                        <div class="mb-3">
+                            <label for="loja_id" class="form-label">Loja *</label>
+                            <select class="form-select" id="loja_id" name="loja_id" required>
+                                <option value="">Selecione a loja</option>
+                                {% for loja in lojas %}
+                                <option value="{{ loja.id }}">{{ loja.razao_social }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Buscar Cliente -->
+                    <div class="mb-3">
+                        <label for="documento" class="form-label">CPF/CNPJ do Cliente *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="documento" placeholder="Digite CPF ou CNPJ">
+                            <button class="btn btn-outline-secondary" type="button" id="btnBuscarCliente">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </div>
+                        <small class="text-muted">Cliente deve estar cadastrado</small>
+                    </div>
+                    
+                    <!-- Dados do Cliente (preenchidos após busca) -->
+                    <div id="dadosCliente" style="display: none;">
+                        <input type="hidden" id="cliente_id" name="cliente_id">
+                        <input type="hidden" id="tipo_cartao" name="tipo_cartao" value="">
+                        <input type="hidden" id="tem_cartoes" value="0">
+                        
+                        <div class="alert alert-success">
+                            <strong><i class="fas fa-user me-2"></i><span id="clienteNome"></span></strong><br>
+                            <small><span id="clienteEmail"></span> | <span id="clienteCelular"></span></small>
+                        </div>
+                        
+                        <!-- Pulldown de Cartões (aparece se houver cartões) -->
+                        <div class="mb-3" id="divCartoes" style="display: none;">
+                            <label for="forma_pagamento" class="form-label">Forma de Pagamento *</label>
+                            <select class="form-select" id="forma_pagamento" name="forma_pagamento">
+                                <option value="">Selecione</option>
+                                <!-- Cartões serão adicionados via JS -->
+                                <option value="novo_cartao">💳 Enviar link de pagamento</option>
+                            </select>
+                            <small class="text-muted">Cartões salvos aparecem primeiro. Escolha "Usar novo cartão" para enviar link ao cliente.</small>
+                        </div>
+                        
+                        <!-- Campos Novo Cartão (se selecionar "novo_cartao") -->
+                        <div class="mb-3" id="divNovoCartao" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-envelope me-2"></i>
+                                <strong>Link de Pagamento:</strong> O cliente receberá email com link seguro para preencher dados do cartão.
+                                <ul class="mb-0 mt-2" style="padding-left: 20px;">
+                                    <li>Link válido por 30 minutos</li>
+                                    <li>Cliente escolhe número de parcelas</li>
+                                    <li>Email enviado para: <strong><span id="emailClienteNovoCartao"></span></strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Info quando NÃO há cartões salvos -->
+                        <div class="mb-3" id="divSemCartoes" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Cliente sem cartões salvos.</strong> Um link de pagamento será enviado por email.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Valor -->
+                    <div class="mb-3">
+                        <label for="valor" class="form-label">Valor (R$) *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="valor" name="valor" placeholder="0,00" required>
+                            <button class="btn btn-primary" type="button" id="btnCalcularParcelas" disabled>
+                                <i class="fas fa-calculator me-2"></i>Calcular Parcelas
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Parcelas -->
+                    <div class="mb-3" id="divParcelas" style="display: none;">
+                        <label for="parcelas" class="form-label">Parcelas</label>
+                        <select class="form-select" id="parcelas" name="parcelas">
+                            <option value="">Calcule as parcelas primeiro (opcional)</option>
+                        </select>
+                        <div id="infoParcelamento" class="mt-2"></div>
+                        <small class="text-muted" id="mensagemCalculoOpcional">O cálculo de parcelas é opcional e serve apenas como referência</small>
+                    </div>
+                    
+                    <!-- Bandeira (hidden para cartão salvo - preenchido via JS) -->
+                    <input type="hidden" id="bandeira" name="bandeira">
+                    
+                    <!-- Valor Total da parcela selecionada (com desconto) -->
+                    <input type="hidden" id="valor_total_parcela" name="valor_total_parcela" value="">
+                    
+                    <!-- Descrição -->
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição da Venda *</label>
+                        <input type="text" class="form-control" id="descricao" name="descricao" placeholder="Ex: Produto X - Pedido #123" required>
+                    </div>
+                    
+                    <!-- Pedido Origem (opcional) -->
+                    <div class="mb-3">
+                        <label for="pedido_origem" class="form-label">ID do Pedido (opcional)</label>
+                        <input type="text" class="form-control" id="pedido_origem" name="pedido_origem" placeholder="Referência no seu sistema">
+                    </div>
+                    
+                    <!-- Código do Item (opcional) -->
+                    <div class="mb-3">
+                        <label for="cod_item_origem" class="form-label">Código/SKU do Item (opcional)</label>
+                        <input type="text" class="form-control" id="cod_item_origem" name="cod_item_origem" placeholder="Ex: SKU-12345, Produto-X">
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg" id="btnProcessar" disabled>
+                            <i class="fas fa-check-circle me-2"></i>Processar Pagamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Máscaras
+function mascaraValor(value) {
+    value = value.replace(/\D/g, '');
+    value = (parseInt(value) / 100).toFixed(2);
+    value = value.replace('.', ',');
+    value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    return value;
+}
+
+function mascaraCartao(value) {
+    return value
+        .replace(/\D/g, '')
+        .replace(/(\d{4})(?=\d)/g, '$1 ')
+        .trim();
+}
+
+function mascaraValidade(value) {
+    return value
+        .replace(/\D/g, '')
+        .replace(/(\d{2})(\d)/, '$1/$2')
+        .replace(/(\/\d{2})\d+?$/, '$1');
+}
+
+document.getElementById('valor').addEventListener('input', function(e) {
+    e.target.value = mascaraValor(e.target.value);
+    // Habilitar botão calcular quando tiver valor
+    const valor = parseFloat(e.target.value.replace(/\./g, '').replace(',', '.'));
+    document.getElementById('btnCalcularParcelas').disabled = !valor || valor <= 0;
+});
+
+
+// Controlar exibição baseado na seleção de forma de pagamento
+document.getElementById('forma_pagamento')?.addEventListener('change', function() {
+    const valorSelecionado = this.value;
+    const emailCliente = document.getElementById('clienteEmail').textContent;
+    const mensagemCalculoOpcional = document.getElementById('mensagemCalculoOpcional');
+    
+    // Esconder todos
+    document.getElementById('divNovoCartao').style.display = 'none';
+    
+    if (valorSelecionado === 'novo_cartao') {
+        // Novo cartão: mostrar info de link de pagamento
+        document.getElementById('divNovoCartao').style.display = 'block';
+        document.getElementById('emailClienteNovoCartao').textContent = emailCliente;
+        document.getElementById('tipo_cartao').value = 'enviar_link';
+        
+        // Esconder parcelas (cliente escolhe no link)
+        document.getElementById('divParcelas').style.display = 'none';
+        document.getElementById('btnCalcularParcelas').disabled = true;
+    } else if (valorSelecionado) {
+        // Cartão salvo selecionado
+        const opcao = this.options[this.selectedIndex];
+        const bandeira = opcao.dataset.bandeira;
+        
+        if (bandeira) {
+            document.getElementById('bandeira').value = bandeira;
+        }
+        document.getElementById('tipo_cartao').value = 'salvo';
+        
+        // Esconder mensagem de cálculo opcional quando cartão tokenizado selecionado
+        if (mensagemCalculoOpcional) {
+            mensagemCalculoOpcional.style.display = 'none';
+        }
+        
+        // Habilitar cálculo de parcelas
+        const valor = parseFloat(document.getElementById('valor').value.replace(/\./g, '').replace(',', '.'));
+        document.getElementById('btnCalcularParcelas').disabled = !valor || valor <= 0;
+    } else {
+        document.getElementById('tipo_cartao').value = '';
+        // Restaurar mensagem quando nada selecionado
+        if (mensagemCalculoOpcional) {
+            mensagemCalculoOpcional.style.display = 'inline';
+        }
+    }
+    
+    validarFormulario();
+});
+
+// Buscar cliente
+document.getElementById('btnBuscarCliente').addEventListener('click', function() {
+    const lojaId = document.getElementById('loja_id').value;
+    const documento = document.getElementById('documento').value.replace(/\D/g, '');
+    
+    if (!lojaId) {
+        alert('Selecione a loja primeiro');
+        return;
+    }
+    
+    if (!documento) {
+        alert('Digite o CPF ou CNPJ');
+        return;
+    }
+    
+    // Buscar via AJAX
+    fetch(`{% url 'vendas:ajax_buscar_cliente' %}?loja_id=${lojaId}&documento=${documento}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                // Preencher dados do cliente
+                document.getElementById('cliente_id').value = data.cliente.id;
+                document.getElementById('clienteNome').textContent = data.cliente.nome;
+                
+                // Montar texto: email | telefone (se houver)
+                let infoCliente = data.cliente.email;
+                if (data.cliente.telefone_obfuscado) {
+                    infoCliente += ' | Telefone: ' + data.cliente.telefone_obfuscado;
+                }
+                document.getElementById('clienteEmail').textContent = infoCliente;
+                
+                const temCartoes = data.cartoes && data.cartoes.length > 0;
+                document.getElementById('tem_cartoes').value = temCartoes ? '1' : '0';
+                
+                if (temCartoes) {
+                    // Cliente TEM cartões: mostrar pulldown com cartões + "Novo cartão"
+                    const selectFormaPgto = document.getElementById('forma_pagamento');
+                    selectFormaPgto.innerHTML = '<option value="">Selecione</option>';
+                    
+                    data.cartoes.forEach(cartao => {
+                        const option = document.createElement('option');
+                        option.value = `cartao_${cartao.id}`;
+                        option.dataset.cartaoId = cartao.id;
+                        option.dataset.bandeira = cartao.bandeira;
+                        
+                        // Formato: VISA - 4110 #### #### 6733 - Vencimento: MM/YYYY
+                        let texto = `${cartao.bandeira} - ${cartao.mascarado} - Vencimento: ${cartao.validade}`;
+                        option.textContent = texto;
+                        selectFormaPgto.appendChild(option);
+                    });
+                    
+                    // Adicionar opção "Enviar link de pagamento"
+                    const optionNovo = document.createElement('option');
+                    optionNovo.value = 'novo_cartao';
+                    optionNovo.textContent = '💳 Enviar link de pagamento';
+                    selectFormaPgto.appendChild(optionNovo);
+                    
+                    document.getElementById('divCartoes').style.display = 'block';
+                    document.getElementById('divSemCartoes').style.display = 'none';
+                } else {
+                    // Cliente SEM cartões: esconder campos de cartão, enviar link automaticamente
+                    document.getElementById('divCartoes').style.display = 'none';
+                    document.getElementById('divSemCartoes').style.display = 'block';
+                    document.getElementById('tipo_cartao').value = 'enviar_link';
+                    
+                    // Esconder botão calcular parcelas (não aplicável para link)
+                    document.getElementById('btnCalcularParcelas').disabled = true;
+                    document.getElementById('divParcelas').style.display = 'none';
+                }
+                
+                document.getElementById('dadosCliente').style.display = 'block';
+                validarFormulario();
+            } else {
+                alert(data.mensagem);
+                document.getElementById('dadosCliente').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao buscar cliente');
+        });
+});
+
+// Código removido - agora controle é via forma_pagamento
+
+
+// Botão Calcular Parcelas
+document.getElementById('btnCalcularParcelas').addEventListener('click', function() {
+    const lojaId = document.getElementById('loja_id').value;
+    const valorStr = document.getElementById('valor').value.replace(/\./g, '').replace(',', '.');
+    const valor = parseFloat(valorStr);
+    
+    // Buscar bandeira do cartão salvo (campo hidden) ou usar MASTERCARD como padrão
+    const bandeira = document.getElementById('bandeira')?.value || 'MASTERCARD';
+    
+    if (!lojaId) {
+        alert('Selecione a loja primeiro');
+        return;
+    }
+    
+    if (!valor || valor <= 0) {
+        alert('Digite um valor válido');
+        return;
+    }
+    
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Calculando...';
+    
+    // Calcular via AJAX usando calculadora
+    fetch(`{% url 'vendas:ajax_calcular_parcelas' %}?loja_id=${lojaId}&valor=${valor}&bandeira=${bandeira}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso && data.parcelas) {
+                const selectParcelas = document.getElementById('parcelas');
+                selectParcelas.innerHTML = '<option value="">Selecione</option>';
+                
+                // Ordenar por número de parcelas
+                const opcoes = Object.entries(data.parcelas).sort((a, b) => {
+                    const numA = parseInt(a[0].replace(/\D/g, ''));
+                    const numB = parseInt(b[0].replace(/\D/g, ''));
+                    return numA - numB;
+                });
+                
+                opcoes.forEach(([key, dados]) => {
+                    const option = document.createElement('option');
+                    option.value = dados.num_parcelas;
+                    option.dataset.valorDesconto = dados.valor_desconto;
+                    option.dataset.cashback = dados.cashback || 0;
+                    option.dataset.descricao = dados.descricao || '';
+                    
+                    // Formato: 3x de 30,00 (s/juros) - Valor Total: R$ 90,00 (cashback R$ XX,XX)
+                    let texto = `${dados.num_parcelas}x de R$ ${dados.valor_parcela.toFixed(2)}`;
+                    
+                    if (dados.descricao) {
+                        texto += ` ${dados.descricao}`;
+                    }
+                    
+                    texto += ` - Valor Total: R$ ${dados.valor_desconto.toFixed(2)}`;
+                    
+                    if (dados.cashback && dados.cashback > 0) {
+                        texto += ` (cashback R$ ${dados.cashback.toFixed(2)})`;
+                    }
+                    
+                    option.textContent = texto;
+                    selectParcelas.appendChild(option);
+                });
+                
+                document.getElementById('divParcelas').style.display = 'block';
+            } else {
+                alert(data.mensagem || 'Erro ao calcular parcelas');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-calculator me-2"></i>Calcular Parcelas';
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao calcular parcelas');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-calculator me-2"></i>Calcular Parcelas';
+        });
+});
+
+// Mostrar info ao selecionar parcela
+document.getElementById('parcelas').addEventListener('change', function() {
+    const option = this.options[this.selectedIndex];
+    if (!option || !option.value) {
+        document.getElementById('infoParcelamento').innerHTML = '';
+        document.getElementById('valor_total_parcela').value = '';
+        return;
+    }
+    
+    const valorDesconto = parseFloat(option.dataset.valorDesconto || 0);
+    const cashback = parseFloat(option.dataset.cashback || 0);
+    const descricao = option.dataset.descricao || '';
+    
+    // Preencher campo hidden com valor total (com desconto)
+    document.getElementById('valor_total_parcela').value = valorDesconto.toFixed(2);
+    
+    // Determinar texto dinâmico baseado na descrição
+    let labelValor = 'Valor total';
+    if (descricao.includes('c/encargos')) {
+        labelValor = 'Valor com encargos';
+    } else if (descricao.includes('c/desconto')) {
+        labelValor = 'Valor com desconto';
+    } else if (descricao.includes('s/juros')) {
+        labelValor = 'Valor sem juros';
+    }
+    
+    let info = `<div class="alert alert-info"><strong>${labelValor}:</strong> R$ ${valorDesconto.toFixed(2)}`;
+    if (cashback > 0) {
+        info += `<br><strong>Cashback:</strong> R$ ${cashback.toFixed(2)}`;
+    }
+    info += '</div>';
+    
+    document.getElementById('infoParcelamento').innerHTML = info;
+    
+    validarFormulario();
+});
+
+// Validar formulário
+function validarFormulario() {
+    const lojaId = document.getElementById('loja_id').value;
+    const clienteId = document.getElementById('cliente_id').value;
+    const valor = document.getElementById('valor').value;
+    const descricao = document.getElementById('descricao').value;
+    const tipoCartao = document.getElementById('tipo_cartao').value;
+    const temCartoes = document.getElementById('tem_cartoes').value === '1';
+    
+    // ENVIAR LINK (novo cartão ou cliente sem cartões): só precisa loja, cliente, valor, descrição
+    if (tipoCartao === 'enviar_link') {
+        const valido = lojaId && clienteId && valor && descricao;
+        document.getElementById('btnProcessar').disabled = !valido;
+        return;
+    }
+    
+    // CARTÃO SALVO: precisa forma_pagamento selecionada, parcelas OBRIGATÓRIAS
+    if (tipoCartao === 'salvo') {
+        const formaPagamento = document.getElementById('forma_pagamento')?.value;
+        const parcelas = document.getElementById('parcelas').value;
+        const bandeira = document.getElementById('bandeira').value;
+        
+        const cartaoSelecionado = formaPagamento && formaPagamento.startsWith('cartao_');
+        const valido = lojaId && clienteId && valor && descricao && cartaoSelecionado && parcelas && bandeira;
+        document.getElementById('btnProcessar').disabled = !valido;
+        return;
+    }
+    
+    // Padrão: desabilitar
+    document.getElementById('btnProcessar').disabled = true;
+}
+
+// Validar ao mudar qualquer campo
+['loja_id', 'forma_pagamento', 'valor', 'parcelas', 'bandeira', 'descricao'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('change', validarFormulario);
+        el.addEventListener('input', validarFormulario);
+    }
+});
+</script>
+{% endblock %}

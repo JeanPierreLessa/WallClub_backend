@@ -1,0 +1,418 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Sistema DermaDream - Checkout WallClub</title>
+    
+    <!-- Bootstrap 5.3.0 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0f2a5a 0%, #1a4480 100%);
+            --primary-color: #1a4480;
+            --primary-dark: #0f2a5a;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container-simulador {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .card-header-custom {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 1.5rem;
+        }
+        
+        .info-field {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .info-field label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .info-field .value {
+            color: #212529;
+            font-size: 1rem;
+        }
+        
+        .btn-enviar-checkout {
+            background: var(--primary-gradient);
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-enviar-checkout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        
+        .log-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            padding: 1rem;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-output .log-line {
+            margin-bottom: 0.5rem;
+        }
+        
+        .log-output .log-success {
+            color: #4ec9b0;
+        }
+        
+        .log-output .log-error {
+            color: #f48771;
+        }
+        
+        .log-output .log-info {
+            color: #569cd6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-simulador">
+        <div class="card shadow-lg mb-4">
+            <div class="card-header-custom">
+                <h2 class="mb-0">
+                    <i class="fas fa-flask me-2"></i>Simulador Sistema DermaDream
+                </h2>
+                <p class="mb-0 mt-2 opacity-75">Sistema de teste para integração com WallClub Checkout</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- Formulário de entrada de dados -->
+                <form id="form-dados-compra">
+                    <h5 class="mb-3"><i class="fas fa-shopping-bag me-2"></i>Dados do Produto</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="loja_id" class="form-label">ID da Loja</label>
+                            <input type="number" class="form-control" id="loja_id" value="26" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="item_nome" class="form-label">Nome do Item</label>
+                            <input type="text" class="form-control" id="item_nome" value="Tratamento Facial Premium" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="item_valor" class="form-label">Valor do Item (R$)</label>
+                        <input type="number" class="form-control" id="item_valor" step="0.01" value="1250.00" required>
+                    </div>
+                    
+                    <h5 class="mb-3"><i class="fas fa-user me-2"></i>Dados do Cliente</h5>
+                    
+                    <div class="mb-3">
+                        <label for="nome_completo" class="form-label">Nome Completo</label>
+                        <input type="text" class="form-control" id="nome_completo" value="Maria Silva Santos" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cpf" class="form-label">CPF</label>
+                            <input type="text" class="form-control" id="cpf" value="12345678901" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="celular" class="form-label">Celular</label>
+                            <input type="text" class="form-control" id="celular" value="11999887766" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="endereco_completo" class="form-label">Endereço Completo</label>
+                        <textarea class="form-control" id="endereco_completo" rows="2" required>Rua das Flores, 123, Apto 45, Jardim Paulista, São Paulo - SP, CEP 01234-567</textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="pedido_origem_loja" class="form-label">ID do Pedido no Sistema (Opcional)</label>
+                        <input type="text" class="form-control" id="pedido_origem_loja" value="PEDIDO-2025-001234" placeholder="Ex: PEDIDO-2025-001234">
+                        <small class="text-muted">Identificador do pedido no sistema da loja para rastreamento</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-cog me-2"></i>Gerar Token de Checkout
+                    </button>
+                </form>
+                
+                <!-- Log de Requisições -->
+                <div class="mt-4" id="log-container" style="display: none;">
+                    <h5 class="mb-3"><i class="fas fa-terminal me-2"></i>Log de Requisições</h5>
+                    <div class="log-output" id="log-output"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card com dados para checkout (aparece após gerar token) -->
+        <div class="card shadow-lg" id="card-checkout" style="display: none;">
+            <div class="card-header-custom">
+                <h4 class="mb-0">
+                    <i class="fas fa-check-circle me-2"></i>Token Gerado com Sucesso
+                </h4>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Os dados abaixo foram enviados ao sistema WallClub e não podem ser editados.
+                </div>
+                
+                <h5 class="mb-3"><i class="fas fa-shopping-bag me-2"></i>Dados do Produto</h5>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="info-field">
+                            <label>Item</label>
+                            <div class="value" id="display_item_nome"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-field">
+                            <label>Valor</label>
+                            <div class="value" id="display_item_valor"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5 class="mb-3 mt-4"><i class="fas fa-user me-2"></i>Dados do Cliente</h5>
+                
+                <div class="info-field">
+                    <label>Nome Completo</label>
+                    <div class="value" id="display_nome_completo"></div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-field">
+                            <label>CPF</label>
+                            <div class="value" id="display_cpf"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-field">
+                            <label>Celular</label>
+                            <div class="value" id="display_celular"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-field">
+                    <label>Endereço Completo</label>
+                    <div class="value" id="display_endereco_completo"></div>
+                </div>
+                
+                <form id="form-enviar-checkout" method="POST" action="http://localhost:8000/api/v1/checkout/">
+                    <input type="hidden" name="token" id="checkout_token">
+                    
+                    <button type="submit" class="btn btn-success btn-enviar-checkout w-100 mt-4">
+                        <i class="fas fa-credit-card me-2"></i>Ir para Checkout e Inserir Dados do Cartão
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Configuração
+        const API_BASE = 'http://localhost:8000';
+        const OAUTH_CLIENT_ID = 'checkout_link_pagamento';
+        const OAUTH_CLIENT_SECRET = 'wallclub_dermadream';
+        
+        let accessToken = null;
+        let checkoutToken = null;
+        
+        // Adicionar log
+        function addLog(message, type = 'info') {
+            const logOutput = document.getElementById('log-output');
+            const logContainer = document.getElementById('log-container');
+            
+            logContainer.style.display = 'block';
+            
+            const logLine = document.createElement('div');
+            logLine.className = `log-line log-${type}`;
+            logLine.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            logOutput.appendChild(logLine);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        // Limpar log
+        function clearLog() {
+            document.getElementById('log-output').innerHTML = '';
+        }
+        
+        // Passo 1: Obter Access Token OAuth
+        async function obterAccessToken() {
+            addLog('Iniciando autenticação OAuth...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/oauth/token/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        client_id: OAUTH_CLIENT_ID,
+                        client_secret: OAUTH_CLIENT_SECRET,
+                        grant_type: 'client_credentials'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    accessToken = data.access_token;
+                    addLog('✓ Access Token obtido com sucesso', 'success');
+                    addLog(`Token: ${accessToken.substring(0, 30)}...`, 'info');
+                    return true;
+                } else {
+                    addLog(`✗ Erro ao obter token: ${data.error || 'Erro desconhecido'}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                addLog(`✗ Erro de conexão: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Passo 2: Gerar Token de Checkout
+        async function gerarTokenCheckout(dadosCompra) {
+            addLog('Gerando token de checkout...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/checkout/gerar_token/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(dadosCompra)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.sucesso && data.token) {
+                    checkoutToken = data.token;
+                    addLog('✓ Token de checkout gerado com sucesso', 'success');
+                    addLog(`Token: ${checkoutToken.substring(0, 30)}...`, 'info');
+                    addLog(`Expira em: ${new Date(data.expires_at).toLocaleString()}`, 'info');
+                    return true;
+                } else {
+                    addLog(`✗ Erro ao gerar token: ${data.mensagem || 'Erro desconhecido'}`, 'error');
+                    if (data.erros) {
+                        addLog(`Detalhes: ${JSON.stringify(data.erros)}`, 'error');
+                    }
+                    return false;
+                }
+            } catch (error) {
+                addLog(`✗ Erro de conexão: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Formatar CPF
+        function formatarCPF(cpf) {
+            return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+        
+        // Formatar celular
+        function formatarCelular(celular) {
+            return celular.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        }
+        
+        // Exibir dados para checkout
+        function exibirDadosCheckout(dados) {
+            // Preencher campos de exibição
+            document.getElementById('display_item_nome').textContent = dados.item_nome;
+            document.getElementById('display_item_valor').textContent = `R$ ${parseFloat(dados.item_valor).toFixed(2)}`;
+            document.getElementById('display_nome_completo').textContent = dados.nome_completo;
+            document.getElementById('display_cpf').textContent = formatarCPF(dados.cpf);
+            document.getElementById('display_celular').textContent = formatarCelular(dados.celular);
+            document.getElementById('display_endereco_completo').textContent = dados.endereco_completo;
+            
+            // Preencher token no formulário
+            document.getElementById('checkout_token').value = checkoutToken;
+            
+            // Mostrar card de checkout
+            document.getElementById('card-checkout').style.display = 'block';
+            
+            // Scroll suave para o card
+            document.getElementById('card-checkout').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Submit do formulário principal
+        document.getElementById('form-dados-compra').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Limpar log anterior
+            clearLog();
+            
+            // Ocultar card de checkout anterior
+            document.getElementById('card-checkout').style.display = 'none';
+            
+            // Coletar dados do formulário
+            const dadosCompra = {
+                loja_id: parseInt(document.getElementById('loja_id').value),
+                item_nome: document.getElementById('item_nome').value,
+                item_valor: parseFloat(document.getElementById('item_valor').value),
+                nome_completo: document.getElementById('nome_completo').value,
+                cpf: document.getElementById('cpf').value.replace(/\D/g, ''),
+                celular: document.getElementById('celular').value.replace(/\D/g, ''),
+                endereco_completo: document.getElementById('endereco_completo').value,
+                pedido_origem_loja: document.getElementById('pedido_origem_loja').value || null
+            };
+            
+            addLog('Iniciando processo de geração de token...', 'info');
+            addLog(`Loja: ${dadosCompra.loja_id} | Item: ${dadosCompra.item_nome} | Valor: R$ ${dadosCompra.item_valor.toFixed(2)}`, 'info');
+            
+            // Passo 1: Obter Access Token
+            const tokenObtido = await obterAccessToken();
+            if (!tokenObtido) {
+                addLog('Processo interrompido: falha na autenticação OAuth', 'error');
+                return;
+            }
+            
+            // Passo 2: Gerar Token de Checkout
+            const checkoutGerado = await gerarTokenCheckout(dadosCompra);
+            if (!checkoutGerado) {
+                addLog('Processo interrompido: falha ao gerar token de checkout', 'error');
+                return;
+            }
+            
+            // Sucesso: exibir dados
+            addLog('✓ Processo concluído com sucesso!', 'success');
+            exibirDadosCheckout(dadosCompra);
+        });
+    </script>
+</body>
+</html>

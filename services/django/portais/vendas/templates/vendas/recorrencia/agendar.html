@@ -1,0 +1,338 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Agendar Recorrência - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-calendar-plus me-2"></i>{{ titulo }}</h2>
+    <p class="text-muted mb-0">Configure uma cobrança recorrente automática</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Dados da Recorrência</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="formRecorrencia">
+                    {% csrf_token %}
+                    
+                    <!-- Buscar Cliente -->
+                    <div class="mb-3">
+                        <label for="documento" class="form-label">CPF/CNPJ do Cliente *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="documento" placeholder="Digite CPF ou CNPJ">
+                            <button class="btn btn-outline-secondary" type="button" id="btnBuscarCliente">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </div>
+                        <small class="text-muted">Cliente deve estar cadastrado e possuir cartões tokenizados</small>
+                    </div>
+                    
+                    <!-- Dados do Cliente (preenchidos após busca) -->
+                    <input type="hidden" id="cliente_id" name="cliente_id">
+                    <input type="hidden" id="cartao_tokenizado_id" name="cartao_tokenizado_id">
+                    
+                    <div class="alert alert-success" id="dadosCliente" style="display: none;">
+                        <strong><i class="fas fa-user me-2"></i><span id="clienteNome"></span></strong><br>
+                        <small><span id="clienteEmail"></span></small>
+                    </div>
+                    
+                    <!-- Cartões Tokenizados -->
+                    <div class="mb-3">
+                        <label for="cartao_selecionado" class="form-label">Cartão para Cobrança Recorrente *</label>
+                        <select class="form-select" id="cartao_selecionado" name="cartao_selecionado">
+                            <option value="">Busque o cliente primeiro para ver os cartões</option>
+                        </select>
+                        <small class="text-muted">Escolha um cartão cadastrado ou envie link para o cliente cadastrar um novo</small>
+                    </div>
+                    
+                    <!-- Alerta se cliente não tem cartões -->
+                    <div class="alert alert-info" id="divSemCartoes" style="display: none;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Cliente sem cartões salvos.</strong> Será enviado um link de pagamento para o cliente cadastrar o cartão com segurança.
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Descrição da Recorrência -->
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição da Cobrança *</label>
+                        <input type="text" class="form-control" id="descricao" name="descricao" 
+                               placeholder="Ex: Mensalidade Academia, Assinatura Premium, etc."
+                               maxlength="255">
+                        <small class="text-muted">Esta descrição será enviada ao cliente nas notificações de cobrança</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="valor" class="form-label">Valor da Recorrência *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control" id="valor" name="valor" 
+                                   placeholder="0,00">
+                        </div>
+                    </div>
+
+                    <!-- Tipo de Periodicidade -->
+                    <div class="mb-3">
+                        <label for="tipo_periodicidade" class="form-label">Tipo de Periodicidade *</label>
+                        <select class="form-select" id="tipo_periodicidade" name="tipo_periodicidade">
+                            <option value="">Selecione...</option>
+                            {% for value, label in tipos_periodicidade %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Campos para Mensal Dia Fixo -->
+                    <div id="campos_mensal" style="display: none;">
+                        <div class="mb-3">
+                            <label for="dia_cobranca" class="form-label">Dia do Mês para Cobrança *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-day"></i></span>
+                                <input type="number" class="form-control" id="dia_cobranca" name="dia_cobranca" 
+                                       min="1" max="31" placeholder="Ex: 15">
+                            </div>
+                            <small class="text-muted">Dia do mês (1-31). Se não existir no mês, ajusta para próximo dia útil.</small>
+                        </div>
+                    </div>
+
+                    <!-- Campos para Anual Data Fixa -->
+                    <div id="campos_anual" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="mes_cobranca_anual" class="form-label">Mês *</label>
+                                <select class="form-select" id="mes_cobranca_anual" name="mes_cobranca_anual">
+                                    <option value="">Selecione...</option>
+                                    <option value="1">Janeiro</option>
+                                    <option value="2">Fevereiro</option>
+                                    <option value="3">Março</option>
+                                    <option value="4">Abril</option>
+                                    <option value="5">Maio</option>
+                                    <option value="6">Junho</option>
+                                    <option value="7">Julho</option>
+                                    <option value="8">Agosto</option>
+                                    <option value="9">Setembro</option>
+                                    <option value="10">Outubro</option>
+                                    <option value="11">Novembro</option>
+                                    <option value="12">Dezembro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dia_cobranca_anual" class="form-label">Dia *</label>
+                                <input type="number" class="form-control" id="dia_cobranca_anual" name="dia_cobranca_anual" 
+                                       min="1" max="31" placeholder="Ex: 25">
+                            </div>
+                        </div>
+                        <small class="text-muted">Data específica do ano (ex: 25/12 para Natal)</small>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>Agendar Recorrência
+                        </button>
+                        <a href="{% url 'vendas:recorrencia_listar' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card de Informações -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="text-primary"><i class="fas fa-info-circle me-2"></i>Como funciona?</h6>
+                <ul class="mb-0">
+                    <li><strong>Mensal Dia Fixo:</strong> Cobrança todo mês no dia escolhido (ex: todo dia 15)</li>
+                    <li><strong>Anual Data Fixa:</strong> Cobrança 1x por ano na data específica (ex: 25/12)</li>
+                    <li>Se a data cair em fim de semana, a cobrança será ajustada para o próximo dia útil</li>
+                    <li>Máximo de 3 tentativas automáticas em caso de falha (D+1, D+3, D+7)</li>
+                    <li>Após 3 falhas, a recorrência entra em HOLD e requer ação manual</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Buscar cliente via AJAX
+    document.getElementById('btnBuscarCliente').addEventListener('click', function() {
+        const documento = document.getElementById('documento').value.replace(/\D/g, '');
+        
+        if (!documento) {
+            alert('Digite o CPF ou CNPJ');
+            return;
+        }
+        
+        const btn = this;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Buscando...';
+        
+        // Buscar via AJAX
+        const lojaId = {{ loja_id }};
+        
+        fetch(`{% url 'vendas:ajax_buscar_cliente' %}?loja_id=${lojaId}&documento=${documento}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    // Preencher dados do cliente
+                    document.getElementById('cliente_id').value = data.cliente.id;
+                    document.getElementById('clienteNome').textContent = data.cliente.nome;
+                    document.getElementById('clienteEmail').textContent = data.cliente.email;
+                    
+                    const temCartoes = data.cartoes && data.cartoes.length > 0;
+                    const selectCartao = document.getElementById('cartao_selecionado');
+                    
+                    // SEMPRE permitir opção de enviar link, mesmo com cartões cadastrados
+                    selectCartao.innerHTML = '<option value="">Selecione uma opção</option>';
+                    
+                    if (temCartoes) {
+                        // Adicionar cartões existentes
+                        data.cartoes.forEach(cartao => {
+                            const option = document.createElement('option');
+                            option.value = cartao.id;
+                            option.textContent = `${cartao.bandeira} - ${cartao.mascarado} - Vencimento: ${cartao.validade}`;
+                            selectCartao.appendChild(option);
+                        });
+                        
+                        // Adicionar opção de enviar link (mesmo com cartões)
+                        const optionNovoCartao = document.createElement('option');
+                        optionNovoCartao.value = 'novo_cartao';
+                        optionNovoCartao.textContent = '📧 Enviar link de pagamento para cadastrar novo cartão';
+                        selectCartao.appendChild(optionNovoCartao);
+                        
+                        document.getElementById('divSemCartoes').style.display = 'none';
+                    } else {
+                        // Cliente SEM cartões - apenas opção de link
+                        const optionNovoCartao = document.createElement('option');
+                        optionNovoCartao.value = 'novo_cartao';
+                        optionNovoCartao.textContent = 'Enviar link de pagamento para cadastrar cartão';
+                        selectCartao.appendChild(optionNovoCartao);
+                        selectCartao.value = 'novo_cartao';
+                        document.getElementById('cartao_tokenizado_id').value = 'novo_cartao';
+                        document.getElementById('divSemCartoes').style.display = 'block';
+                    }
+                    
+                    document.getElementById('dadosCliente').style.display = 'block';
+                } else {
+                    alert(data.mensagem || 'Cliente não encontrado');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar cliente:', error);
+                alert('Erro ao buscar cliente. Tente novamente.');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+    });
+    
+    // Atualizar campo hidden quando selecionar cartão
+    document.getElementById('cartao_selecionado').addEventListener('change', function() {
+        document.getElementById('cartao_tokenizado_id').value = this.value;
+    });
+    
+    const tipoPeriodicidade = document.getElementById('tipo_periodicidade');
+    const camposMensal = document.getElementById('campos_mensal');
+    const camposAnual = document.getElementById('campos_anual');
+    const diaCobranca = document.getElementById('dia_cobranca');
+    const mesCobrancaAnual = document.getElementById('mes_cobranca_anual');
+    const diaCobrancaAnual = document.getElementById('dia_cobranca_anual');
+    
+    // Mostrar/ocultar campos conforme tipo
+    tipoPeriodicidade.addEventListener('change', function() {
+        if (this.value === 'mensal_dia_fixo') {
+            camposMensal.style.display = 'block';
+            camposAnual.style.display = 'none';
+            diaCobranca.required = true;
+            mesCobrancaAnual.required = false;
+            diaCobrancaAnual.required = false;
+        } else if (this.value === 'anual_data_fixa') {
+            camposMensal.style.display = 'none';
+            camposAnual.style.display = 'block';
+            diaCobranca.required = false;
+            mesCobrancaAnual.required = true;
+            diaCobrancaAnual.required = true;
+        } else {
+            camposMensal.style.display = 'none';
+            camposAnual.style.display = 'none';
+            diaCobranca.required = false;
+            mesCobrancaAnual.required = false;
+            diaCobrancaAnual.required = false;
+        }
+    });
+    
+    // Máscara de moeda
+    const valorInput = document.getElementById('valor');
+    valorInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = (value / 100).toFixed(2).replace('.', ',');
+        e.target.value = value;
+    });
+    
+    // Validar formulário antes de submeter
+    document.getElementById('formRecorrencia').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validar campos obrigatórios
+        const clienteId = document.getElementById('cliente_id').value;
+        const cartaoId = document.getElementById('cartao_tokenizado_id').value;
+        const descricao = document.getElementById('descricao').value;
+        const valor = document.getElementById('valor').value;
+        const tipoPeriodicidade = document.getElementById('tipo_periodicidade').value;
+        
+        if (!clienteId) {
+            alert('Busque e selecione um cliente primeiro');
+            return false;
+        }
+        
+        if (!cartaoId) {
+            alert('Selecione um cartão para cobrança');
+            return false;
+        }
+        
+        if (!descricao || descricao.trim() === '') {
+            alert('Informe a descrição da cobrança');
+            return false;
+        }
+        
+        if (!valor || parseFloat(valor.replace(',', '.')) <= 0) {
+            alert('Informe um valor válido');
+            return false;
+        }
+        
+        if (!tipoPeriodicidade) {
+            alert('Selecione o tipo de periodicidade');
+            return false;
+        }
+        
+        // Validar campos específicos de periodicidade
+        if (tipoPeriodicidade === 'mensal_dia_fixo') {
+            const dia = document.getElementById('dia_cobranca').value;
+            if (!dia || dia < 1 || dia > 31) {
+                alert('Informe o dia da cobrança mensal (1-31)');
+                return false;
+            }
+        } else if (tipoPeriodicidade === 'anual_data_fixa') {
+            const mes = document.getElementById('mes_cobranca_anual').value;
+            const dia = document.getElementById('dia_cobranca_anual').value;
+            if (!mes || !dia) {
+                alert('Informe o mês e dia da cobrança anual');
+                return false;
+            }
+        }
+        
+        // Se passou todas validações, submeter
+        this.submit();
+    });
+});
+</script>
+{% endblock %}

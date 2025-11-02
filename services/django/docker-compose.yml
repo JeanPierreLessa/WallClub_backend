@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: wallclub-prod-release300
+    ports:
+      - "8003:8000"  # Porta externa 8003, interna 8000
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./media:/app/media  # Persistir arquivos de mídia (imagens de ofertas, etc)
+      # AWS credentials: usa IAM role da instância EC2
+    command: /app/entrypoint.sh
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - wallclub-network
+    depends_on:
+      - redis
+    restart: always
+    mem_limit: 2g
+    cpus: 1.5
+
+  redis:
+    image: redis:7-alpine
+    container_name: wallclub-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  # Risk Engine - APIs Antifraude (porta 8004)
+  riskengine:
+    build:
+      context: ../wallclub_django_risk_engine
+      dockerfile: Dockerfile
+    container_name: wallclub-riskengine
+    ports:
+      - "8004:8004"
+    command: gunicorn riskengine.wsgi:application --bind 0.0.0.0:8004 --workers 3 --timeout 120
+    env_file:
+      - ../wallclub_django_risk_engine/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CALLBACK_URL_PRINCIPAL=http://wallclub-prod-release300:8000
+    volumes:
+      - ../wallclub_django_risk_engine/logs:/app/logs
+      - ~/.aws:/root/.aws:ro
+    depends_on:
+      - redis
+    restart: always
+    mem_limit: 512m
+    cpus: 0.5
+
+  # Celery Workers - Tasks assíncronas
+  celery-worker:
+    build:
+      context: ../wallclub_django_risk_engine
+      dockerfile: Dockerfile
+    container_name: wallclub-celery-worker
+    command: celery -A riskengine worker --loglevel=info --concurrency=4
+    env_file:
+      - ../wallclub_django_risk_engine/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ../wallclub_django_risk_engine/logs:/app/logs
+      - ~/.aws:/root/.aws:ro
+    depends_on:
+      - redis
+      - riskengine
+    restart: always
+    mem_limit: 256m
+    cpus: 0.5
+
+  # Celery Beat - Scheduler de tasks periódicas (Risk Engine)
+  celery-beat:
+    build:
+      context: ../wallclub_django_risk_engine
+      dockerfile: Dockerfile
+    container_name: wallclub-celery-beat
+    command: celery -A riskengine beat --loglevel=info
+    env_file:
+      - ../wallclub_django_risk_engine/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ../wallclub_django_risk_engine/logs:/app/logs
+      - ~/.aws:/root/.aws:ro
+    depends_on:
+      - redis
+      - celery-worker
+    restart: always
+    mem_limit: 128m
+    cpus: 0.25
+
+  # Celery Worker Django - Tasks de recorrências, cargas, etc
+  celery-worker-django:
+    build: .
+    container_name: wallclub-celery-worker-django
+    command: celery -A wallclub worker --loglevel=info --concurrency=2
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./logs:/app/logs
+      - ~/.aws:/root/.aws:ro
+    depends_on:
+      - redis
+      - web
+    restart: always
+    mem_limit: 512m
+    cpus: 0.5
+    networks:
+      - default
+      - wallclub-network
+
+  # Celery Beat Django - Scheduler de recorrências
+  celery-beat-django:
+    build: .
+    container_name: wallclub-celery-beat-django
+    command: celery -A wallclub beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./logs:/app/logs
+      - ~/.aws:/root/.aws:ro
+    depends_on:
+      - redis
+      - celery-worker-django
+    restart: always
+    mem_limit: 256m
+    cpus: 0.25
+    networks:
+      - default
+      - wallclub-network
+
+networks:
+  wallclub-network:
+    external: true
+
+volumes:
+  redis_data:

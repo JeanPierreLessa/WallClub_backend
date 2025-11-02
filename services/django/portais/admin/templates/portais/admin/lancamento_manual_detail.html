@@ -1,0 +1,268 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Lançamento Manual #{{ lancamento.id }}{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:lancamentos_manuais_list' %}" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-hand-holding-usd me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">Lançamento Manual #{{ lancamento.id }}</h1>
+        </div>
+        <div>
+            {% if lancamento.status == 'pendente' %}
+            <button type="button" class="btn btn-success btn-colorido me-2" 
+                    onclick="processarLancamento({{ lancamento.id }})">
+                <i class="fas fa-check me-1"></i> Processar
+            </button>
+            <button type="button" class="btn btn-danger btn-colorido" 
+                    onclick="cancelarLancamento({{ lancamento.id }})">
+                <i class="fas fa-times me-1"></i> Cancelar
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Detalhes do Lançamento -->
+<div class="container">
+    <div class="loja-info-card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-3">ID:</dt>
+                        <dd class="col-sm-9">{{ lancamento.id }}</dd>
+                        <dt class="col-sm-3">Loja:</dt>
+                        <dd class="col-sm-9">{{ loja_nome|default:"N/A" }}</dd>
+                        <dt class="col-sm-3">Usuário:</dt>
+                        <dd class="col-sm-9">{{ usuario_nome|default:"N/A" }}</dd>
+                        <dt class="col-sm-3">Tipo:</dt>
+                        <dd class="col-sm-9">
+                            {% if lancamento.tipo_lancamento == 'C' %}
+                                Crédito
+                            {% else %}
+                                Débito
+                            {% endif %}
+                        </dd>
+                        <dt class="col-sm-3">Valor:</dt>
+                        <dd class="col-sm-9" class="fs-5 fw-bold" style="color: var(--primary-color);">R$ {{ lancamento.valor|floatformat:2 }}</dd>
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            {% if lancamento.status == 'pendente' %}
+                                Pendente
+                            {% elif lancamento.status == 'processado' %}
+                                Processado
+                            {% else %}
+                                Cancelado
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Valor:</strong></td>
+                            <td class="fs-5 fw-bold" style="color: var(--primary-color);">R$ {{ lancamento.valor|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>
+                                {% if lancamento.status == 'pendente' %}
+                                    Pendente
+                                {% elif lancamento.status == 'processado' %}
+                                    Processado
+                                {% else %}
+                                    Cancelado
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Data Lançamento:</strong></td>
+                            <td>{{ lancamento.data_lancamento|date:"d/m/Y H:i:s" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Usuário:</strong></td>
+                            <td>{{ usuario_nome|default:"N/A" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Motivo:</strong></td>
+                            <td>{{ lancamento.motivo|default:"Não informado" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Referência Externa:</strong></td>
+                            <td>{{ lancamento.referencia_externa|default:"Não informada" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Criado em:</strong></td>
+                            <td>{{ lancamento.created_at|date:"d/m/Y H:i:s" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Atualizado em:</strong></td>
+                            <td>{{ lancamento.updated_at|date:"d/m/Y H:i:s" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Descrição -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6><strong>Descrição:</strong></h6>
+                    <div class="border p-3 bg-light rounded">
+                        {{ lancamento.descricao|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observações -->
+            {% if lancamento.observacoes %}
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6><strong>Observações:</strong></h6>
+                    <div class="border p-3 bg-light rounded">
+                        {{ lancamento.observacoes|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Histórico da Loja -->
+    {% if historico %}
+    <div class="loja-info-card">
+        <div class="card-body">
+            <h6 class="mb-3">
+                <i class="fas fa-history me-2"></i>
+                Histórico de Lançamentos da Loja ({{ loja_nome|default:"N/A" }})
+            </h6>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in historico %}
+                        <tr {% if item.id == lancamento.id %}style="background-color: #fff3cd;"{% endif %}>
+                            <td>
+                                {% if item.id == lancamento.id %}
+                                    <strong>{{ item.id }}</strong> <small>(atual)</small>
+                                {% else %}
+                                    {{ item.id }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.tipo_lancamento == 'C' %}
+                                    Crédito
+                                {% else %}
+                                    Débito
+                                {% endif %}
+                            </td>
+                            <td class="monetary">R$ {{ item.valor|floatformat:2 }}</td>
+                            <td>
+                                {% if item.status == 'pendente' %}
+                                    Pendente
+                                {% elif item.status == 'processado' %}
+                                    Processado
+                                {% else %}
+                                    Cancelado
+                                {% endif %}
+                            </td>
+                            <td>{{ item.data_lancamento|date:"d/m/Y H:i" }}</td>
+                            <td>{{ item.descricao|truncatechars:50 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function processarLancamento(lancamentoId) {
+    if (confirm('Tem certeza que deseja processar este lançamento?')) {
+        fetch(`{% url 'portais_admin:lancamento_manual_process' 0 %}`.replace('0', lancamentoId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro interno. Verifique o console para mais detalhes.');
+        });
+    }
+}
+
+function cancelarLancamento(lancamentoId) {
+    const motivo = prompt('Informe o motivo do cancelamento:');
+    if (motivo) {
+        fetch(`{% url 'portais_admin:lancamento_manual_cancel' 0 %}`.replace('0', lancamentoId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ motivo: motivo })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro interno. Verifique o console para mais detalhes.');
+        });
+    }
+}
+
+// Adicionar token CSRF se não existir
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfInput);
+    }
+});
+</script>
+{% endblock %}

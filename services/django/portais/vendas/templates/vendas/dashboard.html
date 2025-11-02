@@ -1,0 +1,133 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Suas Vendas - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-chart-line me-2"></i>Suas Vendas</h2>
+    <p class="text-muted mb-0">Acompanhe seu desempenho de vendas</p>
+</div>
+
+<!-- Suas Vendas Aprovadas -->
+<div class="row mb-4">
+    <!-- Vendas Aprovadas Hoje -->
+    <div class="col-md-6 mb-3">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-day me-2"></i>Suas Vendas Aprovadas - Hoje</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-shopping-cart text-primary fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Quantidade</h6>
+                        <h2 class="text-primary mb-0">{{ vendas_hoje.quantidade }}</h2>
+                        <small class="text-muted">pedido{{ vendas_hoje.quantidade|pluralize }}</small>
+                    </div>
+                    <div class="col-6 text-center border-start">
+                        <div class="mb-2">
+                            <i class="fas fa-dollar-sign text-success fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Valor Total</h6>
+                        <h2 class="text-success mb-0">R$ {{ vendas_hoje.valor_total|floatformat:2 }}</h2>
+                        <small class="text-muted">em vendas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vendas Aprovadas Mês -->
+    <div class="col-md-6 mb-3">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Suas Vendas Aprovadas - Mês</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-shopping-cart text-primary fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Quantidade</h6>
+                        <h2 class="text-primary mb-0">{{ vendas_mes.quantidade }}</h2>
+                        <small class="text-muted">pedido{{ vendas_mes.quantidade|pluralize }}</small>
+                    </div>
+                    <div class="col-6 text-center border-start">
+                        <div class="mb-2">
+                            <i class="fas fa-dollar-sign text-success fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Valor Total</h6>
+                        <h2 class="text-success mb-0">R$ {{ vendas_mes.valor_total|floatformat:2 }}</h2>
+                        <small class="text-muted">em vendas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vendas Captadas -->
+<div class="row mb-4">
+    <!-- Vendas Captadas Hoje -->
+    <div class="col-md-6 mb-3">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-day me-2"></i>Vendas Captadas - Hoje</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-shopping-cart text-info fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Quantidade</h6>
+                        <h2 class="text-info mb-0">{{ captadas_hoje.quantidade }}</h2>
+                        <small class="text-muted">pedido{{ captadas_hoje.quantidade|pluralize }}</small>
+                    </div>
+                    <div class="col-6 text-center border-start">
+                        <div class="mb-2">
+                            <i class="fas fa-dollar-sign text-success fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Valor Total</h6>
+                        <h2 class="text-success mb-0">R$ {{ captadas_hoje.valor_total|floatformat:2 }}</h2>
+                        <small class="text-muted">captadas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vendas Captadas Mês -->
+    <div class="col-md-6 mb-3">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Vendas Captadas - Mês</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-shopping-cart text-info fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Quantidade</h6>
+                        <h2 class="text-info mb-0">{{ captadas_mes.quantidade }}</h2>
+                        <small class="text-muted">pedido{{ captadas_mes.quantidade|pluralize }}</small>
+                    </div>
+                    <div class="col-6 text-center border-start">
+                        <div class="mb-2">
+                            <i class="fas fa-dollar-sign text-success fa-2x"></i>
+                        </div>
+                        <h6 class="text-muted mb-1">Valor Total</h6>
+                        <h2 class="text-success mb-0">R$ {{ captadas_mes.valor_total|floatformat:2 }}</h2>
+                        <small class="text-muted">captadas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

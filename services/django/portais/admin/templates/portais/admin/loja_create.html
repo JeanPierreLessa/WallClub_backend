@@ -1,0 +1,273 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Nova Loja{% endblock %}
+
+{% block navbar_actions %}
+<button onclick="voltarTela()" class="btn btn-outline-light btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header-compact">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-store me-2" style="color: var(--primary-color);"></i>
+            <h1 class="mb-0">Nova Loja</h1>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+            </li>
+            <li class="breadcrumb-item active">Nova Loja</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-store me-2"></i>
+                        Informações da Loja
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="razao_social" class="form-label">
+                                    <i class="fas fa-building me-1"></i>
+                                    Razão Social
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="razao_social" 
+                                       name="razao_social" 
+                                       placeholder="Ex: Empresa ABC Ltda"
+                                       value="{{ request.POST.razao_social|default:'' }}">
+                                <div class="form-text">Nome empresarial da loja</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="cnpj" class="form-label">
+                                    <i class="fas fa-id-card me-1"></i>
+                                    CNPJ
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="cnpj" 
+                                       name="cnpj" 
+                                       placeholder="00.000.000/0000-00"
+                                       value="{{ request.POST.cnpj|default:'' }}">
+                                <div class="form-text">CNPJ da empresa</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="complemento" class="form-label">
+                                    <i class="fas fa-align-left me-1"></i>
+                                    Complemento
+                                </label>
+                                <textarea class="form-control" 
+                                          id="complemento" 
+                                          name="complemento" 
+                                          rows="3"
+                                          placeholder="Informações complementares da loja">{{ request.POST.complemento|default:'' }}</textarea>
+                                <div class="form-text">Informações adicionais sobre a loja</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="canal_id" class="form-label">
+                                    <i class="fas fa-hashtag me-1"></i>
+                                    ID Canal
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="canal_id" 
+                                       name="canal_id" 
+                                       placeholder="123"
+                                       pattern="[0-9]+"
+                                       value="{{ request.POST.canal_id|default:'' }}">
+                                <div class="form-text">Identificador do canal</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    Email
+                                </label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="email" 
+                                       name="email" 
+                                       placeholder="loja@exemplo.com"
+                                       value="{{ request.POST.email|default:'' }}">
+                                <div class="form-text">Email de contato da loja</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="senha" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>
+                                    Senha
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="senha" 
+                                       name="senha" 
+                                       placeholder="senha de acesso"
+                                       value="{{ request.POST.senha|default:'' }}">
+                                <div class="form-text">Senha para acesso ao sistema</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cod_cliente" class="form-label">
+                                    <i class="fas fa-barcode me-1"></i>
+                                    Código Cliente
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="cod_cliente" 
+                                       name="cod_cliente" 
+                                       placeholder="código do cliente"
+                                       value="{{ request.POST.cod_cliente|default:'' }}">
+                                <div class="form-text">Código identificador do cliente</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="celular" class="form-label">
+                                    <i class="fas fa-mobile-alt me-1"></i>
+                                    Celular
+                                </label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="celular" 
+                                       name="celular" 
+                                       placeholder="(11) 99999-9999"
+                                       value="{{ request.POST.celular|default:'' }}">
+                                <div class="form-text">Número de celular para contato</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="nomebanco" class="form-label">
+                                    <i class="fas fa-university me-1"></i>
+                                    Nome Banco
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="nomebanco" 
+                                       name="nomebanco" 
+                                       placeholder="Ex: Banco do Brasil"
+                                       value="{{ request.POST.nomebanco|default:'' }}">
+                                <div class="form-text">Nome do banco</div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="numerobanco" class="form-label">
+                                    <i class="fas fa-hashtag me-1"></i>
+                                    Número Banco
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="numerobanco" 
+                                       name="numerobanco" 
+                                       placeholder="001"
+                                       value="{{ request.POST.numerobanco|default:'' }}">
+                                <div class="form-text">Código do banco</div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="agencia" class="form-label">
+                                    <i class="fas fa-building me-1"></i>
+                                    Agência
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="agencia" 
+                                       name="agencia" 
+                                       placeholder="1234-5"
+                                       value="{{ request.POST.agencia|default:'' }}">
+                                <div class="form-text">Número da agência</div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="conta" class="form-label">
+                                    <i class="fas fa-credit-card me-1"></i>
+                                    Conta
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="conta" 
+                                       name="conta" 
+                                       placeholder="12345-6"
+                                       value="{{ request.POST.conta|default:'' }}">
+                                <div class="form-text">Número da conta</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pix" class="form-label">
+                                    <i class="fas fa-qrcode me-1"></i>
+                                    PIX
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="pix" 
+                                       name="pix" 
+                                       placeholder="chave PIX"
+                                       value="{{ request.POST.pix|default:'' }}">
+                                <div class="form-text">Chave PIX para recebimentos</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="GrupoEconomicoId" class="form-label">
+                                    <i class="fas fa-users me-1"></i>
+                                    Grupo Econômico *
+                                </label>
+                                <select class="form-select" id="GrupoEconomicoId" name="GrupoEconomicoId" required>
+                                    <option value="">Selecione um grupo econômico</option>
+                                    {% for grupo in grupos %}
+                                    <option value="{{ grupo.id }}" 
+                                            {% if request.POST.GrupoEconomicoId == grupo.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ grupo.nome }} ({{ grupo.vendedor_nome }} - {{ grupo.regional_nome }} - {{ grupo.canal_nome }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Grupo econômico ao qual a loja pertence</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'portais_admin:hierarquia_geral' %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-save me-1"></i>
+                                Criar Loja
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}

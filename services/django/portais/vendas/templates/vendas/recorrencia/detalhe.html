@@ -1,0 +1,238 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Detalhes Recorrência #{{ recorrencia.id }} - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fas fa-info-circle me-2"></i>{{ titulo }}</h2>
+        <p class="text-muted mb-0">Informações completas e histórico de execuções</p>
+    </div>
+    <a href="{% url 'vendas:recorrencia_listar' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<div class="row">
+    <!-- Informações da Recorrência -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Informações da Recorrência</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">ID:</td>
+                        <td><strong>#{{ recorrencia.id }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Status:</td>
+                        <td>
+                            {% if recorrencia.status == 'ativo' %}
+                                <span class="badge bg-success">Ativo - Cobrando</span>
+                            {% elif recorrencia.status == 'pausado' %}
+                                <span class="badge bg-warning">Pausado Temporariamente</span>
+                            {% elif recorrencia.status == 'hold' %}
+                                <span class="badge bg-danger">Hold - Múltiplas Falhas</span>
+                            {% elif recorrencia.status == 'cancelado' %}
+                                <span class="badge bg-secondary">Cancelado</span>
+                            {% else %}
+                                <span class="badge bg-dark">{{ recorrencia.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Valor:</td>
+                        <td><strong class="text-primary">R$ {{ recorrencia.valor_recorrencia|floatformat:2 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Periodicidade:</td>
+                        <td><span class="badge bg-info">{{ recorrencia.periodicidade_display }}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Próxima Cobrança:</td>
+                        <td><strong>{{ recorrencia.proxima_cobranca|date:"d/m/Y" }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Criada em:</td>
+                        <td>{{ recorrencia.created_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dados do Cliente -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Dados do Cliente</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="40%">Nome:</td>
+                        <td><strong>{{ recorrencia.cliente.nome }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">CPF:</td>
+                        <td>{{ recorrencia.cliente.cpf }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Email:</td>
+                        <td>{{ recorrencia.cliente.email|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Telefone:</td>
+                        <td>{{ recorrencia.cliente.celular|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Cartão:</td>
+                        <td>
+                            <i class="fas fa-credit-card me-1"></i>
+                            {{ recorrencia.cartao_tokenizado.cartao_mascarado }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Loja:</td>
+                        <td>{{ recorrencia.loja.razao_social }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon text-success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-value text-success">R$ {{ recorrencia.total_cobrado|floatformat:2 }}</div>
+            <div class="stat-label">Total Cobrado</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon text-primary"><i class="fas fa-sync"></i></div>
+            <div class="stat-value text-primary">{{ recorrencia.total_execucoes }}</div>
+            <div class="stat-label">Execuções</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon text-danger"><i class="fas fa-times-circle"></i></div>
+            <div class="stat-value text-danger">{{ recorrencia.tentativas_falhas_consecutivas }}</div>
+            <div class="stat-label">Falhas Consecutivas</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon text-info"><i class="fas fa-clock"></i></div>
+            <div class="stat-value text-info">
+                {{ recorrencia.ultima_cobranca_sucesso_em|date:"d/m/Y"|default:"Nunca" }}
+            </div>
+            <div class="stat-label">Última Cobrança</div>
+        </div>
+    </div>
+</div>
+
+<!-- Histórico de Execuções -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Histórico de Execuções</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if historico %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Transação ID</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>NSU</th>
+                            <th>Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in historico %}
+                        <tr>
+                            <td>{{ trans.created_at|date:"d/m/Y H:i" }}</td>
+                            <td><strong>#{{ trans.id }}</strong></td>
+                            <td>R$ {{ trans.valor_transacao_final|floatformat:2 }}</td>
+                            <td>
+                                {% if trans.status == 'APROVADO' %}
+                                    <span class="badge bg-success">Aprovado</span>
+                                {% elif trans.status == 'NEGADO' %}
+                                    <span class="badge bg-danger">Negado</span>
+                                {% elif trans.status == 'PENDENTE' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ trans.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ trans.nsu|default:"-" }}</td>
+                            <td>
+                                {% if trans.motivo_recusa %}
+                                    <small class="text-danger">{{ trans.motivo_recusa }}</small>
+                                {% else %}
+                                    <small class="text-muted">-</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Nenhuma execução registrada ainda.</p>
+                <small class="text-muted">
+                    A primeira cobrança ocorrerá em {{ recorrencia.proxima_cobranca|date:"d/m/Y" }}
+                </small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Ações -->
+<div class="mt-4 d-flex gap-2">
+    {% if recorrencia.status == 'ativo' %}
+        <form method="POST" action="{% url 'vendas:recorrencia_pausar' recorrencia.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Pausar esta recorrência?')">
+                <i class="fas fa-pause me-2"></i>Pausar Recorrência
+            </button>
+        </form>
+        <form method="POST" action="{% url 'vendas:recorrencia_cancelar' recorrencia.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Cancelar permanentemente esta recorrência?')">
+                <i class="fas fa-times me-2"></i>Cancelar Recorrência
+            </button>
+        </form>
+    {% elif recorrencia.status == 'pausado' %}
+        <form method="POST" action="{% url 'vendas:recorrencia_reativar' recorrencia.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success" onclick="return confirm('Reativar esta recorrência?')">
+                <i class="fas fa-play me-2"></i>Reativar Recorrência
+            </button>
+        </form>
+        <form method="POST" action="{% url 'vendas:recorrencia_cancelar' recorrencia.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Cancelar permanentemente esta recorrência?')">
+                <i class="fas fa-times me-2"></i>Cancelar Recorrência
+            </button>
+        </form>
+    {% elif recorrencia.status == 'hold' %}
+        <div class="alert alert-danger mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Recorrência em HOLD:</strong> Múltiplas falhas consecutivas detectadas. 
+            Verifique o cartão do cliente e reative manualmente após correção.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

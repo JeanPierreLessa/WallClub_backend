@@ -1,0 +1,226 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Buscar Pedido - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-search me-2"></i>Buscar Pedido</h2>
+    <p class="text-muted mb-0">Consulte pedidos realizados nas suas lojas</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros de Busca</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'vendas:buscar_pedido' %}" id="formFiltros">
+            <div class="row">
+                <!-- Data Início -->
+                <div class="col-md-3 mb-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                           value="{{ filtros_ativos.data_inicio }}">
+                </div>
+                
+                <!-- Data Fim -->
+                <div class="col-md-3 mb-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                           value="{{ filtros_ativos.data_fim }}">
+                </div>
+                
+                <!-- CPF -->
+                <div class="col-md-3 mb-3">
+                    <label for="cpf" class="form-label">CPF do Cliente</label>
+                    <input type="text" class="form-control" id="cpf" name="cpf" 
+                           placeholder="000.000.000-00" maxlength="14"
+                           value="{{ filtros_ativos.cpf }}">
+                </div>
+                
+                <!-- Status -->
+                <div class="col-md-3 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos</option>
+                        {% for codigo, nome in status_choices %}
+                        <option value="{{ codigo }}" {% if filtros_ativos.status == codigo %}selected{% endif %}>
+                            {{ nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Buscar
+                </button>
+                <a href="{% url 'vendas:buscar_pedido' %}" class="btn btn-secondary">
+                    <i class="fas fa-eraser me-2"></i>Limpar Filtros
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Resultados</h5>
+        <span class="badge bg-primary">{{ total_resultados }} pedido{{ total_resultados|pluralize }}</span>
+    </div>
+    <div class="card-body">
+        {% if page_obj.object_list %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>CPF</th>
+                        <th>Loja</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>NSU</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transacao in page_obj %}
+                    <tr>
+                        <td>
+                            <small>{{ transacao.created_at|date:"d/m/Y H:i" }}</small>
+                        </td>
+                        <td>
+                            {% if transacao.cliente %}
+                                {{ transacao.cliente.nome }}
+                            {% elif transacao.session %}
+                                {{ transacao.session.nome }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if transacao.cliente %}
+                                {{ transacao.cliente.cpf|default:"-" }}
+                            {% elif transacao.session %}
+                                {{ transacao.session.cpf|default:"-" }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if transacao.loja %}
+                                <small>{{ transacao.loja.razao_social|truncatewords:3 }}</small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>R$ {{ transacao.valor_transacao|floatformat:2 }}</strong>
+                            {% if transacao.parcelas > 1 %}
+                            <br><small class="text-muted">{{ transacao.parcelas }}x</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if transacao.status == 'APROVADA' %}
+                                <span class="badge bg-success">Aprovada</span>
+                            {% elif transacao.status == 'PENDENTE' %}
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                            {% elif transacao.status == 'NEGADA' %}
+                                <span class="badge bg-danger">Negada</span>
+                            {% elif transacao.status == 'ERRO' %}
+                                <span class="badge bg-danger">Erro</span>
+                            {% elif transacao.status == 'CANCELADA' %}
+                                <span class="badge bg-secondary">Cancelada</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ transacao.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if transacao.nsu %}
+                                <code>{{ transacao.nsu }}</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'vendas:checkout_resultado' transacao.id %}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               title="Ver Detalhes">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Navegação de página">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in filtros_ativos.items %}&{{ key }}={{ value }}{% endfor %}">
+                        Primeira
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filtros_ativos.items %}&{{ key }}={{ value }}{% endfor %}">
+                        Anterior
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filtros_ativos.items %}&{{ key }}={{ value }}{% endfor %}">
+                        Próxima
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in filtros_ativos.items %}&{{ key }}={{ value }}{% endfor %}">
+                        Última
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            {% if filtros_ativos %}
+                Nenhum pedido encontrado com os filtros selecionados.
+            {% else %}
+                Use os filtros acima para buscar pedidos.
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Máscara CPF
+document.getElementById('cpf').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    e.target.value = value;
+});
+</script>
+{% endblock %}

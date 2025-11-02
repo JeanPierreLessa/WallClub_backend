@@ -1,0 +1,228 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+
+{% block title %}Histórico de Disparos - {{ oferta.titulo }}{% endblock %}
+
+{% block navbar_actions %}
+<a href="{% url 'portais_admin:ofertas_list' %}" class="btn btn-outline-light me-2">
+    <i class="fas fa-arrow-left me-1"></i>
+    Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-history me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Histórico de Disparos</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Informações da Oferta -->
+    <div class="form-section">
+        <h5 class="mb-3">
+            <i class="fas fa-gift me-2"></i>Informações da Oferta
+        </h5>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <p class="mb-1">
+                    <strong>Título:</strong> {{ oferta.titulo }}
+                </p>
+                <p class="mb-1">
+                    <strong>Texto Push:</strong> {{ oferta.texto_push }}
+                </p>
+                <p class="mb-1">
+                    <strong>Canal:</strong> 
+                    <span class="badge bg-info">Canal {{ oferta.canal_id }}</span>
+                </p>
+                <p class="mb-1">
+                    <strong>Vigência:</strong> 
+                    {{ oferta.vigencia_inicio|date:"d/m/Y H:i" }} até {{ oferta.vigencia_fim|date:"d/m/Y H:i" }}
+                </p>
+                <p class="mb-0">
+                    <strong>Status:</strong> 
+                    {% if oferta.ativo %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i>Ativo
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-times-circle me-1"></i>Inativo
+                        </span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                {% if oferta.imagem_url %}
+                <img src="{{ oferta.imagem_url }}" alt="{{ oferta.titulo }}" class="img-thumbnail" style="max-width: 150px;">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Disparos -->
+    <div class="form-section mt-3">
+        <h5 class="mb-3">
+            <i class="fas fa-list me-2"></i>
+            Histórico de Disparos
+            <span class="badge bg-primary ms-2">{{ disparos|length }} disparo{{ disparos|length|pluralize }}</span>
+        </h5>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-success">
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Data/Hora</th>
+                        <th>Usuário</th>
+                        <th>Clientes Alvo</th>
+                        <th>Enviados</th>
+                        <th>Sucesso</th>
+                        <th>Falhas</th>
+                        <th>Taxa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for disparo in disparos %}
+                    <tr>
+                        <td class="align-middle">
+                            <span class="badge bg-primary">#{{ disparo.id }}</span>
+                        </td>
+                        <td class="align-middle">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ disparo.data_disparo|date:"d/m/Y" }}
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ disparo.data_disparo|date:"H:i:s" }}
+                            </small>
+                        </td>
+                        <td class="align-middle">
+                            {% if disparo.usuario_disparador_id %}
+                                <i class="fas fa-user me-1"></i>
+                                Usuário #{{ disparo.usuario_disparador_id }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle text-center">
+                            <span class="badge bg-info">{{ disparo.total_clientes_alvo }}</span>
+                        </td>
+                        <td class="align-middle text-center">
+                            <span class="badge bg-primary">{{ disparo.total_enviados }}</span>
+                        </td>
+                        <td class="align-middle text-center">
+                            {% if disparo.total_sucesso > 0 %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>{{ disparo.total_sucesso }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle text-center">
+                            {% if disparo.total_falhas > 0 %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>{{ disparo.total_falhas }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle">
+                            {% if disparo.total_enviados > 0 %}
+                                {% widthratio disparo.total_sucesso disparo.total_enviados 100 as taxa %}
+                                {% if taxa >= 90 %}
+                                    <span class="badge bg-success">{{ taxa }}%</span>
+                                {% elif taxa >= 70 %}
+                                    <span class="badge bg-warning">{{ taxa }}%</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ taxa }}%</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>Nenhum disparo realizado ainda</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Resumo Geral -->
+    {% if disparos %}
+    <div class="form-section mt-3">
+        <h5 class="mb-3">
+            <i class="fas fa-chart-bar me-2"></i>Resumo Geral
+        </h5>
+        
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-0">{{ disparos|length }}</h3>
+                        <p class="mb-0 small">Total de Disparos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        {% with total_enviados=disparos|length %}
+                        {% if total_enviados > 0 %}
+                            {% for d in disparos %}
+                                {% if forloop.first %}
+                                    {% widthratio d.total_enviados 1 1 as soma %}
+                                {% else %}
+                                    {% widthratio d.total_enviados 1 1 as temp %}
+                                    {% widthratio soma 1 1 as soma_temp %}
+                                    {% widthratio temp 1 1 as temp_val %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+                        <h3 class="mb-0">
+                            {% widthratio disparos.0.total_enviados 1 1 as primeiro %}
+                            {{ primeiro|default:"0" }}
+                        </h3>
+                        <p class="mb-0 small">Pushes Enviados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-0">
+                            {% widthratio disparos.0.total_sucesso 1 1 as sucesso %}
+                            {{ sucesso|default:"0" }}
+                        </h3>
+                        <p class="mb-0 small">Sucesso</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-0">
+                            {% widthratio disparos.0.total_falhas 1 1 as falhas %}
+                            {{ falhas|default:"0" }}
+                        </h3>
+                        <p class="mb-0 small">Falhas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
