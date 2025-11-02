@@ -17,8 +17,8 @@ services:
   # Django - API Principal (porta 8003)
   web:
     build:
-      context: ./services
-      dockerfile: django/Dockerfile
+      context: .
+      dockerfile: Dockerfile.django
     container_name: wallclub-django
     ports:
       - "8003:8000"
@@ -45,8 +45,8 @@ services:
   # Risk Engine - Antifraude (porta 8004)
   riskengine:
     build:
-      context: ./services
-      dockerfile: riskengine/Dockerfile
+      context: .
+      dockerfile: Dockerfile.riskengine
     container_name: wallclub-riskengine
     ports:
       - "8004:8004"
@@ -73,8 +73,8 @@ services:
   # Celery Worker - Unificado (processa tasks de Django e Risk Engine)
   celery-worker:
     build:
-      context: ./services
-      dockerfile: django/Dockerfile
+      context: .
+      dockerfile: Dockerfile.django
     container_name: wallclub-celery-worker
     command: celery -A wallclub worker --loglevel=info --concurrency=4
     env_file:
@@ -99,8 +99,8 @@ services:
   # Celery Beat - Unificado (agenda tasks periódicas)
   celery-beat:
     build:
-      context: ./services
-      dockerfile: django/Dockerfile
+      context: .
+      dockerfile: Dockerfile.django
     container_name: wallclub-celery-beat
     command: celery -A wallclub beat --loglevel=info
     env_file:
