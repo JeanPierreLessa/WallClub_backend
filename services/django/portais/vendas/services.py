@@ -458,6 +458,43 @@ class CheckoutVendasService:
             return {'sucesso': False, 'mensagem': str(e)}
 
     @staticmethod
+    def processar_pagamento_cartao_salvo(
+        cliente_id: int,
+        cartao_id: int,
+        valor_original: Decimal,
+        valor_final: Decimal,
+        parcelas: int,
+        bandeira: str,
+        descricao: str,
+        ip_address: str,
+        user_agent: str,
+        pedido_origem: str = None,
+        cod_item_origem: str = None,
+        vendedor_id: int = None
+    ) -> Dict[str, Any]:
+        """Processa pagamento com cartão salvo via CheckoutService."""
+        try:
+            resultado = CheckoutService.processar_pagamento_cartao_tokenizado(
+                cliente_id=cliente_id,
+                cartao_id=cartao_id,
+                valor=valor_final,
+                parcelas=parcelas,
+                bandeira=bandeira,
+                descricao=descricao,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                pedido_origem_loja=pedido_origem,
+                cod_item_origem_loja=cod_item_origem,
+                portais_usuarios_id=vendedor_id,
+                valor_transacao_original=valor_original,
+                valor_transacao_final=valor_final
+            )
+            return resultado
+        except Exception as e:
+            registrar_log('portais.vendas', f"Erro processar pagamento: {str(e)}", nivel='ERROR')
+            return {'sucesso': False, 'mensagem': str(e)}
+
+    @staticmethod
     def simular_parcelas(valor: float, loja_id: int, bandeira: str = 'MASTERCARD') -> Dict[str, Any]:
         """Simula parcelas usando CheckoutService."""
         try:

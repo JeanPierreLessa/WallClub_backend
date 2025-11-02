@@ -27,7 +27,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - REDIS_HOST=wallclub-redis-monorepo
-      - REDIS_PORT=6380
+      - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
       - RISK_ENGINE_URL=http://riskengine:8004
@@ -56,7 +56,7 @@ services:
       - ./services/riskengine/.env
     environment:
       - REDIS_HOST=wallclub-redis-monorepo
-      - REDIS_PORT=6380
+      - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
       - CALLBACK_URL_PRINCIPAL=http://wallclub-django-monorepo:8000
@@ -82,7 +82,7 @@ services:
       - ./services/django/.env
     environment:
       - REDIS_HOST=wallclub-redis-monorepo
-      - REDIS_PORT=6380
+      - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
     volumes:
@@ -108,7 +108,7 @@ services:
       - ./services/django/.env
     environment:
       - REDIS_HOST=wallclub-redis-monorepo
-      - REDIS_PORT=6380
+      - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
     volumes:
