@@ -3,13 +3,13 @@ Service para consultar dados de autenticação do cliente no Django
 Integração entre riskengine e wallclub_django
 """
 import requests
+import os
 from typing import Dict, Any, Optional
 from datetime import datetime
-from wallclub_core.oauth.services import OAuthService
+from django.core.cache import cache
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 def registrar_log(modulo, mensagem, nivel='INFO'):
     """Wrapper para logging"""
@@ -20,7 +20,6 @@ def registrar_log(modulo, mensagem, nivel='INFO'):
     else:
         logger.info(f"[{modulo}] {mensagem}")
 
-
 class ClienteAutenticacaoService:
     """
     Service para consultar histórico de autenticação do cliente
@@ -28,7 +27,9 @@ class ClienteAutenticacaoService:
     """
     
     # Configurações (devem vir do .env em produção)
-    DJANGO_BASE_URL = 'http://wallclub-prod-release300:8003'  # Container Django
+    DJANGO_BASE_URL = os.getenv('DJANGO_BASE_URL', 'http://wallclub-prod-release300:8003')
+    OAUTH_CLIENT_ID = os.getenv('RISK_ENGINE_INTERNAL_CLIENT_ID', 'wallclub_django_internal')
+    OAUTH_CLIENT_SECRET = os.getenv('RISK_ENGINE_INTERNAL_CLIENT_SECRET', '')
     TIMEOUT_SEGUNDOS = 2  # Timeout da requisição
     
     @classmethod
@@ -49,7 +50,7 @@ class ClienteAutenticacaoService:
             timeout = ConfiguracaoAntifraude.get_config('CONSULTA_AUTH_TIMEOUT_SEGUNDOS', cls.TIMEOUT_SEGUNDOS)
             
             # Obter token OAuth
-            access_token = OAuthService.get_oauth_token()
+            access_token = cls._get_oauth_token()
             if not access_token:
                 registrar_log(
                     'antifraude.cliente_auth',
@@ -137,6 +138,74 @@ class ClienteAutenticacaoService:
                 nivel='ERROR'
             )
             return cls._retornar_resposta_fallback(cpf, 'erro_inesperado')
+    
+    @classmethod
+    def _get_oauth_token(cls) -> Optional[str]:
+        """Obtém token OAuth do Django via client_credentials.
+        Usa cache Redis para evitar múltiplas requisições.
+        
+        Returns:
+            str: Access token ou None se falhar
+        """
+        # Verificar cache
+        cache_key = 'riskengine_oauth_token'
+        cached_token = cache.get(cache_key)
+        
+        if cached_token:
+            return cached_token
+        
+        try:
+            # Requisição OAuth
+            oauth_url = f"{cls.DJANGO_BASE_URL}/api/oauth/token/"
+            payload = {
+                'grant_type': 'client_credentials',
+                'client_id': cls.OAUTH_CLIENT_ID,
+                'client_secret': cls.OAUTH_CLIENT_SECRET
+            }
+            
+            response = requests.post(
+                oauth_url,
+                data=payload,
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                access_token = data.get('access_token')
+                
+                # Cachear por 23h (token expira em 24h)
+                cache.set(cache_key, access_token, 82800)  # 23h em segundos
+                
+                registrar_log(
+                    'antifraude.cliente_auth',
+                    'Token OAuth obtido e cacheado com sucesso',
+                    nivel='INFO'
+                )
+                
+                return access_token
+            else:
+                registrar_log(
+                    'antifraude.cliente_auth',
+                    f'Erro ao obter token OAuth: HTTP {response.status_code}',
+                    nivel='ERROR'
+                )
+                return None
+        
+        except requests.Timeout:
+            registrar_log(
+                'antifraude.cliente_auth',
+                'Timeout ao obter token OAuth',
+                nivel='ERROR'
+            )
+            return None
+        
+        except Exception as e:
+            registrar_log(
+                'antifraude.cliente_auth',
+                f'Erro inesperado ao obter token OAuth: {str(e)}',
+                nivel='ERROR'
+            )
+            return None
     
     @classmethod
     def _retornar_resposta_fallback(cls, cpf: str, motivo: str) -> Dict[str, Any]:

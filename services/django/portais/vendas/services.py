@@ -17,7 +17,7 @@ from wallclub_core.estr_organizacional.loja import Loja
 from wallclub_core.integracoes.messages_template_service import MessagesTemplateService
 from wallclub_core.integracoes.whatsapp_service import WhatsAppService
 from wallclub_core.integracoes.sms_service import enviar_sms
-from checkout.services import CheckoutService, CartaoTokenizadoService
+from checkout.services import CheckoutService
 
 
 class CheckoutVendasService:
@@ -417,7 +417,9 @@ class CheckoutVendasService:
                 return {'sucesso': False, 'mensagem': 'Documento inválido'}
 
             if cliente:
-                cartoes = CartaoTokenizadoService.listar_cartoes_cliente(cliente.id)
+                # Lazy import para evitar erro de undefined
+                from checkout.services import CartaoTokenizadoService as CartaoService
+                cartoes = CartaoService.listar_cartoes_cliente(cliente.id)
                 
                 # Buscar telefone ativo do cliente para exibir obfuscado
                 telefone_obfuscado = ''
