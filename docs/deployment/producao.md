@@ -65,22 +65,23 @@ git pull origin feature/multi-app-security
 docker-compose stop web riskengine celery-worker celery-beat
 docker-compose rm -f web riskengine celery-worker celery-beat
 docker-compose build --no-cache web riskengine celery-worker celery-beat
-docker-compose up -d --build web riskengine celery-worker celery-beat
+docker-compose up -d web riskengine celery-worker celery-beat
+
+# ⚠️ OBRIGATÓRIO: Coletar arquivos estáticos após rebuild
+docker exec wallclub-django python manage.py collectstatic --noinput
+
+# Limpar cache Redis
 docker exec wallclub-redis redis-cli FLUSHALL
 
-
+# Deploy rápido (somente Django)
 git pull origin feature/multi-app-security
 docker-compose stop web
 docker-compose rm -f web
 docker-compose build --no-cache web
-docker-compose up -d --build web
-
-git pull origin multiplos_containers
-docker-compose stop web
-docker-compose rm -f web
-docker-compose build web
 docker-compose up -d web
-docker exec wallclub-redis redis-cli FLUSHALL
+
+# ⚠️ OBRIGATÓRIO: Coletar arquivos estáticos
+docker exec wallclub-django python manage.py collectstatic --noinput
 
 
 # Verificar status de TODOS os containers

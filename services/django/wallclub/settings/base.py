@@ -50,6 +50,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000  # Padrão é 1000, aumentado para suportar
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Servir arquivos estáticos com Gunicorn
     'portais.controle_acesso.middleware.PortalSessionMiddleware',  # Substituir SessionMiddleware padrão
     'corsheaders.middleware.CorsMiddleware',
     'wallclub_core.middleware.security_middleware.APISecurityMiddleware',  # Rate limiting e validação de APIs

@@ -16,49 +16,6 @@ from portais.controle_acesso.decorators import require_admin_access
 logger = logging.getLogger('wallclub.admin.seguranca')
 
 
-def get_risk_engine_token():
-    """
-    Obtém token OAuth para autenticar com Risk Engine
-    """
-    from django.core.cache import cache
-    
-    token = cache.get('risk_engine_oauth_token')
-    if token:
-        return token
-    
-    try:
-        oauth_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8000')
-        token_url = f"{oauth_url}/oauth/token/"
-        
-        # Usar credenciais ADMIN específicas para Portal Admin
-        client_id = getattr(settings, 'RISK_ENGINE_ADMIN_CLIENT_ID', 'wallclub-django')
-        client_secret = getattr(settings, 'RISK_ENGINE_ADMIN_CLIENT_SECRET', '')
-        
-        response = requests.post(
-            token_url,
-            json={
-                'grant_type': 'client_credentials',
-                'client_id': client_id,
-                'client_secret': client_secret
-            },
-            timeout=3
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get('access_token')
-            expires_in = data.get('expires_in', 3600)
-            cache.set('risk_engine_oauth_token', token, expires_in * 0.9)
-            return token
-        else:
-            logger.error(f"Erro ao obter token: {response.status_code}")
-            return None
-            
-    except Exception as e:
-        logger.error(f"Erro ao gerar token: {str(e)}")
-        return None
-
-
 @require_admin_access
 def atividades_suspeitas(request):
     """
@@ -72,18 +29,10 @@ def atividades_suspeitas(request):
         dias = request.GET.get('dias', '7')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8000')
+        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
         api_url = f"{risk_engine_url}/api/antifraude/suspicious/"
         
-        token = get_risk_engine_token()
-        if not token:
-            messages.error(request, 'Erro ao conectar com Risk Engine')
-            return render(request, 'admin/seguranca/atividades_suspeitas.html', {
-                'atividades': [],
-                'erro_conexao': True
-            })
-        
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {}
         params = {
             'status': status,
             'dias': dias
@@ -180,16 +129,10 @@ def investigar_atividade(request, atividade_id):
             return redirect('admin_atividades_suspeitas')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8000')
+        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
         api_url = f"{risk_engine_url}/api/antifraude/investigate/"
         
-        token = get_risk_engine_token()
-        if not token:
-            messages.error(request, 'Erro ao conectar com Risk Engine')
-            return redirect('admin_atividades_suspeitas')
-        
         headers = {
-            'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'
         }
         
@@ -241,18 +184,10 @@ def bloqueios_seguranca(request):
         dias = request.GET.get('dias', '30')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8000')
+        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
         api_url = f"{risk_engine_url}/api/antifraude/blocks/"
         
-        token = get_risk_engine_token()
-        if not token:
-            messages.error(request, 'Erro ao conectar com Risk Engine')
-            return render(request, 'admin/seguranca/bloqueios.html', {
-                'bloqueios': [],
-                'erro_conexao': True
-            })
-        
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {}
         params = {'dias': dias}
         if tipo:
             params['tipo'] = tipo
@@ -322,16 +257,10 @@ def criar_bloqueio(request):
             return redirect('admin_bloqueios_seguranca')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8000')
+        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
         api_url = f"{risk_engine_url}/api/antifraude/block/"
         
-        token = get_risk_engine_token()
-        if not token:
-            messages.error(request, 'Erro ao conectar com Risk Engine')
-            return redirect('admin_bloqueios_seguranca')
-        
         headers = {
-            'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'
         }
         

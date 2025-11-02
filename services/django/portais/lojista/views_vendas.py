@@ -701,22 +701,22 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
             results = []
             for venda in vendas_queryset:
                 # Processar dados
-                vl_bruto = float(venda.var19 or 0)
-                vl_liq_previsto = float(venda.var42 or 0)
-                vl_liq_pago = float(venda.var44 or 0) if venda.var44 and float(venda.var44) != 0 else vl_liq_previsto
-                taxa_adm = float(venda.var37 or 0)
-                custo_antec = float(venda.var41 or 0)
-                num_parcelas = int(venda.var13 or 0)
+                vl_bruto = float(venda['var19'] or 0)
+                vl_liq_previsto = float(venda['var42'] or 0)
+                vl_liq_pago = float(venda['var44'] or 0) if venda['var44'] and float(venda['var44']) != 0 else vl_liq_previsto
+                taxa_adm = float(venda['var37'] or 0)
+                custo_antec = float(venda['var41'] or 0)
+                num_parcelas = int(venda['var13'] or 0)
                 
                 # Data e hora formatadas
-                data_formatada = venda.data_transacao.strftime('%d/%m/%Y') if venda.data_transacao else '-'
-                hora_formatada = venda.data_transacao.strftime('%H:%M:%S') if venda.data_transacao else '-'
+                data_formatada = venda['data_transacao'].strftime('%d/%m/%Y') if venda['data_transacao'] else '-'
+                hora_formatada = venda['data_transacao'].strftime('%H:%M:%S') if venda['data_transacao'] else '-'
                 
                 # Data pagamento
-                data_pgto = venda.var45 if venda.var45 else venda.var43
+                data_pgto = venda['var45'] if venda['var45'] else venda['var43']
                 
                 # Truncar nome da loja em 10 caracteres
-                nome_loja = (venda.var5 or '-')[:10] if venda.var5 else '-'
+                nome_loja = (venda['var5'] or '-')[:10] if venda['var5'] else '-'
                 
                 row_dict = {
                     'Loja': nome_loja,
@@ -725,15 +725,15 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                     'Vl Bruto(R$)': vl_bruto,
                     'Vl Liq Previsto(R$)': vl_liq_previsto,
                     'Vl Liq Pago(R$)': vl_liq_pago,
-                    'Status Pgto': venda.var121 or '-',
+                    'Status Pgto': venda['var121'] or '-',
                     'Data Pgto': data_pgto or '-',
-                    'Plano': venda.var8 or '-',
+                    'Plano': venda['var8'] or '-',
                     'Núm. Parcelas': num_parcelas,
                     'Taxa Adm(R$)': taxa_adm,
                     'Custo Antec(R$)': custo_antec,
-                    'Status Trans.': venda.var68 or '-',
-                    'NSU': venda.var9 or '-',
-                    'NOP': venda.var10 or '-'
+                    'Status Trans.': venda['var68'] or '-',
+                    'NSU': venda['var9'] or '-',
+                    'NOP': venda['var10'] or '-'
                 }
                 results.append(row_dict)
             
@@ -825,17 +825,17 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                     
                     for venda in vendas_lote:
                         # Processar dados (mesma lógica da view principal)
-                        vl_bruto = float(venda.var19 or 0)
-                        vl_liq_previsto = float(venda.var42 or 0)
-                        vl_liq_pago = float(venda.var44 or 0)
-                        taxa_adm = float(venda.var37 or 0)
-                        custo_antec = float(venda.var41 or 0)
-                        num_parcelas = int(venda.var13 or 0)
+                        vl_bruto = float(venda['var19'] or 0)
+                        vl_liq_previsto = float(venda['var42'] or 0)
+                        vl_liq_pago = float(venda['var44'] or 0)
+                        taxa_adm = float(venda['var37'] or 0)
+                        custo_antec = float(venda['var41'] or 0)
+                        num_parcelas = int(venda['var13'] or 0)
                         
-                        data_formatada = venda.data_transacao.strftime('%d/%m/%Y') if venda.data_transacao else '-'
-                        hora_formatada = venda.data_transacao.strftime('%H:%M:%S') if venda.data_transacao else '-'
-                        data_pgto = venda.var45 if venda.var45 else venda.var43
-                        nome_loja = (venda.var5 or '-')[:10] if venda.var5 else '-'
+                        data_formatada = venda['data_transacao'].strftime('%d/%m/%Y') if venda['data_transacao'] else '-'
+                        hora_formatada = venda['data_transacao'].strftime('%H:%M:%S') if venda['data_transacao'] else '-'
+                        data_pgto = venda['var45'] if venda['var45'] else venda['var43']
+                        nome_loja = (venda['var5'] or '-')[:10] if venda['var5'] else '-'
                         
                         # Escrever linha CSV
                         linha = [
@@ -843,11 +843,11 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                             f"{vl_bruto:.2f}".replace('.', ','),
                             f"{vl_liq_previsto:.2f}".replace('.', ','),
                             f"{vl_liq_pago:.2f}".replace('.', ','),
-                            venda.var121 or '-', data_pgto or '-', venda.var8 or '-',
+                            venda['var121'] or '-', data_pgto or '-', venda['var8'] or '-',
                             str(num_parcelas),
                             f"{taxa_adm:.2f}".replace('.', ','),
                             f"{custo_antec:.2f}".replace('.', ','),
-                            venda.var68 or '-', venda.var9 or '-', venda.var10 or '-'
+                            venda['var68'] or '-', venda['var9'] or '-', venda['var10'] or '-'
                         ]
                         temp_file.write(';'.join(linha) + '\n')
             

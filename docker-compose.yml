@@ -25,6 +25,7 @@ services:
     env_file:
       - ./services/django/.env
     environment:
+      - ENVIRONMENT=production
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -49,7 +50,7 @@ services:
     container_name: wallclub-riskengine
     ports:
       - "8004:8004"
-    command: gunicorn riskengine.wsgi:application --bind 0.0.0.0:8004 --workers 3 --timeout 120
+    command: gunicorn riskengine.wsgi:application --bind 0.0.0.0:8004 --workers 3 --timeout 120 --log-level=debug --access-logfile=- --error-logfile=-
     env_file:
       - ./services/riskengine/.env
     environment:
