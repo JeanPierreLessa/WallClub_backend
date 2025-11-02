@@ -30,6 +30,7 @@ services:
       - REDIS_PORT=6380
       - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
+      - RISK_ENGINE_URL=http://riskengine:8004
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/django/media:/app/media

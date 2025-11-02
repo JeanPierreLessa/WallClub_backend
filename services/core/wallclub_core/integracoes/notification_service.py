@@ -7,6 +7,8 @@ from django.db import connection
 from wallclub_core.utilitarios.log_control import registrar_log
 from wallclub_core.integracoes.firebase_service import FirebaseService
 from wallclub_core.integracoes.apn_service import APNService
+from decimal import Decimal
+import json
 
 
 class NotificationService:
@@ -200,12 +202,17 @@ class NotificationService:
             # Preparar dados adicionais (todos os parâmetros exceto campos já salvos)
             dados_adicionais = {k: v for k, v in parametros.items() if k not in ['titulo', 'mensagem']}
             
-            # Converter para JSON válido
-            import json
+            # Converter para JSON válido com suporte a Decimal
             dados_adicionais_json = None
             if dados_adicionais:
                 try:
-                    dados_adicionais_json = json.dumps(dados_adicionais, ensure_ascii=False)
+                    # Converter Decimal para float antes de serializar
+                    def decimal_default(obj):
+                        if isinstance(obj, Decimal):
+                            return float(obj)
+                        raise TypeError
+                    
+                    dados_adicionais_json = json.dumps(dados_adicionais, ensure_ascii=False, default=decimal_default)
                 except Exception as e:
                     registrar_log('comum.integracoes', f'Erro ao serializar dados_adicionais: {str(e)}', nivel='ERROR')
             
