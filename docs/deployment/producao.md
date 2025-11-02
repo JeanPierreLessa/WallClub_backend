@@ -1,124 +1,110 @@
-## Produção ##
+# Deploy Produção - Monorepo WallClub
 
-## Comandos
+## SSH
+```bash
 ssh -i /Users/jeanlessa/wall_projects/aws/webserver-dev.pem ubuntu@10.0.1.46
+cd /var/www/wallclub_backend
+```
 
-docker system prune -a
-docker logs wallclub-prod-oauth
-git checkout feature/multi-app-security
+## Deploy Completo (Primeira Vez)
+```bash
+# Pull do código
+git pull origin main
 
-## REDIS
-docker network create wallclub-network
+# Criar diretórios de logs
+sudo mkdir -p /var/www/wallclub_backend/services/django/logs
+sudo mkdir -p /var/www/wallclub_backend/services/django/media
+sudo mkdir -p /var/www/wallclub_backend/services/riskengine/logs
+sudo chown -R 1000:1000 /var/www/wallclub_backend/services/django/logs
+sudo chown -R 1000:1000 /var/www/wallclub_backend/services/django/media
+sudo chown -R 1000:1000 /var/www/wallclub_backend/services/riskengine/logs
 
-docker stop wallclub-redis && docker rm wallclub-redis
-docker run -d \
-  --name wallclub-redis \
-  --network wallclub-network \
-  --restart=always \
-  redis:7-alpine redis-server --appendonly yes
-
-## DJANGO
-git pull origin feature/multi-app-security
-docker stop wallclub-prod-release300 && docker rm wallclub-prod-release300
-docker build -t wallclub-django:v1.0 .
-
-docker run -d \
-  --name wallclub-prod-release300 \
-  --network wallclub-network \
-  -v $(pwd)/media:/app/media \
-  -p 8003:8000 \
-  --env-file .env \
-  --restart=always \
-  -v $(pwd)/logs:/app/logs \
-  --memory=2g \
-  --memory-swap=2g \
-  --cpus="1.5" \
-  --oom-kill-disable=false \
-  wallclub-django:v1.0
-
-
-## TODOS OS CONTAINERS (Django + Risk Engine + Celery) ##
-# Orquestração centralizada no projeto principal
-
-# IMPORTANTE: Instalar Docker Compose se não estiver instalado
-# sudo apt install docker-compose
-
-cd /path/to/wallclub_django
-
-# Pull dos 2 projetos
-git pull origin feature/multi-app-security
-cd ../wallclub_django_risk_engine && git pull origin main && cd ../wallclub_django
-
-# Parar containers antigos (se existirem)
-docker stop wallclub-prod-release300 wallclub-riskengine wallclub-celery-worker wallclub-celery-beat 2>/dev/null
-docker rm wallclub-prod-release300 wallclub-riskengine wallclub-celery-worker wallclub-celery-beat 2>/dev/null
-
-# OPÇÃO 1: Subir TODOS os 5 containers (primeira vez ou mudanças no Redis)
-# Containers: wallclub-prod-release300 (8000), wallclub-redis (6379),
-#             wallclub-riskengine (8004), wallclub-celery-worker, wallclub-celery-beat
+# Subir todos os containers
 docker-compose down
-docker-compose up -d --build
+docker-compose up -d
 
-# OPÇÃO 2: Deploy de rotina (atualizar código Django + Risk Engine)
-# IMPORTANTE: Parar containers ANTES do build para evitar erro ContainerConfig
-git pull origin feature/multi-app-security
-docker-compose stop web riskengine celery-worker celery-beat
-docker-compose rm -f web riskengine celery-worker celery-beat
+# Verificar status
+docker ps
+```
+
+## Deploy de Rotina (Atualizar Código)
+```bash
+# Pull do código
+git pull origin main
+
+# Rebuild e restart
 docker-compose build --no-cache web riskengine celery-worker celery-beat
-docker-compose up -d web riskengine celery-worker celery-beat
+docker-compose down
+docker-compose up -d
 
-# ⚠️ OBRIGATÓRIO: Coletar arquivos estáticos após rebuild
-docker exec wallclub-django python manage.py collectstatic --noinput
+# Verificar
+docker ps
+docker logs wallclub-django-monorepo --tail 50
+```
 
-# Limpar cache Redis
-docker exec wallclub-redis redis-cli FLUSHALL
-
-# Deploy rápido (somente Django)
-git pull origin feature/multi-app-security
-docker-compose stop web
-docker-compose rm -f web
-docker-compose build --no-cache web
-docker-compose up -d web
-
-# ⚠️ OBRIGATÓRIO: Coletar arquivos estáticos
-docker exec wallclub-django python manage.py collectstatic --noinput
+## Deploy Rápido (Apenas restart)
+```bash
+docker-compose restart web riskengine celery-worker celery-beat
+```
 
 
-# Verificar status de TODOS os containers
-docker-compose ps
+## Logs e Monitoramento
+```bash
+# Status de todos os containers
+docker ps
 
-# Ver logs individuais (opcional)
-docker-compose logs -f web             # Django principal
-docker-compose logs -f riskengine      # APIs antifraude
+# Logs individuais
+docker logs wallclub-django-monorepo --tail 100 -f
+docker logs wallclub-riskengine-monorepo --tail 100 -f
+docker logs wallclub-celery-worker-monorepo --tail 100 -f
+docker logs wallclub-celery-beat-monorepo --tail 100 -f
+docker logs wallclub-redis-monorepo --tail 100 -f
 
-# ⚠️ TROUBLESHOOTING: Erro KeyError 'ContainerConfig'
-# Se aparecer esse erro, cache do Docker corrompido:
-# Execute: bash scripts/fix_docker_error.sh
-# (Só necessário 1x quando erro aparecer, não em todo deploy)
-docker-compose logs -f celery-worker   # Tasks assíncronas
-docker-compose logs -f celery-beat     # Scheduler
+# Logs do Docker Compose
+docker-compose logs -f web
+docker-compose logs -f riskengine
+docker-compose logs -f celery-worker
+docker-compose logs -f celery-beat
+```
 
+## Containers e Portas
+- **wallclub-django-monorepo**: Django (porta 8003)
+- **wallclub-riskengine-monorepo**: Risk Engine/Antifraude (porta 8004)
+- **wallclub-redis-monorepo**: Redis (porta 6380 externa, 6379 interna)
+- **wallclub-celery-worker-monorepo**: Worker Celery
+- **wallclub-celery-beat-monorepo**: Beat Celery
 
-## LIMPEZA DE CONTAINERS E IMAGENS (MANUTENÇÃO) ##
+## Troubleshooting
 
+### Erro: ContainerConfig
+```bash
+docker-compose down
+docker-compose rm -f
+docker-compose up -d
+```
+
+### Erro: Connection refused Redis
+- Verificar se REDIS_PORT=6379 (porta interna, não 6380)
+- Verificar se container Redis está rodando: `docker ps | grep redis`
+
+### Push notifications não funcionam
+- Verificar certificados em `/app/services/core/wallclub_core/integracoes/firebase_configs/`
+- Verificar certificados em `/app/services/core/wallclub_core/integracoes/apn_configs/`
+
+## Limpeza e Manutenção
+```bash
 # Parar todos os containers
 docker-compose down
 
 # Remover containers parados
 docker container prune -f
 
-# Remover imagens não utilizadas (libera espaço)
+# Remover imagens não utilizadas
 docker image prune -a -f
 
-# Limpeza completa (containers + imagens + networks + cache de build)
-# CUIDADO: Remove TODAS as imagens não utilizadas
+# Limpeza completa (CUIDADO!)
 docker system prune -a -f
 
-# Limpeza completa incluindo VOLUMES (perde dados do Redis!)
-# MUITO CUIDADO: Só use se quiser limpar TUDO
-# docker system prune -a -f --volumes
-
-# Verificar espaço recuperado
+# Verificar espaço
 docker system df
-
-
+```
