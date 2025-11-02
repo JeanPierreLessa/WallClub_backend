@@ -48,7 +48,10 @@ class FirebaseService:
                     return None
                 
                 # Diretório base dos arquivos de configuração Firebase
-                firebase_dir = os.path.join(settings.BASE_DIR, 'comum', 'integracoes', 'firebase_configs')
+                # No monorepo: wallclub_core está em /app/services/core/wallclub_core
+                import wallclub_core
+                core_path = os.path.dirname(os.path.dirname(wallclub_core.__file__))
+                firebase_dir = os.path.join(core_path, 'wallclub_core', 'integracoes', 'firebase_configs')
                 config_path = os.path.join(firebase_dir, result[0])
                 
                 if not os.path.exists(config_path):

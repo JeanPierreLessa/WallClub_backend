@@ -17,7 +17,7 @@ from wallclub_core.estr_organizacional.loja import Loja
 from wallclub_core.integracoes.messages_template_service import MessagesTemplateService
 from wallclub_core.integracoes.whatsapp_service import WhatsAppService
 from wallclub_core.integracoes.sms_service import enviar_sms
-from checkout.services import CheckoutService
+from checkout.services import CheckoutService, CartaoTokenizadoService
 
 
 class CheckoutVendasService:

@@ -51,7 +51,10 @@ class APNService:
                     registrar_log('comum.integracoes', f'Configuração APN não encontrada para canal {self.canal_id}', nivel='WARNING')
                     return None, None
 
-                apn_dir = os.path.join(settings.BASE_DIR, 'comum', 'integracoes', 'apn_configs')
+                # No monorepo: wallclub_core está em /app/services/core/wallclub_core
+                import wallclub_core
+                core_path = os.path.dirname(os.path.dirname(wallclub_core.__file__))
+                apn_dir = os.path.join(core_path, 'wallclub_core', 'integracoes', 'apn_configs')
                 cert_path = os.path.join(apn_dir, result[0])
                 key_path = os.path.join(apn_dir, result[1])
 
