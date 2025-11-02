@@ -4,9 +4,9 @@ services:
   # Redis - Cache e Broker do Celery
   redis:
     image: redis:7-alpine
-    container_name: wallclub-redis
+    container_name: wallclub-redis-monorepo
     ports:
-      - "6379:6379"
+      - "6380:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -19,17 +19,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.django
-    container_name: wallclub-django
+    container_name: wallclub-django-monorepo
     ports:
       - "8003:8000"
     env_file:
       - ./services/django/.env
     environment:
       - ENVIRONMENT=production
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_HOST=wallclub-redis-monorepo
+      - REDIS_PORT=6380
+      - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
+      - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/django/media:/app/media
@@ -47,18 +47,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.riskengine
-    container_name: wallclub-riskengine
+    container_name: wallclub-riskengine-monorepo
     ports:
       - "8004:8004"
     command: gunicorn riskengine.wsgi:application --bind 0.0.0.0:8004 --workers 3 --timeout 120 --log-level=debug --access-logfile=- --error-logfile=-
     env_file:
       - ./services/riskengine/.env
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - CALLBACK_URL_PRINCIPAL=http://wallclub-django:8000
+      - REDIS_HOST=wallclub-redis-monorepo
+      - REDIS_PORT=6380
+      - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
+      - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
+      - CALLBACK_URL_PRINCIPAL=http://wallclub-django-monorepo:8000
     volumes:
       - ./services/riskengine/logs:/app/logs
       - ./services/core:/app/services/core:ro
@@ -75,15 +75,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.django
-    container_name: wallclub-celery-worker
+    container_name: wallclub-celery-worker-monorepo
     command: celery -A wallclub worker --loglevel=info --concurrency=4
     env_file:
       - ./services/django/.env
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_HOST=wallclub-redis-monorepo
+      - REDIS_PORT=6380
+      - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
+      - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/core:/app/services/core:ro
@@ -101,15 +101,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.django
-    container_name: wallclub-celery-beat
+    container_name: wallclub-celery-beat-monorepo
     command: celery -A wallclub beat --loglevel=info
     env_file:
       - ./services/django/.env
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_HOST=wallclub-redis-monorepo
+      - REDIS_PORT=6380
+      - CELERY_BROKER_URL=redis://wallclub-redis-monorepo:6379/0
+      - CELERY_RESULT_BACKEND=redis://wallclub-redis-monorepo:6379/0
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/core:/app/services/core:ro
