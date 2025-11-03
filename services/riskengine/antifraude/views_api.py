@@ -19,7 +19,6 @@ import time
 
 
 @api_view(['POST'])
-@handle_api_errors
 @validate_required_params(['cpf', 'valor', 'modalidade'])
 def analyze(request):
     """
