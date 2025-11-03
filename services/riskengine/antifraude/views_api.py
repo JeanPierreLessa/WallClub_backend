@@ -19,7 +19,7 @@ import time
 
 
 @api_view(['POST'])
-@validate_required_params(['cpf', 'valor', 'modalidade'])
+@validate_required_params('cpf', 'valor', 'modalidade')
 def analyze(request):
     """
     Endpoint principal de análise de risco
@@ -240,7 +240,7 @@ def decision(request, transacao_id):
 
 @api_view(['POST'])
 @handle_api_errors
-@validate_required_params(['auth_id'])
+@validate_required_params('auth_id')
 def validate_3ds(request):
     """
     Valida resultado da autenticação 3DS
