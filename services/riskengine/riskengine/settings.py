@@ -27,6 +27,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     
+    # Shared core
+    'wallclub_core',
+    
     # Local apps
     'antifraude',
 ]
