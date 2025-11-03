@@ -466,87 +466,11 @@ class AntifraudeIntegrationService:
                 'mensagem': str(e)
             }
     
-    def _obter_token_oauth(self) -> Optional[str]:
-        """
-        Obtém token OAuth do Risk Engine
-        
-        Returns:
-            Token OAuth ou None se falhar
-        """
-        # Se já tem token válido em cache, retorna
-        if self._cached_token and self._token_expires_at:
-            from datetime import datetime, timedelta
-            if datetime.now() < self._token_expires_at:
-                return self._cached_token
-        
-        # Se não tem credenciais configuradas, não precisa de OAuth
-        if not self.oauth_client_id or not self.oauth_client_secret:
-            registrar_log(
-                'posp2.antifraude',
-                '⚠️ Credenciais OAuth não configuradas - tentando sem autenticação',
-                nivel='WARNING'
-            )
-            return None
-        
-        try:
-            registrar_log(
-                'posp2.antifraude',
-                f'🔑 Obtendo token OAuth: {self.riskengine_url}/oauth/token/'
-            )
-            
-            response = requests.post(
-                f'{self.riskengine_url}/oauth/token/',
-                data={
-                    'grant_type': 'client_credentials',
-                    'client_id': self.oauth_client_id,
-                    'client_secret': self.oauth_client_secret
-                },
-                timeout=self.timeout
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                token = data.get('access_token')
-                expires_in = data.get('expires_in', 3600)  # 1 hora padrão
-                
-                # Cache token
-                self._cached_token = token
-                from datetime import datetime, timedelta
-                self._token_expires_at = datetime.now() + timedelta(seconds=expires_in - 60)  # 1min antes
-                
-                registrar_log(
-                    'posp2.antifraude',
-                    f'✅ Token OAuth obtido com sucesso (expira em {expires_in}s)'
-                )
-                return token
-            else:
-                registrar_log(
-                    'posp2.antifraude',
-                    f'❌ Erro ao obter token OAuth: HTTP {response.status_code}',
-                    nivel='ERROR'
-                )
-                return None
-                
-        except Exception as e:
-            registrar_log(
-                'posp2.antifraude',
-                f'❌ Exceção ao obter token OAuth: {str(e)}',
-                nivel='ERROR'
-            )
-            return None
-    
     def _get_headers(self) -> Dict[str, str]:
-        """Retorna headers para requisições HTTP"""
-        headers = {
+        """Retorna headers para requisições HTTP (sem OAuth - rede interna)"""
+        return {
             'Content-Type': 'application/json'
         }
-        
-        # Tenta obter token OAuth
-        token = self._obter_token_oauth()
-        if token:
-            headers['Authorization'] = f'Bearer {token}'
-        
-        return headers
     
     def _resultado_fallback(self, motivo: str) -> Dict[str, Any]:
         """

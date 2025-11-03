@@ -13,8 +13,8 @@ class AntifraudeService:
     Container: wallclub-riskengine (porta 8004)
     """
 
-    # URL base do Risk Engine (ajustar conforme ambiente)
-    BASE_URL = 'https://riskmanager.wallclub.com.br/api/antifraude'
+    # URL base do Risk Engine - rede interna Docker
+    BASE_URL = 'http://wallclub-riskengine-monorepo:8004/api/antifraude'
 
     @classmethod
     def listar_pendentes(cls) -> Dict:

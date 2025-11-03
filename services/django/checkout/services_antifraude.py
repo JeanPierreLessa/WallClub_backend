@@ -17,45 +17,6 @@ class CheckoutAntifraudeService:
     """
     
     @staticmethod
-    def _obter_token_oauth() -> Optional[str]:
-        """
-        Obtém token OAuth do Risk Engine
-        Cache implementado no AntifraudeIntegrationService do POSP2
-        """
-        if not settings.RISK_ENGINE_POS_CLIENT_ID or not settings.RISK_ENGINE_POS_CLIENT_SECRET:
-            registrar_log('checkout.antifraude', '⚠️ Credenciais OAuth não configuradas', nivel='WARNING')
-            return None
-        
-        oauth_url = f"{settings.RISK_ENGINE_URL}/oauth/token/"
-        
-        try:
-            registrar_log('checkout.antifraude', f'🔑 Obtendo token OAuth: {oauth_url}')
-            
-            response = requests.post(
-                oauth_url,
-                data={
-                    'grant_type': 'client_credentials',
-                    'client_id': settings.RISK_ENGINE_POS_CLIENT_ID,
-                    'client_secret': settings.RISK_ENGINE_POS_CLIENT_SECRET
-                },
-                timeout=5
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                token = data.get('access_token')
-                expires_in = data.get('expires_in', 3600)
-                registrar_log('checkout.antifraude', f'✅ Token OAuth obtido com sucesso (expira em {expires_in}s)')
-                return token
-            else:
-                registrar_log('checkout.antifraude', f'❌ Erro ao obter token OAuth: HTTP {response.status_code}', nivel='ERROR')
-                return None
-                
-        except Exception as e:
-            registrar_log('checkout.antifraude', f'❌ Exceção ao obter token OAuth: {str(e)}', nivel='ERROR')
-            return None
-    
-    @staticmethod
     def analisar_transacao(
         cpf: str,
         valor: Decimal,
@@ -154,16 +115,11 @@ class CheckoutAntifraudeService:
         if bandeira:
             payload['bandeira'] = bandeira
         
-        # Obter token OAuth
-        token = CheckoutAntifraudeService._obter_token_oauth()
-        
-        # Chamar API
+        # Chamar API (sem OAuth - rede interna)
         api_url = f"{settings.RISK_ENGINE_URL}/api/antifraude/analyze/"
         registrar_log('checkout.antifraude', f'🌐 CHAMANDO API ANTIFRAUDE: {api_url}')
         
-        headers = {}
-        if token:
-            headers['Authorization'] = f'Bearer {token}'
+        headers = {'Content-Type': 'application/json'}
         
         try:
             inicio = datetime.now()
