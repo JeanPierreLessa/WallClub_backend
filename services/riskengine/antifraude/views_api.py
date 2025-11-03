@@ -19,7 +19,6 @@ import time
 
 
 @api_view(['POST'])
-@require_oauth_token
 @handle_api_errors
 @validate_required_params(['cpf', 'valor', 'modalidade'])
 def analyze(request):
@@ -180,7 +179,6 @@ def analyze(request):
 
 
 @api_view(['GET'])
-@require_oauth_token
 @handle_api_errors
 def decision(request, transacao_id):
     """
@@ -242,7 +240,6 @@ def decision(request, transacao_id):
 
 
 @api_view(['POST'])
-@require_oauth_token
 @handle_api_errors
 @validate_required_params(['auth_id'])
 def validate_3ds(request):
@@ -322,7 +319,6 @@ def validate_3ds(request):
 
 
 @api_view(['GET'])
-@require_oauth_token
 @handle_api_errors
 def health(request):
     """
