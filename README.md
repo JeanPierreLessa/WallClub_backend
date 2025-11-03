@@ -4,6 +4,25 @@ Repositório unificado contendo todos os serviços do ecossistema WallClub, cria
 
 Sistema de gestão financeira e antifraude com múltiplos containers orquestrados.
 
+## 🚨 STATUS ATUAL
+
+**Última Atualização:** 02/11/2025 21:27
+
+### Produção
+- ✅ Django Principal (wallclub-django-monorepo:8000)
+- ✅ Risk Engine (wallclub-riskengine-monorepo:8004)
+- ✅ Portal Admin Antifraude
+- ✅ Atividades Suspeitas & Bloqueios
+- 🔴 **BLOQUEADOR:** POS → Risk Engine (TypeError em `/api/antifraude/analyze/`)
+
+### Pendências Técnicas
+📋 **Ver:** [`docs/em execucao/PENDENCIAS_TECNICAS.md`](docs/em%20execucao/PENDENCIAS_TECNICAS.md)
+
+**Problema Crítico:**
+- Decorator `@handle_api_errors` depende de `LogParametro` que não existe no Risk Engine
+- Causa TypeError 500 em transações POS
+- Solução em andamento: simplificar decorator ou usar try/except manual
+
 ## 📋 Navegação Rápida
 
 - [Estrutura](#estrutura)

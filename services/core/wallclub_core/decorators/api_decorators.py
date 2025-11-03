@@ -51,23 +51,31 @@ def handle_api_errors(view_func):
 def validate_required_params(*required_params):
     """
     Decorator para validar parâmetros obrigatórios no request body.
+    Funciona com DRF (@api_view) e views Django tradicionais.
     
     Uso:
+        @api_view(['POST'])
         @validate_required_params('cpf', 'senha', 'terminal')
         def validar_senha(request):
-            data = json.loads(request.body)
+            data = request.data  # DRF já processou
             # cpf, senha e terminal já foram validados
     """
     def decorator(view_func):
         @functools.wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            try:
-                data = json.loads(request.body)
-            except json.JSONDecodeError:
-                return JsonResponse({
-                    'sucesso': False,
-                    'mensagem': 'JSON inválido'
-                }, status=400)
+            # Detectar se é DRF (request.data) ou Django tradicional (request.body)
+            if hasattr(request, 'data'):
+                # DRF - dados já processados
+                data = request.data
+            else:
+                # Django tradicional - precisa fazer parse
+                try:
+                    data = json.loads(request.body)
+                except json.JSONDecodeError:
+                    return JsonResponse({
+                        'sucesso': False,
+                        'mensagem': 'JSON inválido'
+                    }, status=400)
             
             # Verifica parâmetros obrigatórios
             missing = [param for param in required_params if not data.get(param)]
