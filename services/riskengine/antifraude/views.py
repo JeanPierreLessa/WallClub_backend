@@ -173,7 +173,6 @@ def historico_cliente(request, cliente_id):
 
 
 @api_view(['GET'])
-@require_oauth_token
 @handle_api_errors
 def dashboard_metricas(request):
     """
