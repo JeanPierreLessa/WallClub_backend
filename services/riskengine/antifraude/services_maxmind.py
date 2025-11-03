@@ -222,6 +222,12 @@ class MaxMindService:
                 'tempo_consulta_ms': tempo_ms
             }
     
+    def esta_disponivel(self) -> bool:
+        """Verifica se MaxMind está configurado e disponível"""
+        account_id = getattr(settings, 'MAXMIND_ACCOUNT_ID', None)
+        license_key = getattr(settings, 'MAXMIND_LICENSE_KEY', None)
+        return bool(account_id and license_key)
+    
     @staticmethod
     def limpar_cache(cpf: str = None, valor: Decimal = None, ip: str = None):
         """

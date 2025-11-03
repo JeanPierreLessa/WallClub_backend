@@ -196,6 +196,28 @@ class ConfigManager:
             pass
             return {}
     
+    def get_maxmind_config(self) -> Dict[str, Any]:
+        """
+        Obtém configurações do MaxMind minFraud do AWS Secret
+        """
+        try:
+            secret_string = self.get_secret(self._get_secret_name())
+            if not secret_string:
+                return {}
+                
+            secrets = json.loads(secret_string)
+            
+            config = {
+                'account_id': secrets.get('MAXMIND_ACCOUNT_ID'),
+                'license_key': secrets.get('MAXMIND_LICENSE_KEY'),
+            }
+            
+            return config
+            
+        except Exception as e:
+            pass
+            return {}
+    
     def get_riskengine_credentials(self) -> Dict[str, str]:
         """
         Obtém credenciais OAuth do Risk Engine do AWS Secret
