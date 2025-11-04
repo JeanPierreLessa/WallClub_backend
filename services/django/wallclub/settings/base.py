@@ -277,9 +277,9 @@ def get_pinbank_config():
 
 # Carregar configurações do Pinbank
 pinbank_config = get_pinbank_config()
-PINBANK_URL = pinbank_config.get('url')
-PINBANK_WALL_USERNAME = pinbank_config.get('username')
-PINBANK_WALL_PASSWD = pinbank_config.get('password')
+PINBANK_URL = pinbank_config.get('url') or os.getenv('PINBANK_URL')
+PINBANK_WALL_USERNAME = pinbank_config.get('username') or os.getenv('PINBANK_WALL_USERNAME')
+PINBANK_WALL_PASSWD = pinbank_config.get('password') or os.getenv('PINBANK_WALL_PASSWD')
 PINBANK_TIMEOUT = 30  # Timeout padrão
 
 # Risk Engine - Antifraude (Fase 2 - Semana 14) - DEPRECADO, usar RISK_ENGINE_* abaixo
