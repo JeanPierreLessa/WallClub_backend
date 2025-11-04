@@ -117,6 +117,13 @@ class RecorrenciaTokenService:
         """
         Processa cadastro de cartão para recorrência (tokenização).
         
+        FLUXO:
+        1. Valida token
+        2. Faz pré-autorização de R$ 1,00 para validar cartão
+        3. Cancela a pré-autorização (estorna)
+        4. Tokeniza o cartão
+        5. Vincula cartão à recorrência
+        
         Args:
             token: Token de recorrência
             numero_cartao: Número do cartão
@@ -132,6 +139,7 @@ class RecorrenciaTokenService:
             from checkout.link_recorrencia_web.models import RecorrenciaToken
             from checkout.models import CheckoutCartaoTokenizado
             from checkout.services import CartaoTokenizadoService
+            from pinbank.services_transacoes_pagamento import TransacoesPinbankService
             
             # Validar token
             try:
@@ -144,6 +152,12 @@ class RecorrenciaTokenService:
             
             recorrencia = token_obj.recorrencia
             cliente = recorrencia.cliente
+            loja_id = token_obj.loja_id
+            
+            registrar_log(
+                'checkout.recorrencia',
+                f"💳 [VALIDAÇÃO] Iniciando validação de cartão para recorrência {recorrencia.id}"
+            )
             
             # Detectar bandeira
             primeiro_digito = numero_cartao[0]
@@ -158,7 +172,95 @@ class RecorrenciaTokenService:
             else:
                 bandeira = 'VISA'  # default
             
-            # Tokenizar cartão via Pinbank
+            # ========== ETAPA 1: PRÉ-AUTORIZAÇÃO DE R$ 1,00 ==========
+            registrar_log(
+                'checkout.recorrencia',
+                f"🔐 [VALIDAÇÃO] Etapa 1: Pré-autorizando R$ 1,00 para validar cartão"
+            )
+            
+            pinbank_service = TransacoesPinbankService(loja_id=loja_id)
+            
+            # Preparar dados para pré-autorização
+            cpf_limpo = cliente.cpf.replace('.', '').replace('-', '')
+            
+            dados_preautorizacao = {
+                'numero_cartao': numero_cartao,
+                'data_validade': validade,
+                'codigo_seguranca': cvv,
+                'nome_impresso': nome_cartao.upper(),
+                'bandeira': bandeira,
+                'valor': Decimal('1.00'),  # R$ 1,00
+                'quantidade_parcelas': 1,
+                'forma_pagamento': '1',  # Crédito à vista
+                'descricao_pedido': 'Validação de cartão - WallClub',
+                'ip_address_comprador': ip_address,
+                'cpf_comprador': int(cpf_limpo),
+                'nome_comprador': cliente.nome,
+                'transacao_pre_autorizada': True  # PRÉ-AUTORIZAÇÃO
+            }
+            
+            resultado_preauth = pinbank_service.efetuar_transacao_cartao(dados_preautorizacao)
+            
+            if not resultado_preauth.get('sucesso'):
+                registrar_log(
+                    'checkout.recorrencia',
+                    f"❌ [VALIDAÇÃO] Pré-autorização negada: {resultado_preauth.get('mensagem')}",
+                    nivel='WARNING'
+                )
+                return {
+                    'sucesso': False,
+                    'mensagem': f'Cartão inválido ou sem saldo: {resultado_preauth.get("mensagem")}'
+                }
+            
+            # Extrair NSU da pré-autorização
+            nsu_preauth = resultado_preauth.get('nsu') or resultado_preauth.get('dados', {}).get('nsu')
+            
+            if not nsu_preauth:
+                registrar_log(
+                    'checkout.recorrencia',
+                    f"⚠️ [VALIDAÇÃO] NSU não retornado na pré-autorização",
+                    nivel='WARNING'
+                )
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Erro ao validar cartão (NSU não retornado)'
+                }
+            
+            registrar_log(
+                'checkout.recorrencia',
+                f"✅ [VALIDAÇÃO] Pré-autorização aprovada: NSU={nsu_preauth}"
+            )
+            
+            # ========== ETAPA 2: CANCELAR PRÉ-AUTORIZAÇÃO (ESTORNO) ==========
+            registrar_log(
+                'checkout.recorrencia',
+                f"↩️ [VALIDAÇÃO] Etapa 2: Cancelando pré-autorização (estorno de R$ 1,00)"
+            )
+            
+            resultado_cancelamento = pinbank_service.cancelar_transacao(
+                nsu_operacao=nsu_preauth,
+                valor=Decimal('1.00')
+            )
+            
+            if not resultado_cancelamento.get('sucesso'):
+                registrar_log(
+                    'checkout.recorrencia',
+                    f"⚠️ [VALIDAÇÃO] Erro ao cancelar pré-autorização: {resultado_cancelamento.get('mensagem')}",
+                    nivel='WARNING'
+                )
+                # Continuar mesmo se cancelamento falhar (cartão já foi validado)
+            else:
+                registrar_log(
+                    'checkout.recorrencia',
+                    f"✅ [VALIDAÇÃO] Pré-autorização cancelada com sucesso (estorno processado)"
+                )
+            
+            # ========== ETAPA 3: TOKENIZAR CARTÃO ==========
+            registrar_log(
+                'checkout.recorrencia',
+                f"🔑 [VALIDAÇÃO] Etapa 3: Tokenizando cartão para uso futuro"
+            )
+            
             dados_cartao = {
                 'numero': numero_cartao,
                 'validade': validade,
@@ -173,10 +275,21 @@ class RecorrenciaTokenService:
             )
             
             if not resultado_token.get('sucesso'):
+                registrar_log(
+                    'checkout.recorrencia',
+                    f"❌ [VALIDAÇÃO] Erro ao tokenizar cartão: {resultado_token.get('mensagem')}",
+                    nivel='ERROR'
+                )
                 return {
                     'sucesso': False,
                     'mensagem': f'Erro ao tokenizar cartão: {resultado_token.get("mensagem")}'
                 }
+            
+            # ========== ETAPA 4: VINCULAR CARTÃO À RECORRÊNCIA ==========
+            registrar_log(
+                'checkout.recorrencia',
+                f"🔗 [VALIDAÇÃO] Etapa 4: Vinculando cartão à recorrência"
+            )
             
             # Buscar cartão tokenizado criado
             cartao_tokenizado = CheckoutCartaoTokenizado.objects.get(id=resultado_token['cartao_id'])
@@ -199,15 +312,17 @@ class RecorrenciaTokenService:
             
             registrar_log(
                 'checkout.recorrencia',
-                f"Cartão cadastrado e recorrência ativada: Recorrência={recorrencia.id}, "
-                f"Cartão={cartao_tokenizado.cartao_mascarado}, Próxima cobrança={proxima}"
+                f"✅ [VALIDAÇÃO] Cartão validado e cadastrado com sucesso: "
+                f"Recorrência={recorrencia.id}, Cartão={cartao_tokenizado.cartao_mascarado}, "
+                f"Próxima cobrança={proxima}, NSU validação={nsu_preauth}"
             )
             
             return {
                 'sucesso': True,
-                'mensagem': 'Cartão cadastrado com sucesso! Sua recorrência está ativa.',
+                'mensagem': 'Cartão validado e cadastrado com sucesso! Sua recorrência está ativa.',
                 'proxima_cobranca': proxima.strftime('%d/%m/%Y'),
-                'recorrencia_id': recorrencia.id
+                'recorrencia_id': recorrencia.id,
+                'validacao_realizada': True
             }
             
         except Exception as e:

@@ -94,6 +94,20 @@ def revogar_meu_dispositivo(request):
                 'mensagem': 'device_fingerprint é obrigatório'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # LOG DETALHADO: Dados recebidos do app
+        registrar_log('apps.cliente',
+            f"🔍 [REVOGAR] Solicitação recebida do app:",
+            nivel='INFO')
+        registrar_log('apps.cliente',
+            f"  - cliente_id: {cliente_id}",
+            nivel='INFO')
+        registrar_log('apps.cliente',
+            f"  - device_fingerprint recebido: {device_fingerprint}",
+            nivel='INFO')
+        registrar_log('apps.cliente',
+            f"  - payload completo: {request.data}",
+            nivel='INFO')
+        
         # Revogar dispositivo
         resultado = DeviceManagementService.revogar_dispositivo(
             user_id=cliente_id,

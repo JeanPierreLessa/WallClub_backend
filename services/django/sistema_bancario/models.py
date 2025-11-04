@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from portais.controle_acesso.models import PortalUsuario
 
 
 class PagamentoEfetuado(models.Model):
@@ -21,7 +20,7 @@ class PagamentoEfetuado(models.Model):
     var111 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     var112 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(PortalUsuario, on_delete=models.PROTECT, verbose_name="Usuário")
+    user = models.ForeignKey('portais.controle_acesso.PortalUsuario', on_delete=models.PROTECT, verbose_name="Usuário")
     
     class Meta:
         db_table = 'pagamentos_efetuados'

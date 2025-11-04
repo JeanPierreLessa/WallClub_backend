@@ -443,23 +443,87 @@ class DeviceManagementService:
             Dict: {'sucesso': bool, 'mensagem': str}
         """
         try:
+            # LOG DETALHADO: Parâmetros recebidos
+            registrar_log('comum.seguranca',
+                f"🔍 [REVOGAR] Parâmetros recebidos:",
+                nivel='INFO')
+            registrar_log('comum.seguranca',
+                f"  - user_id: {user_id}",
+                nivel='INFO')
+            registrar_log('comum.seguranca',
+                f"  - tipo_usuario: {tipo_usuario}",
+                nivel='INFO')
+            registrar_log('comum.seguranca',
+                f"  - device_fingerprint: {device_fingerprint}",
+                nivel='INFO')
+            registrar_log('comum.seguranca',
+                f"  - dispositivo_id: {dispositivo_id}",
+                nivel='INFO')
+            
             # Buscar dispositivo por fingerprint ou ID
             if device_fingerprint and user_id and tipo_usuario:
+                # LOG: Listar TODOS os dispositivos ativos do usuário antes de revogar
+                dispositivos_ativos = DispositivoConfiavel.objects.filter(
+                    user_id=user_id,
+                    tipo_usuario=tipo_usuario,
+                    ativo=True
+                )
+                
+                registrar_log('comum.seguranca',
+                    f"📱 [REVOGAR] Dispositivos ativos encontrados para user_id={user_id}: {dispositivos_ativos.count()}",
+                    nivel='INFO')
+                
+                for idx, disp in enumerate(dispositivos_ativos, 1):
+                    registrar_log('comum.seguranca',
+                        f"  [{idx}] ID={disp.id}, fingerprint={disp.device_fingerprint}, "
+                        f"nome={disp.nome_dispositivo}, user_agent={disp.user_agent}",
+                        nivel='INFO')
+                
+                # Buscar dispositivo específico pelo fingerprint
                 dispositivo = DispositivoConfiavel.objects.filter(
                     device_fingerprint=device_fingerprint,
                     user_id=user_id,
                     tipo_usuario=tipo_usuario,
                     ativo=True
                 ).first()
+                
+                # LOG: Resultado da busca
+                if dispositivo:
+                    registrar_log('comum.seguranca',
+                        f"✅ [REVOGAR] Dispositivo encontrado pelo fingerprint:",
+                        nivel='INFO')
+                    registrar_log('comum.seguranca',
+                        f"  - ID: {dispositivo.id}",
+                        nivel='INFO')
+                    registrar_log('comum.seguranca',
+                        f"  - fingerprint: {dispositivo.device_fingerprint}",
+                        nivel='INFO')
+                    registrar_log('comum.seguranca',
+                        f"  - nome: {dispositivo.nome_dispositivo}",
+                        nivel='INFO')
+                    registrar_log('comum.seguranca',
+                        f"  - user_agent: {dispositivo.user_agent}",
+                        nivel='INFO')
+                else:
+                    registrar_log('comum.seguranca',
+                        f"❌ [REVOGAR] NENHUM dispositivo encontrado com fingerprint={device_fingerprint}",
+                        nivel='WARNING')
             elif dispositivo_id:
                 dispositivo = DispositivoConfiavel.objects.filter(id=dispositivo_id).first()
             else:
                 return {'sucesso': False, 'mensagem': 'Parâmetros insuficientes para localizar dispositivo'}
 
             if not dispositivo:
-                registrar_log('comum.seguranca', f"Dispositivo não encontrado", nivel='WARNING')
+                registrar_log('comum.seguranca',
+                    f"❌ [REVOGAR] Dispositivo não encontrado para revogação",
+                    nivel='WARNING')
                 return {'sucesso': False, 'mensagem': 'Dispositivo não encontrado'}
 
+            # LOG: Antes de revogar
+            registrar_log('comum.seguranca',
+                f"🗑️ [REVOGAR] Revogando dispositivo ID={dispositivo.id}, fingerprint={dispositivo.device_fingerprint}",
+                nivel='INFO')
+            
             # Usar update() para evitar violação de constraint unique_user_device_ativo
             DispositivoConfiavel.objects.filter(id=dispositivo.id).update(
                 ativo=False,
@@ -472,7 +536,8 @@ class DeviceManagementService:
 
             registrar_log(
                 'comum.seguranca',
-                f"Dispositivo revogado: {dispositivo.tipo_usuario} ID:{dispositivo.user_id} - {dispositivo.nome_dispositivo} - por {revogado_por}",
+                f"✅ [REVOGAR] Dispositivo revogado com sucesso: {dispositivo.tipo_usuario} ID:{dispositivo.user_id} - "
+                f"{dispositivo.nome_dispositivo} (fingerprint={dispositivo.device_fingerprint}) - por {revogado_por}",
                 nivel='INFO'
             )
 
