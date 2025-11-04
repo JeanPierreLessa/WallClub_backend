@@ -2,7 +2,6 @@
 - Gestao: contabilizacao de cashback
 - Voucher
 - Aumentar panfleto de oferta
-- Organizar comprovantes pinbank pro app. Deveria tudo estar em baseGestao
 - Remover a movimentacao maluca na conta corrente quando fechar pedido. so geracao de cash back com bloqueio e testes de conta digital
 - nao envia mensagem de baixar app no checkout
 - configurar nginx para receber ip real e ver alguns temmplates de remover cliente_auth

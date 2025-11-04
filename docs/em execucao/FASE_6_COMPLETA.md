@@ -303,142 +303,166 @@ wallclub_core @ file:///../core
 
 ---
 
-## 📅 FASE 6D - SEPARAÇÃO FÍSICA (PRÓXIMA)
+## 📅 FASE 6D - SEPARAÇÃO FÍSICA COM NGINX GATEWAY
 
-**Duração Estimada:** 3-4 semanas (Semanas 32-36)  
-**Status:** 📅 PLANEJADA
+**Duração Estimada:** 1-2 semanas  
+**Status:** 🚀 EM ANDAMENTO  
+**Início:** 03/11/2025
 
 ### Objetivos:
 
-1. **Configurar Docker Compose**
-   - Django Main (porta 8003)
-   - Risk Engine (porta 8004)
-   - Redis
-   - Celery Worker
-   - Celery Beat
-   - MySQL compartilhado
+1. **Configurar Nginx Gateway com Subdomínios**
+   - 6 subdomínios para acesso externo
+   - Roteamento inteligente por domínio
+   - Rate limiting diferenciado
+   - SSL/TLS centralizado
 
-2. **Implementar Deploy Independente**
+2. **Ajustar Containers**
+   - Remover sufixo `-monorepo` dos nomes
+   - Padronizar porta interna 8000
+   - Adicionar container Nginx
+
+3. **Deploy Independente**
    - Build por serviço
    - Restart seletivo
+   - Zero downtime
+
+4. **Testes End-to-End**
+   - Comunicação entre containers
+   - APIs internas (26 endpoints)
+   - OAuth entre serviços
    - Health checks
 
-3. **Configurar Nginx Gateway**
-   - Proxy reverso
-   - Load balancing
-   - SSL/TLS
-
-4. **Volumes Compartilhados**
-   - `/app/services/core` → wallclub_core
-   - `/shared/media` → Arquivos
-   - `/shared/logs` → Logs centralizados
-
-5. **Testes End-to-End**
-   - Comunicação entre containers
-   - APIs internas
-   - OAuth entre serviços
-   - Fallbacks
-
-### Arquitetura Alvo:
+### Arquitetura Final:
 
 ```
-Nginx Gateway (80/443)
-    ├── /api/ → Django Main (:8003)
-    ├── /api/antifraude/ → Risk Engine (:8004)
-    ├── /portal_admin/ → Django Main
-    ├── /portal_lojista/ → Django Main
-    └── /static/ → Static Files
+Internet (80/443)
+    ↓
+[Nginx Gateway - Container único]
+    ↓
+├─→ admin.wallclub.com.br          → Django:8000/portal_admin/
+├─→ vendas.wallclub.com.br         → Django:8000/portal_vendas/
+├─→ lojista.wallclub.com.br        → Django:8000/portal_lojista/
+├─→ api.wallclub.com.br            → Django:8000/api/ (Mobile - JWT)
+├─→ apipos.wallclub.com.br         → Django:8000/api/posp2/ (POS - OAuth)
+└─→ checkout.wallclub.com.br       → Django:8000/checkout/ (Web público)
 
-Backend:
-    Django Main (:8003)
-    Risk Engine (:8004)
-    Redis (:6379)
-    MySQL (:3306)
-    Celery Worker
-    Celery Beat
+Comunicação Interna (Rede Docker):
+    Django ←→ Risk Engine (http://wallclub-riskengine:8000)
+    Django ←→ Redis (wallclub-redis:6379)
+    Celery ←→ Redis (broker/backend)
 ```
 
-### Dockerfile Pattern:
-
-```dockerfile
-FROM python:3.11-slim
-
-# Copiar monorepo
-COPY . /app
-
-# Instalar wallclub_core
-RUN pip install -e /app/services/core
-
-# Instalar dependências do serviço
-WORKDIR /app/services/django
-RUN pip install -r requirements.txt
-
-EXPOSE 8003
-CMD ["gunicorn", "wallclub.wsgi:application"]
-```
-
-### docker-compose.yml:
+### Containers (7 total):
 
 ```yaml
-services:
-  django:
-    build:
-      context: .
-      dockerfile: services/django/Dockerfile
-    ports:
-      - "8003:8003"
-    volumes:
-      - ./services/core:/app/services/core
-      - media:/shared/media
-      - logs:/shared/logs
-    depends_on:
-      - redis
-      - mysql
-
-  riskengine:
-    build:
-      context: .
-      dockerfile: services/riskengine/Dockerfile
-    ports:
-      - "8004:8004"
-    volumes:
-      - ./services/core:/app/services/core
-      - logs:/shared/logs
-    depends_on:
-      - redis
-      - mysql
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: wallclub
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-volumes:
-  media:
-  logs:
-  mysql_data:
+1. nginx                    # Gateway - porta 80/443 (ÚNICA externa)
+2. wallclub-django          # Django - porta 8000 (interna)
+3. wallclub-riskengine      # Risk Engine - porta 8000 (interna)
+4. wallclub-redis           # Cache/Broker - porta 6379 (interna)
+5. wallclub-celery-worker   # Tasks assíncronas
+6. wallclub-celery-beat     # Scheduler
+7. mysql                    # Banco de dados (externo)
 ```
 
-### Checklist Fase 6D:
+### Segurança por Subdomínio:
 
-- [ ] Criar Dockerfiles para cada serviço
-- [ ] Configurar docker-compose.yml completo
-- [ ] Configurar Nginx como gateway
-- [ ] Implementar health checks
-- [ ] Testar comunicação entre containers
-- [ ] Validar APIs internas
-- [ ] Testar OAuth entre serviços
-- [ ] Deploy em staging
-- [ ] Testes de carga
+| Subdomínio | Autenticação | Rate Limit | Uso |
+|------------|--------------|------------|-----|
+| `admin.wallclub.com.br` | Django Admin | 5 req/s | Gestão sistema |
+| `vendas.wallclub.com.br` | Django Session | 10 req/s | Portal vendas/checkout |
+| `lojista.wallclub.com.br` | Django Session | 10 req/s | Portal lojista |
+| `api.wallclub.com.br` | OAuth + JWT | 10 req/s | Apps mobile |
+| `apipos.wallclub.com.br` | OAuth POSP2 | 50 req/s | Terminais POS |
+| `checkout.wallclub.com.br` | Session/Token | 20 req/s | Checkout web |
+
+### Estratégia de Transição (Domínios API):
+
+**Fase 1 - Imediata (Semana 1):**
+```nginx
+# Todos os domínios API respondem igual (alias no Nginx)
+server_name api.wallclub.com.br apipos.wallclub.com.br apidj.wallclub.com.br;
+```
+- Zero mudança no código Django
+- Comunicar novos domínios aos clientes
+- Monitorar uso de cada domínio
+
+**Fase 2 - Separação (30-60 dias):**
+```nginx
+# Separar rate limiting por domínio
+api.wallclub.com.br     → 10 req/s (mobile)
+apipos.wallclub.com.br  → 50 req/s (POS)
+apidj.wallclub.com.br   → deprecado (logs)
+```
+
+**Fase 3 - Deprecação (90 dias):**
+```nginx
+# Redirecionar apidj.wallclub.com.br
+location /posp2/ {
+    return 301 https://apipos.wallclub.com.br$request_uri;
+}
+location / {
+    return 301 https://api.wallclub.com.br$request_uri;
+}
+```
+
+### Mudanças nos Nomes:
+
+**Antes:**
+- `wallclub-django-monorepo`
+- `wallclub-riskengine-monorepo`
+- `wallclub-redis-monorepo`
+- `wallclub-celery-worker-monorepo`
+- `wallclub-celery-beat-monorepo`
+
+**Depois:**
+- `wallclub-django`
+- `wallclub-riskengine`
+- `wallclub-redis`
+- `wallclub-celery-worker`
+- `wallclub-celery-beat`
+
+### Arquivos a Criar/Modificar:
+
+- [x] Planejamento e documentação
+- [ ] `docker-compose.yml` - Ajustar nomes + adicionar nginx
+- [ ] `nginx.conf` - 6 subdomínios + rate limiting
+- [ ] `Dockerfile.nginx` - Container Nginx
+- [ ] `docs/deployment/deploy_fase_6d.md` - Comandos deploy
+- [ ] `scripts/teste_containers.py` - Testes end-to-end
+- [ ] Validar comunicação entre containers
 - [ ] Deploy em produção
+
+### Comandos de Deploy:
+
+```bash
+# Deploy completo
+docker-compose up -d --build
+
+# Deploy apenas Django (sem afetar outros)
+docker-compose up -d --build --no-deps wallclub-django
+
+# Deploy apenas Risk Engine
+docker-compose up -d --build --no-deps wallclub-riskengine
+
+# Restart sem rebuild
+docker-compose restart wallclub-django wallclub-riskengine
+
+# Logs específicos
+docker logs -f wallclub-django
+docker logs -f wallclub-riskengine
+docker logs -f nginx
+```
+
+### Benefícios da Arquitetura:
+
+✅ **Deploy Independente** - Atualizar Django sem afetar Risk Engine  
+✅ **Segurança em Camadas** - Rate limiting diferenciado por subdomínio  
+✅ **Monitoramento Específico** - Logs separados por tipo de acesso  
+✅ **Escalabilidade** - Adicionar réplicas de containers específicos  
+✅ **Troubleshooting** - Isolar problemas por serviço  
+✅ **Zero Downtime** - Deploy rolling por container  
+✅ **Transição Suave** - Aliases no Nginx (zero mudança no código)
 
 ---
 
@@ -461,12 +485,14 @@ volumes:
 - **Arquivos migrados:** 113
 - **Bug:** ✅ Corrigido
 
-### Meta Fase 6D (Dezembro 2025):
-- **Containers:** 5+ independentes
+### Meta Fase 6D (Novembro 2025):
+- **Containers:** 7 (nginx + django + riskengine + redis + celery worker/beat + mysql)
+- **Subdomínios:** 6 (admin, vendas, lojista, api, apipos, checkout)
 - **Deploy:** Independente por serviço
-- **Comunicação:** APIs REST + OAuth
+- **Comunicação:** APIs REST + OAuth (interna)
 - **Escalabilidade:** Horizontal
 - **Manutenção:** Isolada por container
+- **Gateway:** Nginx centralizado (única porta externa)
 
 ---
 
@@ -487,8 +513,11 @@ volumes:
 - feat(core): Package wallclub_core criado
 - refactor: Migrar 113 arquivos para wallclub_core
 
+### Fase 6D:
+- (em andamento)
+
 ---
 
 **Documentação Completa:** 03/11/2025  
 **Responsável:** Jean Lessa  
-**Versão:** Consolidada FASE_6 (A+B+C)
+**Versão:** Consolidada FASE_6 (A+B+C+D em andamento)
