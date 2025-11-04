@@ -422,16 +422,255 @@ location / {
 - `wallclub-celery-worker`
 - `wallclub-celery-beat`
 
-### Arquivos a Criar/Modificar:
+### Passo a Passo da Implementação:
 
-- [x] Planejamento e documentação
-- [ ] `docker-compose.yml` - Ajustar nomes + adicionar nginx
-- [ ] `nginx.conf` - 6 subdomínios + rate limiting
-- [ ] `Dockerfile.nginx` - Container Nginx
-- [ ] `docs/deployment/deploy_fase_6d.md` - Comandos deploy
-- [ ] `scripts/teste_containers.py` - Testes end-to-end
-- [ ] Validar comunicação entre containers
-- [ ] Deploy em produção
+#### **Passo 1: Ajustar docker-compose.yml**
+
+**Objetivo:** Remover sufixo `-monorepo` e adicionar container Nginx
+
+**Mudanças:**
+```yaml
+# Renomear containers:
+wallclub-django-monorepo     → wallclub-django
+wallclub-riskengine-monorepo → wallclub-riskengine
+wallclub-redis-monorepo      → wallclub-redis
+wallclub-celery-worker-monorepo → wallclub-celery-worker
+wallclub-celery-beat-monorepo   → wallclub-celery-beat
+
+# Ajustar portas (remover exposição externa):
+web:
+  ports:
+    - "8003:8000"  # REMOVER - não expor mais
+  # Porta 8000 fica apenas interna na rede Docker
+
+riskengine:
+  ports:
+    - "8004:8004"  # REMOVER - não expor mais
+  # Porta 8000 fica apenas interna na rede Docker
+
+# Adicionar container Nginx:
+nginx:
+  build:
+    context: .
+    dockerfile: Dockerfile.nginx
+  container_name: nginx
+  ports:
+    - "80:80"
+    - "443:443"
+  volumes:
+    - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    - ./services/django/staticfiles:/staticfiles:ro
+  depends_on:
+    - wallclub-django
+    - wallclub-riskengine
+  networks:
+    - wallclub-network
+```
+
+**Arquivo:** `/WallClub_backend/docker-compose.yml`
+
+---
+
+#### **Passo 2: Criar nginx.conf**
+
+**Objetivo:** Configurar roteamento por subdomínio com rate limiting
+
+**Estrutura:**
+```nginx
+# Rate limiting zones
+limit_req_zone $binary_remote_addr zone=admin:10m rate=5r/s;
+limit_req_zone $binary_remote_addr zone=portal:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=api_mobile:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=api_pos:10m rate=50r/s;
+limit_req_zone $binary_remote_addr zone=checkout:10m rate=20r/s;
+
+# Upstream Django
+upstream django_backend {
+    server wallclub-django:8000;
+}
+
+# Server blocks (6 subdomínios)
+server {
+    server_name admin.wallclub.com.br;
+    limit_req zone=admin burst=10;
+    location / {
+        proxy_pass http://django_backend/portal_admin/;
+    }
+}
+
+server {
+    server_name vendas.wallclub.com.br;
+    limit_req zone=portal burst=20;
+    location / {
+        proxy_pass http://django_backend/portal_vendas/;
+    }
+}
+
+server {
+    server_name lojista.wallclub.com.br;
+    limit_req zone=portal burst=20;
+    location / {
+        proxy_pass http://django_backend/portal_lojista/;
+    }
+}
+
+# APIs - Fase 1 (todos respondem igual)
+server {
+    server_name api.wallclub.com.br apipos.wallclub.com.br apidj.wallclub.com.br;
+    limit_req zone=api_mobile burst=20;
+    location / {
+        proxy_pass http://django_backend;
+    }
+}
+
+server {
+    server_name checkout.wallclub.com.br;
+    limit_req zone=checkout burst=40;
+    location / {
+        proxy_pass http://django_backend/checkout/;
+    }
+}
+```
+
+**Arquivo:** `/WallClub_backend/nginx.conf`
+
+---
+
+#### **Passo 3: Criar Dockerfile.nginx**
+
+**Objetivo:** Container Nginx customizado
+
+```dockerfile
+FROM nginx:1.25-alpine
+
+# Copiar configuração
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Criar diretórios
+RUN mkdir -p /var/log/nginx /staticfiles
+
+# Expor portas
+EXPOSE 80 443
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**Arquivo:** `/WallClub_backend/Dockerfile.nginx`
+
+---
+
+#### **Passo 4: Atualizar variáveis de ambiente**
+
+**Django (.env):**
+```bash
+# Ajustar URLs internas
+REDIS_HOST=wallclub-redis
+RISK_ENGINE_URL=http://wallclub-riskengine:8000
+
+# Adicionar domínios permitidos
+ALLOWED_HOSTS=admin.wallclub.com.br,vendas.wallclub.com.br,lojista.wallclub.com.br,api.wallclub.com.br,apipos.wallclub.com.br,apidj.wallclub.com.br,checkout.wallclub.com.br,localhost
+```
+
+**Risk Engine (.env):**
+```bash
+REDIS_HOST=wallclub-redis
+CALLBACK_URL_PRINCIPAL=http://wallclub-django:8000
+```
+
+---
+
+#### **Passo 5: Criar script de teste end-to-end**
+
+**Objetivo:** Validar comunicação entre containers
+
+```python
+# scripts/teste_containers.py
+import requests
+import sys
+
+def testar_health_checks():
+    """Testa health checks dos containers"""
+    testes = [
+        ("Django", "http://wallclub-django:8000/health/"),
+        ("Risk Engine", "http://wallclub-riskengine:8000/api/antifraude/health/"),
+    ]
+    
+    for nome, url in testes:
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                print(f"✅ {nome}: OK")
+            else:
+                print(f"❌ {nome}: ERRO {response.status_code}")
+                return False
+        except Exception as e:
+            print(f"❌ {nome}: {str(e)}")
+            return False
+    
+    return True
+
+def testar_comunicacao_interna():
+    """Testa Django → Risk Engine via OAuth"""
+    # Implementar teste de análise antifraude
+    pass
+
+if __name__ == "__main__":
+    if not testar_health_checks():
+        sys.exit(1)
+    print("\n✅ Todos os testes passaram!")
+```
+
+**Arquivo:** `/WallClub_backend/scripts/teste_containers.py`
+
+---
+
+#### **Passo 6: Deploy em produção**
+
+**Comandos:**
+```bash
+# 1. Fazer backup
+docker-compose down
+docker system prune -a  # Limpar imagens antigas
+
+# 2. Build dos novos containers
+docker-compose build
+
+# 3. Subir containers
+docker-compose up -d
+
+# 4. Verificar logs
+docker logs -f wallclub-django
+docker logs -f wallclub-riskengine
+docker logs -f nginx
+
+# 5. Testar health checks
+docker exec wallclub-django curl http://localhost:8000/health/
+docker exec wallclub-riskengine curl http://localhost:8000/api/antifraude/health/
+
+# 6. Configurar DNS (apontar subdomínios para servidor)
+# admin.wallclub.com.br    → IP_SERVIDOR
+# vendas.wallclub.com.br   → IP_SERVIDOR
+# lojista.wallclub.com.br  → IP_SERVIDOR
+# api.wallclub.com.br      → IP_SERVIDOR
+# apipos.wallclub.com.br   → IP_SERVIDOR
+# checkout.wallclub.com.br → IP_SERVIDOR
+```
+
+---
+
+### Checklist de Validação:
+
+- [ ] Containers renomeados (sem `-monorepo`)
+- [ ] Nginx configurado com 6 subdomínios
+- [ ] Rate limiting funcionando
+- [ ] Health checks respondendo
+- [ ] Django → Risk Engine (OAuth interno)
+- [ ] Django → Redis (cache)
+- [ ] Celery processando tasks
+- [ ] DNS configurado
+- [ ] SSL/TLS configurado (Certbot)
+- [ ] Logs centralizados
+- [ ] Monitoramento ativo
 
 ### Comandos de Deploy:
 
