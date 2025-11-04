@@ -134,7 +134,7 @@ class OfertasAPIClient:
         Returns:
             {'sucesso': True, 'total': int, 'grupos': [...]}
         """
-        return self._make_request('POST', 'grupos/listar/')
+        return self._make_request('POST', 'grupos/listar/', data={})
     
     def criar_grupo(self, dados: Dict[str, Any]) -> Dict[str, Any]:
         """

@@ -401,6 +401,8 @@ Volumes:
 
 ## Documentação
 
+📚 **Para documentação completa, consulte o [Índice de Documentação](docs/README.md)**
+
 ### Estrutura Consolidada
 
 A documentação foi reorganizada em uma estrutura única no diretório `/docs`:

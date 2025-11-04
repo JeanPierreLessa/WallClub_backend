@@ -1,0 +1,55 @@
+"""
+Settings para Container POS (Terminal POS)
+"""
+from .base import *
+import os
+
+# Debug mode (ativar para desenvolvimento local)
+DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 'yes']
+
+# ALLOWED_HOSTS - aceitar todos em dev, específicos em prod
+if DEBUG:
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = ['apipos.wallclub.com.br']
+
+# Apps específicos do container POS
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Third party apps
+    'rest_framework',
+    'corsheaders',
+    
+    # Core
+    'wallclub_core',
+    'wallclub_core.oauth',
+    
+    # Apps do container POS
+    'posp2',
+    'pinbank',
+    'pinbank.cargas_pinbank',
+    'parametros_wallclub',
+]
+
+# URLs específicas
+ROOT_URLCONF = 'wallclub.urls_pos'
+
+# Middleware mínimo (sem middlewares de portais)
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'wallclub_core.middleware.security_middleware.APISecurityMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]

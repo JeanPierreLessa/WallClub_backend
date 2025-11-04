@@ -107,7 +107,7 @@
                                    class="form-control" 
                                    id="vigencia_inicio" 
                                    name="vigencia_inicio" 
-                                   value="{% if oferta %}{{ oferta.vigencia_inicio|date:'Y-m-d\TH:i' }}{% endif %}"
+                                   value="{{ vigencia_inicio_formatted|default:'' }}"
                                    required>
                         </div>
 
@@ -119,7 +119,7 @@
                                    class="form-control" 
                                    id="vigencia_fim" 
                                    name="vigencia_fim" 
-                                   value="{% if oferta %}{{ oferta.vigencia_fim|date:'Y-m-d\TH:i' }}{% endif %}"
+                                   value="{{ vigencia_fim_formatted|default:'' }}"
                                    required>
                         </div>
                     </div>

@@ -33,6 +33,12 @@ def ofertas_list(request):
         
         ofertas_com_disparos = []
         for oferta_data in ofertas:
+            # Formatar datas para exibição (remover segundos da string ISO)
+            if 'vigencia_inicio' in oferta_data and oferta_data['vigencia_inicio']:
+                oferta_data['vigencia_inicio_formatted'] = oferta_data['vigencia_inicio'][:16]
+            if 'vigencia_fim' in oferta_data and oferta_data['vigencia_fim']:
+                oferta_data['vigencia_fim_formatted'] = oferta_data['vigencia_fim'][:16]
+            
             oferta_obj = OfertaObj(oferta_data)
             ofertas_com_disparos.append({
                 'oferta': oferta_obj,
@@ -211,6 +217,17 @@ def ofertas_edit(request, oferta_id):
         
         oferta = OfertaObj(oferta_data)
         
+        # Formatar datas para input datetime-local (formato: 2025-10-12T06:48)
+        vigencia_inicio_formatted = None
+        vigencia_fim_formatted = None
+        
+        if oferta.vigencia_inicio:
+            # Remover segundos e timezone da string ISO
+            vigencia_inicio_formatted = oferta.vigencia_inicio[:16]  # "2025-10-12T06:48:00" -> "2025-10-12T06:48"
+        
+        if oferta.vigencia_fim:
+            vigencia_fim_formatted = oferta.vigencia_fim[:16]
+        
         if request.method == 'GET':
             # Buscar grupos via API
             grupos_response = ofertas_api.listar_grupos()
@@ -225,7 +242,9 @@ def ofertas_edit(request, oferta_id):
             
             context = {
                 'oferta': oferta,
-                'grupos': grupos
+                'grupos': grupos,
+                'vigencia_inicio_formatted': vigencia_inicio_formatted,
+                'vigencia_fim_formatted': vigencia_fim_formatted
             }
             return render(request, 'portais/admin/ofertas_form.html', context)
         

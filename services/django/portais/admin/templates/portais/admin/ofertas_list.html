@@ -63,8 +63,12 @@
                                 <td class="align-middle">
                                     <small>
                                         <i class="fas fa-calendar-alt me-1"></i>
-                                        {{ item.oferta.vigencia_inicio|date:"d/m/Y H:i" }}<br>
-                                        até {{ item.oferta.vigencia_fim|date:"d/m/Y H:i" }}
+                                        {% if item.oferta.vigencia_inicio_formatted %}
+                                            {{ item.oferta.vigencia_inicio_formatted|slice:":10" }} {{ item.oferta.vigencia_inicio_formatted|slice:"11:" }}<br>
+                                            até {{ item.oferta.vigencia_fim_formatted|slice:":10" }} {{ item.oferta.vigencia_fim_formatted|slice:"11:" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
                                     </small>
                                 </td>
                                 <td class="align-middle">

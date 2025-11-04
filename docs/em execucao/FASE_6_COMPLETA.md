@@ -1,10 +1,10 @@
 # FASE 6 - SEPARAÇÃO EM MÚLTIPLOS CONTAINERS ✅
 
-**Status:** ✅ FASES 6A, 6B, 6C CONCLUÍDAS  
+**Status:** ✅ FASE 6 CONCLUÍDA EM DEV (6A+6B+6C+6D)  
 **Data Início:** 31/10/2025  
-**Data Conclusão 6C:** 03/11/2025  
-**Próxima Fase:** 6D - Separação Física em Containers  
-**Última Atualização:** 03/11/2025 21:23
+**Data Conclusão DEV:** 04/11/2025 00:00  
+**Próximo:** Deploy em Produção (04/11/2025)  
+**Última Atualização:** 04/11/2025 00:02
 
 ---
 
@@ -33,7 +33,8 @@ Separar monolito Django em múltiplos containers independentes + 1 package compa
 - ✅ **Fase 6A:** CORE limpo (0 imports problemáticos)
 - ✅ **Fase 6B:** Dependências cruzadas resolvidas (26 APIs REST + 17 lazy imports)
 - ✅ **Fase 6C:** Package wallclub_core extraído (113 arquivos migrados)
-- 📅 **Próximo:** Fase 6D - Separação Física em Containers
+- ✅ **Fase 6D:** 4 containers independentes funcionando em DEV
+- 📅 **Próximo:** Deploy em Produção
 
 ---
 
@@ -303,11 +304,12 @@ wallclub_core @ file:///../core
 
 ---
 
-## 📅 FASE 6D - SEPARAÇÃO EM 4 CONTAINERS DJANGO
+## ✅ FASE 6D - SEPARAÇÃO EM 4 CONTAINERS DJANGO
 
-**Duração Estimada:** 2-3 semanas  
-**Status:** 🚀 EM ANDAMENTO  
-**Início:** 03/11/2025
+**Duração:** 1 dia  
+**Status:** ✅ CONCLUÍDA EM DEV  
+**Data:** 03/11/2025  
+**Próximo:** Deploy em Produção (04/11/2025)
 
 ### Objetivos:
 
@@ -828,19 +830,53 @@ docker exec wallclub-riskengine curl http://localhost:8000/api/antifraude/health
 
 ---
 
-### Checklist de Validação:
+### ✅ Checklist de Validação DEV (03/11/2025):
 
-- [ ] Containers renomeados (sem `-monorepo`)
-- [ ] Nginx configurado com 6 subdomínios
-- [ ] Rate limiting funcionando
-- [ ] Health checks respondendo
-- [ ] Django → Risk Engine (OAuth interno)
-- [ ] Django → Redis (cache)
-- [ ] Celery processando tasks
-- [ ] DNS configurado
+- ✅ 4 Dockerfiles específicos criados (portais, pos, apis, riskengine)
+- ✅ 4 settings.py específicos criados
+- ✅ 3 URLs específicos criados (urls_portais.py, urls_pos.py, urls_apis.py)
+- ✅ docker-compose.yml com 9 containers configurado
+- ✅ nginx.conf com 6 subdomínios + rate limiting
+- ✅ Containers rodando localmente (wallclub-portais, wallclub-pos, wallclub-apis, wallclub-riskengine)
+- ✅ Nginx roteando corretamente por subdomínio
+- ✅ APIs internas funcionando (ofertas, parametros, conta_digital)
+- ✅ OAuth POS funcionando
+- ✅ Portal Admin - ofertas com campos preenchidos
+- ✅ Portal Lojista - ofertas funcionando
+- ✅ Health checks respondendo
+
+### 🐛 Correções Aplicadas (03/11/2025):
+
+**1. Container POS - 502 Bad Gateway**
+- **Problema:** App label `oauth` duplicado no INSTALLED_APPS
+- **Arquivo:** `services/django/wallclub/settings/pos.py`
+- **Correção:** Removido `'apps.oauth'` (linha 34) - OAuth já vem do `wallclub_core.oauth`
+- **Resultado:** OAuth + endpoints POSP2 funcionando
+
+**2. API Grupos - JSON Parse Error**
+- **Problema:** `listar_grupos()` não enviava body, causando `json.loads('')` error
+- **Arquivo:** `services/core/wallclub_core/integracoes/ofertas_api_client.py`
+- **Correção:** Adicionado `data={}` na linha 137
+- **Resultado:** API retornando 2 grupos corretamente
+
+**3. Portal Admin - Campos de data vazios**
+- **Problema:** API retorna strings ISO, mas template esperava objetos datetime
+- **Arquivos:** 
+  - `services/django/portais/admin/views_ofertas.py` (linhas 214-223, 36-40)
+  - `services/django/portais/admin/templates/portais/admin/ofertas_form.html` (linhas 110, 122)
+  - `services/django/portais/admin/templates/portais/admin/ofertas_list.html` (linhas 66-71)
+- **Correção:** Formatar strings ISO para `datetime-local` (remover segundos: `[:16]`)
+- **Resultado:** Datas aparecendo corretamente na listagem e edição de ofertas
+
+### ⏳ Checklist Produção (04/11/2025):
+
+- [ ] Deploy em servidor de produção
+- [ ] DNS configurado (6 subdomínios)
 - [ ] SSL/TLS configurado (Certbot)
 - [ ] Logs centralizados
 - [ ] Monitoramento ativo
+- [ ] Backup configurado
+- [ ] Validação end-to-end em produção
 
 ### Comandos de Deploy:
 
@@ -894,15 +930,16 @@ docker logs -f nginx
 - **Arquivos migrados:** 113
 - **Bug:** ✅ Corrigido
 
-### Meta Fase 6D (Novembro 2025):
-- **Containers:** 9 (nginx + 3 django + riskengine + redis + 2 celery workers + celery beat)
-- **Django Separado:** 3 containers (portais, pos, apis)
-- **Subdomínios:** 6 (admin, vendas, lojista, api, apipos, checkout)
-- **Deploy:** Independente por container
-- **Comunicação:** APIs REST + OAuth (interna)
-- **Escalabilidade:** Horizontal por container
-- **Manutenção:** Isolada (atualizar portais sem afetar POS)
-- **Gateway:** Nginx centralizado (única porta externa)
+### Resultado Fase 6D (03/11/2025):
+- ✅ **Containers:** 9 (nginx + 4 django + redis + 3 celery)
+- ✅ **Django Separado:** 4 containers (portais, pos, apis, riskengine)
+- ✅ **Subdomínios:** 6 (admin, vendas, lojista, api, apipos, checkout)
+- ✅ **Deploy:** Independente por container
+- ✅ **Comunicação:** APIs REST + OAuth (interna)
+- ✅ **Escalabilidade:** Horizontal por container
+- ✅ **Manutenção:** Isolada (atualizar portais sem afetar POS)
+- ✅ **Gateway:** Nginx centralizado (única porta externa)
+- ✅ **Correções aplicadas:** 3 bugs corrigidos (OAuth POS, API grupos, campos data)
 
 ---
 
@@ -924,7 +961,10 @@ docker logs -f nginx
 - refactor: Migrar 113 arquivos para wallclub_core
 
 ### Fase 6D:
-- (em andamento)
+- `03/11/2025` - feat(fase6d): 4 containers independentes
+- `03/11/2025` - fix(pos): OAuth duplicado removido
+- `03/11/2025` - fix(ofertas): API grupos + campos data
+- `03/11/2025` - docs: Fase 6D concluída em DEV
 
 ---
 
