@@ -303,67 +303,123 @@ wallclub_core @ file:///../core
 
 ---
 
-## 📅 FASE 6D - SEPARAÇÃO FÍSICA COM NGINX GATEWAY
+## 📅 FASE 6D - SEPARAÇÃO EM 4 CONTAINERS DJANGO
 
-**Duração Estimada:** 1-2 semanas  
+**Duração Estimada:** 2-3 semanas  
 **Status:** 🚀 EM ANDAMENTO  
 **Início:** 03/11/2025
 
 ### Objetivos:
 
-1. **Configurar Nginx Gateway com Subdomínios**
+1. **Separar Django em 4 Containers Especializados**
+   - Container 1: Portais (Admin, Vendas, Lojista)
+   - Container 2: POS (Terminal POS)
+   - Container 3: APIs (Mobile + Checkout)
+   - Container 4: Risk Engine (Antifraude)
+
+2. **Configurar Nginx Gateway com Subdomínios**
    - 6 subdomínios para acesso externo
-   - Roteamento inteligente por domínio
+   - Roteamento por subdomínio para container correto
    - Rate limiting diferenciado
    - SSL/TLS centralizado
 
-2. **Ajustar Containers**
-   - Remover sufixo `-monorepo` dos nomes
-   - Padronizar porta interna 8000
-   - Adicionar container Nginx
-
-3. **Deploy Independente**
+3. **Deploy Independente por Container**
    - Build por serviço
    - Restart seletivo
    - Zero downtime
+   - Escalabilidade horizontal
 
-4. **Testes End-to-End**
-   - Comunicação entre containers
-   - APIs internas (26 endpoints)
-   - OAuth entre serviços
-   - Health checks
+4. **Isolamento e Segurança**
+   - Cada container carrega apenas apps necessários
+   - POS isolado (sistema crítico)
+   - Comunicação interna via rede Docker
 
 ### Arquitetura Final:
 
 ```
 Internet (80/443)
     ↓
-[Nginx Gateway - Container único]
+[Nginx Gateway]
     ↓
-├─→ admin.wallclub.com.br          → Django:8000/portal_admin/
-├─→ vendas.wallclub.com.br         → Django:8000/portal_vendas/
-├─→ lojista.wallclub.com.br        → Django:8000/portal_lojista/
-├─→ api.wallclub.com.br            → Django:8000/api/ (Mobile - JWT)
-├─→ apipos.wallclub.com.br         → Django:8000/api/posp2/ (POS - OAuth)
-└─→ checkout.wallclub.com.br       → Django:8000/checkout/ (Web público)
+├─→ admin.wallclub.com.br      → wallclub-portais:8000 (portais/)
+├─→ vendas.wallclub.com.br     → wallclub-portais:8000 (portais/)
+├─→ lojista.wallclub.com.br    → wallclub-portais:8000 (portais/)
+│
+├─→ apipos.wallclub.com.br     → wallclub-pos:8000 (posp2/)
+│
+├─→ api.wallclub.com.br        → wallclub-apis:8000 (apps/)
+├─→ checkout.wallclub.com.br   → wallclub-apis:8000 (checkout/)
+│
+└─→ (interno apenas)           → wallclub-riskengine:8000 (antifraude/)
 
 Comunicação Interna (Rede Docker):
-    Django ←→ Risk Engine (http://wallclub-riskengine:8000)
-    Django ←→ Redis (wallclub-redis:6379)
-    Celery ←→ Redis (broker/backend)
+    Todos ←→ Redis (wallclub-redis:6379)
+    Todos ←→ MySQL (compartilhado)
+    APIs/POS → Risk Engine (OAuth interno)
 ```
 
-### Containers (7 total):
+### Containers (9 total):
 
 ```yaml
-1. nginx                    # Gateway - porta 80/443 (ÚNICA externa)
-2. wallclub-django          # Django - porta 8000 (interna)
-3. wallclub-riskengine      # Risk Engine - porta 8000 (interna)
-4. wallclub-redis           # Cache/Broker - porta 6379 (interna)
-5. wallclub-celery-worker   # Tasks assíncronas
-6. wallclub-celery-beat     # Scheduler
-7. mysql                    # Banco de dados (externo)
+1. nginx                          # Gateway - porta 80/443 (ÚNICA externa)
+2. wallclub-portais               # Portais Web - porta 8000 (interna)
+3. wallclub-pos                   # Terminal POS - porta 8000 (interna)
+4. wallclub-apis                  # APIs Mobile - porta 8000 (interna)
+5. wallclub-riskengine            # Antifraude - porta 8000 (interna)
+6. wallclub-redis                 # Cache/Broker - porta 6379 (interna)
+7. wallclub-celery-worker-portais # Tasks portais
+8. wallclub-celery-worker-apis    # Tasks APIs
+9. wallclub-celery-beat           # Scheduler
 ```
+
+### Distribuição de Apps por Container:
+
+#### **Container 1: wallclub-portais**
+**Módulos:**
+- `portais/admin/` - Portal administrativo
+- `portais/lojista/` - Portal lojista
+- `portais/vendas/` - Portal vendas/checkout interno
+- `portais/controle_acesso/` - Autenticação portais
+- `sistema_bancario/` - Gestão bancária
+
+**Características:**
+- Deploy: Frequente (features admin/lojista)
+- Estabilidade: Média
+- Usuários: Equipe interna + Lojistas
+
+#### **Container 2: wallclub-pos**
+**Módulos:**
+- `posp2/` - Terminal POS
+- `pinbank/` - Integração Pinbank
+- `parametros_wallclub/` - Parâmetros e calculadora
+
+**Características:**
+- Deploy: Raro (sistema crítico)
+- Estabilidade: ALTA
+- Usuários: Terminais físicos em lojas
+
+#### **Container 3: wallclub-apis**
+**Módulos:**
+- `apps/cliente/` - Autenticação mobile
+- `apps/conta_digital/` - Conta digital
+- `apps/ofertas/` - Ofertas e simulações
+- `apps/transacoes/` - Transações mobile
+- `apps/oauth/` - OAuth apps
+- `checkout/` - Checkout web público
+
+**Características:**
+- Deploy: Médio (features app mobile)
+- Estabilidade: Média
+- Usuários: Apps mobile + Checkout web
+
+#### **Container 4: wallclub-riskengine**
+**Módulos:**
+- `antifraude/` - Motor antifraude + MaxMind
+
+**Características:**
+- Deploy: Frequente (ajustes regras)
+- Estabilidade: Alta (já consolidado)
+- Usuários: Interno (chamado por outros containers)
 
 ### Segurança por Subdomínio:
 
@@ -424,35 +480,149 @@ location / {
 
 ### Passo a Passo da Implementação:
 
-#### **Passo 1: Ajustar docker-compose.yml**
+#### **Passo 1: Criar Dockerfiles Especializados**
 
-**Objetivo:** Remover sufixo `-monorepo` e adicionar container Nginx
+**Dockerfile.portais:**
+```dockerfile
+FROM python:3.11-slim
+# Copia apenas: portais/, sistema_bancario/, wallclub_core
+# DJANGO_SETTINGS_MODULE=wallclub.settings.portais
+# Porta 8000
+```
 
-**Mudanças:**
+**Dockerfile.pos:**
+```dockerfile
+FROM python:3.11-slim
+# Copia apenas: posp2/, pinbank/, parametros_wallclub/, wallclub_core
+# DJANGO_SETTINGS_MODULE=wallclub.settings.pos
+# Porta 8000
+```
+
+**Dockerfile.apis:**
+```dockerfile
+FROM python:3.11-slim
+# Copia apenas: apps/, checkout/, conta_digital/, wallclub_core
+# DJANGO_SETTINGS_MODULE=wallclub.settings.apis
+# Porta 8000
+```
+
+---
+
+#### **Passo 2: Criar Settings Específicos**
+
+**wallclub/settings/portais.py:**
+```python
+from .base import *
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    # ...
+    'portais.admin',
+    'portais.lojista',
+    'portais.vendas',
+    'portais.controle_acesso',
+    'sistema_bancario',
+]
+
+ROOT_URLCONF = 'wallclub.urls_portais'
+```
+
+**wallclub/settings/pos.py:**
+```python
+from .base import *
+
+INSTALLED_APPS = [
+    # Mínimo necessário
+    'posp2',
+    'pinbank',
+    'parametros_wallclub',
+]
+
+ROOT_URLCONF = 'wallclub.urls_pos'
+```
+
+**wallclub/settings/apis.py:**
+```python
+from .base import *
+
+INSTALLED_APPS = [
+    'apps.cliente',
+    'apps.conta_digital',
+    'apps.ofertas',
+    'apps.transacoes',
+    'apps.oauth',
+    'checkout',
+]
+
+ROOT_URLCONF = 'wallclub.urls_apis'
+```
+
+---
+
+#### **Passo 3: Criar URLs Específicos**
+
+**wallclub/urls_portais.py:**
+```python
+urlpatterns = [
+    path('portal_admin/', include('portais.admin.urls')),
+    path('portal_vendas/', include('portais.vendas.urls')),
+    path('portal_lojista/', include('portais.lojista.urls')),
+]
+```
+
+**wallclub/urls_pos.py:**
+```python
+urlpatterns = [
+    path('api/posp2/', include('posp2.urls')),
+]
+```
+
+**wallclub/urls_apis.py:**
+```python
+urlpatterns = [
+    path('api/cliente/', include('apps.cliente.urls')),
+    path('api/conta-digital/', include('apps.conta_digital.urls')),
+    path('checkout/', include('checkout.urls')),
+]
+```
+
+---
+
+#### **Passo 4: Ajustar docker-compose.yml**
+
 ```yaml
-# Renomear containers:
-wallclub-django-monorepo     → wallclub-django
-wallclub-riskengine-monorepo → wallclub-riskengine
-wallclub-redis-monorepo      → wallclub-redis
-wallclub-celery-worker-monorepo → wallclub-celery-worker
-wallclub-celery-beat-monorepo   → wallclub-celery-beat
-
-# Ajustar portas (remover exposição externa):
-web:
-  ports:
-    - "8003:8000"  # REMOVER - não expor mais
-  # Porta 8000 fica apenas interna na rede Docker
-
-riskengine:
-  ports:
-    - "8004:8004"  # REMOVER - não expor mais
-  # Porta 8000 fica apenas interna na rede Docker
-
-# Adicionar container Nginx:
-nginx:
-  build:
-    context: .
-    dockerfile: Dockerfile.nginx
+services:
+  nginx:
+    # Gateway único
+    
+  wallclub-portais:
+    build:
+      dockerfile: Dockerfile.portais
+    container_name: wallclub-portais
+    environment:
+      - DJANGO_SETTINGS_MODULE=wallclub.settings.portais
+    # Porta 8000 interna
+    
+  wallclub-pos:
+    build:
+      dockerfile: Dockerfile.pos
+    container_name: wallclub-pos
+    environment:
+      - DJANGO_SETTINGS_MODULE=wallclub.settings.pos
+    # Porta 8000 interna
+    
+  wallclub-apis:
+    build:
+      dockerfile: Dockerfile.apis
+    container_name: wallclub-apis
+    environment:
+      - DJANGO_SETTINGS_MODULE=wallclub.settings.apis
+    # Porta 8000 interna
+    
+  wallclub-riskengine:
+    # Já existe
+    # Porta 8000 interna
   container_name: nginx
   ports:
     - "80:80"
@@ -725,12 +895,13 @@ docker logs -f nginx
 - **Bug:** ✅ Corrigido
 
 ### Meta Fase 6D (Novembro 2025):
-- **Containers:** 7 (nginx + django + riskengine + redis + celery worker/beat + mysql)
+- **Containers:** 9 (nginx + 3 django + riskengine + redis + 2 celery workers + celery beat)
+- **Django Separado:** 3 containers (portais, pos, apis)
 - **Subdomínios:** 6 (admin, vendas, lojista, api, apipos, checkout)
-- **Deploy:** Independente por serviço
+- **Deploy:** Independente por container
 - **Comunicação:** APIs REST + OAuth (interna)
-- **Escalabilidade:** Horizontal
-- **Manutenção:** Isolada por container
+- **Escalabilidade:** Horizontal por container
+- **Manutenção:** Isolada (atualizar portais sem afetar POS)
 - **Gateway:** Nginx centralizado (única porta externa)
 
 ---

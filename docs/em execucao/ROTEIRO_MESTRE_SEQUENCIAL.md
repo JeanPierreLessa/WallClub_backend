@@ -1,15 +1,16 @@
 # ROTEIRO MESTRE SEQUENCIAL - WALLCLUB DJANGO
 
-**Versão:** 3.7  
-**Data:** 2025-10-23  
-**Status:** 🟢 EM ANDAMENTO - Fase 5 CONCLUÍDA + Melhorias Out/2025 ✅  
-**Estratégia:** Segurança → Antifraude → Refatoração → Quebra Gradual
+**Versão:** 4.0
+**Data:** 2025-11-03
+**Status:** 🟢 EM ANDAMENTO - Fase 6 (A+B+C) CONCLUÍDA + Fase 6D EM ANDAMENTO ✅
+**Estratégia:** Segurança → Antifraude → Refatoração → Quebra em 4 Containers
 
-**Progresso Atual:** 24/31 semanas concluídas (~77%)  
-**Fases Críticas (0-3):** 4/4 concluídas (100%) ✅  
-**Fase 4 (2FA):** Semanas 20-23 CONCLUÍDAS (100%) ✅  
-**Fase 5 (Unificação Portais):** Semana 24 CONCLUÍDA (100%) ✅  
-**Melhorias Out/2025:** Checkout Web + Cargas Pinbank ✅
+**Progresso Atual:** 29/34 semanas concluídas (~85%)
+**Fases Críticas (0-5):** 6/6 concluídas (100%) ✅
+**Fase 6A (CORE Limpo):** Semana 27 CONCLUÍDA (100%) ✅
+**Fase 6B (Dependências):** Semana 28 CONCLUÍDA (100%) ✅
+**Fase 6C (Monorepo):** Semana 29 CONCLUÍDA (100%) ✅
+**Fase 6D (4 Containers):** Semanas 30-32 EM ANDAMENTO 🚀
 
 ---
 
@@ -17,7 +18,7 @@
 
 **Objetivo:** Reestruturar sistema priorizando segurança e antifraude, depois quebrar em múltiplas aplicações para deploy independente e escalabilidade.
 
-**Tempo Total:** 20-26 semanas (5-6,5 meses)  
+**Tempo Total:** 20-26 semanas (5-6,5 meses)
 **Custo Mensal:** R$ 900-2.600 (APIs externas)
 
 ---
@@ -81,10 +82,13 @@
 | **3. Services** | 4-5 sem | S15 | S19 | P1 | Monolito | ✅ CONCLUÍDA |
 | **4. 2FA + Device** | 3-4 sem | S20 | S23 | P1 | Monolito | ✅ CONCLUÍDA |
 | **5. Unificação Portais** | 2-3 sem | S24 | S26 | P1 | Monolito | ✅ CONCLUÍDA |
-| **6. Quebra Apps** | 6-8 sem | S27 | S34 | P1 | APPs 1,2,3 | 🟡 EM ANDAMENTO |
-| **7. Seg. Avançada** | 3-4 sem | S35+ | - | P3 | Opcional | ⏳ PENDENTE |
+| **6A. CORE Limpo** | 1 sem | S27 | S27 | P1 | Monolito | ✅ CONCLUÍDA |
+| **6B. Dependências** | 1 sem | S28 | S28 | P1 | Monolito | ✅ CONCLUÍDA |
+| **6C. Monorepo** | 1 sem | S29 | S29 | P1 | Package | ✅ CONCLUÍDA |
+| **6D. 4 Containers** | 2-3 sem | S30 | S32 | P1 | APPs 1,2,3,4 | 🚀 EM ANDAMENTO |
+| **7. Seg. Avançada** | 3-4 sem | S33+ | - | P3 | Opcional | ⏳ PENDENTE |
 
-**Total Fases Obrigatórias (0-6):** 25-34 semanas (~6,5 meses)  
+**Total Fases Obrigatórias (0-6):** 25-34 semanas (~6,5 meses)
 **Com Paralelização (2 devs):** 17-22 semanas (~4,5 meses)
 
 ---
@@ -116,7 +120,7 @@ Preparar ambiente e contratar serviços necessários.
 - ✅ Staging funcional
 - ✅ Branch de desenvolvimento criada
 
-**Data de conclusão:** 15/10/2025  
+**Data de conclusão:** 15/10/2025
 **Custo evitado:** R$ 450/mês (APIs já integradas)
 
 ---
@@ -126,8 +130,8 @@ Preparar ambiente e contratar serviços necessários.
 ### Objetivo:
 Mitigar riscos imediatos no sistema atual (ainda monolítico).
 
-**Prioridade:** P0 - PRÉ-REQUISITO PARA OPERAÇÃO  
-**Container:** Monolito atual  
+**Prioridade:** P0 - PRÉ-REQUISITO PARA OPERAÇÃO
+**Container:** Monolito atual
 **📄 Detalhes:** [`decorators_api_aplicacao.md`](./decorators_api_aplicacao.md)
 
 ### Semana 3: Middleware e Rate Limiting ✅ **CONCLUÍDA**
@@ -137,7 +141,7 @@ Mitigar riscos imediatos no sistema atual (ainda monolítico).
 - ✅ Retornar HTTP 429 em excesso
 - ✅ Testes validados com sucesso
 
-**Entregas:** 
+**Entregas:**
 - ✅ Rate limiting ativo e testado
 - ✅ Headers de segurança (X-Frame-Options, HSTS, etc)
 - ✅ Validação de Content-Type e payload
@@ -164,7 +168,7 @@ Mitigar riscos imediatos no sistema atual (ainda monolítico).
 - ✅ Endpoint de revogação `/api/oauth/revoke/`
 - ✅ Decorators com validação de device fingerprint
 
-**Entregas:** 
+**Entregas:**
 - ✅ Sistema de auditoria completo e testado
 - ✅ Bloqueio inteligente (CPF + IP)
 - ✅ Histórico completo para compliance
@@ -224,7 +228,7 @@ Mitigar riscos imediatos no sistema atual (ainda monolítico).
 
 **Data de conclusão:** 16/10/2025
 
-**Commits:** 
+**Commits:**
 - `f7d3be4` - feat: Implementa validação CPF + decorators POSP2
 - Pendente - fix: Integra blacklist + templates WhatsApp padronizados
 
@@ -250,8 +254,8 @@ Mitigar riscos imediatos no sistema atual (ainda monolítico).
 ### Objetivo:
 Criar APP 4 (container separado) com sistema antifraude completo.
 
-**Prioridade:** P0 - PRÉ-REQUISITO PARA OPERAÇÃO  
-**Container:** APP 4 (novo - porta 8004)  
+**Prioridade:** P0 - PRÉ-REQUISITO PARA OPERAÇÃO
+**Container:** APP 4 (novo - porta 8004)
 **📄 Detalhes completos:** [`concluido.seguranca_risco_antifraude.md`](./concluido.seguranca_risco_antifraude.md)
 
 ### Semana 7: Criar Container Antifraude ✅ **CONCLUÍDA**
@@ -500,7 +504,7 @@ Criar APP 4 (container separado) com sistema antifraude completo.
 - ✅ Sistema pronto para operação
 - **Custo:** R$ 70-120/mês (MaxMind)
 
-**Data de conclusão:** 17/10/2025  
+**Data de conclusão:** 17/10/2025
 **Próximo passo:** Iniciar Fase 3 - Services e Refatoração (Semana 15)
 
 ---
@@ -510,8 +514,8 @@ Criar APP 4 (container separado) com sistema antifraude completo.
 ### Objetivo:
 Separar lógica de negócio das views (Regra 16) - Preparar código para quebra.
 
-**Prioridade:** P1 - ALTA  
-**Container:** Monolito atual  
+**Prioridade:** P1 - ALTA
+**Container:** Monolito atual
 **📄 Detalhes:** [`REFATORACAO_VIEWS.md`](./REFATORACAO_VIEWS.md)
 
 ### Semana 15: Services Core ✅ **CONCLUÍDA**
@@ -981,8 +985,8 @@ Separar lógica de negócio das views (Regra 16) - Preparar código para quebra.
 
 ### 📊 Resumo Total da Fase 3 ✅
 
-**Status:** ✅ 100% CONCLUÍDA  
-**Data de Conclusão:** 17/10/2025  
+**Status:** ✅ 100% CONCLUÍDA
+**Data de Conclusão:** 17/10/2025
 **Duração:** 5 semanas (Semanas 15-19)
 
 **Refatoração Final (17/10/2025):**
@@ -1016,9 +1020,9 @@ Separar lógica de negócio das views (Regra 16) - Preparar código para quebra.
 ### Objetivo:
 Implementar segunda camada de autenticação (2FA) e rastreamento de dispositivos em todos os pontos críticos do sistema.
 
-**Prioridade:** P1 - ALTA  
-**Container:** Monolito atual  
-**Duração:** 4 semanas  
+**Prioridade:** P1 - ALTA
+**Container:** Monolito atual
+**Duração:** 4 semanas
 **📄 Detalhes:** [`seguranca_app_conta_digital.md`](./seguranca_app_conta_digital.md)
 
 ### Pontos de Aplicação:
@@ -1044,8 +1048,8 @@ Implementar segunda camada de autenticação (2FA) e rastreamento de dispositivo
 
 ### Semana 20: Infraestrutura 2FA Base ✅
 
-**Objetivo:** Criar base reutilizável para 2FA em todos os módulos  
-**Status:** ✅ CONCLUÍDA  
+**Objetivo:** Criar base reutilizável para 2FA em todos os módulos
+**Status:** ✅ CONCLUÍDA
 **Data:** 17/10/2025
 
 #### 1. Models e Estrutura
@@ -1186,7 +1190,7 @@ Implementar segunda camada de autenticação (2FA) e rastreamento de dispositivo
 - 🔴 **3DS fica para Fase 2 (se chargebacks > 0.5%)**
 - ✅ **Backend completo - pronto para testes**
 
-**Arquivos criados/modificados:** 
+**Arquivos criados/modificados:**
 - `checkout/link_pagamento_web/models_2fa.py` (CheckoutClienteTelefone, CheckoutTransactionHelper, CheckoutRateLimitControl)
 - `checkout/link_pagamento_web/services_2fa.py` (CheckoutSecurityService)
 - `checkout/link_pagamento_web/views_2fa.py` (3 APIs: solicitar-otp, validar-otp, limite-progressivo)
@@ -1462,11 +1466,11 @@ TIPOS_ALERTA = {
 1. **Push Notification** (prioritário)
    - Usar `comum/integracoes/firebase_service.py` (já existe)
    - Entrega imediata
-   
+
 2. **SMS** (backup)
    - Usar `comum/integracoes/whatsapp_service.py` ou SMS provider
    - Para alertas críticos
-   
+
 3. **Email** (backup)
    - Para documentação e histórico
 
@@ -1663,9 +1667,9 @@ SECURITY_NOTIFICATIONS_EMAIL = True
 ### Objetivo:
 Unificar Portal de Vendas e Portal de Recorrência em um único portal, eliminando duplicação de código e simplificando arquitetura.
 
-**Prioridade:** P1 - ALTA  
-**Container:** Monolito atual  
-**Duração:** 2-3 semanas  
+**Prioridade:** P1 - ALTA
+**Container:** Monolito atual
+**Duração:** 2-3 semanas
 **Motivação:** Recorrência é apenas "checkout agendado" com gestão de retry. Não justifica portal separado.
 
 ### Arquitetura Atual (Problema):
@@ -1818,7 +1822,7 @@ portais/vendas/
   - Atualiza `proxima_cobranca` se aprovado
   - Incrementa `tentativas_retry` se negado
   - Marca `status_recorrencia = hold` após 3 falhas
-  
+
 - [ ] `retentar_cobranças_falhadas()` - Roda diariamente 10:00
   - Busca transações com status negado e `tentativas_retry < 3`
   - Retenta nos dias: D+1, D+3, D+7 (backoff exponencial)
@@ -1901,85 +1905,120 @@ app.conf.beat_schedule = {
 - `-1 aplicação` para manter
 - **Preparação ideal para Fase 6 (quebra em containers)**
 
-**Data de conclusão esperada:** Semana 26  
+**Data de conclusão esperada:** Semana 26
 **Próxima fase:** Fase 6 - Quebra em Múltiplas Aplicações
 
 ---
 
-## FASE 6: QUEBRA EM MÚLTIPLAS APLICAÇÕES (Semanas 27-34)
+## FASE 6: QUEBRA EM 4 CONTAINERS (Semanas 27-32) 🚀 **EM ANDAMENTO**
 
 ### Objetivo:
-Separar monolito em 3 aplicações independentes + antifraude já criado.
+Separar monolito Django em 4 containers especializados para deploy independente e escalabilidade.
 
-**Prioridade:** P1 - ALTA  
-**Containers:** APPs 1, 2, 3 (APP 4 já existe)
-
-### Semanas 27-28: Package Comum
-- [ ] Extrair `comum/` para `wallclub-core`
-- [ ] Package pip instalável
-- [ ] Setup.py e requirements
-- [ ] Todas apps instalam
-
-**Entregas:** Package compartilhado
+**Prioridade:** P1 - ALTA
+**Containers:** 4 Django (portais, pos, apis, riskengine) + 5 auxiliares
 
 ---
 
-### Semanas 29-30: Separar APP 2 (POS)
-- [ ] Criar projeto `wallclub-pos`
-- [ ] Migrar `posp2/`, `pinbank/`, `parametros_wallclub/`
-- [ ] Docker porta 8002
-- [ ] Atualizar imports
-- [ ] Testar endpoints
-- [ ] Deploy staging
+### Semana 27: Fase 6A - CORE Limpo ✅ **CONCLUÍDA**
 
-**Entregas:** Container POS independente
+**Objetivo:** Limpar wallclub_core de imports de apps Django
 
----
+**Entregas:**
+- ✅ 0 imports de apps no wallclub_core
+- ✅ Bug device_fingerprint corrigido
+- ✅ Código pronto para extração
 
-### Semanas 31-32: Separar APP 3 (APIs)
-- [ ] Criar projeto `wallclub-apis`
-- [ ] Migrar `apps/` + `checkout/`
-- [ ] Docker porta 8003
-- [ ] Integração com APP 4
-- [ ] Testar fluxos mobile
-- [ ] Deploy staging
-
-**Entregas:** Container APIs independente
+**Commits:**
+- `b366851` - feat(fase6a): CORE limpo
+- `4e2fc56` - fix: device_fingerprint sobrescrito
 
 ---
 
-### Semana 33: Refatorar APP 1 (Portais)
-- [ ] Renomear para `wallclub-portais`
-- [ ] Remover módulos migrados
-- [ ] Manter `portais/` + `sistema_bancario/`
-- [ ] Docker porta 8001
+### Semana 28: Fase 6B - Resolver Dependências ✅ **CONCLUÍDA**
 
-**Entregas:** Container Portais limpo
+**Objetivo:** Resolver dependências cruzadas entre apps
 
----
+**Entregas:**
+- ✅ 26 APIs REST internas criadas
+- ✅ 17 lazy imports implementados
+- ✅ SQL direto para queries read-only
+- ✅ 0 imports diretos entre apps
 
-### Semana 33: Nginx Gateway
-- [ ] Nginx proxy reverso
-- [ ] Rotas para 4 containers
-- [ ] Load balancing
-- [ ] SSL/TLS
-- [ ] Logs centralizados
-
-**Entregas:** Gateway funcional
+**Commits:**
+- `c6f98d5` - INICIO DA FASE 6B
+- `7416f3a` - feat(conta-digital): APIs internas
+- `286e0f5` - feat(fase6b): APIs ofertas + SQL direto
+- `ee0e369` - Lazy imports (17 arquivos)
 
 ---
 
-### Semana 34: Validação Final
-- [ ] Testes integração entre apps
-- [ ] Validar comunicação HTTP
-- [ ] Testes de carga
-- [ ] Monitoramento latência
-- [ ] Documentação arquitetura
-- [ ] Deploy staging completo
-- [ ] Preparar rollback
-- [ ] **Deploy produção**
+### Semana 29: Fase 6C - Monorepo Unificado ✅ **CONCLUÍDA**
 
-**Entregas:** Sistema multi-app validado
+**Objetivo:** Unificar 3 repositórios em 1 monorepo
+
+**Entregas:**
+- ✅ Package wallclub_core criado
+- ✅ 113 arquivos migrados (comum → wallclub_core)
+- ✅ 1 repositório git unificado
+- ✅ Diretório comum/ removido
+
+**Estrutura:**
+```
+WallClub_backend/
+├── services/
+│   ├── django/      # Django Main
+│   ├── riskengine/  # Antifraude
+│   └── core/        # wallclub_core (package)
+```
+
+---
+
+### Semanas 30-32: Fase 6D - Separação em 4 Containers 🚀 **EM ANDAMENTO**
+
+**Objetivo:** Separar Django em 4 containers especializados
+
+**Arquitetura Final:**
+```
+Internet (80/443)
+    ↓
+[Nginx Gateway]
+    ↓
+├─→ admin.wallclub.com.br      → wallclub-portais:8000
+├─→ vendas.wallclub.com.br     → wallclub-portais:8000
+├─→ lojista.wallclub.com.br    → wallclub-portais:8000
+├─→ apipos.wallclub.com.br     → wallclub-pos:8000
+├─→ api.wallclub.com.br        → wallclub-apis:8000
+├─→ checkout.wallclub.com.br   → wallclub-apis:8000
+└─→ (interno)                  → wallclub-riskengine:8000
+```
+
+**Containers (9 total):**
+1. nginx - Gateway
+2. wallclub-portais - Admin + Vendas + Lojista
+3. wallclub-pos - Terminal POS
+4. wallclub-apis - APIs Mobile + Checkout
+5. wallclub-riskengine - Antifraude
+6. wallclub-redis - Cache/Broker
+7. wallclub-celery-worker-portais - Tasks portais
+8. wallclub-celery-worker-apis - Tasks APIs
+9. wallclub-celery-beat - Scheduler
+
+**Tarefas:**
+- [ ] Criar Dockerfile.portais, Dockerfile.pos, Dockerfile.apis
+- [ ] Criar settings/portais.py, settings/pos.py, settings/apis.py
+- [ ] Criar urls_portais.py, urls_pos.py, urls_apis.py
+- [ ] Ajustar docker-compose.yml (4 containers Django)
+- [ ] Criar nginx.conf (roteamento por subdomínio)
+- [ ] Criar Dockerfile.nginx
+- [ ] Testes end-to-end
+- [ ] Deploy em produção
+
+**Benefícios:**
+- ✅ Deploy independente por container
+- ✅ Escalabilidade horizontal
+- ✅ Isolamento (POS crítico separado)
+- ✅ Performance (cada container carrega apenas necessário)
 
 ---
 
@@ -1988,7 +2027,7 @@ Separar monolito em 3 aplicações independentes + antifraude já criado.
 ### Objetivo:
 Garantir qualidade e cobertura de testes.
 
-**Prioridade:** P2 - MÉDIA  
+**Prioridade:** P2 - MÉDIA
 **Escopo:** Testes automatizados
 
 ### Semanas 35-36: Testes Unitários
@@ -2010,7 +2049,7 @@ Garantir qualidade e cobertura de testes.
 ### Objetivo:
 Implementar stack de monitoramento.
 
-**Prioridade:** P2 - MÉDIA  
+**Prioridade:** P2 - MÉDIA
 **Escopo:** Logs, métricas, alertas
 
 ### Semana 39: ELK Stack
@@ -2032,8 +2071,8 @@ Implementar stack de monitoramento.
 ### Objetivo:
 Remover ocorrências menores de model.objects nas views.
 
-**Prioridade:** P3 - BAIXA (OPCIONAL)  
-**Escopo:** Polish e refinação de código  
+**Prioridade:** P3 - BAIXA (OPCIONAL)
+**Escopo:** Polish e refinação de código
 **📝 Detalhes:** [`concluido.REFATORACAO_VIEWS.md`](./concluido.REFATORACAO_VIEWS.md)
 
 ### Semana 41: Limpeza de Recuperações de Sessão
@@ -2076,7 +2115,7 @@ Remover ocorrências menores de model.objects nas views.
 ### Objetivo:
 Features avançadas de segurança.
 
-**Prioridade:** P3 - BAIXA  
+**Prioridade:** P3 - BAIXA
 **📄 Detalhes:** [`seguranca_app_conta_digital.md`](./seguranca_app_conta_digital.md) - Fases 3 e 4
 
 ### Implementações Opcionais:
@@ -2181,7 +2220,7 @@ Features avançadas de segurança.
 - Fase 5: Unificação portais (2-3 sem) - após Fase 4
 - Fase 6: Auxílio quebra apps (2-3 sem)
 
-**Tempo com paralelização:** 17-22 semanas (~4,5 meses)  
+**Tempo com paralelização:** 17-22 semanas (~4,5 meses)
 **Economia de tempo:** ~35%
 
 ---
@@ -2214,8 +2253,8 @@ Features avançadas de segurança.
 
 ---
 
-**Documento criado:** 2025-10-15  
-**Última atualização:** 2025-10-17  
+**Documento criado:** 2025-10-15
+**Última atualização:** 2025-10-17
 **Consolidação de:**
 - Plano Mestre Unificado v2.0
 - Segurança, Risco e Antifraude
@@ -2223,7 +2262,7 @@ Features avançadas de segurança.
 - Decorators e Middleware
 - Quebra Multi-Aplicação
 
-**Status:** 🟢 EM ANDAMENTO  
-**Fases 0-3:** ✅ 100% CONCLUÍDAS  
-**Fase 4:** 🔄 EM ANDAMENTO (Semana 21 concluída)  
+**Status:** 🟢 EM ANDAMENTO
+**Fases 0-3:** ✅ 100% CONCLUÍDAS
+**Fase 4:** 🔄 EM ANDAMENTO (Semana 21 concluída)
 **Próxima fase:** FASE 5 - UNIFICAÇÃO PORTAL VENDAS + RECORRÊNCIA
