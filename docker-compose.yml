@@ -79,7 +79,7 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
-      - RISK_ENGINE_URL=http://wallclub-riskengine:8000
+      - RISK_ENGINE_URL=http://wallclub-riskengine:8005
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/core:/app/services/core:ro
@@ -107,7 +107,7 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
-      - RISK_ENGINE_URL=http://wallclub-riskengine:8000
+      - RISK_ENGINE_URL=http://wallclub-riskengine:8005
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/django/media:/app/media

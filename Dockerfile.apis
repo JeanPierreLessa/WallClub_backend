@@ -36,6 +36,6 @@ RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8005
 
-CMD ["gunicorn", "wallclub.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120"]
+CMD ["gunicorn", "wallclub.wsgi:application", "--bind", "0.0.0.0:8005", "--workers", "4", "--timeout", "120"]
