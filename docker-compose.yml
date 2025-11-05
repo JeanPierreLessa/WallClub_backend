@@ -44,8 +44,6 @@ services:
       - ./services/django/.env
     environment:
       - DJANGO_SETTINGS_MODULE=wallclub.settings.portais
-      - ENVIRONMENT=development
-      - DEBUG=True
       - REDIS_HOST=wallclub-redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
@@ -73,8 +71,6 @@ services:
       - ./services/django/.env
     environment:
       - DJANGO_SETTINGS_MODULE=wallclub.settings.pos
-      - ENVIRONMENT=development
-      - DEBUG=True
       - REDIS_HOST=wallclub-redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
@@ -101,8 +97,6 @@ services:
       - ./services/django/.env
     environment:
       - DJANGO_SETTINGS_MODULE=wallclub.settings.apis
-      - ENVIRONMENT=development
-      - DEBUG=True
       - REDIS_HOST=wallclub-redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
