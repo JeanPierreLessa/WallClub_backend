@@ -32,6 +32,9 @@ urlpatterns = [
     path('atualiza_celular/', views.atualiza_celular, name='atualiza_celular'),  # API Key + JWT Token
     path('atualiza_email/', views.atualiza_email, name='atualiza_email'),  # API Key + JWT Token
     path('grava_firebase_token/', views.grava_firebase_token, name='grava_firebase_token'),
+    
+    # Exclusão de conta
+    path('excluir/', views.excluir_conta, name='excluir_conta'),  # API Key + JWT Token
 
     # Notificações
     path('notificacoes/', views.notificacoes, name='notificacoes'),  # API Key + JWT Token

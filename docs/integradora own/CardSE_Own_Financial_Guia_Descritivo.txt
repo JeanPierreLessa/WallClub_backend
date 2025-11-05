@@ -1,0 +1,1337 @@
+
+=== PÁGINA 1 ===
+
+
+Para segurança de seu ambiente, consulte sempre o documento Guia de Implementação SiTef PCI que pode 
+ser encontrado na pasta de instalação do SiTef ou no link 
+https://www.softwareexpress.com.br/distri/aplicativos/GuiaImplementacaoSiTefPCI.zip . Ele contém as 
+orientações de configurações do seu servidor SiTef para atender as regras do PCI PA -DSS. 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ROTEIRO DE INSTALAÇÃO E CONFIGURAÇÃO  
+MÓDULO CARDSE – OWN FINANCIAL  
+ 
+Versão 1.0
+
+
+=== PÁGINA 2 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   2 de 24 
+ 
+ 
+CONTEÚDO    
+1. INTRODUÇÃO  ................................ ................................ ................................ ................................ . 3 
+2. DESCRIÇÃO DO NEGÓCIO  ................................ ................................ ................................ ................  3 
+3. PRÉ-REQUISITO  ................................ ................................ ................................ ...............................  3 
+4. INSTALAÇÃO DO MÓDULO CARDSE  ................................ ................................ ................................ . 4 
+4.1 BACKUP  ................................ ................................ ................................ ................................ ...................  4 
+4.2 INSTALAÇÃO  ................................ ................................ ................................ ................................ ............  4 
+4.3 ROLLBACK ................................ ................................ ................................ ................................ ..............  4 
+5. CONFIGURAÇÃO DO PRODUTO OWN FINANCIAL  NO MÓDULO CARDSE  ................................ ...........  5 
+6. CONFIGURAÇÃO MULTIBANDEIRA  ................................ ................................ ................................ ... 9 
+6.1 CONFIGURADOR  MULTI -BANDEIRA  PADRÃO  ................................ ................................ ...............  10 
+6.2 CONFIGURADOR  MULTIBANDEIRA  COLORIDO  ................................ ................................ ............  12 
+7. CARGA DE TABELAS  ................................ ................................ ................................ .......................  17 
+8. VISUALIZADOR DE TABELAS  ................................ ................................ ................................ ...........  18 
+9. RELATÓRIOS  ................................ ................................ ................................ ................................ . 19 
+10. SITEFWEB  ................................ ................................ ................................ ................................ ..... 19 
+11. CONFIGURAÇÃO DO PONTO DE VENDA (PDV)  ................................ ................................ ................  20 
+11.1  INTERFACE  CLISITEF  ................................ ................................ ................................ ........................  20 
+11.1.2  Venda Crédito  ................................ ................................ ................................ ................................ ............  20 
+11.1.3  Cancelamento Venda Crédito  ................................ ................................ ................................ ...................  20 
+11.1.4  Venda Débito  ................................ ................................ ................................ ................................ ..............  21 
+11.1.5  Cancelamento Venda Débito  ................................ ................................ ................................ .....................  21 
+11.2  INTERFACE  CLIENT  MODULAR  ................................ ................................ ................................ ........  22 
+11.2.1  Venda Crédito  ................................ ................................ ................................ ................................ ............  22 
+11.2.2  Cancelamento Venda Crédito  ................................ ................................ ................................ ...................  22 
+11.2.3  Venda Débito  ................................ ................................ ................................ ................................ ..............  22 
+ Error! Bookmark not defined.  
+11.2.4  Cancelamento Venda Débito  ................................ ................................ ................................ .....................  23 
+12. VERSÃO MÍNIMA DO CARDSE PARA OWN FINANCIAL  ................................ ................................ .... 24
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 3 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   3 de 24 
+ 
+1. INTRODUÇÃO  
+ 
+Este documento destina -se ao usuário que pretende instalar e configurar o módulo CardSE  com o produto Own 
+Financial  no SiTef ou no SitDemo . 
+ 
+2. DESCRIÇÃO DO NEGÓCIO  
+ 
+O CardSE  é um módulo do SiTef que possibilita transacionar com diversas bandeiras através de uma única conexão.  
+ 
+A OWN FINANCIAL  transaciona débito e crédito com as bandeiras Elo, Master e Visa.  
+ 
+ 
+3. PRÉ-REQUISITO  
+Abaixo apresentamos as versões mínimas das interfaces, conforme a versão do SiTef ou SitDemo utilizada:  
+ 
+Nome  Versão mínima para o SiTef  Versão mínima para o SitDemo  
+Client Modular  6.1.2.38P  6.0.0.0  
+CliSiTef  6.1.114.14.r2  6.0.114.0S  
+ 
+As interfaces dos PDV’s somente são compatíveis com a versões específicas do SiTef/SitDemo informadas 
+acima.
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 4 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   4 de 24 
+ 
+ 
+4. Instalação do Módulo CardSE  
+ 
+ 
+4.1 Backup  
+a) Efetuar uma cópia de backup das pastas \SiTef \CONFIG e \SiTef \APLIC.WIN  
+ 
+4.2 Instalação  
+a) Descompactar o módulo em uma pasta temporária, por exemplo C: \Instalacao \ 
+b) Acessar o diretório temporário criado (C: \Instalacao), executar o programa SiTef_ CardSE .msi e seguir os 
+passos Avançar ► Instalar ► Concluir.  
+c) Efetuar a configuração conforme item “Configuração do Módulo” abaixo.  
+ 
+Observações:  
+ 
+• Se a instalação estiver sendo realizada em ambiente de Produção , antes de iniciar o procedimento, é 
+necessário parar o serviço do SiTef - Solução Inteligente através dos serviços do Windows, e após concluída 
+a configuração, ativar novamente.  
+ 
+ 
+• Se a instalação estiver sendo realizada em ambiente Simulado , antes de iniciar o procedimento, é 
+necessário fechar o Console do Controle Geral, e após concluída a configuração, iniciar novamente o 
+SitDemo.  
+ 
+4.3 RollBack  
+a) Renomear a pasta \SiTef \Config \ para \Config_ CardSE  
+b) Renomear a pasta \SiTef \Aplic.win para \Aplic.win_ CardSE  
+c) Voltar as pastas que foram feitas backup no item 5.1 Backup ► \SiTef \CONFIG e \SiTef \APLIC.WIN para o 
+mesmo diretório \SiTef \
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+£3 SiTef - Solucao inteligente para TEF ‘Automatico Sistema local
+
+
+=== PÁGINA 5 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   5 de 24 
+ 
+5. CONFIGURAÇÃO DO  PRODUTO  OWN FINANCIAL  NO MÓDULO CARDSE  
+ 
+ ATENÇÃO:  Essa  versão contempla as novas características de configuração do SiTef descritas no 
+documento Características de Segurança.pdf . 
+ 
+ 
+Acessar o menu Iniciar ► Programas ►  
+SiTef Produção :    ►  
+SiTef Simulado :   ►  
+ 
+Em seguida selecione a guia CardSE , serão apresentadas as opções abaixo:  
+ 
+ 
+Na guia Estabelecimento , configurar:  
+ 
+Empresa: Selecione a empresa no qual deseja configurar. Caso o SiTef esteja configurado como monoempresa a 
+empresa utilizada é a 00000000, não permitindo selecionar outra empresa.  
+Identificação Lojista:  
+SiTef Produção : Informar o código da loja fornecido pela  Own Financial .
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Configurador Geral SiTef
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+E) CardSE
+Estabelecimento
+Comunicagao
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+I Contigurador SiTef - 2.2.0.4 [michelehuff mann] - oF x
+Arquivo Comunicagio Sobre
+SiTef
+from
+Modulos CardSE/Estabelecimento
+
+& sitet a
+on nee
+‘4 (00000000
+
+Estabelecimento .
+
+c dentificagao Lojsta
+
+ee ene . rani
+
+Comunicacdo Cod. Estabelecimento:
+Cielo
+Conductor Hatta VAN Vrs -2.111
+FB Coopelife - ;
+a Dee ctom pun fete efecto por ne
+Pay cin Habiltar Produto
+Bi GetnetLAC ore
+2 Global Payments Pep. Adqurente
+Hi Gwel DPag.Ai sub TRREEEEREEER EG)
+ Hiperife Lipagseguro - PagBank
+2 Incomm LPassePag STREEEEREEEE EE)
+2 pornpaaly Dpay Face
+
+vices
+
+PayGo TRREEEERREER EG)
+
+[@ PagSeguro Qa a ¥
+Rede S u
+ Satra
+Stone 9
+« >
+
+
+=== PÁGINA 6 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   6 de 24 
+ 
+SiTef Simulado:  Informar um código de estabelecimento fictício. Por Exemplo: 11111111111111.  
+ 
+Em Habilitar Produto  deve ser realizada a habilitação do autorizador Own Financial  para transacionar no CardSE. 
+Para isto, basta che car a caixa ao lado de seu nome e informar o código de estabelecimento.  
+ 
+ 
+O código de estabelecimento informado pelo autorizador de ve ser configurado na tela abaixo:  
+ 
+ 
+Depois de configurado, pressione o botão , em seguida .
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+pane Se ern ta © ee te eee oe eee
+
+Habiltar Produto a
+oe To
+pep. Adqurente
+
+(Pag Aisub STREET EEEEEEE EI
+[1)PagSeguro - PagBank
+
+(Ci PassePag 991999119911911
+
+DPay Face
+
+(CPayGo 9999191919191.
+
+qa >
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Cédigo de estabelecimento
+
+} ok | Cancelat
+
+
+=== PÁGINA 7 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   7 de 24 
+ 
+Na guia Comunicação , configurar a interface utilizada para comunicação com o autorizador.  
+ 
+SiTef Produção : 
+• Interface  TCPIP/Direto , realizar a configuração conforme informado abaixo:  
+ 
+ 
+ 
+Endereço IP Primário : Informar o endereço IP de destino  
+Porta TCP : Informar a porta TCP de destino  
+ 
+Formato do Tamanho :  
+• Se a comunicação for TCP/IP direto com a autorizadora CardSE , configurar Binário (Low High) .  
+• Se a comunicação for com o Gateway, configurar Binário (Low High) . 
+ 
+Configuração Geral: Habilitar a opção ‘SiTef -GW’  caso a comunicação seja com o Gateway, ou com o SiTef -GW 
+utilizando VPN com as provedoras homologadas.  
+Habilitar a opção  ‘S.E.’  caso a comunicação seja com o Gateway (Fepas/GW) da Software Express.  
+ 
+Caso tenha duas conexões IP, sendo uma primária e a outra secundária, efetuar a mesma configuração com os 
+dados da conexão secundária.  
+  
+ 
+SiTef Simulado : 
+• Por se tratar de um ambiente Simulado, os dados de comunicação são dados fictícios, não havendo a 
+comunicação real com o Host/Autorizador, quem responde a comunicação é um simulador interno.
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+[Bi Configurador Sie 2.1.01 {llopes}
+
+Arquivo Comunicagso Sobre
+
+SiTef
+> fe,
+
+Médulos
+
+CardSEiComunicagao
+
+‘Sitet
+
+Eh Cards Interface Host 1 - TCPAP Direto
+
+Estabelecimerto
+
+Comunicagéo
+
+j-Eormat co tamanho
+
+Eniereco Host(P ou dominio) prinéro Porta Tp © Bindi (gh Low)
+© Binario (Low High)
+Eniereco Host (Pou dominio) secur Tey @ esa
+BCD
+Configuragée Gera
+TP sietow se
+ont Port
+@ asci  EBCDIC © Padréo — @ Individuel Cédigo TEF Gateway:
+
+Digite o ntirmero da porta Tep para o endereca IP primério,
+
+
+=== PÁGINA 8 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   8 de 24 
+ 
+ 
+Dessa forma pode ser utilizada qualquer interface, informando dados fictícios, por exemplo:  
+ 
+Endereço IP Primário:  Informar um endereço IP fictício, exemplo 1.2.3.4  
+Porta TCP:  Informar uma porta “socket” fictícia, por exemplo 7001.  
+ 
+ 
+Depois de configurado, pressione o botão , em seguida . 
+ 
+Ao retornar para a tela do configurador, selecionar a opção Arquivo  – Sair. 
+ 
+Configuração CARDSE  realizada com sucesso!
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 9 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   9 de 24 
+ 
+ 
+6. CONFIGURAÇÃO MULTIBANDEIRA  
+ 
+Para configurar as bandeiras que serão roteadas pela CardSE, acessar o menu Iniciar ► Programas ►  
+ 
+SiTef Produção :    ►  
+SiTef Simulado :   ►  
+ 
+Em seguida selecione a guia Sitef -> Multibandeira, serão apresentadas as opções abaixo:  
+ 
+ 
+ 
+ 
+Atualmente é possível realizar a configuração utilizando dois configuradores, sendo eles Multi Bandeira Colorido e 
+Multi bandeira Padrão. Abaixo apresentamos as configurações de cada.
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Configurador Geral SiTef
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+[Bi Configurador Sie 2.1.01 {llopes}
+
+Arquivo Comunicagso Sobre
+
+Silef
+
+‘om fiserv,
+
+Médulos
+ese
+@
+
+Métlulo de contiguracéo Muttizendetras.
+
+Configurador Multibandeiras Colorida
+
+
+=== PÁGINA 10 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   10 de 24 
+ 
+ 
+6.1 CONFIGURADOR MULTI -BANDEIRA PADRÃO  
+Na guia SiTef ► Multibandeiras ► Multiband. Padrão ► Configurador:  
+ 
+ 
+ 
+Selecione a empresa a ser configurada, ou opte por uma configuração padrão para todas as empresas/lojas do 
+servidor selecionando a opção TODAS , segue:
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+WB Configurador SiTef - 2.1.0.1 [llopes] = a x
+
+Arquivo Comunicagso Sobre
+
+Médulos Multband. Padrao/Configurador
+
+ESiret ry
+Interface POVISITet Empresa
+
+Interface SiTetMost ——«
+Loja
+
+Visualiza Comunicagso
+
+‘Canal Compartithado Muti Bendeiras |
+Dadas Operacionais:
+\Validagdo de CNP Banderas [autrizador
+
+Payment Faciltator ID
+Ei Mutbandetras
+Multeand. Colerida
+E-Mutbandl, Paco
+CConfigurador
+Carteras Digitais
+Combustivel
+
+Salecione « empresa para Configurar 1
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+loooo0001
+[Topas
+
+
+=== PÁGINA 11 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   11 de 24 
+ 
+ 
+ 
+Na sequência, escolher a Bandeira do cartão e na coluna Autorizador,  marcar a opção Own Financial . 
+Conforme abaixo:  
+ 
+ 
+ 
+Para salvar as configurações clique em  . 
+ 
+Configuração MultiBandeira OWN FINANCIAL  realizada com sucesso.
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+I Confirma excluir a configuracao especifica da empresa 00000000 7
+
+
+=== PÁGINA 12 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   12 de 24 
+ 
+ 
+6.2 CONFIGURADOR MULTIBANDEIRA COLORIDO  
+Na guia SiTef ► Multibandeiras ► Multiband. Colorido ► Configurador:  
+ 
+ 
+•   Funcionalidades
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+© Configurador SiTef - 2.1.0.0 {uliane.cardoso}
+
+Arquivo Comunicagéo Sobre
+
+SiTef
+sen fisery.
+
+‘Médulos
+
+‘Multband. Colorido/Configurador
+
+Ee Sier
+
+Interface POVISiTef
+
+Interface STetMost Mastercard [Mester Voucher __ [Wise Credo [wise Electron
+Loja ‘Nenhum ‘Nenhum ‘Nenhum ‘Nenhum
+‘Visuaiza Comunicacio Gener
+‘Canal Compartihado < >
+sits pore Clique na coluna mais & esquerda
+\Validacdo de CNP
+‘Compatibiidade SiTef ve GEES SETEOCD
+i Muttbanderas 7 ha ha Taster r
+E-Muttband, Colorido [Emerese /Produio [Amex Credo esi estereard jester Vouher_ [88 Creste [Vise Becton
+‘Configurador [ooo00000 ‘Nenhum ‘Nenhum ‘Nenhum ‘Nenhum ‘Nenhum 1
+Opgies [o0000001 Nentum ‘Nenum ‘Nenfum ‘Nenfum ‘Nenfum ‘Nenfum i
+ioe oy |
+Rede [ooo00003 enum ‘Nenfum ‘Nenfum ‘Nenfum ‘Nenfum ‘Nenfum 1
+Estabelecimento foo000010 enum ‘Nenfum ‘Nenfum ‘Nenfum ‘Nenfum ‘Nenfum 1
+Eee peteut enum ‘Nenum ‘Nenum ‘Nenum ‘Nenum ‘Nenum 1
+‘Comunicago
+
+“ @
+
+Total de empresas: 6
+
+Desabilitar Multibandeira:
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+[Amex Credto [Maestro Mastercard Master Voucher _ | Visa Credito [Visa Electron [visa Vale [Aleto [Agiplan Credo [Agiplan Debito [Avista
+Clique na célula
+
+si Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhurl
+para ediar =
+
+« GRID DE EDICAO >
+
+Clique na coluna mais & esquerda
+
+para selecionar a inh.
+[Empresa /Produto [Amex Credto [Maestro [Mastercard Master Voucher [Visa Credito [visa Electron [Visa Vale [Aleto [Aciplan Credo [Aciplan Debito [Avista
+fooo00000 Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhur
+fo0000001 Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum
+fooo00002 Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum
+fooo00003 Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum
+fooo00010 Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum
+peteut Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum Nenhum
+
+GRID PRINCIPAL
+
+« >
+
+ml —— @
+
+Total de empresas: 6
+
+ilitar Multibandeira
+
+
+=== PÁGINA 13 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   13 de 24 
+ 
+ 
+ 
+•   Botões  
+ 
+ Copia uma linha selecionada da Grid Principal  para a Grid de 
+Edição . Apenas uma linha deve estar selecionada para a 
+cópia ser bem -sucedida.  
+ Copia a linha da Grid de Edição  para todas as linhas 
+selecionadas no Grid Principal . Essa operação depende de 
+alguns fatores para ser completamente bem -sucedida.  
+ Seleciona todas as linhas (também feito com Ctrl+A ). 
+ Desmarca todas as linhas  
+ Exclui todas as linhas que estão selecionadas.  
+ Regrava todas as configurações  
+ Abre o exportador  
+ Busca a linha de alguma empresa. É necessário preencher 
+com 8 caracteres. Se a linha não é encontrada, nada é feito.  
+•   Linha  
+Cada linha da Grid Principal  faz referência a uma empresa.  
+ Linha não selecionada  
+ Linha selecionada (clique na linha para selecioná -la) 
+ 
+•   Coluna  
+Cada coluna faz referência a um produto de uma bandeira.  
+ 
+ 
+ 
+ 
+ 
+•   Realizando a Configuração das Bandeiras  
+ Coluna não selecionada.  
+ Coluna selecionada (clique na coluna para selecioná -la).
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 14 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   14 de 24 
+ 
+As empresas estão listadas na coluna à esquerda e a primeira linha lista os produtos. O primeiro passo é 
+criar uma linha com a configuração desejada, isso é feito na Grid de Edição , localizada na parte superior do 
+configurador.  
+ 
+Clique nas células da Grid de Edição  para listar os módulos existentes  
+ 
+ 
+*Os módulos listados são apenas os configurados.  
+ 
+Monte a linha da Grid de Edição  da forma que achar necessário, selecionando para cada bandeira o respectivo 
+módulo. Após selecione as empresas onde é desejável copiar a configuração montada na \ 
+Grid de Edição e clique em  .
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+. =m fase eve eas
+Genes |[Nenhum ‘Nenhum ‘Nenhum ‘Nenhum ‘Nenhum
+aa
+
+=
+Ccique na cohna maleege
+concoct © ©
+|Empresa / Produto jspbaPevments Mastercard Master Voucher | Visa Credito Visa Electron.
+Ro a
+—_ ————
+= —————
+= —————
+= —————
+—_ a
+
+
+=== PÁGINA 15 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   15 de 24 
+ 
+ 
+ 
+Para consolidar as alterações feitas na Grid Principal , clique em .  
+ 
+Observação:  Quando a configuração é gravada, ela não será ativada no SiTef imediatamente, a não ser que o 
+configurador esteja configurado para fazer isso * ou que o serviço do SiTef seja reiniciado manualmente. Se 
+não é esse o caso, a configuração é ativada no SiTef em até, no máximo, um dia após a gravação.  
+ 
+* Ativar a configuração sempre que salvar: Se esta opção está ativa, sempre que a configuração feita na Grid 
+Principal  é salva, o configurador irá imediatamente tentar ativar as mudanças feitas.
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+© Configurador SiTef - 2.1.0.0 {uliane.cardoso}
+
+Arquivo Comunicagéo Sobre
+
+SiTef
+sen fisery.
+
+Modulos Multband. Colorido/Configurador
+sitet
+interface POVISTet
+amex Greato_[Wsesto iasercard [Waster Voucher [visa Credto [Vea econ [sa Vale
+iertace Sietniost emme
+ae an Rede an Geinetac
+eta,
+‘Visualize Comunicacdo =
+Canal Compartilhado “ >
+sits pore Clique na coluna mais & esquerda
+Vakagdo de cNPs me
+‘Compatibilidade SiTef v6 pars *
+Foe athena Car [Empresa /Produto [Amex Credito [Maestro [Mastercard [Master Voucher _ [Visa Gredto [Visa Electron [visa Vale a
+es 20000000 enn ‘Nenu "ennu ‘enor enum ‘enum r
+Oncées 0000002 | Nennum Nenu Nenu Nenu Nenu Nenu Nenu N
+= fea | == =o a N
+8 Rede pooooe | = | == [=o [eee se N
+Estabeleciento 20000001 ent Nenu Nenu Nenu Nenu Nenu Nenu N
+Eee Detaut enum ‘Nenum ‘Nenum ‘Nenum ‘Nenum ‘Nenum ‘Nenum ci
+
+‘Comunicago
+
+
+=== PÁGINA 16 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   16 de 24 
+ 
+Para ativar essa opção, na guia SiTef ► Multibandeiras ► Multiband. Colorido ► Opções:  
+ 
+ 
+Habilite a opção “ Ativar configuração sempre que salvar ”.  
+ 
+A opção de “ Não abrir o log em caso de sucesso ” pode ser habilitada ou não. Se habilitada, quando a ativação 
+foi completada com sucesso, o log não é aberto. Se houver uma falha em alguma mensagem, a log será 
+sempre aberta automaticamente.  
+ 
+A opção “ Pedir confirmação quando aplicar uma linha da Grid de Edição para a Grid Principal ” habilita a tela 
+de confirmação após qualquer alteração nas grids, conforme abaixo:
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+(OS Atenco = a
+
+Aviso:
+
+[Empresa 00000002
+‘Mudanca do produto [Maestro] da rede (Nenhum] para [Bin]
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+[i Configurador Sife- 2.1.01 {llopes}
+
+Arquivo Comunicagso Sobre
+
+SiTef
+
+‘om fiserv,
+
+Médulos
+
+Multhand, Colorido/opedes
+
+ESiret
+Interface POVISITet
+Interface SiTetMost
+Loja
+Visualiza Comunicagso
+Canal Compartihado
+Dadias Operacionais,
+\Validagdo de CNP
+Payment Faciltator ID
+
+Ei Mutbandetras
+-Mutbandl. Colorida
+
+CConfigurador
+
+Ongées
+
+Multeand, Pada
+
+Carteras Digitale
+
+Combustivel
+
+Ativagéo:
+
+I> ver configaracis Serave aie Salva)
+
+TT No abrir o log em caso de sucesso
+
+Outros:
+
+T Pedi confmagée quando aplicer uma nha da
+
+Grid de Edigdo nara a Grid Principal
+
+
+=== PÁGINA 17 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   17 de 24 
+ 
+ 
+7. CARGA DE TABELAS  
+ 
+Acessar o menu Iniciar ► Programas ► 
+ 
+SiTef Produção :    ►  
+SiTef Simulado :   ►  
+ 
+Este aplicativo realiza uma baixa das configurações habilitadas para o estabelecimento. Em ambiente de produção , é 
+realizada uma conexão com a CardSE , a qual envia essas configurações ao SiTef.  
+ 
+Selecionar a opção CardSE  ► Carga , clicar na empresa SiTef que deseja efetuar a carga de tabelas e clicar no Botão 
+‘Enviar’.
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+D> corge de Tabetas
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Ii carga de Tabelas - 3.0.1.30 [llopes]
+
+Arquive
+
+SiTef
+
+‘er fiserv,
+
+Carga de Tabelas - CardSE
+
+Cards
+carga
+
+Empresa [onoaon00 v
+
+Dados da Tabela
+
+Datta da ina iniciaizace Horéria da itn incializaga0
+
+Dados da Carga
+
+Status
+
+Tabela
+
+Principal
+
+Verséo
+oooa108
+
+Carga CardSE
+
+
+=== PÁGINA 18 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   18 de 24 
+ 
+8. VISUALIZADOR DE TABELAS  
+ 
+Acessar o menu Iniciar ► Programas ► 
+ 
+SiTef Produção :    ►  
+SiTef Simulado :   ►  
+Este aplicativo permite apenas visualizar os dados que desceram na tabela da CardSE . Qualquer alteração em 
+ambiente de produção , deve ser solicitada para a CardSE , e após, realizar uma nova carga de tabelas.  
+ 
+Selecione a opção CardSE :
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+» Visualizador de Tabelas:
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+| Visualizador de Tabeles
+rooney
+SiTef
+tse,
+tooaniaes Swale
++ ease
+Autorizadores arent)
+Range
+totes omen
+eo
+
+Tween Grain on 11052022 de 103521 - Verso ODOHOS
+Visualizador CardSE, Vers60: 1.2.00
+
+
+=== PÁGINA 19 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   19 de 24 
+ 
+9. RELATÓRIOS  
+ 
+Para listar as transações  utilizar o Relatório do SiTef, através do menu Iniciar ► Programas ►  
+ 
+SiTef Produção :    ►  
+SiTef Simulado :   ►  
+ 
+Tipo de Log: log_mmdd.dat  
+ 
+ 
+10. SITEFWEB  
+ 
+ 
+Abaixo apresentamos as versões mínimas das aplicações para usuários do SiTefWeb:  
+ 
+Nome  Descrição  Versão Mínima  
+SiTefWeb  Aplicativo SiTefWeb  07/02/2020  
+ExpCli  Exportador Cliente  1.19.6  
+ExpServ  Exportador Servidor  1.19.6  
+ 
+ 
+ 
+ 
+11. TRANSAÇÕES PERMITIDAS JUNTO A OWN FINANCIAL  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Compra Crédito à vista  
+Compra Crédito Parcelado pelo lojista  
+Cancelamento da Compra Crédito  
+Compra Débito  à vista  
+Cancelamento da Compra Débito  à vista
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 20 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   20 de 24 
+ 
+ 
+ 
+11. CONFIGURAÇÃO DO PONTO DE VENDA (PDV)  
+ 
+11.1 INTERFACE CLISITEF  
+Importante: Verificar se a CliSiTef utilizada é compatível com o SiTef/SitDemo que será utilizado, conforme 
+descrito no item “Pré-Requisitos ”. 
+ 
+11.1.2  Venda Crédito  
+Não há parâmetros para serem configurados.  
+Essa transação está disponível no menu de Pagamentos ( função 0 ). 
+Selecionar a opção Cartão de Créd ito, e seguir com o fluxo da venda.  
+ 
+ 
+ 
+11.1.3  Cancelamento Venda Crédito  
+Não há parâmetros para serem configurados.  
+Pode ser realizado através do menu Administrativo ( função 110 ).  
+Selecionar a opção Cancelamento de Transação , e seguir com o fluxo do cancelamento.  
+ 
+Ou através do menu de Cancelamento ( função 200 ). 
+ 
+ 
+ 
+Selecionar a opção Cancelamento de Transação , e seguir com o fluxo do cancelamento.  
+ 
+Selecione a forma de pagamento
+2:Cartao de Debito; 3:Cartao de Credito
+Selecione a opcao desejada
+3:Cancelamento de transacao;
+Selecione o tipo de cancelamento
+2:Cancelamento de Cartao de Credito;
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 21 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   21 de 24 
+ 
+11.1.4  Venda Débito  
+Não há parâmetros para serem configurados.  
+Essa transação está disponível no menu de Pagamentos ( função 0 ). 
+Selecionar a opção Cartão de Débito , e seguir com o fluxo da venda.  
+ 
+ 
+11.1.5  Cancelamento Venda Débito  
+ 
+Não há parâmetros para serem configurados.  
+Pode ser realizado através do menu Administrativo ( função 110 ).  
+Selecionar a opção Cancelamento de Transação , e seguir com o fluxo do cancelamento.  
+ 
+ 
+Ou através do menu de Cancelamento ( função 200 ). 
+ 
+ 
+ 
+Selecionar a opção Cancelamento de Transação , e seguir com o fluxo do cancelamento.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Selecione a forma de pagamento
+2:Cartao de Debito; 3:Cartao de Credito
+Selecione a opcao desejada
+3:Cancelamento de transacao;
+Selecione o tipo de cancelamento
+1:Cancelamento de Cartao de Debito;
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 22 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   22 de 24 
+ 
+ 
+ 
+11.2 INTERFACE CLIENT MODULAR  
+Importante: Verificar se o Client Modular utilizado é compatível com o SiTef/SitDemo que será utilizado, 
+conforme descrito no item “Pré-Requisitos ”. 
+ 
+11.2.1  Venda Crédito  
+Não há parâmetros para serem configurados.  
+Essa transação está disponível no menu de Pagamentos ( função CRT ). 
+ 
+Selecionar  
+Em seguida, seguir com o fluxo da venda.  
+ 
+11.2.2  Cancelamento Venda Crédito  
+Não há parâmetros para serem configurados.  
+Pode ser realizado através do menu Administrativo ( função ADM ), ou através do menu de Cancelamento 
+(função CNC ). 
+ 
+Selecionar a opção   
+Em seguida, escolher   
+Em seguida, seguir com o fluxo do cancelamento.  
+ 
+11.2.3  Venda Débito  
+ 
+Não há parâmetros para serem configurados.  
+Essa transação está disponível no menu de Pagamentos ( função CRT ). 
+Selecionar  
+Em seguida, seguir com o fluxo da venda.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  1 - Crédito
+  5 - Cancelamento
+  1 - Crédito
+  2 - Débito
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 23 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   23 de 24 
+ 
+11.2.4  Cancelamento Venda Débito  
+ 
+Não há parâmetros para serem configurados.  
+Pode ser realizado através do menu Administrativo ( função ADM ), ou através do menu de Cancelamento 
+(função CNC ). 
+ 
+Selecionar a opção   
+Em seguida, escolher    
+Em seguida, seguir com o fluxo do cancelamento.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  5 - Cancelamento
+  2 - Débito
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express
+
+
+=== PÁGINA 24 ===
+
+
+CardSE_ Own Financial _Guia de Instalação   24 de 24 
+ 
+12. VERSÃO MÍNIMA DO CARDSE PARA OWN FINANCIAL  
+ 
+Versão  Alteração  
+8.0.0.32a  Inclusão do Autorizador Own Financial
+
+
+[Imagem técnica detectada - conteúdo OCR abaixo:]
+
+
+Za
+
+Software
+Express

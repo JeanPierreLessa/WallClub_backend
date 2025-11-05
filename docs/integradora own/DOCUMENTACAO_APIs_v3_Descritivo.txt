@@ -1,0 +1,304 @@
+
+=== PÁGINA 1 ===
+
+
+Sumário	Apis OWN - Adquirência ...................................................................................................................... 4 Autenticação: ................................................................................................................................................... 4 Definições ......................................................................................................................................................... 4 1 - Payload de entrada em formato Json: .................................................................................................... 4 2 - Payload de saída em formato Json: ........................................................................................................ 5 3 - Exemplo de uma requisição: .................................................................................................................... 5 Consulta de transações gerais: ............................................................................................................ 7 1 - Payload de entrada em formato Json: .................................................................................................... 7 2 - Payload de saída em formato Json: ........................................................................................................ 8 3 - Exemplo de uma requisição: .................................................................................................................. 10 Consulta de liquidações: .................................................................................................................... 11 1 – Params da requisição .............................................................................................................................. 11 2 - Payload de saída em formato Json: ...................................................................................................... 11 3 - Exemplo de uma requisição: .................................................................................................................. 13 Credenciamento lojista: ...................................................................................................................... 14 1 - Payload de entrada em formato Json: .................................................................................................. 14 2 - Payload de saída em formato Json: ...................................................................................................... 20 3- Exemplo de Payload de saída em caso de validação de campos obrigatórios ou inválidos: ......... 20 4 - Exemplo de uma requisição: .................................................................................................................. 21 Consulta de protocolos: ...................................................................................................................... 22 1 – Params da requisição .............................................................................................................................. 22 2 - Payload de saída em formato Json: ...................................................................................................... 22 3- Exemplo de Payload de saída em caso de validação de campos obrigatórios ou inválidos: ......... 23 4 - Exemplo de uma requisição: .................................................................................................................. 24 Consulta de cestas de tarifas: ............................................................................................................ 25 1 – Params da requisição .............................................................................................................................. 25 2 - Payload de saída em formato Json: ...................................................................................................... 25 3 - Exemplo de uma requisição: .................................................................................................................. 27 Consulta de atividades: ...................................................................................................................... 28 1 – Params da requisição .............................................................................................................................. 28 2 - Payload de saída em formato Json: ...................................................................................................... 28 3 - Exemplo de uma requisição: .................................................................................................................. 29 Consulta resumida de dados cadastrais de estabelecimento: ....................................................... 30
+
+
+=== PÁGINA 2 ===
+
+
+1 – Params da requisição .............................................................................................................................. 30 2 - Payload de saída em formato Json: ...................................................................................................... 30 3 - Exemplo de uma requisição: .................................................................................................................. 32 Configura equipamento: .................................................................................................................... 33 1 – Params da requisição .............................................................................................................................. 33 2 - Payload de saída em formato Json: ...................................................................................................... 34 3 - Exemplo de Payload de saída em caso de validação de campos obrigatórios ou inválidos: ........ 34 4 - Exemplo de uma requisição: .................................................................................................................. 35 Cadastro de Canal: .............................................................................................................................. 36 1 – Params da requisição .............................................................................................................................. 36 2 - Payload de saída em formato Json: ...................................................................................................... 36 3 - Exemplo de uma requisição: .................................................................................................................. 37 Consulta de Canal por CNPJ: ............................................................................................................. 38 1 – Params da requisição .............................................................................................................................. 38 2 - Payload de saída em formato Json: ...................................................................................................... 38 3 - Exemplo de uma requisição: .................................................................................................................. 39 Consulta de Canal por nome do Canal: ............................................................................................ 40 1 – Params da requisição .............................................................................................................................. 40 2 - Payload de saída em formato Json: ...................................................................................................... 40 3 - Exemplo de uma requisição: .................................................................................................................. 41 E-commerce - Consulta Token do pelo Número do contrato: ........................................................ 42 1 – Params da requisição .............................................................................................................................. 42 2 - Payload de saída em formato Json: ...................................................................................................... 42 3 - Exemplo de uma requisição: .................................................................................................................. 43 WebHook .............................................................................................................................................. 44 Eventos ............................................................................................................................................................ 44 Token de autenticação ................................................................................................................................... 44 Cadastrar URL ................................................................................................................................................. 44 WebHook de cadastro de estabelecimento ...................................................................................... 45 1 – Exemplo de Payload de um DEFERIMENTO de cadastro ................................................................... 45 2 – Exemplo de Payload de um INDEFERIMENTO de cadastro ............................................................... 45 WebHook de transação ...................................................................................................................... 46 1 – Exemplo de payload de transação confirmada: .................................................................................. 46 2 – Exemplo de payload de transação estornada: ..................................................................................... 46 WebHook de liquidações .................................................................................................................... 47
+
+
+=== PÁGINA 3 ===
+
+
+1 – Exemplo de payload de liquidação ....................................................................................................... 47
+
+
+=== PÁGINA 4 ===
+
+
+Apis OWN - Adquirência Autenticação:  Para utilizar o conjunto de recursos e soluções de integração da OWN, será necessário realizar a autenticação utilizado o protocolo de integração OAuth 2.0 EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/v2/auth Produção: https://acquirer.own.financial/agilli/v2/auth   Definições Para o perfeito entendimento e interpretação deste documento, são adotadas as seguintes definições: Cliente: empresa (CPF ou CNPJ) que possui vínculo contratual com a OWN Financial, como ex.: cliente white label  Parceiro: empresa (CPF ou CNPJ) que possui vínculo contratual com o cliente da OWN Financial e também com o fornecedor, como ex.: posto, restaurante, loja e etc, em suma o estabelecimento final. Método : Post:  1 - Payload de entrada em formato Json:  {     "client_id": "xxxxxxxxxxxxx-api-acquirer.wl",     "client_secret": "xxxxxxxxxxxxxxx",     "scope": "xxxxxxxxxxx",     "grant_type": "client_credentials" }  Após a conclusão de seu cadastro como cliente OWN você receber por e-mail as credenciais para utilização dos serviços de integração:  Campo Detalhes client_id Seu identificador como cliente OWN client_secret Chave secreta gerada a partir de algoritmo scope Escopo de integração grant_type Mecanismo de autenticação do token.
+
+
+=== PÁGINA 5 ===
+
+
+2 - Payload de saída em formato Json: {     "access_token":"xxxxxxxxxxxxxxxx",     "expires_in":300,     "refresh_expires_in":0,     "token_type":"Bearer",     "not-before-policy":0,     "scope":"own.api_wl.api" }  Campos do Payload de saída: Campo Detalhes Opções access_token Token de acesso gerado, ele que será utilizado para consumir os demais endPoints.  expires_in Tempo de vencimento do token em segundos  refresh_expires_in Tempo para vencimento de um refresh token em segundos.   token_type Tipo de token obtido  not-before-policy Informativo de identificador de política de segurança, atributo somente informativo.  scope escopo de integrações liberado para esse token.  3 - Exemplo de uma requisição: 
+ Ao consumir todos os endPoints o token gerado deve ser enviado como Bearer conforme exemplo:
+
+
+=== PÁGINA 6 ===
+
+
+
+
+
+=== PÁGINA 7 ===
+
+
+Consulta de transações gerais: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/transacoes/v2/buscaTransacoesGerais Produção: https://acquirer.own.financial/agilli/transacoes/v2/buscaTransacoesGerais  Método : Post:  1 - Payload de entrada em formato Json:  {     "cnpjCliente": "00000000000000",     "docParceiro": "11111111111111",     "identificadorTransacao": null,     "statusTransacao": null,     "dataInicial": "2025-01-08 00:00",     "dataFinal": "2025-01-08 23:59" } Campos do Payload de entrada: Campo Detalhes Opções Obrigatório cnpjCliente Cnpj do cliente White Label, nesse caso será o cnpj do cliente / parceiro da OWN  Sim docParceiro Documento do parceiro, podendo ser cpf ou cnpj do cliente do nosso cliente, nesse caso será a Padaria, Restaurante.. (estabelecimento final)  Não identificadorTransacao Identificador único da transação, ele é enviado no webHook de transação quando habilitado, será um número parecido com esse: 250108001860537457  Não statusTransacao Status da transação VENDA CONFIRMADA ou VENDA ESTORNADA Não dataInicial Data Inicial para o período de transação, no formato: “2025-01-08 00:00”  Sim dataFinal Data final para o período de transação, no formato: “2025-01-08 00:00”  Sim
+
+
+=== PÁGINA 8 ===
+
+
+2 - Payload de saída em formato Json: [     {       "cnpjCpfCliente": "00000000000000",       "cnpjCpfParceiro": "11111111111111",       "identificadorTransacao": "241228001856006195",       "data": "2024-12-28T11:07:34",       "numeroSerieEquipamento": "6C514723",       "valor": 3200,       "quantidadeParcelas": 2,       "mdr": 173.12,       "valorAntecipacaoTotal": 3026.88,       "taxaAntecipacaoTotal": 0,       "statusTransacao": "VENDA LIQUIDADA",       "bandeira": "MASTERCARD",       "modalidade": "CREDITO PARC 2 a 6",       "codigoAutorizacao": "097939",       "numeroCartao": "52343107****9237",       "parcelas": [         {           "parcelaId": 1529489824,           "statusPagamento": "Pago",           "dataHoraTransacao": "2024-12-28T11:07:34",           "mdr": 86.56,           "numeroParcela": 1,           "valorParcela": 1600,           "dataPagamentoReal": "2024-12-30",           "valorAntecipado": 1513.44,           "taxaAntecipada": 0,           "antecipado": "S",           "identificadorTransacao": "241228001856006195",           "numeroTitulo": "79447256",           "detalheAntecipacao": [             {               "id": 57567668,               "parcelaId": 1529489824,               "valorBrutoAntecipado": 1513.44,               "valorLiquidoAntecipado": 1513.44,               "taxaAntecipacao": 0,               "dataAntecipacao": "2024-12-30T00:00:00"             }           ]         },         {           "parcelaId": 1529489828,           "statusPagamento": "Pago",           "dataHoraTransacao": "2024-12-28T11:07:34",           "mdr": 86.56,           "numeroParcela": 2,           "valorParcela": 1600,           "dataPagamentoReal": "2024-12-30",           "valorAntecipado": 1513.44,           "taxaAntecipada": 0,
+
+
+=== PÁGINA 9 ===
+
+
+"antecipado": "S",           "identificadorTransacao": "241228001856006195",           "numeroTitulo": "79447258",           "detalheAntecipacao": [             {               "id": 57567668,               "parcelaId": 1529489828,               "valorBrutoAntecipado": 1513.44,               "valorLiquidoAntecipado": 1513.44,               "taxaAntecipacao": 0,               "dataAntecipacao": "2024-12-30T00:00:00"             }           ]         }       ]     }   ]  Campos do Payload de saída: Campo Detalhes Atributo  cnpjCliente Cnpj do cliente White Label, nesse caso será o cnpj do cliente / parceiro da OWN  docParceiro Documento do parceiro, podendo ser cpf ou cnpj  identificadorTransacao Identificador único da transação, ele será um número parecido com esse: 250108001860537457  data Data e hora da transação no formato “2024-12-28T11:07:34”  numeroSerieEquipamento Número de série do equipamento onde aconteceu a transação  valor Valor bruto da transação  quantidadeParcelas Quantidade de parcelas da transação, quando for uma venda parcelada.   mdr Valor monetário do mdr calculado para a transação  valorAntecipacaoTotal Valor bruto antecipado da transação  taxaAntecipacaoTotal Percentual aplicada de antecipação na transação  statusTransacao  Status financeiro da transação, podendo ter as seguintes opções: VENDA CONFIRMADA = Venda confirmada na adquirente VENDA ESTORNADA = Venda estornada na adquirente  VENDA CANCELADA = Venda cancelada na adquirente VENDA PENDENTE = Venda que ainda aguarda aprovação no adquirente VENDA LIQUIDADA = Venda confirmada que já foi liquidada junto ao estabelecimento VENDA LIQUIDADA PARCIALMENTE = Venda confirmada que foi paga parcialmente junto ao estabelecimento  
+bandeira Bandeira utilizada na transação  modalidade Modalidade de transação  codigoAutorizacao Código de autorização da transação  numeroCartao Número do cartão mascarado  parcelas Lista de parcelas quando é uma venda parcelada  parcelaId Identificador da parcela parcelas statusPagamento Em aberto = Título ainda não liquidado Pago = Título já liquidado junto ao estabelecimento  Liquidado Parcialmente = Título pago parcialmente, exemplo: parte do saldo do título foi antecipado. parcelas dataHoraTransacao Data e hora da transação no formato “2024-12-28T11:07:34” parcelas
+
+
+=== PÁGINA 10 ===
+
+
+mdr Valor monetário do mdr calculado para a parcela parcelas numeroParcela Identificador da parcela parcelas valorParcela Valor bruto da parcela parcelas dataPagamentoReal Data de pagamento da parcela parcelas valorAntecipado Valor bruto antecipado da parcela parcelas taxaAntecipada Percentual aplicada de antecipação na parcela parcelas antecipado Identificador se parcela foi antecipada, opções S = Sim; N=Não parcelas identificadorTransacao  Identificador único da transação, ele, será um número parecido com esse: 250108001860537457 parcelas  numeroTitulo Número do título de pagamento parcelas detalheAntecipacao Lista de parcelas quando é uma venda parcelada parcelas Id Identificador da antecipação parcelas / detalheAntecipacao parcelaId Referência da parcela parcelas / detalheAntecipacao valorBrutoAntecipado Valor bruto antecipado da parcela parcelas / detalheAntecipacao taxaAntecipacao Percentual aplicada de antecipação na parcela parcelas / detalheAntecipacao dataAntecipacao Data da operação de antecipação realizada, no formato: "2024-12-30T00:00:00" parcelas / detalheAntecipacao 3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 11 ===
+
+
+Consulta de liquidações: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/parceiro/v2/consultaLiquidacoes  Produção: https://acquirer.own.financial/agilli/parceiro/v2/consultaLiquidacoes  Método : Get: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório dataPagamentoReal Data de liquidação das transações no formato de data 2024-11-25 Sim cnpjCliente Documento do cliente, podendo ser cpf ou cnpj Sim  2 - Payload de saída em formato Json: [     {       "lancamentoId": 878021667,       "statusPagamento": "Pago",       "dataPagamentoPrevista": "25/11/2024",       "numeroParcela": 5,       "valor": 75.41,       "dataPagamentoReal": "25/11/2024",       "antecipada": "N",       "identificadorTransacao": 250108001860537457,       "bandeira": "ELO",       "modalidade": "CREDITO PARC 7 A 12",       "codigoCliente": "00000000000000",       "docParceiro": "11111111111111",       "nsuTransacao": "423936371",       "numeroTitulo": 37525960     },     {       "lancamentoId": 878021641,       "statusPagamento": "Pago",       "dataPagamentoPrevista": "25/11/2024",       "numeroParcela": 5,       "valor": 100,       "dataPagamentoReal": "25/11/2024",
+
+
+=== PÁGINA 12 ===
+
+
+"antecipada": "N",       "identificadorTransacao": 250108001860537457,       "bandeira": "VISA",       "modalidade": "CREDITO PARC 7 A 12",       "codigoCliente": "00000000000000",       "docParceiro": "11111111111111",       "nsuTransacao": "423936365",       "numeroTitulo": 37525923     }  ]  Campos do Payload de saída: Campo Detalhes lancamentoId Identificador do lançamento statusPagamento Pago = Título já liquidado junto ao estabelecimento   Liquidado Parcialmente = Título pago parcialmente, exemplo: parte do saldo do título foi antecipado. dataPagamentoPrevista Data de previsão (vencimento) do pagamento da transação numeroParcela Número da parcela valor Valor da liquidação dataPagamentoReal Data de pagamento realizada da transação antecipada Identificador se transação foi antecipada, opções S = Sim; N=Não identificadorTransacao Identificador único da transação, ele, será um número parecido com esse: 250108001860537457 bandeira Bandeira utilizada na transação modalidade Modalidade de transação codigoCliente Cnpj do cliente White Label, nesse caso será o cnpj do cliente / parceiro da OWN docParceiro Documento do parceiro, podendo ser cpf ou cnpj do cliente do nosso cliente, nesse caso será a Padaria, Restaurante.. (estabelecimento final) nsuTransacao Nsu da transação numeroTitulo Número do título de pagamento
+
+
+=== PÁGINA 13 ===
+
+
+3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 14 ===
+
+
+Credenciamento lojista: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/parceiro/v2/cadastrarConveniada Produção: https://acquirer.own.financial/agilli/parceiro/v2/cadastrarConveniada  Método : Post:  1 - Payload de entrada em formato Json: {     "cnpj": "11111111111111",     "cnpjCanalWL": "22222222222222",     "cnpjOrigem": "",     "identificadorCliente": "51802678468",     "urlCallback":"https://www.google.com",     "razaoSocial": "EMPRESA TESTE LTDA",     "nomeFantasia": "EMPRESA TESTE",     "cnae": "4679-6/01",     "ramoAtividade": "LANCHONETES, CASAS DE CHA, DE SUCOS E SIMILARES",     "faturamentoPrevisto": 10000,     "email": "empresateste@gmail.com",     "dddComercial": "83",     "telefoneComercial": "999114785",     "cep": "58690000",     "logradouro": "Rua Rita Pereira De Almeida",     "numeroEndereco": 173,     "complemento": "Em Cima Do Mercadinho Popular",     "bairro": "Centro",     "municipio": "Livramento",     "uf": "PB",     "dddCel": "83",     "telefoneCelular": "83",     "responsavelAssinatura": "Responsavel Legal",     "quantidadePos": 1,     "faturamentoContratado": 10000,     "antecipacaoAutomatica": "S",     "taxaAntecipacao": 0,     "tipoAntecipacao": "ROTATIVO",     "mcc": "5814",     "tipoContrato": "W",     "codConfiguracao": "",     "cnpjParceiro": "11111111111111",     "idCesta": 834,     "tarifacao": [         {             "id": 118687,             "valor": 0
+
+
+=== PÁGINA 15 ===
+
+
+},         {             "id": 118730,             "valor": 3.82         },         {             "id": 118688,             "valor": 3.22         },         {             "id": 118709,             "valor": 3.22         },         {             "id": 118731,             "valor": 4.59         }  ],     "codBanco": "001",     "agencia": "906",     "digAgencia": "09",     "numConta": "785985",     "digConta": "9",     "protocoloCore": " ",     "hashAceite": "X",     "terminais": [],     "documentosSocios": [         {             "identificacao": "51802678468",             "anexos": [                 {                     "nomeArquivo": "semAnexo.jpg",                     "conteudo": "EM BRANCO",                     "tipo": "BRANCO"                 }             ]         }     ],     "anexos": [         {             "nomeArquivo": "semAnexo.jpg",             "conteudo": "EM BRANCO",             "tipo": "BRANCO"         }     ],     "outrosMeiosCaptura": [         {             "meioCaptura": "ECOMMERCE"         }     ] }
+
+
+=== PÁGINA 16 ===
+
+
+Campos do Payload de entrada: Campo Detalhes Opções Atributo Obrigatório cnpj Cnpj  ou CPF do estabelecimento comercial   Sim cnpjOrigem Campo descontinuado. Informar vazio “”   Não identificadorCliente Código RID que identifica o cliente no sistema do parceiro white label.    Não urlCallback Url de callback do cliente white label para envio da notificação do status de andamento cadastral   Não razaoSocial Razão social do estabelecimento comercial   Sim nomeFantasia Nome fantasia do estabelecimento comercial   Sim cnae CNAE principal do estabelecimento comercial    Sim ramoAtividade Ramo de atividade do estabelecimento https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarAtividades  Sim faturamentoPrevisto Valor de faturamento previsto para o estabelecimento   Sim email E-mail do estabelecimento comercial   Sim dddComercial DDD do telefone do estabelecimento comercial   Sim telefoneComercial Telefone do estabelecimento comercial   Sim cep CEP do estabelecimento comercial   Sim logradouro Logradouro do estabelecimento comercial   Sim numeroEndereco Número do endereço do estabelecimento comercial   Sim
+
+
+=== PÁGINA 17 ===
+
+
+complemento Complemento do endereço do estabelecimento comercial   Não bairro Bairro do estabelecimento comercial   Sim municipio Munícipio do estabelecimento comercial   Sim uf Estado do estabelecimento comercial   Sim dddCel DDD do telefone celular do estabelecimento comercial    Sim telefoneCelular Telefone celular do estabelecimento comercial   Sim responsavelAssinatura Nom do responsável legal pela assinatura do contrato   Sim quantidadePos Quantidade de POS que serão enviados para estabelecimento   Sim faturamentoContratado Valor do faturamento conratado com o estabelecimento comercial   Sim antecipacaoAutomatica Indica que se o estabelecimento deseja antecipar suas vendas de forma automática S ou N  Sim taxaAntecipacao Taxa a ser utilizada para antecipação automática   Condicional  tipoAntecipacao Periodicidade da antecipação automática ROTATIVO SEMANAL MENSAL QUINZENAL   Condicional 
+mcc Código MCC (Merchant Category Code) do estabelecimento Comercial https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarAtividades   Sim tipoContrato Fixo W (Withe Label)   Sim codConfiguracao Campo depreciado. Informar em branco “ “.    cnpjParceiro Cnpj do cliente White Label, nesse caso será o   Sim
+
+
+=== PÁGINA 18 ===
+
+
+cnpj do cliente / parceiro da OWN protocoloCore Número do protocolo de cadastro. Só deve ser enviado caso o cadastro tenha alguma recusa e então haverá o reenvio informando o número do protocolo.   Condicional 
+numeroContrato Número do contrato em nosso sistema referente ao cadastro realizado. Só deve ser enviado caso o cadastro tenha algum aditivo.   Condicional 
+idCesta ID da Cesta de tarifas a ser utilizada https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarCesta  Sim tarifacao Lista de tarifas a serem cobradas do estabelecimento comercial. Obs.: em caso de aditivo de alteração de valor, é obrigatório o envio de todas as tarifas, mesmo as que não tenham sofrido alteração de preço. https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarCesta   Sim 
+id ID da tarifa  tarifacao Sim valor Valor da tarifa  tarifacao Sim codBanco Código do banco do estabelecimento comercial   Sim agencia Agência do banco do estabelecimento comercial   Sim digAgencia Dígito da agência do estabelecimento comercial   Sim
+
+
+=== PÁGINA 19 ===
+
+
+numConta Número da conta do estabelecimento comercial   Sim digConta Dígito da conta do estabelecimento comercial   Sim documentosSocios Lista de documentos dos sócios do estabelecimento comercial   Sim identificacao CPF do sócio  documentosSocios  Sim anexos Lista de anexos  documentosSocios Sim nomeArquivo Nome do arquivo  anexos Sim conteudo Conteúdo do arquivo em base 64  anexos Sim tipo Tipo do arquivo  RGFRENTE RGVERSO CPF CNH COMPROVANTE_ENDERECO  anexos Sim 
+anexos Lista de anexo do contrato   Sim nomeArquivo Nome do arquivo  anexos Sim conteudo Conteúdo do arquivo em base 64  anexos Sim tipo Tipo do arquivo COMPROVANTE_ENDERECO CONTRATO_SOCIAL TERMO_ADESAO  anexos Sim
+
+
+=== PÁGINA 20 ===
+
+
+hashAceite Campo descontinuado, informar em branco “ ”    Sim cnpjCanalWL Cnpj do canal do cliente Withe Label   Não outrosMeiosCaptura Lista de outros meios de captura a serem habilitados   Não meioCaptura Informar meio de captura a ser habilitado Atualmente a opção disponível para ser utilizada como meio de captura adicional é: ECOMMERCE  Não   2 - Payload de saída em formato Json: {     "protocolo": "000000000422",     "status": "EM ANALISE" } Campos do Payload de saída: Campo Detalhes protocolo Número do protocolo para consulta do status da integração cadastral status “EM ANALISE”, o contrato encontra-se em análise pela equipe de gestão de contrato.  3- Exemplo de Payload de saída em caso de validação de campos obrigatórios ou inválidos: {     "timestamp": "2025-02-06T15:02:08.694742039",     "message": "Campo(s) obrigatório(s) inválido(s): CPF ou CNPJ inválido: cnpj!",     "camposValidados": {       "cnpj": "CPF ou CNPJ inválido: cnpj."     } } Campos do Payload de saída: Campo Detalhes timestamp Data de hora da ocorrência message Mensagem informativa sobre o(s) erro(s) encontrado(s) CamposValidados Lista dos campos com problemas.
+
+
+=== PÁGINA 21 ===
+
+
+4 - Exemplo de uma requisição:
+
+
+=== PÁGINA 22 ===
+
+
+Consulta de protocolos: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/parceiro/consultarProtocolos Produção: https://acquirer.own.financial/agilli/parceiro/consultarProtocolos Método : Get: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório cnpjEstabelecimento CNPJ ou CPF do estabelecimento comercial Condicional dataInicial Data inicial de pesquisa de registro de cadastro Condicional dataFinal Data final de pesquisa de registro de cadastro Condicional Obs.: É obrigatório pelo menos o envio de um dos seguintes cenários: preencher ambas as datas ('dataInicial' e 'dataFinal') ou preencher 'cnpjEstabelecimento'.  2 - Payload de saída em formato Json: [     {       "protocoloCore": "000000000420",       "dataRecebimento": "06/02/2025 17:42:48",       "identificadorCliente": null,       "contrato": " ",       "status": "EM ANALISE",       "motivo": " ",       "tipo": "CREDENCIAMENTO",       "reenvio": "N",       "cnpjWL": "11111111111111",       "cnpjEstabelecimento": "22222222222222",       "detalhesCadastro": null     }
+
+
+=== PÁGINA 23 ===
+
+
+]  Campos do Payload de saída: Campo Detalhes protocoloCore Número do protocolo dataRecebimento Data do recebimento dos dados cadastrais em nosso sistema identificadorCliente Código identificador do cadastro no sistema do cliente white label. contrato Código do contrato gerado no nosso sistema em caso de cadastro deferido. Formato: NNN-NNN-NN status Status do cadastro. Possíveis retornos:  ERRO – quando o cadastro é indeferido. SUCESSO – quando o cadastro é deferido pela gestão de contratos. REPROVED – quando o cadastro é aprovado pela equipe de gestão de contratos e reprovado na biometria. APPROVED – quando o cadastro é aprovado pela gestão de contratos e também aprovado na biometria. motivo Motivo em caso de reprovação tipo Tipo do cadastro: CREDENCIAMENTO ou ADITIVO reenvio Indica de se é um cadastro que foi reenviado após alguma correção cnpjWL Cnpj do cliente White Label, nesse caso será o cnpj do cliente / parceiro da OWN cnpjEstabelecimento CNPJ ou CPF do estabelecimento comercial detalhesCadastro Detalhes adicionais sobre o cadastro  3- Exemplo de Payload de saída em caso de validação de campos obrigatórios ou inválidos: {     "message": "É obrigatório pelo menos o envio de um dos seguintes cenários: preencher ambas as datas ('dataInicial' e 'dataFinal') ou preencher 'cnpjEstabelecimento'." }  Campos do Payload de saída: Campo Detalhes message Mensagem de erro
+
+
+=== PÁGINA 24 ===
+
+
+4 - Exemplo de uma requisição:
+
+
+=== PÁGINA 25 ===
+
+
+Consulta de cestas de tarifas: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarCesta Produção: https://acquirer.own.financial/agilli/parceiro/v2/consultarCesta  Método : Get: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório nomeCesta Nome da cesta de serviço. Os nomes são definidos no momento da implantação da cesta de serviço de cada cliente white label. Caso não informado irá retornar a lista de todas a cestas cadastradas. Não    2 - Payload de saída em formato Json: {       "cestaId": 123,       "nomeCesta": "CESTA DE SERVICO - POR PARCELA",       "cestaValorId": 12353,       "produto": "Credito a Vista Visa/Master",       "valor": 0,       "faixaInicial": 0,       "faixaFinal": 49999.99,       "valorMinimo": 4.5     },     {       "cestaId": 123,       "nomeCesta": "CESTA DE SERVICO - POR PARCELA",       "cestaValorId": 12361,       "produto": "Credito Parcelado 04x Visa",       "valor": 0,       "faixaInicial": 50000,       "faixaFinal": 999998.99,
+
+
+=== PÁGINA 26 ===
+
+
+"valorMinimo": 5.05     },     {       "cestaId": 123,       "nomeCesta": "CESTA DE SERVICO - POR PARCELA",       "cestaValorId": 12373,       "produto": "Credito Parcelado 07x Visa",       "valor": 0,       "faixaInicial": 999999,       "valorMinimo": 5.6     },     {       "cestaId": 123,       "nomeCesta": "CESTA DE SERVICO - POR PARCELA",       "cestaValorId": 12377,       "produto": "Credito Parcelado 08x Visa",       "valor": 0,       "faixaInicial": 0,       "faixaFinal": 49999.99,       "valorMinimo": 5.6     },     {       "cestaId": 123,       "nomeCesta": "CESTA DE SERVICO - POR PARCELA",       "cestaValorId": 12382,       "produto": "Credito Parcelado 10x Visa",       "valor": 0,       "faixaInicial": 999999,       "valorMinimo": 5.6     } }   Campos do Payload de saída: Campo Detalhes cestaId ID da cesta de tarifias nomeCesta Nome da cesta cestaValorId ID que identifica a tarifa, a qual deve ser informada no serviço de credenciamento. produto Descrição da tarifa valor Valor padrão da tarifa cadastrada. O valor pode ser alterado no momento do credenciamento. faixaInicial Faixa inicial de faturamento que será cobrada a tarifa faixaFinal Faixa final de faturamento que será cobrada a tarifa valorMinimo Valor mínimo da tarifa
+
+
+=== PÁGINA 27 ===
+
+
+3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 28 ===
+
+
+Consulta de atividades: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarAtividades Produção: https://acquirer.own.financial/agilli/parceiro/v2/consultarAtividades  Método : Get: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório descCnae Descrição do CNAE Não  2 - Payload de saída em formato Json: [     {       "codCnae": "4679-6/01",       "descCnae": "COMÉRCIO ATACADISTA DE TINTAS, VERNIZES E SIMILARES",       "codMcc": 5198     },     {       "codCnae": "4679-6/02",       "descCnae": "COMÉRCIO ATACADISTA DE MÁRMORES E GRANITOS",       "codMcc": 5039     },     {       "codCnae": "4679-6/03",       "descCnae": "COMÉRCIO ATACADISTA DE VIDROS, ESPELHOS E VITRAIS",       "codMcc": 5039     } ]  Campos do Payload de saída: Campo Detalhes
+
+
+=== PÁGINA 29 ===
+
+
+codCnae Código do CNAE  descCnae Descrição do CNAE codMcc Código do MCC a ser informado no serviço de credenciamento  3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 30 ===
+
+
+Consulta resumida de dados cadastrais de estabelecimento: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/indicadores/v2/cadastrais Produção: https://acquirer.own.financial/agilli/indicadores/v2/cadastrais  Método : Get: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório CpfCnpj CNPJ ou CPF do estabelecimento comercial Condicional contrato Código do contrato do estabelecimento comercial em nosso sistema Condicional dataCadastro Data de cadastro dos contratos Condicional Obs.: É obrigatório pelo menos o envio de um dos campos: 'dataCadastro', 'cpfCnpj' ou 'contrato'  2 - Payload de saída em formato Json: [     {       "cnpj": "11111111111111",       "contrato": "029-197-02",       "modalidade": "Cred Parc 13 a 18 Visa/Master",       "valor": 4.08,       "razaoSocial": "EMPRESA TESTE LTDA",       "nomeFantasia": "EMPRESA TESTE",       "mccId": 123,       "mcc": 7299,       "uf": "PR",       "dataEntrada": "20/06/2024",       "cidade": "CURITIBA"
+
+
+=== PÁGINA 31 ===
+
+
+},     {       "cnpj": "11111111111111",       "contrato": "029-197-02",       "modalidade": "Cred Parc 2 a 6 Elo",       "valor": 3.12,       "razaoSocial": "EMPRESA TESTE LTDA",       "nomeFantasia": "EMPRESA TESTE",       "mccId": 123,       "mcc": 7299,       "uf": "PR",       "dataEntrada": "20/06/2024",       "cidade": "CURITIBA"     }   Campos do Payload de saída: Campo Detalhes cnpj Cnpj ou CPF do estabelecimento comercial contrato Código do contrato do estabelecimento comercial em nosso sistema modalidade Descrição da tarifa  valor Valor da tarifa  razaoSocial Razão social do estabelecimento comercial  nomeFantasia Nome fantasia do estabelecimento comercial mccId ID do MCC na nossa base de dados mcc Código do MCC do estabelecimento comercial uf Estado do estabelecimento comercial dataEntrada Data do cadastro cidade Cidade do estabelecimento comercial
+
+
+=== PÁGINA 32 ===
+
+
+3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 33 ===
+
+
+Configura equipamento: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/parceiro/configuraEquipamento Produção: https://acquirer.own.financial/agilli/parceiro/configuraEquipamento  Método : POST: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório terminais Lista de terminais a serem configurados Sim numeroSerie Número de série do equipamento Não modelo Modelo de equipamento. Possíveis valores:  POS GPOS 700 POS GPOS 700 MINI POS GPOS 760 POS IWL251 POS MOVE 2500 POS PAX D195 Sim
+
+
+=== PÁGINA 34 ===
+
+
+POS PAX D195 POS PAX Q92X  POS PAX S920 numeroSerieAntigo Número de série do equipamento a ser trocado o desativado Não numeroContrato Número do contrato do estabelecimento comercial em nossa base de dados. Sim    Observações:  Caso deseja-se associar um equipamento sem troca, informar o atributo ‘numeroSerie’ e não informar o atributo ‘numeroSerieAntigo’ Caso deseja-se associar um equipamento com troca, informar no atributo ‘numerSerie’ o equipamento a ser associado e no atributo ‘numeroSerieAntigo’ o equipamento que será trocado. Caso deseja-se desativar um equipamento, não informar o atributo ‘numeroSerie’ e informar o atributo ‘numeroSerieAntigo’.  2 - Payload de saída em formato Json:  {     "status": "Equipamento configurado com sucesso." } Campos do Payload de saída: Campo Detalhes status Equipamento configurado com sucesso  3 - Exemplo de Payload de saída em caso de validação de campos obrigatórios ou inválidos:  {     "timestamp": "2025-02-07T17:34:07.931506076",     "message": "Equipamento não localizado entre os existentes: [PINPAD, POS GPOS 760, POS GPOS 700, POS GPOS 700 MINI, POS PAX D195, POS PAX S920, POS IWL251, POS MOVE 2500, POS PAX Q92X ]" } Campos do Payload de saída: Campo Detalhes timestamp Data e hora do erro message Mensagem de erro
+
+
+=== PÁGINA 35 ===
+
+
+4 - Exemplo de uma requisição:
+
+
+=== PÁGINA 36 ===
+
+
+Cadastro de Canal: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/canal/cadastrar Produção: https://acquirer.own.financial/agilli/canal/cadastrar  Esse endpoint destina-se exclusivamente para parceiros white label que tenham clientes withe label em sua estrutura. Método : POST: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório cnpj CNPJ do canal withe label Sim nome Nome do canal withe label Não  2 - Payload de saída em formato Json:  {     "id": 192,     "cnpj": "07221887000197",     "nome": "TESTE CANAL ESPECIAL",     "dataCadastro": "2025-02-10T15:13:02.292462198" }  Campos do Payload de saída: Campo Detalhes id ID do canal cnpj CNPJ do canal withe label nome Nome do canal withe label dataaCadastro Data do cadastro do canal
+
+
+=== PÁGINA 37 ===
+
+
+3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 38 ===
+
+
+Consulta de Canal por CNPJ: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/canal/cnpjcanal Produção: https://acquirer.own.financial/agilli/canal/cnpjcanal  Esse endpoint destina-se exclusivamente para parceiros white label que tenham clientes withe label em sua estrutura.  Método : GET: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório cnpj CNPJ do canal withe label Sim   2 - Payload de saída em formato Json:  {     "id": 170,     "cnpj": "11111111111111",     "nome": "TESTE CANAL",     "dataCadastro": "2025-01-14T15:28:33"  } Campos do Payload de saída: Campo Detalhes id ID do canal cnpj CNPJ do canal withe label nome Nome do canal withe label dataaCadastro Data do cadastro do canal
+
+
+=== PÁGINA 39 ===
+
+
+3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 40 ===
+
+
+Consulta de Canal por nome do Canal: EndPoint: SandBox : https://acquirer-qa.own.financial/agilli/canal/nomecanal Produção: https://acquirer.own.financial/agilli/canal/nomecanal  Esse endpoint destina-se exclusivamente para parceiros white label que tenham clientes withe label em sua estrutura.  Método : GET: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório nome Nome do canal Withe Label Sim   2 - Payload de saída em formato Json:  [     {       "id": 170,       "cnpj": "84120958000106",       "nome": "TESTE CANAL",       "dataCadastro": "2025-01-14T15:28:33"     } ] Campos do Payload de saída: Campo Detalhes id ID do canal cnpj CNPJ do canal withe label
+
+
+=== PÁGINA 41 ===
+
+
+nome Nome do canal withe label dataaCadastro Data do cadastro do canal 3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 42 ===
+
+
+E-commerce - Consulta Token do pelo Número do contrato: EndPoint : SandBox : https://acquirer-qa.own.financial/agilli/ecommerce/token Produção: https://acquirer.own.financial/agilli/ecommerce/token  Esse endpoint destina-se exclusivamente para parceiros White label que tenham clientes em sua estrutura habilitados para operações e-commerce. Na api de cadastro de estabelecimento citada acima, deve ter sinalizado o ECOMMERCE como um meio de captura adicional.  Método : GET: 1 – Params da requisição 
+ Campos de Params da requisição: Campo Detalhes Obrigatório numeroContrato Número do contrato do estabelecimento Sim   2 - Payload de saída em formato Json:
+
+
+=== PÁGINA 43 ===
+
+
+Campos do Payload de saída:  Campo Detalhes channelId Identificador do canal do estabelecimento junto ao fornecedor do Ecommerce token Token do estabelecimento (o channelId será usado como parâmetro na requisição de gerar link de pagamento como entityId)  3 - Exemplo de uma requisição:
+
+
+=== PÁGINA 44 ===
+
+
+WebHook Com webhooks você pode inscrever uma URL da sua aplicação que esteja disponível para a internet, para receber notificações referentes de alguns eventos de status da Adquirência OWN, podendo ser eventos relativos a transações (vendas) e Liquidações. Eventos Todos os eventos são enviados através de uma requisição HTTP/HTTPS POST com o formato JSON no payload. Seu endpoint precisa retornar um status code 200 ou 204 na resposta, assim consideraremos como entregue. Caso contrário, vamos tentar entregar a notificação até que tenhamos a resposta positiva, depois disso, não vamos mais tentar entregar a notificação deste evento.  Token de autenticação Podemos enviar no header da requisição um token de autenticação do tipo Basic caso deseje que sua url seja protegida por autenticação.  Cadastrar URL É necessário após a criação do endPoint por parte do parceiro, informar nosso time de suporte da OWN para cadastro em nossa plataforma e associarmos a um dos eventos disponíveis de: Transações (vendas) e Liquidações.
+
+
+=== PÁGINA 45 ===
+
+
+WebHook de cadastro de estabelecimento Uma vez inscrito no WebHook de cadastro iremos notificar as alterações durante a esteira cadastral a cada mudança de etapa até o deferimento ou indeferimento de um cadastro.  1 – Exemplo de Payload de um DEFERIMENTO de cadastro  {   "protocoloCore": "000000002842",   "identificadorCliente": "32430",   "contrato": "029-196-35",   "status": "SUCESSO",   "tipo": "CREDENCIAMENTO",   "reenvio": "N" }  2 – Exemplo de Payload de um INDEFERIMENTO de cadastro  {   "protocoloCore": "000000002828",   "identificadorCliente": "32396",   "contrato": " ",   "status": "ERRO",   "tipo": "CREDENCIAMENTO",   "motivo": "INDEFERIMENTO FILA MANUAL: 01 - Sem comprovante de endereço",   "reenvio": "S" }
+
+
+=== PÁGINA 46 ===
+
+
+WebHook de transação Método : Enviamos um requisição de Post na URL disponibilizada pelo parceiro: 1 – Exemplo de payload de transação confirmada: {     "mcc":"8999",     "mdr":0.83,     "data":"06/01/2025 20:57:25",     "valor":60,     "cartao":"550209******6512",     "bandeira":"MASTERCARD",     "contrato":"029-227-58",     "modalide":"DEBITO",     "terminal":"01035279",     "cnpjCliente":"00000000000000",     "docParceiro":"11111111111111",     "numeroSerie":"6M086053",     "customFields":"0.00|0.00",     "nomePortador":null,     "tipoTransacao":"VENDA CONFIRMADA",     "quantidadeParcela":"1",     "identificadorTransacao":"250106001859910574"  }  2 – Exemplo de payload de transação estornada: {     "mcc":"8999",     "mdr":0.83,     "data":"06/01/2025 20:57:25",     "valor":60,     "cartao":"550209******6512",     "bandeira":"MASTERCARD",     "contrato":"029-227-58",     "modalide":"DEBITO",     "terminal":"01035279",     "cnpjCliente":"00000000000000",     "docParceiro":"11111111111111",     "numeroSerie":"6M086053",     "customFields":"0.00|0.00",     "nomePortador":null,     "tipoTransacao":"VENDA ESTORNADA",     "quantidadeParcela":"1",     "identificadorTransacao":"250106001859910574"  }
+
+
+=== PÁGINA 47 ===
+
+
+WebHook de liquidações Método : Enviamos um requisição de Post na URL disponibilizada pelo parceiro: 1 – Exemplo de payload de liquidação [   {      "lancamentoId":"1533589352",      "statusPagamento":"Pago",      "dataPagamentoPrevista":"10/04/25",      "mdr":"12.46",      "numeroParcela":"3",      "valor":"416.66",      "dataPagamentoReal":"13/01/25",      "valorAntecipado":"404.20",      "taxaAntecipacao":"24.99",      "antecipada":"S",      "identificadorTransacao":"250110001861985572",      "bandeira":"MASTERCARD",      "modalidade":"CREDITO PARC 7 A 12",      "codigoCliente":"00000000000000",      "docParceiro":"11111111111111",      "nsuTransacao":"695449640",      "numeroTitulo":"81214538"   },   {      "lancamentoId":"1502620701",      "statusPagamento":"Pago",      "dataPagamentoPrevista":"29/01/25",      "mdr":"5.97",      "numeroParcela":"4",      "valor":"249.75",      "dataPagamentoReal":"13/01/25",      "valorAntecipado":"243.78",      "taxaAntecipacao":"2.72",      "antecipada":"S",      "identificadorTransacao":"241001001816933719",      "bandeira":"MASTERCARD",      "modalidade":"CREDITO PARC 2 a 6",      "codigoCliente":"00000000000000",      "docParceiro":"11111111111111",      "nsuTransacao":"684938579",      "numeroTitulo":"69904312"   },   {      "lancamentoId":"1529260184",      "statusPagamento":"Pago",      "dataPagamentoPrevista":"25/02/25",      "mdr":"1.79",      "numeroParcela":"2",      "valor":"75.00",
+
+
+=== PÁGINA 48 ===
+
+
+"dataPagamentoReal":"13/01/25",      "valorAntecipado":"73.21",      "taxaAntecipacao":"2.21",      "antecipada":"S",      "identificadorTransacao":"241227001855680142",      "bandeira":"MASTERCARD",      "modalidade":"CREDITO PARC 2 a 6",      "codigoCliente":"00000000000000",      "docParceiro":"11111111111111",      "nsuTransacao":"693962424",      "numeroTitulo":"79411447"   }

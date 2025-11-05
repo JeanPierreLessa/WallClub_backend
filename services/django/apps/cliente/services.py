@@ -1095,3 +1095,76 @@ class ClienteAuthService:
                 "mensagem": f"Erro interno: {str(e)}"
             }
 
+    @staticmethod
+    def excluir_cliente(cliente_id: int) -> Dict[str, Any]:
+        """
+        Soft delete de cliente (desativa conta e revoga tokens)
+        
+        Args:
+            cliente_id: ID do cliente a ser excluído
+            
+        Returns:
+            dict: {"sucesso": bool, "mensagem": str}
+        """
+        from django.db import transaction
+        from .models import ClienteJWTToken
+        
+        try:
+            with transaction.atomic():
+                # Buscar cliente
+                try:
+                    cliente = Cliente.objects.get(id=cliente_id)
+                except Cliente.DoesNotExist:
+                    registrar_log('apps.cliente', f"Cliente não encontrado para exclusão: ID={cliente_id}", nivel='WARNING')
+                    return {
+                        "sucesso": False,
+                        "mensagem": "Cliente não encontrado"
+                    }
+                
+                # Verificar se já está inativo
+                if not cliente.is_active:
+                    registrar_log('apps.cliente', f"Cliente já estava inativo: ID={cliente_id}", nivel='INFO')
+                    return {
+                        "sucesso": False,
+                        "mensagem": "Cliente já está inativo"
+                    }
+                
+                # 1. Desativar cliente
+                cliente.is_active = False
+                cliente.save(update_fields=['is_active', 'updated_at'])
+                
+                registrar_log('apps.cliente', 
+                    f"Cliente desativado: ID={cliente_id}, CPF={cliente.cpf}, Canal={cliente.canal_id}", 
+                    nivel='INFO')
+                
+                # 2. Revogar todos os tokens JWT ativos
+                tokens_revogados = ClienteJWTToken.objects.filter(
+                    cliente=cliente,
+                    is_active=True
+                ).update(
+                    is_active=False,
+                    revoked_at=datetime.now()
+                )
+                
+                registrar_log('apps.cliente', 
+                    f"Tokens JWT revogados: {tokens_revogados} tokens do cliente ID={cliente_id}", 
+                    nivel='INFO')
+                
+                return {
+                    "sucesso": True,
+                    "mensagem": "Cliente excluído com sucesso",
+                    "dados": {
+                        "cliente_id": cliente_id,
+                        "tokens_revogados": tokens_revogados
+                    }
+                }
+                
+        except Exception as e:
+            registrar_log('apps.cliente', 
+                f"Erro ao excluir cliente ID={cliente_id}: {str(e)}", 
+                nivel='ERROR')
+            return {
+                "sucesso": False,
+                "mensagem": "Erro ao excluir cliente"
+            }
+

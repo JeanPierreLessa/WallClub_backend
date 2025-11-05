@@ -444,3 +444,53 @@ def notificacoes_ler(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['POST'])
+@require_jwt_only
+def excluir_conta(request):
+    """
+    Endpoint para exclusão de conta do cliente (soft delete)
+    
+    Headers obrigatórios:
+    - Authorization: Bearer <jwt_token>
+    
+    Ações realizadas:
+    - Desativa a conta (is_active = False)
+    - Revoga todos os tokens JWT ativos
+    - Cliente não poderá mais fazer login
+    
+    Retorna:
+    {
+        "sucesso": true,
+        "mensagem": "Cliente excluído com sucesso",
+        "dados": {
+            "cliente_id": 123,
+            "tokens_revogados": 2
+        }
+    }
+    """
+    try:
+        # Extrair cliente_id do token JWT
+        cliente_id = request.user.cliente_id
+        
+        registrar_log('apps.cliente', 
+            f"Solicitação de exclusão de conta - Cliente ID: {cliente_id}", 
+            nivel='INFO')
+        
+        # Processar exclusão via service
+        resultado = ClienteAuthService.excluir_cliente(cliente_id)
+        
+        if resultado['sucesso']:
+            return Response(resultado, status=status.HTTP_200_OK)
+        else:
+            return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
+    
+    except Exception as e:
+        registrar_log('apps.cliente', 
+            f"Erro no endpoint excluir_conta: {str(e)}", 
+            nivel='ERROR')
+        return Response({
+            'sucesso': False,
+            'mensagem': 'Erro interno do servidor'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
