@@ -2,8 +2,12 @@
 
 ## SSH
 ```bash
+# Servidor antigo
 ssh -i /Users/jeanlessa/wall_projects/aws/webserver-dev.pem ubuntu@10.0.1.46
-cd /var/www/wallclub_backend
+
+# Servidor novo (atual)
+ssh -i /Users/jeanlessa/wall_projects/aws/webserver-dev.pem ubuntu@10.0.1.124
+cd /var/www/WallClub_backend
 ```
 
 ## Deploy Completo (Primeira Vez)
@@ -30,21 +34,21 @@ docker ps
 ## Deploy de Rotina (Atualizar Código)
 ```bash
 # Pull do código
-git pull origin main
+git pull origin v2.0.0
 
-# Rebuild e restart
-docker-compose build --no-cache web riskengine celery-worker celery-beat
+# Rebuild e restart (apenas containers Django)
+docker-compose build --no-cache wallclub-portais wallclub-apis wallclub-pos
 docker-compose down
 docker-compose up -d
 
 # Verificar
 docker ps
-docker logs wallclub-django-monorepo --tail 50
+docker logs wallclub-portais --tail 50
 ```
 
 ## Deploy Rápido (Apenas restart)
 ```bash
-docker-compose restart web riskengine celery-worker celery-beat
+docker-compose restart wallclub-portais wallclub-apis wallclub-pos wallclub-riskengine
 ```
 
 
@@ -54,25 +58,54 @@ docker-compose restart web riskengine celery-worker celery-beat
 docker ps
 
 # Logs individuais
-docker logs wallclub-django-monorepo --tail 100 -f
-docker logs wallclub-riskengine-monorepo --tail 100 -f
-docker logs wallclub-celery-worker-monorepo --tail 100 -f
-docker logs wallclub-celery-beat-monorepo --tail 100 -f
-docker logs wallclub-redis-monorepo --tail 100 -f
-
-# Logs do Docker Compose
-docker-compose logs -f web
-docker-compose logs -f riskengine
-docker-compose logs -f celery-worker
-docker-compose logs -f celery-beat
+docker logs wallclub-portais --tail 100 -f
+docker logs wallclub-apis --tail 100 -f
+docker logs wallclub-pos --tail 100 -f
+docker logs wallclub-riskengine --tail 100 -f
+docker logs wallclub-celery-worker-portais --tail 100 -f
+docker logs wallclub-celery-worker-apis --tail 100 -f
+docker logs wallclub-celery-beat --tail 100 -f
+docker logs nginx --tail 100 -f
 ```
 
-## Containers e Portas
-- **wallclub-django-monorepo**: Django (porta 8003)
-- **wallclub-riskengine-monorepo**: Risk Engine/Antifraude (porta 8004)
-- **wallclub-redis-monorepo**: Redis (porta 6380 externa, 6379 interna)
-- **wallclub-celery-worker-monorepo**: Worker Celery
-- **wallclub-celery-beat-monorepo**: Beat Celery
+## Arquitetura de Portas
+
+### Fluxo de Comunicação
+```
+Internet → AWS Security Group (8005)
+        → EC2 (10.0.1.124)
+        → Docker Nginx (8005:80)
+        → Containers Django (8005 interna)
+```
+
+### Portas Externas (Expostas)
+- **Nginx**: 8005 (HTTP temporário, será 80 após SSL) / 443 (HTTPS)
+
+### Portas Internas (Docker Network)
+Todos os containers Django escutam na **porta 8005 interna** (não expostas):
+
+- **wallclub-portais**: 8005 (Portais Admin/Lojista/Vendas/Corporativo)
+- **wallclub-apis**: 8005 (APIs Mobile + Checkout)
+- **wallclub-pos**: 8005 (Terminal POS)
+- **wallclub-riskengine**: 8005 (Antifraude)
+- **wallclub-redis**: 6379 (Cache + Broker)
+- **wallclub-celery-worker-portais**: Worker Celery Portais
+- **wallclub-celery-worker-apis**: Worker Celery APIs
+- **wallclub-celery-beat**: Beat Celery
+
+### Nginx Upstreams
+O Nginx roteia baseado no `server_name`:
+- `admin.wallclub.com.br` → `wallclub-portais:8005`
+- `lojista.wallclub.com.br` → `wallclub-portais:8005`
+- `vendas.wallclub.com.br` → `wallclub-portais:8005`
+- `api.wallclub.com.br` → `wallclub-apis:8005`
+- `pos.wallclub.com.br` → `wallclub-pos:8005`
+
+### Segurança
+- ✅ Containers Django **não expostos** diretamente
+- ✅ Apenas Nginx acessível externamente
+- ✅ Comunicação interna via rede Docker privada
+- ✅ Redis não acessível de fora
 
 ## Troubleshooting
 
