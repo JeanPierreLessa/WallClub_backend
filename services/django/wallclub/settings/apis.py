@@ -7,13 +7,17 @@ import os
 # Debug mode (ativar para desenvolvimento local)
 DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 'yes']
 
-# ALLOWED_HOSTS - aceitar todos em dev, específicos em prod
-if DEBUG:
+# ALLOWED_HOSTS - usar do .env ou aceitar todos em dev
+allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '')
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
+elif DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
     ALLOWED_HOSTS = [
         'api.wallclub.com.br',
         'checkout.wallclub.com.br',
+        'wcapi.wallclub.com.br',
     ]
 
 # Apps específicos do container APIs
