@@ -578,7 +578,7 @@ class CheckoutVendasService:
                     # Fallback para SMS
                     registrar_log('portais.vendas', f"Erro WhatsApp, usando SMS: {str(e)}", nivel='WARNING')
                     mensagem = f"Olá {cliente.nome}! Seu link de pagamento: {link_url}"
-                    enviar_sms(telefone, mensagem)
+                    enviar_sms(telefone, mensagem, 'Link Pagamento')
             else:
                 registrar_log('portais.vendas', f"Cliente {cliente_id} sem telefone cadastrado", nivel='WARNING')
             
