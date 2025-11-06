@@ -1,0 +1,74 @@
+{% extends 'portais/corporativo/base.html' %}
+{% load static %}
+
+{% block title %}Wall Club - Descontos e Cashback para Clientes | Recebimento via Cartão{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">Descontos, mais prazo para pagar e benefícios para quem compra</h1>
+                    <p class="hero-subtitle">Uma nova forma de pagar e vender com cartão. Menores taxas e custos para quem vende.</p>
+                    <a href="{% url 'portais_corporativo:para_voce_cliente' %}" class="btn btn-lg">Conheça o Wall Club →</a>
+                </div>
+                <div class="hero-image">
+                    <img src="{% static 'images/img_loja.jpg' %}" alt="Wall Club">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Nossos Serviços</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-percent"></i>
+                    </div>
+                    <h3 class="feature-title">Cliente Wall paga menos</h3>
+                    <p>Ganhe descontos no valor das parcelas ofertadas pelas lojas. Ou ganhe mais prazo para pagar! Sem custo adicional.</p>
+                    <a href="{% url 'portais_corporativo:para_voce_cliente' %}" class="btn btn-sm mt-3">Filie-se à Wall! Sem mensalidade →</a>
+                </div>
+                
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <h3 class="feature-title">Menores taxas para lojistas</h3>
+                    <p>Utilize a maquininha Wall e receba mais pela mesma venda! Reduza suas taxas e aumente sua margem de lucro.</p>
+                    <a href="{% url 'portais_corporativo:para_voce_comerciante' %}" class="btn btn-sm mt-3">Conheça e filie sua loja →</a>
+                </div>
+                
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Seguros e assistências</h3>
+                    <p>A Wall oferece as melhores assistências e seguros para o seu bem estar e de sua família.</p>
+                    <a href="{% url 'portais_corporativo:para_voce_cliente' %}" class="btn btn-sm mt-3">Mais tranquilidade para você →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Comece a economizar hoje mesmo!</h2>
+            <p class="cta-text">Baixe o aplicativo Wall Club e comece a aproveitar todos os benefícios. Não tem mensalidade ou custo para se filiar.</p>
+            <div class="app-links mt-4 justify-center d-flex">
+                <a href="https://apps.apple.com/br/app/wall-club/id6480528775" target="_blank" rel="nofollow" class="app-link" style="margin: 0 10px;">
+                    <img src="{% static 'images/logo_apple_store.png' %}" alt="Baixar na App Store" style="width: 150px !important; height: auto !important; display: block !important; max-width: 150px !important;">
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.wallclub.app" target="_blank" rel="nofollow" class="app-link" style="margin: 0 10px;">
+                    <img src="{% static 'images/logo_google_store.png' %}" alt="Disponível no Google Play" style="width: 150px !important; height: auto !important; display: block !important; max-width: 150px !important;">
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

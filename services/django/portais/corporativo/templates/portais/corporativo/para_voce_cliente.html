@@ -1,0 +1,124 @@
+{% extends 'portais/corporativo/base.html' %}
+{% load static %}
+
+{% block title %}Para Você Cliente | Wall Club{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">Desconto ou mais prazo para pagar?<br>Com a Wall, você escolhe!</h1>
+                    <p class="hero-subtitle">Baixe o app, filie-se e comece a aproveitar os descontos hoje mesmo!</p>
+                    
+                    <div class="app-links mt-4">
+                        <a href="https://apps.apple.com/br/app/wall-club/id6480528775" target="_blank" rel="nofollow" class="app-link">
+                            <img src="{% static 'images/logo_apple_store.png' %}" alt="Baixar na App Store">
+                        </a>
+                        <a href="https://play.google.com/store/apps/details?id=com.wallclub.app" target="_blank" rel="nofollow" class="app-link">
+                            <img src="{% static 'images/logo_google_store.png' %}" alt="Disponível no Google Play">
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="{% static 'images/celulares_wall.png' %}" alt="Telas do aplicativo Wall Club">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Benefícios para você</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Fácil de usar</h3>
+                    <p>Para conseguir o seu desconto, basta você pedir ao caixa da loja o desconto para clientes Wall e pagar com um dos seus cartões de crédito ou por pix, usando a maquininha da Wall.</p>
+                </div>
+                
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <h3 class="feature-title">Parcela menor</h3>
+                    <p>Pagando com a Wall, você ganha descontos no valor das parcelas oferecidas pela loja. Peça para usar a maquininha Wall e pague menos!</p>
+                </div>
+                
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Mais benefícios</h3>
+                    <p>A Wall disponibiliza para você e sua família seguros especiais para dar mais tranquilidade e conforto para o seu dia a dia.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Benefits Section -->
+    <section class="benefits-section">
+        <div class="container">
+            <div class="benefits-grid">
+                <div class="benefits-text">
+                    <h3>Fácil de usar</h3>
+                    <p>Para conseguir o seu desconto, basta você pedir ao caixa da loja o desconto para clientes Wall e pagar com um dos seus cartões de crédito ou por pix, usando a maquininha da Wall.</p>
+                </div>
+                
+                <div class="benefits-image">
+                    <img src="{% static 'images/pessoas_segurando_cartao.jpg' %}" alt="Pessoa segurando cartão">
+                </div>
+            </div>
+            
+            <div class="benefits-grid">
+                <div class="benefits-image">
+                    <img src="{% static 'images/sacolas_compras.jpg' %}" alt="Sacolas de compras">
+                </div>
+                
+                <div class="benefits-text">
+                    <h3>Com a Wall, sua parcela é menor</h3>
+                    <p>Pagando com a Wall, você ganha descontos no valor das parcelas oferecidas pela loja.</p>
+                    <p>Peça para usar a maquininha Wall e pague menos!</p>
+                </div>
+            </div>
+            
+            <div class="benefits-grid">
+                <div class="benefits-text">
+                    <h3>Mais benefícios e assistências</h3>
+                    <p>A Wall disponibiliza para você e sua família seguros especiais para dar mais tranquilidade e conforto para o seu dia a dia.</p>
+                    <p>Quer garantir o pagamento do colégio ou faculdade dos seus filhos em casos de imprevistos?</p>
+                    <p>Preocupado em se defender de um desfalque por Pix na sua conta seja por assalto ou por golpe on line?</p>
+                    <p>Está gastando muito com a saúde de seu Pet e gostaria de um plano de saúde para ele que caiba no seu bolso?</p>
+                    <p>A sua segurança e de sua família pode custar muito menos do que você imagina!</p>
+                    <p>Venha para a Wall e monte um plano de segurança e proteção que caiba no seu bolso!</p>
+                </div>
+                
+                <div class="benefits-image">
+                    <img src="{% static 'images/cachorro.jpg' %}" alt="Cachorro">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Comece a economizar hoje mesmo!</h2>
+            <p class="cta-text">Baixe o aplicativo Wall Club e comece a aproveitar todos os benefícios. Não tem mensalidade ou custo para se filiar.</p>
+            
+            <div class="app-links mt-4 justify-center d-flex">
+                <a href="https://apps.apple.com/br/app/wall-club/id6480528775" target="_blank" rel="nofollow" class="app-link">
+                    <img src="{% static 'images/logo_apple_store.png' %}" alt="Baixar na App Store">
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.wallclub.app" target="_blank" rel="nofollow" class="app-link">
+                    <img src="{% static 'images/logo_google_store.png' %}" alt="Disponível no Google Play">
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

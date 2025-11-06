@@ -1,0 +1,93 @@
+{% extends 'portais/corporativo/base.html' %}
+{% load static %}
+
+{% block title %}Sobre o Wall Club | Wall Club{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text" style="text-align: center;">
+                    <h1 class="hero-title">Sobre o Wall Club</h1>
+                    <p class="hero-subtitle">Conheça nossa história, missão e a equipe por trás da Wall Club.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- About Section -->
+    <section class="features">
+        <div class="container">
+            <div class="content-block mb-5">
+                <h2 class="section-title">Nossa História</h2>
+                <div class="text-content">
+                    <p>A Wall é uma fintech que oferece serviços de pagamento e benefícios para clientes e lojistas.</p>
+                    <p>Fundada por profissionais com ampla experiência no mercado financeiro, a Wall tem como objetivo transformar a experiência de pagamento, oferecendo benefícios reais para ambos os lados da transação.</p>
+                    <h3 class="mt-4 mb-3">Com mais de 25 anos de experiência nos mercados bancário, de pagamentos e de crédito</h3>
+                    <p>Os sócios da Wall acreditam na transformação da sociedade e da vida das pessoas e empresas através da aplicação de tecnologias que permitam o melhor atendimento de suas necessidades através da customização, personalização e maior adequação dos produtos e serviços à realidade de cada um ou de seus grupos.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Team Section -->
+    <section class="benefits-section">
+        <div class="container">
+            <h2 class="section-title mb-5">Nossa Equipe</h2>
+            
+            <div class="benefits-grid">
+                <div class="benefits-text">
+                    <h3>Fernando Monteiro</h3>
+                    <h5 class="mb-3">CEO / Sócio Fundador</h5>
+                    <p>Profissional com mais de 25 anos de experiência nos mercados bancário, de meios de pagamento e crédito.</p>
+                    <p>Foi general manager do Banco Afinz Empresas e da Credenciadora Afinzpay e diretor de grandes bancos e financeiras nacionais e multinacionais tais como Citibank, Itau-Unibanco e da Credipac-Pactual.</p>
+                    <p>Especializado nas áreas de cash management, cartões de crédito e financiamento, já ajudou/coordenou a criação e desenvolvimento de pelo menos 2 fintechs na área.</p>                           
+                </div>
+                <div class="benefits-image">
+                    <img src="{% static 'images/fernandomonteiro.avif' %}" alt="Fernando Monteiro" class="team-member-photo" width="250" height="250">
+                </div>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefits-text">
+                    <h3>André Sonnenburg</h3>
+                    <h5 class="mb-3">CTO / Sócio Fundador</h5>
+                    <p>Profissional com mais de 20 anos de experiência em Canais Digitais, Produtos Financeiros e Tecnologia da Informação.</p>
+                    <p>Trabalhou em empresas tradicionais como Citibank, HSBC, JP Morgan, e também em diversas Startups e Fintechs.</p>
+                    <p>Foi responsável por projetos importantes nas áreas de:</p>
+                    <ul class="mt-2">
+                        <li>Mobile Banking & Payment</li>
+                        <li>Open & Embedded Finance</li>
+                        <li>AI/Machine Learning</li>
+                    </ul>
+                </div>
+                <div class="benefits-image">
+                    <img src="{% static 'images/andresonnen.avif' %}" alt="André Sonnenburg" class="team-member-photo" width="250" height="250">
+                </div>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefits-text">
+                    <h3>Luiz Felipe Villac</h3>
+                    <h5 class="mb-3">COO / Sócio Fundador</h5>
+                    <p>Profissional com mais de 23 anos de experiência com startups, operações de adquirência e fintechs.</p>
+                    <p>Comandou e estruturou equipes comerciais e de operações em importantes empresas e fintechs no país, tais como Editora Abril, BestPay e Trustpay.</p>
+                    <p>Empreendedor, foi um dos primeiros a trazer para o Brasil portais/site de grupos de discussão e conteúdo, lançando o primeiro site de grupos de discussão do Brasil, o MeuGrupo.com que foi posteriormente vendido a aceleradora americana Esnet Group.</p>
+                </div>
+                <div class="benefits-image">
+                    <img src="{% static 'images/felipe.avif' %}" alt="Luiz Felipe Villac" class="team-member-photo" width="250" height="250">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Junte-se à Wall Club</h2>
+            <p class="cta-text">Faça parte da revolução nos meios de pagamento. Baixe o aplicativo ou entre em contato para saber mais.</p>
+            <a href="{% url 'portais_corporativo:contato' %}" class="btn cta-btn btn-lg">Entre em contato →</a>
+        </div>
+    </section>
+{% endblock %}

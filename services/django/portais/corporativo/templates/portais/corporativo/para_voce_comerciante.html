@@ -1,0 +1,102 @@
+{% extends 'portais/corporativo/base.html' %}
+{% load static %}
+
+{% block title %}Para Você Comerciante | Wall Club{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">Aumente suas vendas e reduza custos com a Wall</h1>
+                    <p class="hero-subtitle">A Wall oferece soluções exclusivas para o seu negócio crescer, com taxas reduzidas e benefícios para seus clientes.</p>
+                    <a href="{% url 'portais_corporativo:contato' %}" class="btn btn-lg">Peça já a sua maquininha! Wall →</a>
+                </div>
+                <div class="hero-image">
+                    <img src="{% static 'images/maquina_cartao.jpg' %}" alt="Wall Club">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Benefícios para o seu negócio</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="feature-title">Aumente suas vendas</h3>
+                    <p>A Wall oferece serviços únicos para aumentar as vendas e os resultados de sua loja. Ofereça condições especiais para seus clientes e venda mais!</p>
+                </div>
+                
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <h3 class="feature-title">Descontos maiores</h3>
+                    <p>Dê descontos maiores para os seus clientes sem comprometer sua margem. É bom para o seu cliente, melhor ainda para você!</p>
+                </div>
+                
+                <div class="feature-card animate-fadeIn">
+                    <div class="feature-icon">
+                        <i class="fas fa-hand-holding-dollar"></i>
+                    </div>
+                    <h3 class="feature-title">Reduza suas taxas</h3>
+                    <p>Reduza suas taxas e custos de recebimento via cartão e aumente a sua margem de lucro. Aumente suas vendas oferecendo condições mais atrativas!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Benefits Section -->
+    <section class="benefits-section">
+        <div class="container">
+            <div class="benefits-grid">
+                <div class="benefits-text">
+                    <h5>A Wall oferece serviços únicos para aumentar as vendas e os resultados de sua loja</h5>
+                    <p>A Wall desenvolveu um revolucionário sistema de pagamentos que permite ao lojista oferecer descontos ou prazos maiores para seus clientes, sem comprometer suas margens.</p>
+                    <p>Ao oferecer estas condições especiais, o lojista se diferencia de seus concorrentes e aumenta suas vendas.</p>
+                    <p>Venha para a Wall e venda mais!</p>
+                </div>
+                <div class="benefits-text">
+                    <h5>Dê descontos maiores para os seus clientes...</h5>
+                    <p>A Wall desenvolveu um revolucionário sistema de pagamentos que permite ao lojista oferecer descontos maiores para seus clientes, sem comprometer suas margens.</p>
+                    <p>Ao oferecer descontos maiores, o lojista se diferencia de seus concorrentes e aumenta suas vendas.</p>
+                    <p>É bom para o seu cliente, melhor ainda para você!</p>
+                    <p>Peça já a sua maquinha Wall e comece já a lucrar mais!</p>
+                </div>
+            </div>
+            
+            <div class="benefits-grid">
+                <div class="benefits-text">
+                    <h5>Reduza suas taxas e custos de recebimento via cartão e aumente a sua margem de lucro...</h5>
+                    <p>A Wall desenvolveu um revolucionário sistema de pagamentos que permite ao lojista reduzir suas taxas e custos de recebimento via cartão, aumentando sua margem de lucro.</p>
+                    <p>Ao reduzir suas taxas, o lojista pode oferecer condições mais atrativas para seus clientes, aumentando suas vendas.</p>
+                    <p>Reduza suas taxas e custos de recebimento via cartão e aumente a sua margem de lucro com a Wall!</p>
+                    <p>Aumente suas vendas oferecendo condições mais atrativas para seus clientes!</p>
+                </div>
+                <div class="benefits-text">
+                    <h5>Aumente seus limites de compra e o prazo de pagamento de seus fornecedores com a Wall...</h5>
+                    <p>A Wall desenvolveu um revolucionário sistema de pagamentos de fornecedores e distribuidores que permite à sua loja pagar seus fornecedores diretamente com recebíveis de cartão.</p>
+                    <p>Com este sistema, seus fornecedores aceitam aumentar os seus limites de compras e, muitas vezes, também os prazos de pagamento.</p>
+                    <p>Alongue os prazos de pagamentos de seus fornecedores com a Wall!</p>
+                    <p>Conheça o serviço de pagamento de fornecedores da Wall e aumente seus resultados!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Filie-se ao WallClub</h2>
+            <p class="cta-text">Com a Wall, seu ponto de venda se diferencia com descontos e prazos de pagamento especiais. Não perca mais tempo e comece a aumentar suas vendas hoje mesmo!</p>
+            <a href="{% url 'portais_corporativo:contato' %}" class="btn cta-btn btn-lg">Filie-se já →</a>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Wall Club - Descontos e Cashback para Clientes | Recebimento via Cartão{% endblock %}</title>
+    <meta name="description" content="{% block description %}Aproveite os descontos e cashback oferecidos pela Wall Club para aumentar a margem EBITDA da sua loja. Receba em D+1, sem taxas de antecipação.{% endblock %}">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link rel="apple-touch-icon" href="data:;base64,iVBORw0KGgo=">
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:url" content="https://wallclub.com.br{% block og_url %}/{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Wall Club - Descontos e Cashback para Clientes | Recebimento via Cartão{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="{% block og_description %}Aproveite os descontos e cashback oferecidos pela Wall Club para aumentar a margem EBITDA da sua loja.{% endblock %}">
+    <meta property="og:site_name" content="Wall Club">
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:title" content="{% block twitter_title %}Wall Club - Descontos e Cashback para Clientes | Recebimento via Cartão{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Aproveite os descontos e cashback oferecidos pela Wall Club.{% endblock %}">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <!-- Keywords -->
+    <meta name="keywords" content="wall club, descontos, recebimento via cartão">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://wallclub.com.br{% block canonical_url %}/{% endblock %}">
+    
+    <!-- Google Fonts -->
+    <link href="https://cdn.zyrosite.com/u1/google-fonts/font-faces?family=Rubik:wght@300;400;500;700&family=Open+Sans:wght@300;400;700&display=swap" rel="stylesheet" referrerpolicy="no-referrer">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="{% static 'css/modern-style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="text-center">Wall Benefícios e Instituição de Pagamentos LTDA - CNPJ: 54.430.621/0001-34</div>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            {% include 'portais/corporativo/includes/menu.html' %}
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+    
+    <!-- Footer -->
+    {% include 'portais/corporativo/includes/footer.html' %}
+    
+    <!-- Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate on Scroll
+            const animateElements = document.querySelectorAll('.animate-fadeIn');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = 1;
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            animateElements.forEach(element => {
+                element.style.opacity = 0;
+                element.style.transform = 'translateY(20px)';
+                element.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                observer.observe(element);
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

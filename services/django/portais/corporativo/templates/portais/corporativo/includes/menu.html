@@ -1,0 +1,86 @@
+{% load static %}
+<!-- Menu padronizado Wall Club -->
+<div class="header-content">
+    <a href="{% url 'portais_corporativo:home' %}" class="logo-container">
+        <img src="{% static 'images/base_logo_transparente.png' %}" alt="Wall Club" class="logo">
+    </a>
+    
+    <nav class="nav-links">
+        <button class="nav-close" aria-label="Close navigation">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="{% url 'portais_corporativo:home' %}" id="menu-home">Home</a>
+        <a href="{% url 'portais_corporativo:para_voce_cliente' %}" id="menu-cliente">Para Você Cliente</a>
+        <a href="{% url 'portais_corporativo:para_voce_comerciante' %}" id="menu-comerciante">Para Você Comerciante</a>
+        <a href="{% url 'portais_corporativo:sobre' %}" id="menu-sobre">Sobre o Wall Club</a>
+        <a href="{% url 'portais_corporativo:contato' %}" id="menu-contato">Contato</a>
+        <a href="https://lojista.wallclub.com.br" target="_blank" rel="nofollow">Portal Lojista</a>
+    </nav>
+    
+    <button class="nav-toggle" aria-label="Toggle navigation">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <div class="nav-overlay"></div>
+</div>
+
+<script>
+    // Ativar o item de menu correspondente à página atual
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obter o caminho da página atual
+        const path = window.location.pathname;
+        
+        // Remover a classe 'active' de todos os links
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Adicionar a classe 'active' ao link correspondente
+        if (path === '/' || path === '/corporativo/' || path.endsWith('/home/')) {
+            const homeLink = document.getElementById('menu-home');
+            if (homeLink) homeLink.classList.add('active');
+        } else if (path.includes('para_voce_cliente') || path.includes('para-voce-cliente')) {
+            const clienteLink = document.getElementById('menu-cliente');
+            if (clienteLink) clienteLink.classList.add('active');
+        } else if (path.includes('para_voce_comerciante') || path.includes('para-voce-comerciante')) {
+            const comercianteLink = document.getElementById('menu-comerciante');
+            if (comercianteLink) comercianteLink.classList.add('active');
+        } else if (path.includes('sobre')) {
+            const sobreLink = document.getElementById('menu-sobre');
+            if (sobreLink) sobreLink.classList.add('active');
+        } else if (path.includes('contato')) {
+            const contatoLink = document.getElementById('menu-contato');
+            if (contatoLink) contatoLink.classList.add('active');
+        }
+        
+        // Mobile Menu Toggle
+        const navToggle = document.querySelector('.nav-toggle');
+        const navClose = document.querySelector('.nav-close');
+        const navLinks = document.querySelector('.nav-links');
+        const navOverlay = document.querySelector('.nav-overlay');
+        
+        if (navToggle) {
+            navToggle.addEventListener('click', function() {
+                navLinks.classList.add('active');
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+        
+        if (navClose) {
+            navClose.addEventListener('click', function() {
+                navLinks.classList.remove('active');
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+        
+        if (navOverlay) {
+            navOverlay.addEventListener('click', function() {
+                navLinks.classList.remove('active');
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+    });
+</script>
