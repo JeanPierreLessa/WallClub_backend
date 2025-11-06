@@ -63,6 +63,25 @@ INSTALLED_APPS = [
 # URLs específicas
 ROOT_URLCONF = 'wallclub.urls_portais'
 
+# CSRF Trusted Origins (para subdomínios dos portais)
+CSRF_TRUSTED_ORIGINS = [
+    'http://admin.wallclub.com.br',
+    'http://wcadmin.wallclub.com.br',
+    'http://vendas.wallclub.com.br',
+    'http://wcvendas.wallclub.com.br',
+    'http://lojista.wallclub.com.br',
+    'http://wclojista.wallclub.com.br',
+    'https://admin.wallclub.com.br',
+    'https://wcadmin.wallclub.com.br',
+    'https://vendas.wallclub.com.br',
+    'https://wcvendas.wallclub.com.br',
+    'https://lojista.wallclub.com.br',
+    'https://wclojista.wallclub.com.br',
+]
+
+# Static files - Whitenoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Middleware específico (manter middlewares de portais)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -80,3 +99,8 @@ MIDDLEWARE = [
     'wallclub_core.middleware.session_timeout.PortalSessionSecurityMiddleware',
     'portais.lojista.middleware.MarcaCanalMiddleware',
 ]
+
+# Whitenoise - Servir arquivos estáticos sem Nginx
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0  # 1 ano em produção
