@@ -395,7 +395,7 @@ class DeviceManagementService:
                 resultado.append({
                     'id': disp.id,
                     'nome_dispositivo': disp.nome_dispositivo,
-                    'fingerprint': disp.device_fingerprint[:16] + '...',
+                    'fingerprint': disp.device_fingerprint,  # Fingerprint completo (necessário para revogação)
                     'ip_registro': disp.ip_registro,
                     'ultimo_acesso': disp.ultimo_acesso.strftime('%d/%m/%Y %H:%M'),
                     'ativo': disp.ativo,
