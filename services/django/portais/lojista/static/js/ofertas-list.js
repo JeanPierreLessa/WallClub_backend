@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', function() {
         disparoLoading.style.display = 'block';
         btnConfirmar.disabled = true;
         
-        // Enviar requisição (usar URL relativa - funciona com e sem prefixo)
-        fetch(`ofertas/${ofertaIdSelecionada}/disparar/`, {
+        // Enviar requisição (URL relativa a partir da página atual)
+        fetch(`${ofertaIdSelecionada}/disparar/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
