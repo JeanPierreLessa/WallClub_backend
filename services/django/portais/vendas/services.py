@@ -526,6 +526,23 @@ class CheckoutVendasService:
             CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
             cliente = CheckoutCliente.objects.get(id=cliente_id)
             
+            # Buscar telefone ativo do cliente (tabela separada)
+            CheckoutClienteTelefone = apps.get_model('link_pagamento_web', 'CheckoutClienteTelefone')
+            telefone_obj = None
+            telefone = None
+            
+            if cliente.cpf:
+                cpf_limpo = ''.join(filter(str.isdigit, cliente.cpf))
+                try:
+                    telefone_obj = CheckoutClienteTelefone.objects.filter(
+                        cpf=cpf_limpo,
+                        ativo=1  # Apenas telefones ativos
+                    ).first()
+                    if telefone_obj:
+                        telefone = telefone_obj.telefone
+                except Exception:
+                    pass
+            
             # Gerar token de checkout
             from checkout.link_pagamento_web.models import CheckoutToken
             from django.conf import settings
@@ -536,7 +553,7 @@ class CheckoutVendasService:
                 item_valor=valor,
                 nome_completo=cliente.nome,
                 cpf=cliente.cpf or '',
-                celular=cliente.telefone or '',
+                celular=telefone or '',
                 endereco_completo=cliente.endereco or '',
                 created_by=f'Portal Vendas - Vendedor ID {vendedor_id}',
                 pedido_origem_loja=pedido_origem
@@ -546,9 +563,7 @@ class CheckoutVendasService:
             base_url = getattr(settings, 'CHECKOUT_BASE_URL', 'https://checkout.wallclub.com.br')
             link_url = f"{base_url}/checkout/{token_obj.token}/"
             
-            # Enviar link via WhatsApp/SMS
-            telefone = cliente.telefone
-            
+            # Enviar link via WhatsApp/SMS se houver telefone
             if telefone:
                 try:
                     # Tentar WhatsApp primeiro
@@ -564,10 +579,12 @@ class CheckoutVendasService:
                     registrar_log('portais.vendas', f"Erro WhatsApp, usando SMS: {str(e)}", nivel='WARNING')
                     mensagem = f"Olá {cliente.nome}! Seu link de pagamento: {link_url}"
                     enviar_sms(telefone, mensagem)
+            else:
+                registrar_log('portais.vendas', f"Cliente {cliente_id} sem telefone cadastrado", nivel='WARNING')
             
             return {
                 'sucesso': True,
-                'mensagem': 'Link de pagamento gerado e enviado com sucesso!',
+                'mensagem': 'Link de pagamento gerado com sucesso!' + (' Enviado via WhatsApp/SMS.' if telefone else ' Cliente sem telefone cadastrado.'),
                 'link_url': link_url,
                 'token': token_obj.token
             }
