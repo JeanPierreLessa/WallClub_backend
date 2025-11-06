@@ -497,6 +497,80 @@ class CheckoutVendasService:
             return {'sucesso': False, 'mensagem': str(e)}
 
     @staticmethod
+    def processar_envio_link_pagamento(
+        cliente_id: int,
+        loja_id: int,
+        valor: Decimal,
+        descricao: str,
+        pedido_origem: str = None,
+        cod_item_origem: str = None,
+        vendedor_id: int = None
+    ) -> Dict[str, Any]:
+        """
+        Gera e envia link de pagamento para o cliente via WhatsApp/SMS.
+        
+        Args:
+            cliente_id: ID do cliente checkout
+            loja_id: ID da loja
+            valor: Valor da transação
+            descricao: Descrição do pagamento
+            pedido_origem: Número do pedido na loja
+            cod_item_origem: Código do item na loja
+            vendedor_id: ID do vendedor que gerou o link
+            
+        Returns:
+            Dict com sucesso, mensagem e dados do link gerado
+        """
+        try:
+            # Gerar link via CheckoutService
+            resultado = CheckoutService.gerar_link_pagamento(
+                cliente_id=cliente_id,
+                loja_id=loja_id,
+                valor=valor,
+                descricao=descricao,
+                pedido_origem_loja=pedido_origem,
+                cod_item_origem_loja=cod_item_origem,
+                portais_usuarios_id=vendedor_id
+            )
+            
+            if not resultado.get('sucesso'):
+                return resultado
+            
+            # Enviar link via WhatsApp/SMS
+            CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
+            cliente = CheckoutCliente.objects.get(id=cliente_id)
+            
+            link_url = resultado.get('link_url')
+            telefone = cliente.telefone
+            
+            if telefone:
+                try:
+                    # Tentar WhatsApp primeiro
+                    WhatsAppService.enviar_link_pagamento(
+                        telefone=telefone,
+                        nome=cliente.nome,
+                        valor=float(valor),
+                        link=link_url
+                    )
+                    registrar_log('portais.vendas', f"Link enviado via WhatsApp para {telefone}")
+                except Exception as e:
+                    # Fallback para SMS
+                    registrar_log('portais.vendas', f"Erro WhatsApp, usando SMS: {str(e)}", nivel='WARNING')
+                    mensagem = f"Olá {cliente.nome}! Seu link de pagamento: {link_url}"
+                    enviar_sms(telefone, mensagem)
+            
+            return {
+                'sucesso': True,
+                'mensagem': 'Link de pagamento gerado e enviado com sucesso!',
+                'link_url': link_url,
+                'transaction_id': resultado.get('transaction_id')
+            }
+            
+        except Exception as e:
+            registrar_log('portais.vendas', f"Erro ao processar envio de link: {str(e)}", nivel='ERROR')
+            return {'sucesso': False, 'mensagem': f'Erro ao gerar link: {str(e)}'}
+
+    @staticmethod
     def simular_parcelas(valor: float, loja_id: int, bandeira: str = 'MASTERCARD') -> Dict[str, Any]:
         """Simula parcelas usando CheckoutService."""
         try:

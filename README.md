@@ -6,11 +6,11 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 05/11/2025
+**Última Atualização:** 06/11/2025
 
 ### Produção - 9 Containers Orquestrados
-- ✅ **Nginx Gateway** (porta 8005) - 6 subdomínios
-- ✅ **wallclub-portais** (Admin + Vendas + Lojista)
+- ✅ **Nginx Gateway** (porta 8005) - 9 subdomínios
+- ✅ **wallclub-portais** (Admin + Vendas + Lojista + Corporativo)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
 - ✅ **wallclub-apis** (Mobile + Checkout)
 - ✅ **wallclub-riskengine** (Antifraude + MaxMind)
@@ -48,7 +48,7 @@ WallClub_backend/
 │   ├── django/          # 4 containers Django (portais, pos, apis, riskengine)
 │   │   ├── apps/         # APIs Mobile (cliente, conta_digital, ofertas, transacoes)
 │   │   ├── checkout/     # Checkout Web + Recorrências
-│   │   ├── portais/      # Admin + Lojista + Vendas + Controle Acesso
+│   │   ├── portais/      # Admin + Lojista + Vendas + Corporativo + Controle Acesso
 │   │   ├── posp2/        # Terminal POS
 │   │   ├── pinbank/      # Integração Pinbank + Cargas
 │   │   └── parametros_wallclub/  # Parâmetros financeiros
@@ -75,12 +75,13 @@ WallClub_backend/
 ### 1. Container Portais (wallclub-portais)
 
 **Porta:** 8005 (interna)  
-**Subdomínios:** admin.wallclub.com.br, vendas.wallclub.com.br, lojista.wallclub.com.br
+**Subdomínios:** admin.wallclub.com.br, vendas.wallclub.com.br, lojista.wallclub.com.br, corporativo.wallclub.com.br, wallclub.com.br, www.wallclub.com.br
 
 **Módulos:**
 - **portais/admin/** - Portal administrativo
 - **portais/lojista/** - Portal lojista
 - **portais/vendas/** - Portal vendas/checkout interno
+- **portais/corporativo/** - Portal corporativo público (institucional)
 - **portais/controle_acesso/** - Sistema Multi-Portal (3 tabelas)
 - **sistema_bancario/** - Gestão bancária
 
@@ -423,12 +424,15 @@ services:
 Internet (80/443)
     ↓
 Nginx Gateway (porta 8005)
-  ├─ admin.wallclub.com.br    → wallclub-portais:8005
-  ├─ vendas.wallclub.com.br   → wallclub-portais:8005
-  ├─ lojista.wallclub.com.br  → wallclub-portais:8005
-  ├─ api.wallclub.com.br      → wallclub-apis:8005
-  ├─ apipos.wallclub.com.br   → wallclub-pos:8005
-  └─ checkout.wallclub.com.br → wallclub-apis:8005
+  ├─ admin.wallclub.com.br       → wallclub-portais:8005
+  ├─ vendas.wallclub.com.br      → wallclub-portais:8005
+  ├─ lojista.wallclub.com.br     → wallclub-portais:8005
+  ├─ corporativo.wallclub.com.br → wallclub-portais:8005
+  ├─ wallclub.com.br             → wallclub-portais:8005
+  ├─ www.wallclub.com.br         → wallclub-portais:8005
+  ├─ api.wallclub.com.br         → wallclub-apis:8005
+  ├─ apipos.wallclub.com.br      → wallclub-pos:8005
+  └─ checkout.wallclub.com.br    → wallclub-apis:8005
     ↓
 9 Containers:
   1. nginx (gateway)
@@ -550,7 +554,7 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025  
-**Última atualização:** 05/11/2025  
+**Última atualização:** 06/11/2025  
 **Responsável:** Equipe WallClub
 
 ---
