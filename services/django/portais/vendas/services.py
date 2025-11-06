@@ -527,7 +527,7 @@ class CheckoutVendasService:
             cliente = CheckoutCliente.objects.get(id=cliente_id)
             
             # Buscar telefone ativo do cliente (tabela separada)
-            CheckoutClienteTelefone = apps.get_model('link_pagamento_web', 'CheckoutClienteTelefone')
+            from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
             telefone_obj = None
             telefone = None
             

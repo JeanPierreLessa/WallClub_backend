@@ -49,8 +49,8 @@ def versao_minima(request):
     urls = urls_por_canal.get(canal_id, urls_por_canal[1])
 
     return Response({
-        "versao_minima_android": "3.1.0",
-        "versao_minima_ios": "3.1.0",
+        "versao_minima_android": "3.1.4",
+        "versao_minima_ios": "3.1.4",
         "forca_atualizacao": True,
         "mensagem": "Uma nova versão está disponível. Atualize para continuar usando o app.",
         "canal_id": canal_id,
@@ -65,13 +65,13 @@ def feature_flag(request):
 
     Body (JSON):
     {
-        "versao": "3.1.0"
+        "versao": "3.1.4"
     }
-    
+
     Nota: cliente_id é extraído automaticamente do JWT
     """
-    versao = request.data.get('versao', '3.1.0')
-    
+    versao = request.data.get('versao', '3.1.4')
+
     # Extrair cliente_id do JWT
     cliente_id = None
     if hasattr(request, 'user') and hasattr(request.user, 'cliente_id'):
