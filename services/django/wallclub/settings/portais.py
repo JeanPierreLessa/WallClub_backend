@@ -5,7 +5,7 @@ from .base import *
 import os
 
 # Debug mode (ativar para desenvolvimento local)
-DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 'yes']
+DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
 # ALLOWED_HOSTS - priorizar .env, depois fallback baseado em DEBUG
 allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '').strip()
@@ -78,6 +78,10 @@ CSRF_TRUSTED_ORIGINS = [
     'https://lojista.wallclub.com.br',
     'https://wclojista.wallclub.com.br',
 ]
+
+# Session Cookie Secure (apenas HTTPS em produção)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Static files - Whitenoise
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # Comentado temporariamente

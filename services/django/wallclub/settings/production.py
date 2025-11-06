@@ -9,7 +9,7 @@ from .base import *  # noqa
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  # Forçado para False em produção
+DEBUG = False
 
 # Parse ALLOWED_HOSTS from environment
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')

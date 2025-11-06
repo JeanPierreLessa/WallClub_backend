@@ -166,7 +166,7 @@ from datetime import timedelta
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Modo Debug
-DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 'yes']
+DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
 # Configurações de Sessão dos Portais
 SESSION_COOKIE_NAME = 'django_portal_adm_id'  # Nome customizado do cookie de sessão
