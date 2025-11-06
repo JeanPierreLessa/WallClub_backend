@@ -372,7 +372,7 @@ LOGGING = {
 
 # Configurações de Integração com Risk Engine (Semana 23)
 # URL e configurações gerais vêm do .env
-RISK_ENGINE_URL = os.environ.get('RISK_ENGINE_URL', 'http://wallclub-riskengine:8000')
+RISK_ENGINE_URL = os.environ.get('RISK_ENGINE_URL', 'http://wallclub-riskengine:8008')
 ANTIFRAUDE_ENABLED = os.environ.get('ANTIFRAUDE_ENABLED', 'False') == 'True'
 ANTIFRAUDE_TIMEOUT = int(os.environ.get('ANTIFRAUDE_TIMEOUT', '5'))
 

@@ -14,7 +14,7 @@ class AntifraudeService:
     """
 
     # URL base do Risk Engine - rede interna Docker
-    BASE_URL = 'http://wallclub-riskengine:8000/api/antifraude'
+    BASE_URL = 'http://wallclub-riskengine:8008/api/antifraude'
 
     @classmethod
     def listar_pendentes(cls) -> Dict:

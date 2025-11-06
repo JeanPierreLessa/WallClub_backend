@@ -333,6 +333,8 @@ docker-compose up -d --build
 docker ps  # Verificar status
 ```
 
+**Nota:** `collectstatic` é executado automaticamente via `docker-entrypoint.sh`
+
 ### Deploy Seletivo - Portais
 ```bash
 git pull origin main

@@ -24,7 +24,7 @@ else:
     ]
 
 # URL base para APIs internas (mesmo container)
-INTERNAL_API_BASE_URL = 'http://127.0.0.1:8000'
+INTERNAL_API_BASE_URL = 'http://127.0.0.1:8005'
 
 # Apps específicos do container de portais
 INSTALLED_APPS = [
