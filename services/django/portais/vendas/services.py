@@ -567,11 +567,16 @@ class CheckoutVendasService:
             if cliente.email:
                 try:
                     from checkout.services import LinkPagamentoService
+                    loja = HierarquiaOrganizacionalService.get_loja(loja_id)
+                    loja_nome = loja.razao_social if loja else 'Loja'
+                    
                     LinkPagamentoService.enviar_link_pagamento_email(
                         token=token_obj,
                         cliente_email=cliente.email,
                         cliente_nome=cliente.nome,
-                        loja_id=loja_id
+                        loja_nome=loja_nome,
+                        valor=valor,
+                        item_nome=descricao
                     )
                     registrar_log('portais.vendas', f"Email enviado para {cliente.email}")
                 except Exception as e:
@@ -582,7 +587,7 @@ class CheckoutVendasService:
                 try:
                     # Buscar canal_id da loja
                     loja = HierarquiaOrganizacionalService.get_loja(loja_id)
-                    canal_id = loja.CanalId if loja else 1
+                    canal_id = loja.canal_id if loja else 1
                     
                     # Enviar via WhatsApp usando template genérico
                     sucesso = WhatsAppService.envia_whatsapp(
