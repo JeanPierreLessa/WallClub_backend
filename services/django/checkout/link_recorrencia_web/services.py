@@ -4,10 +4,9 @@ Services para tokenização de cartão em recorrências.
 from typing import Dict, Any
 from decimal import Decimal
 from django.db import transaction
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
 from django.conf import settings
 from wallclub_core.utilitarios.log_control import registrar_log
+from wallclub_core.integracoes.email_service import EmailService
 
 
 class RecorrenciaTokenService:
@@ -64,31 +63,35 @@ class RecorrenciaTokenService:
             base_url = settings.BASE_URL or 'https://apidj.wallclub.com.br'
             link_checkout = f"{base_url}/api/v1/checkout/recorrencia/?token={token_obj.token}"
             
-            # Enviar email
-            assunto = f'Cadastre seu cartão para cobrança recorrente - {loja_nome}'
-            
-            html_message = render_to_string('recorrencia/email_cadastro_cartao.html', {
+            # Enviar email usando serviço centralizado
+            context = {
                 'cliente_nome': cliente_nome,
                 'descricao': descricao,
                 'valor': valor,
                 'loja_nome': loja_nome,
                 'link_checkout': link_checkout,
                 'validade_horas': 72
-            })
+            }
             
-            send_mail(
-                subject=assunto,
-                message=f'Olá {cliente_nome},\n\nAcesse o link para cadastrar seu cartão: {link_checkout}',
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[cliente_email],
-                html_message=html_message,
+            resultado = EmailService.enviar_email(
+                destinatarios=[cliente_email],
+                assunto=f'Cadastre seu cartão para cobrança recorrente - {loja_nome}',
+                template_html='emails/checkout/link_recorrencia.html',
+                template_context=context,
                 fail_silently=False
             )
             
-            registrar_log(
-                'checkout.recorrencia',
-                f"Email de cadastro de cartão enviado: Recorrência={recorrencia_id}, Email={cliente_email}"
-            )
+            if resultado['sucesso']:
+                registrar_log(
+                    'checkout.recorrencia',
+                    f"Email de cadastro de cartão enviado: Recorrência={recorrencia_id}, Email={cliente_email}"
+                )
+            else:
+                registrar_log(
+                    'checkout.recorrencia',
+                    f"Erro ao enviar email: {resultado['mensagem']}",
+                    nivel='ERROR'
+                )
             
             return {
                 'sucesso': True,

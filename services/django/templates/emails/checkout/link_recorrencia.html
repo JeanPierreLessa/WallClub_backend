@@ -1,0 +1,45 @@
+{% extends "emails/base.html" %}
+
+{% block title %}{{ loja_nome }} - Cadastro de Cartão para Recorrência{% endblock %}
+
+{% block header_title %}🔄 Cadastro de Cartão{% endblock %}
+{% block header_subtitle %}{{ loja_nome }} - Cobrança Recorrente{% endblock %}
+
+{% block content %}
+<p>Olá <strong>{{ cliente_nome }}</strong>,</p>
+
+<p>Para ativar sua cobrança recorrente, precisamos que você cadastre um cartão de crédito.</p>
+
+<div class="info-box">
+    <p><strong>🏪 Loja:</strong> {{ loja_nome }}</p>
+    <p><strong>📋 Descrição:</strong> {{ descricao }}</p>
+    <p><strong>💰 Valor da Recorrência:</strong> R$ {{ valor|floatformat:2 }}</p>
+</div>
+
+<p><strong>⚠️ Importante:</strong> Neste momento, você apenas cadastrará o cartão. <strong>Nenhuma cobrança será realizada agora</strong>.</p>
+
+<p class="text-center">
+    <a href="{{ link_checkout }}" class="button button-primary" style="font-size: 16px; padding: 15px 40px;">
+        🔒 Cadastrar Cartão
+    </a>
+</p>
+
+<div class="alert">
+    <p><strong>📅 Sobre a Cobrança Recorrente:</strong></p>
+    <ul style="margin: 10px 0 0 0;">
+        <li>Este link é válido por <strong>{{ validade_horas }} horas</strong></li>
+        <li>Após cadastrar o cartão, as cobranças serão automáticas</li>
+        <li>Você pode cancelar a qualquer momento</li>
+        <li>Receberá notificação antes de cada cobrança</li>
+    </ul>
+</div>
+
+<div class="alert alert-info">
+    <p><strong>🔐 Segurança</strong></p>
+    <p>Seus dados de cartão são armazenados de forma segura e criptografada. Nunca teremos acesso aos dados completos do seu cartão.</p>
+</div>
+
+<p style="margin-top: 20px; color: #6c757d; font-size: 14px;">
+    Se você não solicitou este cadastro, ignore este email.
+</p>
+{% endblock %}

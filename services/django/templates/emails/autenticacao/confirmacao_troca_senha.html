@@ -1,0 +1,37 @@
+{% extends "emails/base.html" %}
+
+{% block title %}{{ canal_nome }} - Confirmação de Troca de Senha{% endblock %}
+
+{% block header_title %}🔄 Troca de Senha Confirmada{% endblock %}
+{% block header_subtitle %}{{ canal_nome }}{% endblock %}
+
+{% block content %}
+<p>Olá <strong>{{ usuario.nome }}</strong>,</p>
+
+<div class="alert alert-success">
+    <p><strong>✅ Sua senha foi trocada com sucesso!</strong></p>
+</div>
+
+<p>Confirmamos que a senha da sua conta foi alterada conforme solicitado.</p>
+
+<div class="info-box">
+    <p><strong>📧 Email:</strong> {{ usuario.email }}</p>
+    <p><strong>🕐 Data:</strong> {{ data_troca }}</p>
+</div>
+
+<p>Você já pode fazer login com sua nova senha.</p>
+
+<div class="alert">
+    <p><strong>⚠️ Importante:</strong></p>
+    <ul style="margin: 10px 0 0 0;">
+        <li>Guarde sua nova senha em local seguro</li>
+        <li>Não compartilhe suas credenciais com ninguém</li>
+        <li>Em caso de dúvidas, entre em contato com o suporte</li>
+    </ul>
+</div>
+
+<div class="alert alert-danger">
+    <p><strong>🚨 Não reconhece esta alteração?</strong></p>
+    <p>Se você não solicitou esta troca de senha, entre em contato com o suporte imediatamente.</p>
+</div>
+{% endblock %}

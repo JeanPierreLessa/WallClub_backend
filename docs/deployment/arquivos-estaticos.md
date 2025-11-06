@@ -38,13 +38,16 @@ portais/
 
 ## Procedimento Obrigatório após Deploy
 
-### ⚠️ SEMPRE executar após rebuild do container:
+### ✅ Executado AUTOMATICAMENTE via docker-entrypoint.sh
 
+**Não precisa mais executar manualmente!** O `collectstatic` roda automaticamente quando o container inicia.
+
+O script `/app/docker-entrypoint.sh` executa:
 ```bash
-docker exec wallclub-django python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --clear
 ```
 
-**Por quê?** O rebuild cria um novo container vazio. O `collectstatic` copia arquivos de:
+**O que faz:** Copia arquivos de:
 - `/app/portais/*/static/` → `/app/staticfiles/`
 - Arquivos do Django Admin
 - Outros apps instalados
@@ -61,17 +64,21 @@ docker exec wallclub-django ls -la /app/staticfiles/images/ | grep logo
 ## Troubleshooting
 
 ### Problema: Arquivos 404 após deploy
-**Causa:** Esqueceu de rodar `collectstatic` após rebuild  
+**Causa:** Container não iniciou corretamente ou erro no entrypoint  
 **Solução:**
 ```bash
-docker exec wallclub-django python manage.py collectstatic --noinput
+# Verificar logs do container
+docker logs wallclub-portais --tail 50
+
+# Se necessário, executar manualmente
+docker exec wallclub-portais python manage.py collectstatic --noinput
 ```
 
 ### Problema: MIME type 'text/html' em vez de 'application/javascript'
 **Causa:** WhiteNoise não está servindo o arquivo, Django retorna página 404  
 **Solução:**
-1. Verificar se arquivo existe: `docker exec wallclub-django ls /app/staticfiles/js/lojista-common.js`
-2. Se não existe, rodar collectstatic
+1. Verificar se arquivo existe: `docker exec wallclub-portais ls /app/staticfiles/js/lojista-common.js`
+2. Se não existe, verificar logs: `docker logs wallclub-portais --tail 50`
 3. Fazer hard refresh no browser (Cmd+Shift+R)
 
 ### Problema: Logo quebrado no portal
@@ -79,7 +86,7 @@ docker exec wallclub-django python manage.py collectstatic --noinput
 **Solução:**
 1. Verificar se existe localmente: `ls services/django/portais/lojista/static/images/logo_wall_lojista.png`
 2. Se existe localmente mas não no container, fazer rebuild
-3. Após rebuild, rodar collectstatic
+3. O collectstatic roda automaticamente no rebuild
 
 ### Problema: CSS/JS antigo após atualização
 **Causa:** Cache do browser ou WhiteNoise  
@@ -88,10 +95,10 @@ docker exec wallclub-django python manage.py collectstatic --noinput
 # Hard refresh no browser (Cmd+Shift+R ou Ctrl+Shift+R)
 
 # Limpar cache Django
-docker exec wallclub-django python -c "from django.core.cache import cache; cache.clear()"
+docker exec wallclub-portais python -c "from django.core.cache import cache; cache.clear()"
 
-# Recopilar arquivos
-docker exec wallclub-django python manage.py collectstatic --noinput --clear
+# Rebuild container (collectstatic roda automaticamente)
+docker-compose up -d --build wallclub-portais
 ```
 
 ## Fluxo Completo de Deploy
@@ -106,11 +113,12 @@ docker-compose rm -f web
 docker-compose build --no-cache web
 docker-compose up -d web
 
-# 3. ⚠️ OBRIGATÓRIO: Coletar estáticos
-docker exec wallclub-django python manage.py collectstatic --noinput
+# 3. ✅ Collectstatic roda automaticamente no entrypoint
+# Verificar logs para confirmar
+docker logs wallclub-portais --tail 30
 
-# 4. Verificar
-docker exec wallclub-django ls /app/staticfiles/js/lojista-common.js
+# 4. Verificar arquivos
+docker exec wallclub-portais ls /app/staticfiles/js/lojista-common.js
 docker exec wallclub-django ls /app/staticfiles/css/lojista.css
 docker exec wallclub-django ls /app/staticfiles/images/logo_wall_lojista.png
 ```
@@ -121,7 +129,7 @@ Se adicionar novos arquivos estáticos:
 
 1. **Colocar em** `/portais/[app]/static/`
 2. **Commit no Git**
-3. **Deploy** (rebuild + collectstatic)
+3. **Deploy** (rebuild - collectstatic automático)
 
 **NÃO colocar arquivos em** `/staticfiles/` - esse é o diretório de DESTINO do collectstatic.
 

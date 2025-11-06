@@ -1,0 +1,42 @@
+{% extends "emails/base.html" %}
+
+{% block title %}{{ loja_nome }} - Link de Pagamento Seguro{% endblock %}
+
+{% block header_title %}💳 Link de Pagamento{% endblock %}
+{% block header_subtitle %}{{ loja_nome }}{% endblock %}
+
+{% block content %}
+<p>Olá <strong>{{ cliente_nome }}</strong>,</p>
+
+<p>Seu link de pagamento está pronto! Complete sua compra de forma rápida e segura.</p>
+
+<div class="info-box">
+    <p><strong>🏪 Loja:</strong> {{ loja_nome }}</p>
+    <p><strong>📦 Item:</strong> {{ item_nome }}</p>
+    <p><strong>💰 Valor:</strong> R$ {{ valor|floatformat:2 }}</p>
+</div>
+
+<p class="text-center">
+    <a href="{{ checkout_url }}" class="button button-primary" style="font-size: 16px; padding: 15px 40px;">
+        🔒 Pagar Agora
+    </a>
+</p>
+
+<div class="alert">
+    <p><strong>⏰ Atenção:</strong></p>
+    <ul style="margin: 10px 0 0 0;">
+        <li>Este link é válido por <strong>{{ validade_minutos }} minutos</strong></li>
+        <li>Após esse período, será necessário solicitar um novo link</li>
+        <li>O pagamento é processado de forma 100% segura</li>
+    </ul>
+</div>
+
+<div class="alert alert-info">
+    <p><strong>🔐 Ambiente Seguro</strong></p>
+    <p>Seus dados de pagamento são protegidos por criptografia de ponta a ponta. Nunca solicitamos informações sensíveis por email.</p>
+</div>
+
+<p style="margin-top: 20px; color: #6c757d; font-size: 14px;">
+    Se você não solicitou este pagamento, ignore este email.
+</p>
+{% endblock %}

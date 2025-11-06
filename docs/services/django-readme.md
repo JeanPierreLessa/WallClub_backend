@@ -315,9 +315,9 @@ docker-compose up --build
 ```
 
 4. Acesse a aplicação:
-- **API**: http://localhost:8000/api/v1/
-- **Admin Django**: http://localhost:8000/admin/
-- **Portal Admin**: http://localhost:8000/portal-admin/
+- **Portais**: http://localhost:8005 (admin, vendas, lojista)
+- **APIs**: http://localhost:8007/api/v1/
+- **POS**: http://localhost:8006
 
 ### Instalação Local (Alternativa)
 

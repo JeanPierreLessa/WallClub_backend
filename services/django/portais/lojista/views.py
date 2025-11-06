@@ -378,7 +378,7 @@ class LojistaTrocarSenhaView(View):
             resultado = EmailService.enviar_email(
                 destinatarios=[usuario.email],
                 assunto=f'Confirmação de Troca de Senha - {canal_nome}',
-                template_html='portais/controle_acesso/emails/confirmacao_troca_senha.html',
+                template_html='emails/autenticacao/confirmacao_troca_senha.html',
                 template_context=context,
                 fail_silently=False
             )
