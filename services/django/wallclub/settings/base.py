@@ -294,8 +294,8 @@ EMAIL_HOST = os.environ.get('MAILSERVER_URL','email-smtp.us-east-1.amazonaws.com
 EMAIL_PORT = 587
 EMAIL_USE_SSL = False
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get('MAILSERVER_USERNAME', 'AKIAXWHDLWAXPATSXOK6')
-EMAIL_HOST_PASSWORD = os.environ.get('MAILSERVER_PASSWD', 'BIlwP21H2UKtnQWSngltPT6jdpV3+D7MunK/RcxRD3S5')
+EMAIL_HOST_USER = os.environ.get('MAILSERVER_USERNAME')
+EMAIL_HOST_PASSWORD = os.environ.get('MAILSERVER_PASSWD')
 DEFAULT_FROM_EMAIL = 'noreply@wallclub.com.br'
 BASE_URL = 'https://wcadmin.wallclub.com.br'
 

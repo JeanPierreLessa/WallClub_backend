@@ -56,9 +56,9 @@ python manage.py collectstatic --noinput --clear
 
 ```bash
 # Verificar CSS e JS do lojista
-docker exec wallclub-django ls -la /app/staticfiles/css/ | grep lojista
-docker exec wallclub-django ls -la /app/staticfiles/js/ | grep lojista
-docker exec wallclub-django ls -la /app/staticfiles/images/ | grep logo
+docker exec wallclub-portais ls -la /app/staticfiles/css/ | grep lojista
+docker exec wallclub-portais ls -la /app/staticfiles/js/ | grep lojista
+docker exec wallclub-portais ls -la /app/staticfiles/images/ | grep logo
 ```
 
 ## Troubleshooting
@@ -105,13 +105,13 @@ docker-compose up -d --build wallclub-portais
 
 ```bash
 # 1. Pull do código
-git pull origin feature/multi-app-security
+git pull origin main
 
 # 2. Rebuild container
-docker-compose stop web
-docker-compose rm -f web
-docker-compose build --no-cache web
-docker-compose up -d web
+docker-compose stop wallclub-portais
+docker-compose rm -f wallclub-portais
+docker-compose build --no-cache wallclub-portais
+docker-compose up -d wallclub-portais
 
 # 3. ✅ Collectstatic roda automaticamente no entrypoint
 # Verificar logs para confirmar
@@ -119,8 +119,8 @@ docker logs wallclub-portais --tail 30
 
 # 4. Verificar arquivos
 docker exec wallclub-portais ls /app/staticfiles/js/lojista-common.js
-docker exec wallclub-django ls /app/staticfiles/css/lojista.css
-docker exec wallclub-django ls /app/staticfiles/images/logo_wall_lojista.png
+docker exec wallclub-portais ls /app/staticfiles/css/lojista.css
+docker exec wallclub-portais ls /app/staticfiles/images/logo_wall_lojista.png
 ```
 
 ## Migração de Arquivos Estáticos

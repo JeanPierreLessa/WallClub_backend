@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views import View
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
 import json
 
@@ -325,6 +326,7 @@ def ofertas_edit(request, oferta_id):
         return redirect('portais_admin:ofertas_list')
 
 
+@csrf_exempt
 def ofertas_disparar(request, oferta_id):
     """Dispara push notification para oferta (AJAX)"""
     # Verificar autenticação manualmente para requisições AJAX

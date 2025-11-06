@@ -83,7 +83,6 @@ Internet → ALB/DNS
 - `admin.wallclub.com.br` → PHP local
 - `lojista.wallclub.com.br` → PHP local
 - `api.wallclub.com.br` → Django local (porta 8000)
-- `apidj.wallclub.com.br` → Django local (porta 8003)
 - `riskmanager.wallclub.com.br` → Django local (porta 8004)
 
 **Novos Domínios** (proxy para servidor 124):
@@ -102,11 +101,11 @@ Internet → ALB/DNS
 - **Nginx Container**: 8005 (recebe do servidor 46)
 
 #### Portas Internas (Docker Network)
-Todos os containers Django escutam na **porta 8005 interna**:
+Cada container Django escuta em sua própria porta interna:
 - **wallclub-portais**: 8005 (Admin/Lojista/Vendas/Corporativo)
-- **wallclub-apis**: 8005 (APIs Mobile + Checkout)
-- **wallclub-pos**: 8005 (Terminal POS)
-- **wallclub-riskengine**: 8005 (Antifraude)
+- **wallclub-apis**: 8007 (APIs Mobile + Checkout)
+- **wallclub-pos**: 8006 (Terminal POS)
+- **wallclub-riskengine**: 8008 (Antifraude)
 - **wallclub-redis**: 6379 (Cache + Broker)
 - **wallclub-celery-worker-portais**: Worker Celery Portais
 - **wallclub-celery-worker-apis**: Worker Celery APIs
@@ -117,9 +116,9 @@ O Nginx container roteia baseado no `server_name`:
 - `wcadmin.wallclub.com.br` → `wallclub-portais:8005`
 - `wcvendas.wallclub.com.br` → `wallclub-portais:8005`
 - `wclojista.wallclub.com.br` → `wallclub-portais:8005`
-- `wcapi.wallclub.com.br` → `wallclub-apis:8005`
-- `apipos.wallclub.com.br` → `wallclub-pos:8005`
-- `checkout.wallclub.com.br` → `wallclub-apis:8005`
+- `wcapi.wallclub.com.br` → `wallclub-apis:8007`
+- `apipos.wallclub.com.br` → `wallclub-pos:8006`
+- `checkout.wallclub.com.br` → `wallclub-apis:8007`
 
 **Configuração:** `/var/www/WallClub_backend/nginx.conf`
 
