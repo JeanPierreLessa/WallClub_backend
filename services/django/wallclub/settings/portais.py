@@ -80,7 +80,7 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Static files - Whitenoise
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # Comentado temporariamente
 
 # Middleware específico (manter middlewares de portais)
 MIDDLEWARE = [

@@ -233,6 +233,7 @@ services:
 networks:
   wallclub-network:
     driver: bridge
+    name: wallclub-network
 
 volumes:
   redis_data:
