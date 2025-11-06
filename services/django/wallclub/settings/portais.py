@@ -67,6 +67,7 @@ ROOT_URLCONF = 'wallclub.urls_portais'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'wallclub.middleware.subdomain_router.SubdomainRouterMiddleware',  # Roteamento por subdomínio
     'portais.controle_acesso.middleware.PortalSessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',

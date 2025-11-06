@@ -35,6 +35,7 @@ Sistema financeiro completo implementado em Django com:
 - **Sistema de Notificações** ✅ (24/10/2025) - Correções Push/SMS: category dinâmico do template (não hardcode), UUID completo em autorizacao_id (não truncado), valor_solicitado na API verificação, URL encoding SMS correto (safe=':/'), timezone fix esta_expirada() (datetime.now() vs timezone.now()). Arquivos: apn_service.py, services_conta_digital.py, services_autorizacao.py, sms_service.py, models.py
 - **Sistema de Mensagens WhatsApp + SMS** ✅ (29/10/2025) - Correções críticas: ordem parâmetros SMS (/TELEFONE/MENSAGEM/SHORTCODE/ASSUNTO), SHORTCODE_PREMIUM, encoding completo (safe=''), templates WhatsApp por categoria (AUTHENTICATION sempre entrega, MARKETING requer opt-in, UTILITY para funcionais), campo celular_validado_em adicionado (atualiza ao validar OTP, revalidação 90 dias), constraint dispositivos confiáveis corrigida (coluna virtual unique_check permite histórico completo), rate limit checado ANTES de exigir 2FA (evita travamento), revogar_dispositivo usa .update() (não .save()). Meta rate limit por número: status "accepted" ≠ entregue. Arquivos: sms_service.py, messages_template_service.py, services_2fa_login.py, services_revalidacao_celular.py, services_device.py, models.py (Cliente)
 - **Simplificação de Portais** ✅ (24/10/2025) - Portal de recorrência removido (funcionalidades integradas no portal_vendas), redirect de sessão expirada corrigido (portal_admin/ sem /login/), dashboard vendas com autenticação obrigatória. Arquitetura reduzida: 4 portais ativos (admin, lojista, corporativo, vendas). Arquivos: urls.py, settings/base.py, middleware.py, decorators.py, views.py
+- **Endpoint de Exclusão de Conta** ✅ (05/11/2025) - Soft delete de clientes via API: POST /api/cliente/excluir/ (JWT obrigatório), desativa conta (is_active=0), revoga todos tokens JWT ativos, operação atômica com transaction.atomic(), logs de auditoria completos. Cliente não consegue mais fazer login nem usar endpoints autenticados. Dados preservados no banco (histórico transações, conta digital, notificações). Service: ClienteAuthService.excluir_cliente(), View: excluir_conta(), Rota: /excluir/. Arquivos: apps/cliente/services.py, apps/cliente/views.py, apps/cliente/urls.py
 
 ## Arquitetura do Sistema
 
@@ -56,7 +57,8 @@ wallclub_django/
 │   │   ├── views_senha.py     # Endpoints senha (solicitar_reset, validar_reset, trocar)
 │   │   ├── views_refresh_jwt.py # Endpoint refresh token (renovar access_token)
 │   │   ├── views_autenticacao_analise.py # ✅ GET /autenticacao/analise/<cpf>/ (OAuth Risk Engine only)
-│   │   └── views_saldo.py     # Endpoints autorização uso de saldo (JWT)
+│   │   ├── views_saldo.py     # Endpoints autorização uso de saldo (JWT)
+│   │   └── views.py (excluir_conta) # ✅ POST /excluir/ - Soft delete (is_active=0 + revoga tokens JWT)
 │   ├── transacoes/            # Saldo, extrato, comprovantes
 │   ├── conta_digital/         # Conta digital customizada (saldo, cashback, autorizações)
 │   │   ├── services.py        # ContaDigitalService (creditar, debitar, obter_saldo)

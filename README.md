@@ -1,27 +1,34 @@
 # WallClub - Backend Monorepo
 
-Repositório unificado contendo todos os serviços do ecossistema WallClub, criado na **Fase 6C** (Novembro 2025) como parte da evolução arquitetural para containers independentes.
+Repositório unificado contendo todos os serviços do ecossistema WallClub, criado na **Fase 6C** (Novembro 2025) e finalizado na **Fase 6D** (05/11/2025) com 4 containers Django independentes.
 
-Sistema de gestão financeira e antifraude com múltiplos containers orquestrados.
+Sistema fintech completo com gestão financeira, antifraude, portais web e APIs mobile.
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 02/11/2025 21:27
+**Última Atualização:** 05/11/2025
 
-### Produção
-- ✅ Django Principal (wallclub-django-monorepo:8000)
-- ✅ Risk Engine (wallclub-riskengine-monorepo:8004)
-- ✅ Portal Admin Antifraude
-- ✅ Atividades Suspeitas & Bloqueios
-- 🔴 **BLOQUEADOR:** POS → Risk Engine (TypeError em `/api/antifraude/analyze/`)
+### Produção - 9 Containers Orquestrados
+- ✅ **Nginx Gateway** (porta 8005) - 6 subdomínios
+- ✅ **wallclub-portais** (Admin + Vendas + Lojista)
+- ✅ **wallclub-pos** (Terminal POS + Pinbank)
+- ✅ **wallclub-apis** (Mobile + Checkout)
+- ✅ **wallclub-riskengine** (Antifraude + MaxMind)
+- ✅ **wallclub-redis** (Cache + Broker)
+- ✅ **wallclub-celery-worker-portais**
+- ✅ **wallclub-celery-worker-apis**
+- ✅ **wallclub-celery-beat** (Scheduler)
 
-### Pendências Técnicas
-📋 **Ver:** [`docs/em execucao/PENDENCIAS_TECNICAS.md`](docs/em%20execucao/PENDENCIAS_TECNICAS.md)
-
-**Problema Crítico:**
-- Decorator `@handle_api_errors` depende de `LogParametro` que não existe no Risk Engine
-- Causa TypeError 500 em transações POS
-- Solução em andamento: simplificar decorator ou usar try/except manual
+### Fases Concluídas
+- ✅ **Fase 1:** Segurança Básica (Rate limiting, OAuth, Auditoria)
+- ✅ **Fase 2:** Antifraude (MaxMind, 9 regras, Dashboard)
+- ✅ **Fase 3:** Services (22 services, 25 queries eliminadas)
+- ✅ **Fase 4:** 2FA + Device Management (Checkout 2FA, Login Simplificado)
+- ✅ **Fase 5:** Unificação Portais (Sistema Multi-Portal, Recorrências)
+- ✅ **Fase 6A:** CORE Limpo (0 imports de apps)
+- ✅ **Fase 6B:** Dependências Resolvidas (26 APIs REST internas)
+- ✅ **Fase 6C:** Monorepo + wallclub_core (113 arquivos migrados)
+- ✅ **Fase 6D:** 4 Containers Independentes (Deploy em produção)
 
 ## 📋 Navegação Rápida
 
@@ -38,58 +45,91 @@ Sistema de gestão financeira e antifraude com múltiplos containers orquestrado
 ```
 WallClub_backend/
 ├── services/
-│   ├── django/          # API Principal (porta 8003)
-│   ├── riskengine/      # Engine Antifraude (porta 8004)
+│   ├── django/          # 4 containers Django (portais, pos, apis, riskengine)
+│   │   ├── apps/         # APIs Mobile (cliente, conta_digital, ofertas, transacoes)
+│   │   ├── checkout/     # Checkout Web + Recorrências
+│   │   ├── portais/      # Admin + Lojista + Vendas + Controle Acesso
+│   │   ├── posp2/        # Terminal POS
+│   │   ├── pinbank/      # Integração Pinbank + Cargas
+│   │   └── parametros_wallclub/  # Parâmetros financeiros
+│   ├── riskengine/      # Engine Antifraude (porta 8005)
 │   └── core/            # Package compartilhado (wallclub_core)
-├── docs/                # Documentação consolidada
+├── docs/                # Documentação consolidada (Fases 1-6)
 │   ├── architecture/    # Arquitetura e visão integrada
 │   ├── development/     # Diretrizes de desenvolvimento
-│   ├── services/        # READMEs detalhados por serviço
-│   ├── setup/           # Setup local
+│   ├── em execucao/     # Fases concluídas (1-6)
 │   └── deployment/      # Deploy produção
-├── docker-compose.yml
+├── docker-compose.yml   # 9 containers orquestrados
+├── nginx.conf           # Gateway com 6 subdomínios
+├── Dockerfile.portais   # Container portais
+├── Dockerfile.pos       # Container POS
+├── Dockerfile.apis      # Container APIs
+├── Dockerfile.riskengine # Container Risk Engine
+├── Dockerfile.nginx     # Container Nginx
 ├── README.md            # Este arquivo
 └── wallclub.code-workspace
 ```
 
 ## Serviços
 
-### 1. Django (services/django/)
+### 1. Container Portais (wallclub-portais)
 
-**Porta:** 8003  
-**Descrição:** API principal do WallClub
+**Porta:** 8005 (interna)  
+**Subdomínios:** admin.wallclub.com.br, vendas.wallclub.com.br, lojista.wallclub.com.br
 
-**Componentes:**
-- **Apps:** Cliente, Conta Digital, Ofertas, Transações, OAuth
-- **Checkout:** Link de Pagamento, Recorrência
-- **Portais:** Admin, Lojista, Controle de Acesso, Vendas
-- **PinBank:** Cargas de extrato, base de gestão, TEF
-- **Parâmetros:** Calculadora de descontos, configurações financeiras
-- **POSP2:** Terminal virtual, tokenização
-- **Sistema Bancário:** Pagamentos, lançamentos
+**Módulos:**
+- **portais/admin/** - Portal administrativo
+- **portais/lojista/** - Portal lojista
+- **portais/vendas/** - Portal vendas/checkout interno
+- **portais/controle_acesso/** - Sistema Multi-Portal (3 tabelas)
+- **sistema_bancario/** - Gestão bancária
 
-**Stack:**
+**Settings:** `wallclub.settings.portais`
+
+### 2. Container POS (wallclub-pos)
+
+**Porta:** 8005 (interna)  
+**Subdomínio:** apipos.wallclub.com.br
+
+**Módulos:**
+- **posp2/** - Terminal POS (OAuth 2.0)
+- **pinbank/** - Integração Pinbank + Cargas automáticas
+- **parametros_wallclub/** - Parâmetros financeiros (3.840 configs)
+
+**Settings:** `wallclub.settings.pos`
+
+### 3. Container APIs Mobile (wallclub-apis)
+
+**Porta:** 8005 (interna)  
+**Subdomínios:** api.wallclub.com.br, checkout.wallclub.com.br
+
+**Módulos:**
+- **apps/cliente/** - JWT Customizado (18 cenários testados)
+- **apps/conta_digital/** - Saldo, Cashback, Autorizações
+- **apps/ofertas/** - Sistema de Ofertas Push
+- **apps/transacoes/** - Transações mobile
+- **checkout/** - Checkout Web + 2FA WhatsApp + Recorrências
+
+**Settings:** `wallclub.settings.apis`
+
+### 4. Container Risk Engine (wallclub-riskengine)
+
+**Porta:** 8005 (interna)  
+**Acesso:** Interno (chamado por outros containers)
+
+**Módulos:**
+- **antifraude/** - Motor antifraude (9 regras)
+- **MaxMind minFraud** - Score 0-100 (cache 1h, hit rate >90%)
+- **Sistema Segurança Multi-Portal** - 6 detectores Celery
+- **Portal Revisão Manual** - Dashboard + Blacklist/Whitelist
+
+**Settings:** `riskengine.settings`
+
+**Stack Comum:**
 - Django 4.2.23
 - DRF 3.16.1
-- MySQL 5.7
-- Redis 5.0.1
-- Celery 5.3.4
-
-### 2. Risk Engine (services/riskengine/)
-
-**Porta:** 8004  
-**Descrição:** Motor de análise antifraude e scoring de risco
-
-**Componentes:**
-- **Antifraude:** Análise de transações, scoring, regras
-- **APIs:** Endpoints para consulta de risco
-- **Integrações:** Bureau (MaxMind minFraud)
-
-**Stack:**
-- Django 4.2.11
-- DRF 3.14.0
-- MySQL 5.7
-- Redis 5.0.1
+- MySQL 8.0 (compartilhado)
+- Redis 7 (compartilhado)
 - Celery 5.3.4
 
 ### 3. Core (services/core/)
@@ -284,28 +324,43 @@ python3 migrate_imports.py /path/to/project
 
 ## Deployment
 
-### Deploy Completo
+### Deploy Completo (Todos os Containers)
 ```bash
-git pull
+cd /var/www/WallClub_backend
+git pull origin main
 docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+docker-compose up -d --build
+docker ps  # Verificar status
 ```
 
-### Deploy Seletivo (Django apenas)
+### Deploy Seletivo - Portais
 ```bash
-git pull
-docker-compose stop web celery-worker celery-beat
-docker-compose build web celery-worker celery-beat
-docker-compose up -d web celery-worker celery-beat
+git pull origin main
+docker-compose up -d --build --no-deps wallclub-portais wallclub-celery-worker-portais
 ```
 
-### Deploy Seletivo (Risk Engine apenas)
+### Deploy Seletivo - POS (Crítico)
 ```bash
-git pull
-docker-compose stop riskengine
-docker-compose build riskengine
-docker-compose up -d riskengine
+git pull origin main
+docker-compose up -d --build --no-deps wallclub-pos
+```
+
+### Deploy Seletivo - APIs Mobile
+```bash
+git pull origin main
+docker-compose up -d --build --no-deps wallclub-apis wallclub-celery-worker-apis
+```
+
+### Deploy Seletivo - Risk Engine
+```bash
+git pull origin main
+docker-compose up -d --build --no-deps wallclub-riskengine
+```
+
+### Deploy Seletivo - Nginx (Configuração)
+```bash
+git pull origin main
+docker-compose up -d --build --no-deps nginx
 ```
 
 ### Deploy do wallclub_core
@@ -357,47 +412,48 @@ services:
 
 ## Arquitetura
 
-### Fase Atual: 6C - Core Extraído
-- ✅ wallclub_core como package compartilhado
-- ✅ Imports migrados de `comum` para `wallclub_core`
-- ✅ Monorepo unificado
+### Fase Atual: 6D - 4 Containers Independentes ✅
 
-### Próximas Fases
+**Concluído em:** 05/11/2025
 
-#### Fase 6D - Separação Física (Semanas 32-36)
-
-**Objetivos:**
-1. Criar 5 containers independentes
-2. Configurar Nginx Gateway
-3. Implementar deploy isolado por container
-4. Configurar volumes compartilhados
-5. Testes end-to-end
-
-**Arquitetura Alvo:**
+**Arquitetura Implementada:**
 ```
-Nginx Gateway (80/443)
-  ├── Django Main (:8000)
-  ├── Risk Engine (:8001)
-  └── Static Files
-
-Containers:
-  - wallclub_django
-  - wallclub_riskengine
-  - redis
-  - celery_worker
-  - celery_beat
-
-Volumes:
-  /shared/wallclub_core → Package instalado
-  /shared/media → Arquivos de mídia
-  /shared/logs → Logs centralizados
+Internet (80/443)
+    ↓
+Nginx Gateway (porta 8005)
+  ├─ admin.wallclub.com.br    → wallclub-portais:8005
+  ├─ vendas.wallclub.com.br   → wallclub-portais:8005
+  ├─ lojista.wallclub.com.br  → wallclub-portais:8005
+  ├─ api.wallclub.com.br      → wallclub-apis:8005
+  ├─ apipos.wallclub.com.br   → wallclub-pos:8005
+  └─ checkout.wallclub.com.br → wallclub-apis:8005
+    ↓
+9 Containers:
+  1. nginx (gateway)
+  2. wallclub-portais (Admin + Vendas + Lojista)
+  3. wallclub-pos (Terminal POS)
+  4. wallclub-apis (Mobile + Checkout)
+  5. wallclub-riskengine (Antifraude)
+  6. wallclub-redis (Cache + Broker)
+  7. wallclub-celery-worker-portais
+  8. wallclub-celery-worker-apis
+  9. wallclub-celery-beat (Scheduler)
 ```
 
-**Benefícios:**
-- Deploy independente
-- Escalabilidade por app
-- Isolamento de falhas
-- Comunicação via APIs REST
+**Benefícios Alcançados:**
+- ✅ Deploy independente por container
+- ✅ Escalabilidade horizontal
+- ✅ Isolamento de falhas
+- ✅ Comunicação via 26 APIs REST internas
+- ✅ Rate limiting diferenciado por subdomínio
+- ✅ Zero downtime em deploys seletivos
+
+### Próximas Evoluções
+
+- Monitoramento (Prometheus + Grafana)
+- CI/CD automatizado
+- Testes end-to-end automatizados
+- Kubernetes (migração futura)
 
 ## Documentação
 
@@ -492,5 +548,18 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025  
-**Última atualização:** 02/11/2025  
+**Última atualização:** 05/11/2025  
 **Responsável:** Equipe WallClub
+
+---
+
+## 📊 Estatísticas do Projeto
+
+- **Containers:** 9 (4 Django + Redis + 2 Celery + Beat + Nginx)
+- **APIs Internas:** 26 endpoints REST
+- **Regras Antifraude:** 9 (5 básicas + 4 autenticação)
+- **Parâmetros Financeiros:** 3.840 configurações
+- **Cenários JWT Testados:** 18
+- **Services Criados:** 22
+- **Queries SQL Eliminadas:** 25
+- **Arquivos Migrados (Fase 6C):** 113

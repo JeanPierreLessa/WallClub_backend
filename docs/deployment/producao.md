@@ -68,23 +68,42 @@ docker logs wallclub-celery-beat --tail 100 -f
 docker logs nginx --tail 100 -f
 ```
 
-## Arquitetura de Portas
+## Arquitetura de Roteamento (Híbrida)
 
-### Fluxo de Comunicação
+### Fluxo de Comunicação Completo
 ```
-Internet → AWS Security Group (8005)
-        → EC2 (10.0.1.124)
-        → Docker Nginx (8005:80)
-        → Containers Django (8005 interna)
+Internet → ALB/DNS
+        → Servidor 46 (10.0.1.46) - Nginx Gateway
+        ├─→ Backends Locais (PHP/Django legado)
+        └─→ Servidor 124 (10.0.1.124) - Nginx Container → Django Containers
 ```
 
-### Portas Externas (Expostas)
-- **Nginx**: 8005 (HTTP temporário, será 80 após SSL) / 443 (HTTPS)
+### Servidor 46 (Gateway - Nginx Sistema)
+**Domínios Legados** (backends locais):
+- `admin.wallclub.com.br` → PHP local
+- `lojista.wallclub.com.br` → PHP local
+- `api.wallclub.com.br` → Django local (porta 8000)
+- `apidj.wallclub.com.br` → Django local (porta 8003)
+- `riskmanager.wallclub.com.br` → Django local (porta 8004)
 
-### Portas Internas (Docker Network)
-Todos os containers Django escutam na **porta 8005 interna** (não expostas):
+**Novos Domínios** (proxy para servidor 124):
+- `wcadmin.wallclub.com.br` → `http://10.0.1.124:8005`
+- `wcvendas.wallclub.com.br` → `http://10.0.1.124:8005`
+- `wclojista.wallclub.com.br` → `http://10.0.1.124:8005`
+- `wcapi.wallclub.com.br` → `http://10.0.1.124:8005`
+- `apipos.wallclub.com.br` → `http://10.0.1.124:8005`
+- `checkout.wallclub.com.br` → `http://10.0.1.124:8005`
 
-- **wallclub-portais**: 8005 (Portais Admin/Lojista/Vendas/Corporativo)
+**Configuração:** `/etc/nginx/sites-available/default`
+
+### Servidor 124 (Containers Docker)
+
+#### Portas Externas
+- **Nginx Container**: 8005 (recebe do servidor 46)
+
+#### Portas Internas (Docker Network)
+Todos os containers Django escutam na **porta 8005 interna**:
+- **wallclub-portais**: 8005 (Admin/Lojista/Vendas/Corporativo)
 - **wallclub-apis**: 8005 (APIs Mobile + Checkout)
 - **wallclub-pos**: 8005 (Terminal POS)
 - **wallclub-riskengine**: 8005 (Antifraude)
@@ -93,19 +112,27 @@ Todos os containers Django escutam na **porta 8005 interna** (não expostas):
 - **wallclub-celery-worker-apis**: Worker Celery APIs
 - **wallclub-celery-beat**: Beat Celery
 
-### Nginx Upstreams
-O Nginx roteia baseado no `server_name`:
-- `admin.wallclub.com.br` → `wallclub-portais:8005`
-- `lojista.wallclub.com.br` → `wallclub-portais:8005`
-- `vendas.wallclub.com.br` → `wallclub-portais:8005`
-- `api.wallclub.com.br` → `wallclub-apis:8005`
-- `pos.wallclub.com.br` → `wallclub-pos:8005`
+#### Nginx Container Upstreams
+O Nginx container roteia baseado no `server_name`:
+- `wcadmin.wallclub.com.br` → `wallclub-portais:8005`
+- `wcvendas.wallclub.com.br` → `wallclub-portais:8005`
+- `wclojista.wallclub.com.br` → `wallclub-portais:8005`
+- `wcapi.wallclub.com.br` → `wallclub-apis:8005`
+- `apipos.wallclub.com.br` → `wallclub-pos:8005`
+- `checkout.wallclub.com.br` → `wallclub-apis:8005`
+
+**Configuração:** `/var/www/WallClub_backend/nginx.conf`
+
+### Security Groups AWS
+- **Servidor 46**: Porta 80/443 aberta para internet
+- **Servidor 124**: Porta 8005 aberta para servidor 46 (10.0.0.0/16)
 
 ### Segurança
 - ✅ Containers Django **não expostos** diretamente
 - ✅ Apenas Nginx acessível externamente
 - ✅ Comunicação interna via rede Docker privada
 - ✅ Redis não acessível de fora
+- ✅ Servidor 124 só aceita conexões do servidor 46
 
 ## Troubleshooting
 

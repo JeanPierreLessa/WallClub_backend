@@ -1,5 +1,6 @@
 """
-URLs para Container PORTAIS (Admin + Vendas + Lojista)
+URLs para Portal Lojista (lojista.wallclub.com.br)
+Responde na raiz (/) sem prefixo /portal_lojista/
 """
 from django.contrib import admin
 from django.urls import path, include
@@ -11,13 +12,10 @@ logger = logging.getLogger(__name__)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # Portais
-    path('portal_admin/', include('portais.admin.urls')),
-    path('portal_lojista/', include('portais.lojista.urls', namespace='lojista')),
-    path('portal_lojista/<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),
-    path('portal_corporativo/', include('portais.corporativo.urls')),
-    path('portal_vendas/', include('portais.vendas.urls')),
+    
+    # Portal Lojista na raiz
+    path('', include('portais.lojista.urls', namespace='lojista')),
+    path('<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),
 ]
 
 # APIs Internas (comunicação entre containers)

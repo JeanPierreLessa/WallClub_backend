@@ -40,6 +40,8 @@ services:
       context: .
       dockerfile: Dockerfile.portais
     container_name: wallclub-portais
+    expose:
+      - "8005"
     env_file:
       - ./services/django/.env
     environment:
@@ -67,6 +69,8 @@ services:
       context: .
       dockerfile: Dockerfile.pos
     container_name: wallclub-pos
+    expose:
+      - "8006"
     env_file:
       - ./services/django/.env
     environment:
@@ -75,7 +79,7 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
-      - RISK_ENGINE_URL=http://wallclub-riskengine:8005
+      - RISK_ENGINE_URL=http://wallclub-riskengine:8008
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/core:/app/services/core:ro
@@ -93,6 +97,8 @@ services:
       context: .
       dockerfile: Dockerfile.apis
     container_name: wallclub-apis
+    expose:
+      - "8007"
     env_file:
       - ./services/django/.env
     environment:
@@ -101,7 +107,7 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
-      - RISK_ENGINE_URL=http://wallclub-riskengine:8005
+      - RISK_ENGINE_URL=http://wallclub-riskengine:8008
     volumes:
       - ./services/django/logs:/app/logs
       - ./services/django/media:/app/media
@@ -120,7 +126,9 @@ services:
       context: .
       dockerfile: Dockerfile.riskengine
     container_name: wallclub-riskengine
-    command: gunicorn riskengine.wsgi:application --bind 0.0.0.0:8005 --workers 3 --timeout 120 --log-level=info --access-logfile=- --error-logfile=-
+    command: gunicorn riskengine.wsgi:application --bind 0.0.0.0:8008 --workers 3 --timeout 120 --log-level=info --access-logfile=- --error-logfile=-
+    expose:
+      - "8008"
     env_file:
       - ./services/riskengine/.env
     environment:
@@ -128,7 +136,7 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
-      - CALLBACK_URL_PRINCIPAL=http://wallclub-apis:8000
+      - CALLBACK_URL_PRINCIPAL=http://wallclub-apis:8007
     volumes:
       - ./services/riskengine/logs:/app/logs
       - ./services/core:/app/services/core:ro

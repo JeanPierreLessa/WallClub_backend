@@ -1,10 +1,10 @@
 # VISÃO INTEGRADA - WALLCLUB ECOSYSTEM
 
-**Versão:** 3.0  
-**Data:** 01/11/2025  
-**Objetivo:** Consolidação semântica da documentação Django + Risk Engine + Fase 6A/6B
+**Versão:** 4.0  
+**Data:** 05/11/2025  
+**Objetivo:** Documentação completa Fases 1-6 (Segurança + Antifraude + Services + 2FA + Portais + 4 Containers)
 
-**Resultado:** Containers desacoplados, 26 APIs internas, CORE limpo
+**Resultado:** 4 containers independentes, 9 containers totais, 26 APIs internas, Sistema Multi-Portal, 9 regras antifraude
 
 ---
 
@@ -12,45 +12,59 @@
 
 ### 📖 Leitura Obrigatória (Ordem Recomendada)
 
-1. **[ARQUITETURA_GERAL.md](1.%20ARQUITETURA_GERAL.md)** (~900 linhas)
-   - 5 containers orquestrados (Django, Risk Engine, Redis, Celery Worker/Beat)
-   - Status migração PHP→Django (Fases 0-6B completas) ⭐
-   - Arquitetura futura: 5 containers independentes ⭐
-   - Funcionalidades por categoria (JWT, Ofertas, Checkout, Parâmetros)
-   - Sistema Antifraude completo (score 0-100, 5 regras)
-   - Estrutura de diretórios anotada
-   - Deploy e configuração produção
-   - **Tempo leitura:** 25 min
-
-2. **[DIRETRIZES_UNIFICADAS.md](2.%20DIRETRIZES_UNIFICADAS.md)** (~850 linhas)
-   - Regras fundamentais (comunicação, escopo, confirmação)
-   - Containers desacoplados (APIs internas, lazy imports, SQL direto) ⭐
-   - Banco de dados (collation utf8mb4_unicode_ci obrigatória)
-   - Timezone (USE_TZ=False, datetime naive)
-   - Valores monetários (Decimal, formatação brasileira)
-   - APIs REST (POST obrigatório, formato resposta)
-   - Autenticação (JWT customizado, 5 regras de ouro, rate limiting)
-   - Sistema Antifraude (5 regras, MaxMind, detectores)
-   - Notificações (WhatsApp, SMS, Firebase, APN)
-   - Boas práticas código (gestão variáveis, cargas, logs)
+1. **[ARQUITETURA_GERAL.md](1.%20ARQUITETURA_GERAL.md)** (~950 linhas)
+   - ✅ 9 containers orquestrados (4 Django + Redis + 2 Celery + Beat + Nginx)
+   - ✅ Fases 1-6 concluídas (Segurança + Antifraude + Services + 2FA + Portais + Containers)
+   - ✅ 4 containers Django independentes em produção (portais, pos, apis, riskengine)
+   - ✅ Nginx Gateway com 6 subdomínios (admin, vendas, lojista, api, apipos, checkout)
+   - ✅ Sistema Antifraude completo (score 0-100, 9 regras)
+   - ✅ JWT Customizado (18 cenários testados)
+   - ✅ Sistema Multi-Portal (3 tabelas, controle hierárquico)
+   - ✅ Estrutura de diretórios anotada
+   - ✅ Deploy e configuração produção
    - **Tempo leitura:** 30 min
 
-3. **[INTEGRACOES.md](3.%20INTEGRACOES.md)** (~950 linhas)
-   - APIs Internas: 26 endpoints (Conta Digital, Checkout, Ofertas, Parâmetros) ⭐
-   - Pinbank (transações, tokenização, cargas automáticas)
-   - MaxMind minFraud (cache 1h, fallback score 50)
-   - WhatsApp Business (templates dinâmicos, categorias)
-   - SMS (URL encoding correto, rate limiting)
-   - Firebase Cloud Messaging (Android push)
-   - Apple Push Notifications (fallback produção→sandbox)
-   - AWS Secrets Manager (IAM Role, 4 secrets)
-   - Troubleshooting completo por integração
-   - **Tempo leitura:** 35 min
+2. **[DIRETRIZES_UNIFICADAS.md](2.%20DIRETRIZES_UNIFICADAS.md)** (~950 linhas)
+   - Regras fundamentais de comportamento
+   - ✅ Containers desacoplados (26 APIs REST + SQL + Lazy imports)
+   - ✅ Banco de dados (collation utf8mb4_unicode_ci, AWS Secrets)
+   - ✅ Timezone e datas (USE_TZ=False, datetime.now())
+   - ✅ Valores monetários (Decimal, formato brasileiro)
+   - ✅ APIs REST (POST obrigatório, formato padrão)
+   - ✅ JWT Customizado (18 cenários, validação obrigatória contra tabela)
+   - ✅ Login Simplificado Fintech (modelo Nubank/PicPay)
+   - ✅ Bypass 2FA para testes Apple/Google
+   - ✅ Sistema Antifraude (9 regras, MaxMind, 3DS)
+   - ✅ Sistema Segurança Multi-Portal (6 detectores Celery)
+   - ✅ Notificações (WhatsApp, SMS, Push Firebase/APN)
+   - ✅ Arquitetura Docker (9 containers)
+   - Boas práticas de código
+   - **Tempo leitura:** 30 min
+
+3. **[INTEGRACOES.md](3.%20INTEGRACOES.md)** (~1550 linhas)
+   - **APIs Internas (26 endpoints - Fase 6B):**
+     - ✅ Conta Digital (5 endpoints: consultar-saldo, autorizar-uso, debitar, estornar, calcular-maximo)
+     - ✅ Checkout Recorrências (8 endpoints: CRUD + pausar/reativar/cobrar)
+     - ✅ Ofertas (6 endpoints: CRUD + grupos/segmentação)
+     - ✅ Parâmetros (7 endpoints: configs + modalidades + planos + importações)
+   - **Integrações Externas:**
+     - ✅ Pinbank (gateway pagamentos, cargas automáticas, captura recorrências)
+     - ✅ MaxMind minFraud (score 0-100, cache 1h, hit rate >90%)
+     - ✅ Risk Engine - Autenticação Cliente (score 0-50, 9 flags)
+     - ✅ WhatsApp Business (templates AUTHENTICATION/UTILITY)
+     - ✅ SMS (encoding URLs correto)
+     - ✅ Firebase Cloud Messaging (Android push)
+     - ✅ Apple Push Notifications (iOS push, fallback sandbox)
+     - ✅ AWS Secrets Manager (credenciais seguras, migração completa)
+   - ✅ Celery Tasks (recorrências diárias, detectores segurança)
+   - Troubleshooting completo
+   - **Tempo leitura:** 45 min
 
 ---
 
-## 🎯 PARA QUEM É ESTA DOCUMENTAÇÃO?
+## PARA QUEM É ESTA DOCUMENTAÇÃO?
 
+### Novo Desenvolvedor (Onboarding)
 ### 👨‍💻 Novo Desenvolvedor (Onboarding)
 **Objetivo:** Entender sistema em <1 hora
 
