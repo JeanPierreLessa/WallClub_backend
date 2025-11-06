@@ -34,6 +34,6 @@ RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 8004
+EXPOSE 8008
 
-CMD ["gunicorn", "riskengine.wsgi:application", "--bind", "0.0.0.0:8004", "--workers", "2", "--timeout", "120"]
+CMD ["gunicorn", "riskengine.wsgi:application", "--bind", "0.0.0.0:8008", "--workers", "2", "--timeout", "120", "--log-level", "info", "--access-logfile", "-", "--error-logfile", "-"]
