@@ -563,17 +563,42 @@ class CheckoutVendasService:
             base_url = getattr(settings, 'CHECKOUT_BASE_URL', 'https://checkout.wallclub.com.br')
             link_url = f"{base_url}/checkout/{token_obj.token}/"
             
+            # Enviar email com link de pagamento
+            if cliente.email:
+                try:
+                    from checkout.services import LinkPagamentoService
+                    LinkPagamentoService.enviar_link_pagamento_email(
+                        token=token_obj,
+                        cliente_email=cliente.email,
+                        cliente_nome=cliente.nome,
+                        loja_id=loja_id
+                    )
+                    registrar_log('portais.vendas', f"Email enviado para {cliente.email}")
+                except Exception as e:
+                    registrar_log('portais.vendas', f"Erro ao enviar email: {str(e)}", nivel='WARNING')
+            
             # Enviar link via WhatsApp/SMS se houver telefone
             if telefone:
                 try:
-                    # Tentar WhatsApp primeiro
-                    WhatsAppService.enviar_link_pagamento(
-                        telefone=telefone,
-                        nome=cliente.nome,
-                        valor=float(valor),
-                        link=link_url
+                    # Buscar canal_id da loja
+                    loja = HierarquiaOrganizacionalService.get_loja(loja_id)
+                    canal_id = loja.CanalId if loja else 1
+                    
+                    # Enviar via WhatsApp usando template genérico
+                    sucesso = WhatsAppService.envia_whatsapp(
+                        numero_telefone=telefone,
+                        canal_id=canal_id,
+                        nome_template='envio_senha2',  # Template genérico
+                        idioma_template='pt_BR',
+                        parametros_corpo=[f"Olá {cliente.nome}! Seu link de pagamento: {link_url}"],
+                        parametros_botao=None
                     )
-                    registrar_log('portais.vendas', f"Link enviado via WhatsApp para {telefone}")
+                    
+                    if sucesso:
+                        registrar_log('portais.vendas', f"Link enviado via WhatsApp para {telefone}")
+                    else:
+                        raise Exception("Falha ao enviar WhatsApp")
+                        
                 except Exception as e:
                     # Fallback para SMS
                     registrar_log('portais.vendas', f"Erro WhatsApp, usando SMS: {str(e)}", nivel='WARNING')
