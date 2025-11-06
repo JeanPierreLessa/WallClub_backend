@@ -329,12 +329,32 @@ def ofertas_edit(request, oferta_id):
 @csrf_exempt
 def ofertas_disparar(request, oferta_id):
     """Dispara push notification para oferta (AJAX)"""
-    # Verificar autenticação manualmente para requisições AJAX
+    # Verificar autenticação manualmente (não usar @admin_required em AJAX)
     usuario_id = request.session.get('portal_usuario_id')
     if not usuario_id:
         return JsonResponse({
             'sucesso': False,
             'mensagem': 'Sessão expirada. Por favor, faça login novamente.',
+            'redirect': '/portal_admin/'
+        }, status=401)
+    
+    # Verificar permissão admin
+    try:
+        from portais.controle_acesso.models import PortalUsuario
+        from portais.controle_acesso.services import ControleAcessoService
+        
+        usuario = PortalUsuario.objects.get(id=usuario_id, ativo=True)
+        nivel_acesso = ControleAcessoService.obter_nivel_portal(usuario, 'admin')
+        
+        if nivel_acesso == 'negado':
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Acesso negado. Permissões insuficientes.'
+            }, status=403)
+    except PortalUsuario.DoesNotExist:
+        return JsonResponse({
+            'sucesso': False,
+            'mensagem': 'Sessão inválida. Faça login novamente.',
             'redirect': '/portal_admin/'
         }, status=401)
     
