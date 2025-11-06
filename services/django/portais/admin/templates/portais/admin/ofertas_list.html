@@ -219,8 +219,8 @@ document.addEventListener('DOMContentLoaded', function() {
         disparoLoading.style.display = 'block';
         btnConfirmar.disabled = true;
         
-        // Enviar requisição
-        fetch(`/portal_admin/ofertas/${ofertaIdSelecionada}/disparar/`, {
+        // Enviar requisição (usar URL relativa - funciona com e sem prefixo)
+        fetch(`ofertas/${ofertaIdSelecionada}/disparar/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

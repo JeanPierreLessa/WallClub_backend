@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', function() {
         disparoLoading.style.display = 'block';
         btnConfirmar.disabled = true;
         
-        // Enviar requisição
-        fetch(`/portal_lojista/ofertas/${ofertaIdSelecionada}/disparar/`, {
+        // Enviar requisição (usar URL relativa - funciona com e sem prefixo)
+        fetch(`ofertas/${ofertaIdSelecionada}/disparar/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -39,7 +39,21 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({})
         })
-        .then(response => response.json())
+        .then(response => {
+            // Verificar se é erro de autenticação
+            if (response.status === 401) {
+                return response.json().then(data => {
+                    alert(data.mensagem || 'Sessão expirada. Redirecionando para login...');
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.href = '/';
+                    }
+                    throw new Error('Sessão expirada');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             disparoLoading.style.display = 'none';
             
@@ -78,7 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             disparoLoading.style.display = 'none';
             btnConfirmar.disabled = false;
-            alert('Erro ao processar requisição: ' + error.message);
+            
+            // Não mostrar alerta se for erro de sessão expirada (já foi tratado)
+            if (error.message !== 'Sessão expirada') {
+                alert('Erro ao processar requisição: ' + error.message);
+            }
         });
     });
     

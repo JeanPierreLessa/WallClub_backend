@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import JsonResponse
 from django.views import View
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from datetime import datetime
 import json
 
-from portais.lojista.mixins import LojistaAuthMixin
-from django.apps import apps
+from .mixins import LojistaAuthMixin, LojistaDataMixin
+from wallclub_core.integracoes.ofertas_api_client import ofertas_api
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
@@ -277,10 +279,18 @@ class OfertasEditView(LojistaAuthMixin, View):
             return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
 
 
-class OfertasDispararView(LojistaAuthMixin, View):
+@method_decorator(csrf_exempt, name='dispatch')
+class OfertasDispararView(View):
     """Dispara push notification para oferta"""
     
     def post(self, request, oferta_id):
+        # Verificar autenticação manualmente (não usar mixin em AJAX)
+        if not request.session.get('lojista_authenticated'):
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Sessão expirada. Faça login novamente.',
+                'redirect': '/'
+            }, status=401)
         try:
             from apps.ofertas.services import OfertaService
             
