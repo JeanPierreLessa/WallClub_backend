@@ -522,25 +522,31 @@ class CheckoutVendasService:
             Dict com sucesso, mensagem e dados do link gerado
         """
         try:
-            # Gerar link via CheckoutService
-            resultado = CheckoutService.gerar_link_pagamento(
-                cliente_id=cliente_id,
-                loja_id=loja_id,
-                valor=valor,
-                descricao=descricao,
-                pedido_origem_loja=pedido_origem,
-                cod_item_origem_loja=cod_item_origem,
-                portais_usuarios_id=vendedor_id
-            )
-            
-            if not resultado.get('sucesso'):
-                return resultado
-            
-            # Enviar link via WhatsApp/SMS
+            # Buscar dados do cliente
             CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
             cliente = CheckoutCliente.objects.get(id=cliente_id)
             
-            link_url = resultado.get('link_url')
+            # Gerar token de checkout
+            from checkout.link_pagamento_web.models import CheckoutToken
+            from django.conf import settings
+            
+            token_obj = CheckoutToken.generate_token(
+                loja_id=loja_id,
+                item_nome=descricao,
+                item_valor=valor,
+                nome_completo=cliente.nome,
+                cpf=cliente.cpf or '',
+                celular=cliente.telefone or '',
+                endereco_completo=cliente.endereco or '',
+                created_by=f'Portal Vendas - Vendedor ID {vendedor_id}',
+                pedido_origem_loja=pedido_origem
+            )
+            
+            # Gerar URL do link
+            base_url = getattr(settings, 'CHECKOUT_BASE_URL', 'https://checkout.wallclub.com.br')
+            link_url = f"{base_url}/checkout/{token_obj.token}/"
+            
+            # Enviar link via WhatsApp/SMS
             telefone = cliente.telefone
             
             if telefone:
@@ -563,9 +569,12 @@ class CheckoutVendasService:
                 'sucesso': True,
                 'mensagem': 'Link de pagamento gerado e enviado com sucesso!',
                 'link_url': link_url,
-                'transaction_id': resultado.get('transaction_id')
+                'token': token_obj.token
             }
             
+        except CheckoutCliente.DoesNotExist:
+            registrar_log('portais.vendas', f"Cliente {cliente_id} não encontrado", nivel='ERROR')
+            return {'sucesso': False, 'mensagem': 'Cliente não encontrado'}
         except Exception as e:
             registrar_log('portais.vendas', f"Erro ao processar envio de link: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro ao gerar link: {str(e)}'}
