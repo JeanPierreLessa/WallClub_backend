@@ -15,7 +15,7 @@ class OfertasAPIClient:
     """
     
     def __init__(self):
-        self.base_url = getattr(settings, 'INTERNAL_API_BASE_URL', 'http://localhost:8000')
+        self.base_url = getattr(settings, 'INTERNAL_API_BASE_URL', 'http://127.0.0.1:8005')
         self.timeout = 10
         
     def _make_request(self, method: str, endpoint: str, data: Dict = None, params: Dict = None) -> Dict[str, Any]:
