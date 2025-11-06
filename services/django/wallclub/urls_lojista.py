@@ -29,7 +29,6 @@ try:
 except Exception as e:
     logger.error(f"Erro ao carregar parametros_wallclub.urls_internal: {e}")
 
-# Servir arquivos estáticos
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Servir arquivos estáticos (Whitenoise cuida em produção)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
