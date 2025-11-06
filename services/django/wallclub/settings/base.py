@@ -297,7 +297,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('MAILSERVER_USERNAME', 'AKIAXWHDLWAXPATSXOK6')
 EMAIL_HOST_PASSWORD = os.environ.get('MAILSERVER_PASSWD', 'BIlwP21H2UKtnQWSngltPT6jdpV3+D7MunK/RcxRD3S5')
 DEFAULT_FROM_EMAIL = 'noreply@wallclub.com.br'
-BASE_URL = 'https://apidj.wallclub.com.br'
+BASE_URL = 'https://wcadmin.wallclub.com.br'
 
 # Configuração de Logging
 import os
