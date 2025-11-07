@@ -15,8 +15,8 @@ elif DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
     ALLOWED_HOSTS = [
-        'apipos.wallclub.com.br',
-        'wcapipos.wallclub.com.br',
+        'api.wallclub.com.br',
+        'wcapi.wallclub.com.br',
     ]
 
 # Apps específicos do container POS
