@@ -34,7 +34,11 @@ docker ps
 ## Deploy de Rotina (Atualizar Código)
 ```bash
 # Pull do código
+cd /var/www/WallClub_backend
 git pull origin v2.0.0
+docker-compose build
+docker-compose down
+docker-compose up -d
 
 # Rebuild e restart (apenas containers Django)
 docker-compose build --no-cache wallclub-portais wallclub-apis wallclub-pos

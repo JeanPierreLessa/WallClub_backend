@@ -8,7 +8,6 @@ import hmac
 import hashlib
 import json
 import base64
-import requests
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
@@ -16,9 +15,7 @@ from django.core.cache import cache
 from django.db import connection
 from django.conf import settings
 from wallclub_core.utilitarios.log_control import registrar_log
-
-# URL base para APIs internas
-INTERNAL_API_BASE_URL = getattr(settings, 'INTERNAL_API_BASE_URL', 'http://localhost:8000')
+from wallclub_core.integracoes.api_interna_service import APIInternaService
 
 
 class SaldoService:
@@ -175,23 +172,16 @@ class SaldoService:
         
         try:
             # Chamar API interna para consultar saldo
-            url = f"{INTERNAL_API_BASE_URL}/api/internal/conta_digital/consultar_saldo/"
-            response = requests.post(url, json={
-                'cpf': cpf,
-                'canal_id': canal_id
-            }, timeout=5)
-            
-            if response.status_code != 200:
-                registrar_log('posp2', 
-                    f'❌ [CONSULTA API] Erro HTTP {response.status_code}: {response.text}',
-                    nivel='ERROR')
-                return {
-                    'sucesso': False,
-                    'mensagem': 'Erro ao consultar saldo',
-                    'tem_saldo': False
-                }
-            
-            resultado = response.json()
+            resultado = APIInternaService.chamar_api_interna(
+                metodo='POST',
+                endpoint='/api/internal/conta_digital/consultar_saldo/',
+                payload={
+                    'cpf': cpf,
+                    'canal_id': canal_id
+                },
+                contexto='apis',
+                timeout=5
+            )
             
             if not resultado.get('sucesso'):
                 return {
@@ -218,42 +208,40 @@ class SaldoService:
             if tem_saldo and loja_id:
                 try:
                     # Chamar API interna para calcular máximo
-                    url_calc = f"{INTERNAL_API_BASE_URL}/api/internal/conta_digital/calcular_maximo/"
-                    response_calc = requests.post(url_calc, json={
-                        'cpf': cpf,
-                        'canal_id': canal_id,
-                        'loja_id': loja_id,
-                        'valor_transacao': str(valor_compra)
-                    }, timeout=5)
+                    resultado_calculo = APIInternaService.chamar_api_interna(
+                        metodo='POST',
+                        endpoint='/api/internal/conta_digital/calcular_maximo/',
+                        payload={
+                            'cpf': cpf,
+                            'canal_id': canal_id,
+                            'loja_id': loja_id,
+                            'valor_transacao': str(valor_compra)
+                        },
+                        contexto='apis',
+                        timeout=5
+                    )
                     
-                    if response_calc.status_code == 200:
-                        resultado_calculo = response_calc.json()
+                    if resultado_calculo.get('sucesso'):
+                        valor_permitido = Decimal(resultado_calculo['valor_maximo_permitido'])
                         
-                        if resultado_calculo.get('sucesso'):
-                            valor_permitido = Decimal(resultado_calculo['valor_maximo_permitido'])
-                            
-                            # Gerar token de validação
-                            validation_token = SaldoService._gerar_token_validacao(
-                                valor=valor_permitido,
-                                cpf=cpf,
-                                terminal=terminal,
-                                valor_compra=valor_compra
-                            )
-                            
-                            resposta['valor_maximo_permitido'] = str(valor_permitido)
-                            resposta['validation_token'] = validation_token
-                            
-                            registrar_log('posp2',
-                                f'💰 [CONSULTA API] Valor máximo calculado: '
-                                f'compra={valor_compra}, saldo={saldo_disponivel}, '
-                                f'permitido={valor_permitido:.2f}, validation_token_gerado=True')
-                        else:
-                            registrar_log('posp2',
-                                f'⚠️ [CONSULTA API] Erro ao calcular valor máximo: {resultado_calculo.get("mensagem")}')
+                        # Gerar token de validação
+                        validation_token = SaldoService._gerar_token_validacao(
+                            valor=valor_permitido,
+                            cpf=cpf,
+                            terminal=terminal,
+                            valor_compra=valor_compra
+                        )
+                        
+                        resposta['valor_maximo_permitido'] = str(valor_permitido)
+                        resposta['validation_token'] = validation_token
+                        
+                        registrar_log('posp2',
+                            f'💰 [CONSULTA API] Valor máximo calculado: '
+                            f'compra={valor_compra}, saldo={saldo_disponivel}, '
+                            f'permitido={valor_permitido:.2f}, validation_token_gerado=True')
                     else:
                         registrar_log('posp2',
-                            f'⚠️ [CONSULTA API] Erro HTTP ao calcular máximo: {response_calc.status_code}',
-                            nivel='WARNING')
+                            f'⚠️ [CONSULTA API] Erro ao calcular valor máximo: {resultado_calculo.get("mensagem")}')
                 except Exception as e:
                     registrar_log('posp2',
                         f'⚠️ [CONSULTA API] Exceção ao calcular máximo: {str(e)}',
@@ -261,13 +249,6 @@ class SaldoService:
             
             return resposta
             
-        except requests.exceptions.Timeout:
-            registrar_log('posp2', '❌ [CONSULTA API] Timeout na chamada da API', nivel='ERROR')
-            return {
-                'sucesso': False,
-                'mensagem': 'Timeout ao consultar saldo',
-                'tem_saldo': False
-            }
         except Exception as e:
             registrar_log('posp2', 
                 f'❌ [CONSULTA API] Erro ao consultar saldo: {str(e)}',
@@ -335,31 +316,24 @@ class SaldoService:
         
         try:
             # Chamar API interna para autorizar uso
-            url = f"{INTERNAL_API_BASE_URL}/api/internal/conta_digital/autorizar_uso/"
-            response = requests.post(url, json={
-                'cpf': cpf,
-                'canal_id': canal_id,
-                'valor': str(valor_usar),
-                'loja_id': loja_id,
-                'terminal_id': terminal
-            }, timeout=10)
-            
-            if response.status_code != 200:
-                registrar_log('posp2', 
-                    f'❌ [AUTORIZAÇÃO API] Erro HTTP {response.status_code}: {response.text}',
-                    nivel='ERROR')
-                return {
-                    'sucesso': False,
-                    'mensagem': 'Erro ao criar autorização'
-                }
-            
-            resultado = response.json()
+            resultado = APIInternaService.chamar_api_interna(
+                metodo='POST',
+                endpoint='/api/internal/conta_digital/autorizar_uso/',
+                payload={
+                    'cpf': cpf,
+                    'canal_id': canal_id,
+                    'valor': str(valor_usar),
+                    'loja_id': loja_id,
+                    'terminal_id': terminal
+                },
+                contexto='apis',
+                timeout=10
+            )
             
             if not resultado.get('sucesso'):
                 return resultado
             
             # Obter cliente_id para enviar push via API interna
-            from wallclub_core.integracoes.api_interna_service import APIInternaService
             try:
                 response = APIInternaService.chamar_api_interna(
                     metodo='POST',
