@@ -1,0 +1,38 @@
+{% extends "emails/lojista/base.html" %}
+
+{% block title %}{{ canal_nome }} - Redefinir Senha - Portal Lojista{% endblock %}
+
+{% block header_title %}🔐 Redefinição de Senha{% endblock %}
+{% block header_subtitle %}Portal Lojista{% endblock %}
+
+{% block content %}
+<p>Olá <strong>{{ usuario.nome }}</strong>,</p>
+
+<p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>Portal Lojista</strong>.</p>
+
+<p>Para criar uma nova senha de acesso, clique no botão abaixo:</p>
+
+<p class="text-center">
+    <a href="{{ link_reset }}" class="button button-primary">Redefinir Minha Senha</a>
+</p>
+
+<div class="alert alert-info">
+    <p><strong>⚠️ Atenção:</strong></p>
+    <ul style="margin: 10px 0 0 0;">
+        <li>Este link é válido por <strong>{{ validade_horas }} horas</strong></li>
+        <li>Após esse período, será necessário solicitar um novo link</li>
+        <li>Por segurança, o link só pode ser usado <strong>uma única vez</strong></li>
+        <li>Crie uma senha forte e fácil de lembrar</li>
+    </ul>
+</div>
+
+<div class="alert alert-danger">
+    <p><strong>🚨 Não foi você?</strong></p>
+    <p>Se você <strong>não solicitou</strong> a redefinição de senha, ignore este email. Sua senha atual permanecerá ativa e segura.</p>
+    <p>Caso suspeite de acesso não autorizado, entre em contato com o suporte.</p>
+</div>
+
+<p style="margin-top: 20px; color: #6c757d; font-size: 14px;">
+    Por questões de segurança, nunca compartilhe este link com outras pessoas.
+</p>
+{% endblock %}

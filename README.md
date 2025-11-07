@@ -9,8 +9,8 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 **Última Atualização:** 06/11/2025
 
 ### Produção - 9 Containers Orquestrados
-- ✅ **Nginx Gateway** (porta 8005) - 9 subdomínios
-- ✅ **wallclub-portais** (Admin + Vendas + Lojista + Corporativo)
+- ✅ **Nginx Gateway** (porta 8005) - 12 subdomínios
+- ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
 - ✅ **wallclub-apis** (Mobile + Checkout)
 - ✅ **wallclub-riskengine** (Antifraude + MaxMind)
@@ -18,6 +18,14 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **wallclub-celery-worker-portais**
 - ✅ **wallclub-celery-worker-apis**
 - ✅ **wallclub-celery-beat** (Scheduler)
+
+### Integrações Externas
+- ✅ **AWS SES** - Email transacional (ConfigManager)
+- ✅ **AWS Secrets Manager** - Credenciais centralizadas
+- ✅ **MaxMind minFraud** - Score antifraude
+- ✅ **Pinbank** - Gateway de pagamento
+- ✅ **WhatsApp Business API** - 2FA e notificações
+- ✅ **Firebase/APN** - Push notifications
 
 ### Fases Concluídas
 - ✅ **Fase 1:** Segurança Básica (Rate limiting, OAuth, Auditoria)
@@ -75,22 +83,31 @@ WallClub_backend/
 ### 1. Container Portais (wallclub-portais)
 
 **Porta:** 8005 (interna)  
-**Subdomínios:** admin.wallclub.com.br, vendas.wallclub.com.br, lojista.wallclub.com.br, corporativo.wallclub.com.br, wallclub.com.br, www.wallclub.com.br
+**Subdomínios:** 
+- admin.wallclub.com.br / wcadmin.wallclub.com.br
+- vendas.wallclub.com.br / wcvendas.wallclub.com.br
+- lojista.wallclub.com.br / wclojista.wallclub.com.br
+- institucional.wallclub.com.br / wcinstitucional.wallclub.com.br
 
 **Módulos:**
 - **portais/admin/** - Portal administrativo
 - **portais/lojista/** - Portal lojista
 - **portais/vendas/** - Portal vendas/checkout interno
-- **portais/corporativo/** - Portal corporativo público (institucional)
-- **portais/controle_acesso/** - Sistema Multi-Portal (3 tabelas)
+- **portais/corporativo/** - Portal institucional público
+- **portais/controle_acesso/** - Sistema Multi-Portal (3 tabelas) + Email Service
 - **sistema_bancario/** - Gestão bancária
+
+**Email Service:**
+- Templates centralizados em `/templates/emails/`
+- Integração AWS SES via ConfigManager
+- Suporte a HTML + anexos
 
 **Settings:** `wallclub.settings.portais`
 
 ### 2. Container POS (wallclub-pos)
 
-**Porta:** 8005 (interna)  
-**Subdomínio:** apipos.wallclub.com.br
+**Porta:** 8006 (interna)  
+**Subdomínios:** apipos.wallclub.com.br / wcapipos.wallclub.com.br
 
 **Módulos:**
 - **posp2/** - Terminal POS (OAuth 2.0)
@@ -101,8 +118,10 @@ WallClub_backend/
 
 ### 3. Container APIs Mobile (wallclub-apis)
 
-**Porta:** 8005 (interna)  
-**Subdomínios:** api.wallclub.com.br, checkout.wallclub.com.br
+**Porta:** 8007 (interna)  
+**Subdomínios:** 
+- api.wallclub.com.br / wcapi.wallclub.com.br
+- checkout.wallclub.com.br / wccheckout.wallclub.com.br
 
 **Módulos:**
 - **apps/cliente/** - JWT Customizado (18 cenários testados)
@@ -115,8 +134,8 @@ WallClub_backend/
 
 ### 4. Container Risk Engine (wallclub-riskengine)
 
-**Porta:** 8005 (interna)  
-**Acesso:** Interno (chamado por outros containers)
+**Porta:** 8008 (interna)  
+**Acesso:** Interno (chamado por outros containers via API REST)
 
 **Módulos:**
 - **antifraude/** - Motor antifraude (9 regras)
@@ -158,10 +177,18 @@ WallClub_backend/
 **Serviços Externos:**
 - `apn_service.py` - Apple Push Notifications
 - `bureau_service.py` - MaxMind minFraud
-- `email_service.py` - AWS SES
+- `email_service.py` - AWS SES (credenciais via ConfigManager)
 - `firebase_service.py` - Firebase Cloud Messaging
 - `sms_service.py` - Gateway SMS
 - `whatsapp_service.py` - WhatsApp Business API
+
+**Configuração:**
+- `config_manager.py` - AWS Secrets Manager + Parameter Store
+  - Banco de dados (MySQL)
+  - Email (AWS SES)
+  - Pinbank
+  - Bureau (MaxMind)
+  - Risk Engine OAuth
 
 **Notificações:**
 - `notification_service.py` - Orquestrador
@@ -424,15 +451,13 @@ services:
 Internet (80/443)
     ↓
 Nginx Gateway (porta 8005)
-  ├─ admin.wallclub.com.br       → wallclub-portais:8005
-  ├─ vendas.wallclub.com.br      → wallclub-portais:8005
-  ├─ lojista.wallclub.com.br     → wallclub-portais:8005
-  ├─ corporativo.wallclub.com.br → wallclub-portais:8005
-  ├─ wallclub.com.br             → wallclub-portais:8005
-  ├─ www.wallclub.com.br         → wallclub-portais:8005
-  ├─ api.wallclub.com.br         → wallclub-apis:8005
-  ├─ apipos.wallclub.com.br      → wallclub-pos:8005
-  └─ checkout.wallclub.com.br    → wallclub-apis:8005
+  ├─ admin.wallclub.com.br / wcadmin.wallclub.com.br           → wallclub-portais:8005
+  ├─ vendas.wallclub.com.br / wcvendas.wallclub.com.br         → wallclub-portais:8005
+  ├─ lojista.wallclub.com.br / wclojista.wallclub.com.br       → wallclub-portais:8005
+  ├─ institucional.wallclub.com.br / wcinstitucional.wallclub.com.br → wallclub-portais:8005
+  ├─ api.wallclub.com.br / wcapi.wallclub.com.br               → wallclub-apis:8007
+  ├─ apipos.wallclub.com.br / wcapipos.wallclub.com.br         → wallclub-pos:8006
+  └─ checkout.wallclub.com.br / wccheckout.wallclub.com.br     → wallclub-apis:8007
     ↓
 9 Containers:
   1. nginx (gateway)
@@ -554,8 +579,15 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025  
-**Última atualização:** 06/11/2025  
+**Última atualização:** 06/11/2025 22:55  
 **Responsável:** Equipe WallClub
+
+### Atualizações Recentes (06/11/2025)
+- ✅ Email Service centralizado com AWS SES
+- ✅ ConfigManager integrado ao email (busca credenciais do Secrets Manager)
+- ✅ Templates de email unificados em `/templates/emails/`
+- ✅ Subdomain Router com suporte a domínios `wc*`
+- ✅ ALLOWED_HOSTS atualizado para todos os subdomínios
 
 ---
 

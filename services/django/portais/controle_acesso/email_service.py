@@ -73,17 +73,25 @@ class EmailService:
                 **contexto_canal
             }
             
+            # Determinar template baseado no portal de destino
+            if portal_destino == 'lojista':
+                template_html = 'emails/lojista/primeiro_acesso.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Acesso ao Portal Lojista Criado'
+            else:
+                template_html = 'emails/admin/primeiro_acesso.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Acesso ao Portal Admin Criado'
+            
             # Enviar via EmailService centralizado
             resultado = EmailServiceCore.enviar_email(
                 destinatarios=[usuario.email],
-                assunto=f'{contexto_canal["canal_nome"]} - Acesso ao Sistema Criado',
-                template_html='emails/autenticacao/primeiro_acesso.html',
+                assunto=assunto,
+                template_html=template_html,
                 template_context=context,
                 fail_silently=False
             )
             
             if resultado['sucesso']:
-                registrar_log('portais.controle_acesso', f"Email de primeiro acesso enviado para {usuario.email}")
+                registrar_log('portais.controle_acesso', f"Email de primeiro acesso enviado para {usuario.email} (portal: {portal_destino})")
                 return True, "Email enviado com sucesso"
             else:
                 registrar_log('portais.controle_acesso', f"Erro ao enviar email: {resultado['mensagem']}", nivel='ERROR')
@@ -94,14 +102,17 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_reset_senha(usuario, token):
+    def enviar_email_reset_senha(usuario, token, portal_destino='admin'):
         """
         Envia email para reset de senha.
         Usa o EmailService centralizado do wallclub_core.
         """
         try:
-            # URL para reset de senha
-            link_reset = f"{settings.BASE_URL}/portal_admin/reset-senha/{token}/"
+            # URL para reset de senha baseada no portal
+            if portal_destino == 'lojista':
+                link_reset = f"{settings.BASE_URL}/portal_lojista/reset-senha/{token}/"
+            else:
+                link_reset = f"{settings.BASE_URL}/portal_admin/reset-senha/{token}/"
             
             # Obter contexto do canal para o assunto
             contexto_canal = EmailService._obter_contexto_canal(usuario)
@@ -113,17 +124,25 @@ class EmailService:
                 **contexto_canal
             }
             
+            # Determinar template baseado no portal de destino
+            if portal_destino == 'lojista':
+                template_html = 'emails/lojista/reset_senha.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Reset de Senha - Portal Lojista'
+            else:
+                template_html = 'emails/admin/reset_senha.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Reset de Senha - Portal Admin'
+            
             # Enviar via EmailService centralizado
             resultado = EmailServiceCore.enviar_email(
                 destinatarios=[usuario.email],
-                assunto=f'{contexto_canal["canal_nome"]} - Reset de Senha',
-                template_html='emails/autenticacao/reset_senha.html',
+                assunto=assunto,
+                template_html=template_html,
                 template_context=context,
                 fail_silently=False
             )
             
             if resultado['sucesso']:
-                registrar_log('portais.controle_acesso', f"Email de reset de senha enviado para {usuario.email}")
+                registrar_log('portais.controle_acesso', f"Email de reset de senha enviado para {usuario.email} (portal: {portal_destino})")
                 return True, "Email enviado com sucesso"
             else:
                 registrar_log('portais.controle_acesso', f"Erro ao enviar email: {resultado['mensagem']}", nivel='ERROR')
@@ -134,7 +153,7 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_senha_alterada(usuario):
+    def enviar_email_senha_alterada(usuario, portal_destino='admin'):
         """
         Envia email de confirmação após alteração de senha.
         Usa o EmailService centralizado do wallclub_core.
@@ -149,17 +168,25 @@ class EmailService:
                 **contexto_canal
             }
             
+            # Determinar template baseado no portal de destino
+            if portal_destino == 'lojista':
+                template_html = 'emails/lojista/senha_alterada.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Senha Alterada - Portal Lojista'
+            else:
+                template_html = 'emails/admin/senha_alterada.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Senha Alterada - Portal Admin'
+            
             # Enviar via EmailService centralizado
             resultado = EmailServiceCore.enviar_email(
                 destinatarios=[usuario.email],
-                assunto=f'{contexto_canal["canal_nome"]} - Senha Alterada com Sucesso',
-                template_html='emails/autenticacao/senha_alterada.html',
+                assunto=assunto,
+                template_html=template_html,
                 template_context=context,
                 fail_silently=False
             )
             
             if resultado['sucesso']:
-                registrar_log('portais.controle_acesso', f"Email de confirmação de alteração de senha enviado para {usuario.email}")
+                registrar_log('portais.controle_acesso', f"Email de confirmação de alteração de senha enviado para {usuario.email} (portal: {portal_destino})")
                 return True, "Email enviado com sucesso"
             else:
                 registrar_log('portais.controle_acesso', f"Erro ao enviar email: {resultado['mensagem']}", nivel='ERROR')

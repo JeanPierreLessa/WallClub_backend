@@ -369,7 +369,7 @@ class LojistaTrocarSenhaView(View):
         # Contexto para o template
         context = {
             'usuario': usuario,
-            'token': token,
+            'data_troca': usuario.updated_at.strftime('%d/%m/%Y às %H:%M'),
             'canal_nome': canal_nome
         }
         
@@ -377,8 +377,8 @@ class LojistaTrocarSenhaView(View):
         try:
             resultado = EmailService.enviar_email(
                 destinatarios=[usuario.email],
-                assunto=f'Confirmação de Troca de Senha - {canal_nome}',
-                template_html='emails/autenticacao/confirmacao_troca_senha.html',
+                assunto=f'{canal_nome} - Troca de Senha Confirmada - Portal Lojista',
+                template_html='emails/lojista/confirmacao_troca_senha.html',
                 template_context=context,
                 fail_silently=False
             )
