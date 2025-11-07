@@ -47,18 +47,10 @@ class EmailService:
         Usa o EmailService centralizado do wallclub_core.
         """
         try:
-            # Determinar URL baseada no portal de destino e canal
-            if portal_destino == 'lojista' and canal_id:
-                # Buscar nome do canal para URL
-                from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
-                try:
-                    canal = HierarquiaOrganizacionalService.get_canal(canal_id)
-                    # Usar marca do canal para URL
-                    marca = canal.marca or f'canal{canal_id}'
-                    link_primeiro_acesso = f"{settings.BASE_URL}/portal_lojista/{marca}/primeiro_acesso/{token}/"
-                except Canal.DoesNotExist:
-                    # Fallback para portal lojista sem canal específico
-                    link_primeiro_acesso = f"{settings.BASE_URL}/portal_lojista/primeiro_acesso/{token}/"
+            # Determinar URL baseada no portal de destino
+            if portal_destino == 'lojista':
+                # Portal lojista usa subdomínio wclojista.wallclub.com.br
+                link_primeiro_acesso = f"https://wclojista.wallclub.com.br/primeiro_acesso/{token}/"
             else:
                 # Portal admin responde na raiz (sem /portal_admin/)
                 link_primeiro_acesso = f"{settings.BASE_URL}/primeiro_acesso/{token}/"
@@ -110,7 +102,8 @@ class EmailService:
         try:
             # URL para reset de senha baseada no portal
             if portal_destino == 'lojista':
-                link_reset = f"{settings.BASE_URL}/portal_lojista/reset-senha/{token}/"
+                # Portal lojista usa subdomínio wclojista.wallclub.com.br
+                link_reset = f"https://wclojista.wallclub.com.br/reset-senha/{token}/"
             else:
                 # Portal admin responde na raiz (sem /portal_admin/)
                 link_reset = f"{settings.BASE_URL}/reset-senha/{token}/"
