@@ -663,7 +663,7 @@ class POSP2Service:
                 # Chamar API interna para buscar cliente
                 response = APIInternaService.chamar_api_interna(
                     metodo='POST',
-                    endpoint='/api/v1/cliente/consultar_por_cpf/',
+                    endpoint='/api/internal/cliente/consultar_por_cpf/',
                     payload={
                         'cpf': cpf_limpo,
                         'canal_id': canal_id
@@ -736,7 +736,7 @@ class POSP2Service:
                 # Chamar API interna para cadastrar cliente (já faz bureau + inserção)
                 response = APIInternaService.chamar_api_interna(
                     metodo='POST',
-                    endpoint='/api/v1/cliente/cadastrar/',
+                    endpoint='/api/internal/cliente/cadastrar/',
                     payload={
                         'cpf': cpf_limpo,
                         'celular': '',
