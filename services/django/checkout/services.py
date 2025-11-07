@@ -903,8 +903,8 @@ class LinkPagamentoService:
         from wallclub_core.integracoes.email_service import EmailService
         
         try:
-            # URL do checkout com token
-            checkout_url = f"{settings.BASE_URL}/api/v1/checkout/?token={token.token}"
+            # URL do checkout com token - usar domínio específico do checkout
+            checkout_url = f"https://checkout.wallclub.com.br/?token={token.token}"
             
             context = {
                 'cliente_nome': cliente_nome,
