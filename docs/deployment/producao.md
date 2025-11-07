@@ -6,7 +6,7 @@
 
 ### Portal Admin - URLs Sem Prefixo
 
-**Antes:** `https://wcadmin.wallclub.com.br/portal_admin/...`  
+**Antes:** `https://wcadmin.wallclub.com.br/portal_admin/...`
 **Agora:** `https://wcadmin.wallclub.com.br/...` (responde na raiz)
 
 **Exemplos:**
@@ -56,11 +56,16 @@ docker ps
 ```
 
 ## Deploy de Rotina (Atualizar Código)
+## Prune
+docker image prune -a
+docker system prune -a --volumes
+docker system df
+
 ```bash
 # Pull do código
 cd /var/www/WallClub_backend
 git pull origin v2.0.0
-docker-compose build
+docker-compose build --no-cache
 docker-compose down
 docker-compose up -d
 

@@ -357,37 +357,10 @@ class LojistaTrocarSenhaView(View):
     
     def _enviar_email_confirmacao(self, usuario, token):
         """Envia email com token de confirmação"""
-        from portais.controle_acesso.services import ControleAcessoService
-        from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
-        from wallclub_core.integracoes.email_service import EmailService
+        from portais.controle_acesso.email_service import EmailService
         
-        # Obter contexto do canal do usuário
-        canal_id = ControleAcessoService.obter_canal_principal_usuario(usuario)
-        canal = HierarquiaOrganizacionalService.get_canal(canal_id)
-        canal_nome = (canal.descricao or canal.nome) if canal else 'WallClub'
-        
-        # Contexto para o template
-        context = {
-            'usuario': usuario,
-            'data_troca': usuario.updated_at.strftime('%d/%m/%Y às %H:%M'),
-            'canal_nome': canal_nome
-        }
-        
-        # Enviar usando EmailService
-        try:
-            resultado = EmailService.enviar_email(
-                destinatarios=[usuario.email],
-                assunto=f'{canal_nome} - Troca de Senha Confirmada - Portal Lojista',
-                template_html='emails/lojista/confirmacao_troca_senha.html',
-                template_context=context,
-                fail_silently=False
-            )
-            
-            if not resultado['sucesso']:
-                print(f"Erro ao enviar email: {resultado['mensagem']}")
-        except Exception as e:
-            # Log do erro mas não falha o processo
-            print(f"Erro ao enviar email: {e}")
+        # Usar método centralizado que já tem toda a lógica
+        EmailService.enviar_email_senha_alterada(usuario, portal_destino='lojista')
 
 
 class LojistaConfirmarTrocaSenhaView(View):
