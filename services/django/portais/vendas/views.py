@@ -172,7 +172,12 @@ def cliente_busca(request):
     
     vendedor = request.vendedor
     busca = request.GET.get('q', '').strip()
+    
+    registrar_log('portais.vendas', f"[BUSCA CLIENTES] Vendedor ID: {vendedor.id}, Email: {vendedor.email}, Busca: '{busca}'")
+    
     clientes = CheckoutVendasService.buscar_clientes(vendedor.id, busca)
+    
+    registrar_log('portais.vendas', f"[BUSCA CLIENTES] Retornou {len(clientes)} clientes")
     
     context = {
         'vendedor': vendedor,
