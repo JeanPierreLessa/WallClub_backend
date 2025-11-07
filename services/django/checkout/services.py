@@ -919,7 +919,7 @@ class LinkPagamentoService:
             resultado = EmailService.enviar_email(
                 destinatarios=[cliente_email],
                 assunto=f'{loja_nome} - Link de Pagamento Seguro',
-                template_html='emails/checkout/link_pagamento.html',
+                template_html='checkout/emails/link_pagamento.html',  # Caminho correto
                 template_context=context,
                 fail_silently=False
             )

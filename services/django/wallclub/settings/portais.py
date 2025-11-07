@@ -19,6 +19,9 @@ else:
         'vendas.wallclub.com.br',
         'lojista.wallclub.com.br',
         'wcadmin.wallclub.com.br',
+        'institucional.wallclub.com.br',
+        'wcinstitucional.wallclub.com.br',
+        'wcadmin.wallclub.com.br',
         'wclojista.wallclub.com.br',
         'wcvendas.wallclub.com.br',
     ]

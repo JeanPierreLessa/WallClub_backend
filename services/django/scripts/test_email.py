@@ -77,7 +77,7 @@ def test_email_template():
         resultado = EmailService.enviar_email(
             destinatarios=['jeanpierre.lessa@gmail.com'],
             assunto='Teste WallClub - Link de Pagamento',
-            template_html='emails/checkout/link_pagamento.html',
+            template_html='checkout/emails/link_pagamento.html',  # Caminho correto
             template_context=context,
             fail_silently=False
         )

@@ -18,6 +18,7 @@ else:
         'api.wallclub.com.br',
         'checkout.wallclub.com.br',
         'wcapi.wallclub.com.br',
+        'wccheckout.wallclub.com.br',
     ]
 
 # Apps específicos do container APIs
