@@ -62,6 +62,7 @@ class APIInternaService:
             # Headers
             headers = {
                 'Content-Type': 'application/json',
+                'Host': 'wcapi.wallclub.com.br',  # Usar domínio público no header Host
             }
             
             # APIs internas não usam OAuth (isolamento de rede Docker)
