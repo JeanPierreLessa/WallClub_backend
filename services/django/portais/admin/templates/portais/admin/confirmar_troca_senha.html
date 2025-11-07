@@ -1,14 +1,14 @@
-{% extends 'portais/lojista/base.html' %}
+{% extends 'portais/admin/base.html' %}
 {% load static %}
 
-{% block title %}Confirmar Troca de Senha - Portal Lojista{% endblock %}
+{% block title %}Confirmar Troca de Senha - Portal Admin{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header bg-warning text-dark">
+                <div class="card-header">
                     <h4 class="mb-0">
                         <i class="fas fa-shield-alt me-2"></i>
                         Confirmar Troca de Senha
@@ -52,7 +52,7 @@
                                 Confirmar Alteração
                             </button>
                             
-                            <a href="{% url 'lojista:trocar_senha' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'portais_admin:trocar_senha' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>
                                 Voltar para Trocar Senha
                             </a>
@@ -65,7 +65,7 @@
                         <small class="text-muted">
                             <i class="fas fa-question-circle me-1"></i>
                             Não recebeu o email? Verifique sua pasta de spam ou 
-                            <a href="{% url 'lojista:trocar_senha' %}" class="text-decoration-none">
+                            <a href="{% url 'portais_admin:trocar_senha' %}" class="text-decoration-none">
                                 solicite um novo token
                             </a>
                         </small>
@@ -79,10 +79,6 @@
 
 {% block extra_css %}
 <style>
-.card-header.bg-warning {
-    border-bottom: 3px solid #ffc107;
-}
-
 .otp-container {
     max-width: 400px;
     margin: 0 auto;
@@ -100,14 +96,14 @@
 }
 
 .otp-input:focus {
-    border-color: #0dcaf0;
-    box-shadow: 0 0 0 0.2rem rgba(13, 202, 240, 0.25);
+    border-color: #65C97A;
+    box-shadow: 0 0 0 0.2rem rgba(101, 201, 122, 0.25);
     outline: none;
 }
 
 .otp-input.filled {
-    background-color: #e7f3ff;
-    border-color: #0dcaf0;
+    background-color: #e8f5e9;
+    border-color: #65C97A;
 }
 
 .btn-lg {
@@ -128,41 +124,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const tokenInput = document.getElementById('token');
     const form = document.getElementById('otpForm');
     
-    // Focar no primeiro input
     inputs[0].focus();
     
     inputs.forEach((input, index) => {
-        // Input event - mover para próximo
         input.addEventListener('input', function(e) {
             const value = e.target.value;
             
-            // Permitir apenas números e letras
             if (!/^[A-Za-z0-9]$/.test(value)) {
                 e.target.value = '';
                 return;
             }
             
-            // Converter para maiúscula
             e.target.value = value.toUpperCase();
             e.target.classList.add('filled');
-            
-            // Atualizar campo hidden
             updateToken();
             
-            // Mover para próximo input
             if (index < inputs.length - 1) {
                 inputs[index + 1].focus();
-            } else {
-                // Último input preenchido, submeter form
-                if (isComplete()) {
-                    form.submit();
-                }
+            } else if (isComplete()) {
+                form.submit();
             }
         });
         
-        // Keydown event - navegação
         input.addEventListener('keydown', function(e) {
-            // Backspace - voltar para anterior
             if (e.key === 'Backspace') {
                 if (e.target.value === '' && index > 0) {
                     inputs[index - 1].focus();
@@ -175,20 +159,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateToken();
             }
             
-            // Seta esquerda
             if (e.key === 'ArrowLeft' && index > 0) {
                 e.preventDefault();
                 inputs[index - 1].focus();
             }
             
-            // Seta direita
             if (e.key === 'ArrowRight' && index < inputs.length - 1) {
                 e.preventDefault();
                 inputs[index + 1].focus();
             }
         });
         
-        // Paste event - colar código completo
         input.addEventListener('paste', function(e) {
             e.preventDefault();
             const pastedData = e.clipboardData.getData('text').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -196,29 +177,24 @@ document.addEventListener('DOMContentLoaded', function() {
             if (pastedData.length === 6) {
                 inputs.forEach((inp, idx) => {
                     inp.value = pastedData[idx] || '';
-                    if (inp.value) {
-                        inp.classList.add('filled');
-                    }
+                    if (inp.value) inp.classList.add('filled');
                 });
                 updateToken();
                 inputs[5].focus();
                 
-                // Auto-submit se completo
                 if (isComplete()) {
                     setTimeout(() => form.submit(), 300);
                 }
             }
         });
         
-        // Focus event - selecionar conteúdo
         input.addEventListener('focus', function(e) {
             e.target.select();
         });
     });
     
     function updateToken() {
-        const code = Array.from(inputs).map(inp => inp.value).join('');
-        tokenInput.value = code;
+        tokenInput.value = Array.from(inputs).map(inp => inp.value).join('');
     }
     
     function isComplete() {

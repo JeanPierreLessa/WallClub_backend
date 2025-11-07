@@ -125,7 +125,7 @@ class AdminConfirmarTrocaSenhaView(View):
                 return redirect('portais_admin:trocar_senha')
             
             # Aplicar nova senha
-            if usuario.confirmar_troca_senha():
+            if usuario.confirmar_troca_senha(portal_destino='admin'):
                 messages.success(request, 'Senha alterada com sucesso!')
                 registrar_log('portais.admin', f'Senha alterada com sucesso para usuário {usuario.email}')
                 return redirect('portais_admin:perfil')

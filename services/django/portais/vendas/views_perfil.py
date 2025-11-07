@@ -127,7 +127,7 @@ class VendasConfirmarTrocaSenhaView(View):
                 return redirect('vendas:trocar_senha')
             
             # Aplicar nova senha
-            if usuario.confirmar_troca_senha():
+            if usuario.confirmar_troca_senha(portal_destino='vendas'):
                 messages.success(request, 'Senha alterada com sucesso!')
                 registrar_log('portais.vendas', f'Senha alterada com sucesso para vendedor {usuario.email}')
                 return redirect('vendas:perfil')

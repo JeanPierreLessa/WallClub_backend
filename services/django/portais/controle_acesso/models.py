@@ -139,7 +139,7 @@ class PortalUsuario(models.Model):
         # Verificar se token confere
         return self.token_reset_senha == token_digitado
     
-    def confirmar_troca_senha(self):
+    def confirmar_troca_senha(self, portal_destino='admin'):
         """Confirma a troca de senha aplicando a nova senha armazenada temporariamente"""
         if not self.backup_codes_2fa:
             return False
@@ -157,7 +157,7 @@ class PortalUsuario(models.Model):
         # Enviar email de confirmação
         try:
             from .email_service import EmailService
-            EmailService.enviar_email_senha_alterada(self)
+            EmailService.enviar_email_senha_alterada(self, portal_destino=portal_destino)
         except Exception as e:
             # Log do erro mas não falha a operação - usando registrar_log
             from wallclub_core.utilitarios.log_control import registrar_log

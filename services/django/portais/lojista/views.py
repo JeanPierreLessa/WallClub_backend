@@ -395,7 +395,7 @@ class LojistaConfirmarTrocaSenhaView(View):
                 return redirect('lojista:trocar_senha')
             
             # Aplicar nova senha
-            if usuario.confirmar_troca_senha():
+            if usuario.confirmar_troca_senha(portal_destino='lojista'):
                 messages.success(request, 'Senha alterada com sucesso!')
                 return redirect('lojista:perfil')
             else:
