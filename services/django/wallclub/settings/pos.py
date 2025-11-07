@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     
     # Apps do container POS
     'posp2',
+    'apps.conta_digital',  # Necessário para verificar status de autorizações
     'pinbank',
     'pinbank.cargas_pinbank',
     'parametros_wallclub',
