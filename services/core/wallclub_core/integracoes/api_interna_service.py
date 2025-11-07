@@ -27,19 +27,17 @@ class APIInternaService:
         endpoint: str,
         payload: Optional[Dict[str, Any]] = None,
         contexto: str = 'apis',
-        timeout: int = 30,
-        oauth_token: Optional[str] = None
+        timeout: int = 30
     ) -> Dict[str, Any]:
         """
         Chama API interna de outro container
         
         Args:
             metodo: GET, POST, PUT, DELETE
-            endpoint: Caminho do endpoint (ex: /api/v1/cliente/consultar/)
+            endpoint: Caminho do endpoint (ex: /api/internal/cliente/consultar/)
             payload: Dados a enviar (para POST/PUT)
             contexto: Container de destino (apis, pos, portais, riskengine)
             timeout: Timeout em segundos
-            oauth_token: Token OAuth (se não fornecido, obtém automaticamente)
         
         Returns:
             Dict com resposta da API
@@ -66,13 +64,8 @@ class APIInternaService:
                 'Content-Type': 'application/json',
             }
             
-            # Obter token OAuth se não fornecido
-            if not oauth_token:
-                oauth_token = cls.obter_token_oauth_container()
-            
-            # Adicionar token OAuth
-            if oauth_token:
-                headers['Authorization'] = f'Bearer {oauth_token}'
+            # APIs internas não usam OAuth (isolamento de rede Docker)
+            # Token OAuth removido - não necessário para comunicação interna
             
             # Fazer requisição
             registrar_log(
@@ -157,70 +150,3 @@ class APIInternaService:
                 'mensagem': f'Erro ao chamar API: {str(e)}'
             }
     
-    @classmethod
-    def obter_token_oauth_container(cls) -> Optional[str]:
-        """
-        Obtém token OAuth para comunicação entre containers
-        Busca token do ambiente ou gera novo via OAuth
-        """
-        import os
-        
-        try:
-            # Tentar obter das variáveis de ambiente
-            token = os.environ.get('OAUTH_INTERNAL_TOKEN')
-            if token:
-                return token
-            
-            # Se não houver token no ambiente, gerar novo via OAuth
-            # Obter credenciais do ambiente
-            client_id = os.environ.get('OAUTH_INTERNAL_CLIENT_ID', 'internal')
-            client_secret = os.environ.get('OAUTH_INTERNAL_CLIENT_SECRET', '')
-            oauth_url = os.environ.get('OAUTH_TOKEN_URL', 'http://wallclub-apis:8007/api/oauth/token/')
-            
-            if not client_secret:
-                registrar_log(
-                    'wallclub_core.api_interna',
-                    'OAUTH_INTERNAL_CLIENT_SECRET não configurado',
-                    nivel='WARNING'
-                )
-                return None
-            
-            # Fazer requisição OAuth
-            response = requests.post(
-                oauth_url,
-                json={
-                    'client_id': client_id,
-                    'client_secret': client_secret,
-                    'grant_type': 'client_credentials'
-                },
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                token = data.get('access_token')
-                
-                # Cache do token no ambiente (válido por 1 hora)
-                if token:
-                    os.environ['OAUTH_INTERNAL_TOKEN'] = token
-                    registrar_log(
-                        'wallclub_core.api_interna',
-                        'Token OAuth obtido com sucesso'
-                    )
-                
-                return token
-            else:
-                registrar_log(
-                    'wallclub_core.api_interna',
-                    f'Erro ao obter token OAuth: {response.status_code}',
-                    nivel='ERROR'
-                )
-                return None
-                
-        except Exception as e:
-            registrar_log(
-                'wallclub_core.api_interna',
-                f'Erro ao obter token OAuth: {str(e)}',
-                nivel='ERROR'
-            )
-            return None

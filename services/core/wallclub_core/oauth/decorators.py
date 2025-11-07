@@ -179,43 +179,6 @@ def require_oauth_checkout(view_func):
     return require_oauth_for_context('checkout')(view_func)
 
 
-def require_oauth_internal(view_func):
-    """
-    Decorator para APIs internas - comunicação entre containers
-    Aceita tokens OAuth de qualquer contexto de servidor (posp2, riskengine, etc)
-    """
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        from .services import OAuthService
-        
-        # Extrair token do header
-        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        if not auth_header.startswith('Bearer '):
-            return JsonResponse({
-                'error': 'invalid_request',
-                'error_description': 'Token OAuth obrigatório'
-            }, status=401)
-        
-        access_token = auth_header.replace('Bearer ', '').strip()
-        
-        # Validar token OAuth
-        validacao = OAuthService.validate_access_token(access_token)
-        
-        if not validacao['valid']:
-            return JsonResponse({
-                'error': 'invalid_token',
-                'error_description': validacao.get('error', 'Token inválido')
-            }, status=401)
-        
-        # Anexar informações do token na request
-        request.oauth_client = validacao.get('client')
-        request.oauth_token = validacao.get('token')
-        
-        return view_func(request, *args, **kwargs)
-    
-    return wrapper
-
-
 def require_oauth_riskengine(view_func):
     """Decorator específico para riskengine - comunicação entre containers"""
     @wraps(view_func)
