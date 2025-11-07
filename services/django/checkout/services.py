@@ -904,7 +904,7 @@ class LinkPagamentoService:
         
         try:
             # URL do checkout com token - usar domínio específico do checkout
-            checkout_url = f"https://checkout.wallclub.com.br/?token={token.token}"
+            checkout_url = f"https://checkout.wallclub.com.br/api/v1/checkout/?token={token.token}"
             
             context = {
                 'cliente_nome': cliente_nome,
