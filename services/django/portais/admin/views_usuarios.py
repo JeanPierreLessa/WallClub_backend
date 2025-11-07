@@ -16,7 +16,44 @@ def usuarios_list(request):
     usuario_logado = request.portal_usuario
     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
 
-    # Buscar usuários filtrados por nível de acesso
+    # Tratar ações POST (resetar senha, remover usuário, etc)
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        usuario_id = request.POST.get('usuario_id')
+        
+        if acao == 'resetar_senha' and usuario_id:
+            try:
+                resultado = UsuarioService.resetar_senha_usuario(
+                    usuario_id=usuario_id,
+                    portal_destino='admin'
+                )
+                
+                if resultado['sucesso']:
+                    messages.success(request, resultado['mensagem'])
+                    registrar_log('portais.admin', f'Senha resetada para usuário ID {usuario_id} por {usuario_logado.email}')
+                else:
+                    messages.error(request, resultado['mensagem'])
+                    registrar_log('portais.admin', f'Erro ao resetar senha: {resultado["mensagem"]}', nivel='ERROR')
+            except Exception as e:
+                messages.error(request, f'Erro ao resetar senha: {str(e)}')
+                registrar_log('portais.admin', f'Erro ao resetar senha: {str(e)}', nivel='ERROR')
+            
+            return redirect('portais_admin:usuarios_list')
+        
+        elif acao == 'remover_usuario' and usuario_id:
+            resultado = UsuarioService.remover_usuario(
+                usuario_id=usuario_id,
+                usuario_logado_id=usuario_logado.id
+            )
+            
+            if resultado['sucesso']:
+                messages.success(request, resultado['mensagem'])
+            else:
+                messages.error(request, resultado['mensagem'])
+            
+            return redirect('portais_admin:usuarios_list')
+
+    # GET: Buscar usuários filtrados por nível de acesso
     usuarios = UsuarioService.buscar_usuarios(
         usuario_logado=usuario_logado
     )

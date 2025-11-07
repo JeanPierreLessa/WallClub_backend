@@ -1108,3 +1108,50 @@ class UsuarioService:
         except Exception as e:
             registrar_log('portais.controle_acesso', f"Erro definir senha: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro: {str(e)}'}
+
+    @staticmethod
+    def resetar_senha_usuario(usuario_id: int, portal_destino: str = 'admin') -> Dict[str, Any]:
+        """Reseta senha do usuário e envia email com link"""
+        import secrets
+        import string
+        from datetime import datetime, timedelta
+        from wallclub_core.utilitarios.log_control import registrar_log
+        from .email_service import EmailService
+
+        try:
+            # Buscar usuário
+            usuario = PortalUsuario.objects.get(id=usuario_id)
+            
+            # Gerar token de reset
+            token_reset = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+            
+            # Atualizar usuário com token
+            usuario.token_reset_senha = token_reset
+            usuario.reset_senha_expira = datetime.now() + timedelta(hours=24)
+            usuario.save()
+            
+            # Enviar email
+            sucesso, mensagem = EmailService.enviar_email_reset_senha(
+                usuario=usuario,
+                token=token_reset,
+                portal_destino=portal_destino
+            )
+            
+            if sucesso:
+                registrar_log('portais.controle_acesso', f"Email de reset enviado para {usuario.email}")
+                return {
+                    'sucesso': True,
+                    'mensagem': f'Email de reset de senha enviado para {usuario.email}'
+                }
+            else:
+                registrar_log('portais.controle_acesso', f"Erro ao enviar email: {mensagem}", nivel='ERROR')
+                return {
+                    'sucesso': False,
+                    'mensagem': f'Erro ao enviar email: {mensagem}'
+                }
+                
+        except PortalUsuario.DoesNotExist:
+            return {'sucesso': False, 'mensagem': 'Usuário não encontrado'}
+        except Exception as e:
+            registrar_log('portais.controle_acesso', f"Erro ao resetar senha: {str(e)}", nivel='ERROR')
+            return {'sucesso': False, 'mensagem': f'Erro ao resetar senha: {str(e)}'}
