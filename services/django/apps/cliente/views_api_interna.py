@@ -1,18 +1,17 @@
 """
 Views de API Interna para comunicação entre containers
 Endpoints usados pelo container POS para acessar dados de clientes
+Sem autenticação OAuth - apenas para comunicação interna entre containers
 """
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from wallclub_core.oauth.decorators import require_oauth_internal
 from wallclub_core.utilitarios.log_control import registrar_log
 from .models import Cliente
 from .services import ClienteAuthService
 
 
 @api_view(['POST'])
-@require_oauth_internal
 def consultar_por_cpf(request):
     """
     Consulta cliente por CPF e canal_id
@@ -62,7 +61,6 @@ def consultar_por_cpf(request):
 
 
 @api_view(['POST'])
-@require_oauth_internal
 def cadastrar(request):
     """
     Cadastra novo cliente (com consulta bureau)
@@ -93,7 +91,6 @@ def cadastrar(request):
 
 
 @api_view(['POST'])
-@require_oauth_internal
 def obter_cliente_id(request):
     """
     Obtém ID do cliente por CPF e canal_id
@@ -121,7 +118,6 @@ def obter_cliente_id(request):
 
 
 @api_view(['POST'])
-@require_oauth_internal
 def atualizar_celular(request):
     """
     Atualiza celular do cliente
@@ -149,7 +145,6 @@ def atualizar_celular(request):
 
 
 @api_view(['POST'])
-@require_oauth_internal
 def obter_dados_cliente(request):
     """
     Obtém dados completos do cliente
@@ -187,7 +182,6 @@ def obter_dados_cliente(request):
 
 
 @api_view(['POST'])
-@require_oauth_internal
 def verificar_cadastro(request):
     """
     Verifica se cliente tem cadastro no canal
