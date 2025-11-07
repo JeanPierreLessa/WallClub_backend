@@ -302,7 +302,7 @@ class CheckoutVendasService:
         """Busca clientes das lojas do vendedor."""
         try:
             CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
-            CheckoutClienteTelefone = apps.get_model('checkout.link_pagamento_web', 'CheckoutClienteTelefone')
+            from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
             
             lojas_ids = list(PortalUsuarioAcesso.objects.filter(
                 usuario_id=vendedor_id, entidade_tipo='loja', ativo=True
