@@ -20,6 +20,9 @@ urlpatterns = [
     path('api/v1/conta_digital/', include('apps.conta_digital.urls')),
     path('api/v1/ofertas/', include('apps.ofertas.urls')),
     
+    # API Interna (comunicação entre containers)
+    path('api/internal/cliente/', include('apps.cliente.urls_api_interna')),
+    
     # Checkout Web
     path('api/v1/checkout/', include('checkout.link_pagamento_web.urls')),
     path('api/v1/checkout/recorrencia/', include('checkout.link_recorrencia_web.urls')),

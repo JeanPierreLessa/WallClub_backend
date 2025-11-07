@@ -33,7 +33,7 @@ docs/
 
 ### Desenvolvimento Diário
 
-- **[Integrações](architecture/3.%20INTEGRACOES.md)** - APIs internas e externas (26 endpoints)
+- **[Integrações](architecture/3.%20INTEGRACOES.md)** - APIs internas e externas (32 endpoints) ⭐ ATUALIZADO
 - **[Diretrizes Django](development/django-diretrizes.md)** - Padrões específicos do Django
 - **[Diretrizes Risk Engine](development/riskengine-diretrizes.md)** - Padrões do motor antifraude
 
@@ -91,9 +91,9 @@ docs/
 
 | Documento | Conteúdo | Linhas | Tempo |
 |-----------|----------|--------|-------|
-| [ARQUITETURA_GERAL.md](architecture/1.%20ARQUITETURA_GERAL.md) | Containers, status migração, funcionalidades, estrutura | ~900 | 25 min |
-| [DIRETRIZES_UNIFICADAS.md](architecture/2.%20DIRETRIZES_UNIFICADAS.md) | Regras fundamentais, padrões, boas práticas | ~850 | 30 min |
-| [INTEGRACOES.md](architecture/3.%20INTEGRACOES.md) | 26 APIs internas, serviços externos, troubleshooting | ~950 | 35 min |
+| [ARQUITETURA_GERAL.md](architecture/1.%20ARQUITETURA_GERAL.md) | Containers, DNS unificado, API interna, estrutura | ~980 | 25 min |
+| [DIRETRIZES_UNIFICADAS.md](architecture/2.%20DIRETRIZES_UNIFICADAS.md) | Regras fundamentais, 32 APIs, padrões | ~950 | 30 min |
+| [INTEGRACOES.md](architecture/3.%20INTEGRACOES.md) | 32 APIs internas (6 Cliente), serviços externos | ~1100 | 40 min |
 
 ### Desenvolvimento
 
@@ -129,7 +129,8 @@ docs/
 - AWS Secrets: [Integrações](architecture/3.%20INTEGRACOES.md#aws-secrets-manager)
 
 ### APIs
-- 26 APIs Internas: [Integrações](architecture/3.%20INTEGRACOES.md#apis-internas)
+- 32 APIs Internas: [Integrações](architecture/3.%20INTEGRACOES.md#apis-internas) ⭐ ATUALIZADO
+- API Cliente (6 endpoints): [Integrações](architecture/3.%20INTEGRACOES.md#cliente-apis) ⭐ NOVO
 - Padrões REST: [Diretrizes Unificadas](architecture/2.%20DIRETRIZES_UNIFICADAS.md#apis-rest)
 - Endpoints: [README Django](services/django-readme.md)
 
@@ -186,8 +187,16 @@ grep "JWT" docs/architecture/*.md
 
 ## 🔄 Atualizações
 
-**Última consolidação:** 02/11/2025  
-**Versão:** 3.0
+**Última atualização:** 07/11/2025  
+**Versão:** 4.2
+
+**Mudanças recentes:**
+- ✅ API Interna Cliente (6 endpoints)
+- ✅ DNS unificado `wcapi.wallclub.com.br`
+- ✅ Service helper `APIInternaService`
+- ✅ Total de APIs internas: 32 (antes: 26)
+
+**Changelog:** [CHANGELOG_07_11_2025.md](CHANGELOG_07_11_2025.md)
 
 Para atualizar a documentação:
 1. Editar arquivo `.md` correspondente

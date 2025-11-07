@@ -43,9 +43,17 @@ class TRDataService:
         - Não tem CPF → 'N' (Cliente anônimo)
         """
         try:
-            from apps.cliente.models import Cliente
+            from wallclub_core.integracoes.api_interna_service import APIInternaService
             
-            tem_cadastro = Cliente.objects.filter(cpf=cpf, canal_id=canal_id).exists()
+            # Verificar cadastro via API interna
+            response = APIInternaService.chamar_api_interna(
+                metodo='POST',
+                endpoint='/api/internal/cliente/verificar_cadastro/',
+                payload={'cpf': cpf, 'canal_id': canal_id},
+                contexto='apis'
+            )
+            
+            tem_cadastro = response.get('tem_cadastro', False) if response.get('sucesso') else False
             
             if tem_cadastro:
                 registrar_log('posp2', f'Cliente {cpf[:3]}*** tem cadastro → wall=S')
@@ -456,11 +464,19 @@ class TRDataService:
                         if canal_id and id_loja:
                             registrar_log('posp2', f'Canal da loja {id_loja}: {canal_id}')
                             
-                            # Validar que o cliente existe neste canal específico
-                            from apps.cliente.models import Cliente
-                            cliente_canal = Cliente.objects.filter(cpf=cpf, canal_id=canal_id, is_active=True).first()
+                            # Validar que o cliente existe neste canal específico via API interna
+                            from wallclub_core.integracoes.api_interna_service import APIInternaService
                             
-                            if not cliente_canal:
+                            response = APIInternaService.chamar_api_interna(
+                                metodo='POST',
+                                endpoint='/api/internal/cliente/consultar_por_cpf/',
+                                payload={'cpf': cpf, 'canal_id': canal_id},
+                                contexto='apis'
+                            )
+                            
+                            cliente_canal = response.get('cliente') if response.get('sucesso') else None
+                            
+                            if not cliente_canal or not cliente_canal.get('is_active'):
                                 registrar_log('posp2', f'AVISO: Cliente {cpf} não encontrado no canal {canal_id} da loja {id_loja}')
                                 canal_id = None
                             else:
@@ -548,7 +564,6 @@ class TRDataService:
             
             if cashback_concedido_decimal > 0 and cpf:
                 try:
-                    from apps.cliente.models import Cliente
                     from .services_conta_digital import CashbackService
                     
                     registrar_log('posp2', 
@@ -669,8 +684,19 @@ class TRDataService:
             if cpf:
                 try:
                     # Usar canal_id dos valores calculados
+                    from wallclub_core.integracoes.api_interna_service import APIInternaService
+                    
                     canal_id = valores_calculados['canal_id']
-                    dados_cliente = ClienteAuthService.obter_dados_cliente(cpf, canal_id)
+                    
+                    # Obter dados via API interna
+                    response = APIInternaService.chamar_api_interna(
+                        metodo='POST',
+                        endpoint='/api/internal/cliente/obter_dados_cliente/',
+                        payload={'cpf': cpf, 'canal_id': canal_id},
+                        contexto='apis'
+                    )
+                    
+                    dados_cliente = response.get('dados') if response.get('sucesso') else None
                     if dados_cliente and dados_cliente.get('nome'):
                         nome = dados_cliente['nome']
                         registrar_log('posp2', f'Nome do cliente encontrado: {nome} (canal_id: {canal_id})')

@@ -358,13 +358,21 @@ class SaldoService:
             if not resultado.get('sucesso'):
                 return resultado
             
-            # Obter cliente_id para enviar push (ainda precisa do model temporariamente)
-            # TODO: API interna pode retornar cliente_id ou enviar push internamente
-            from apps.cliente.models import Cliente
+            # Obter cliente_id para enviar push via API interna
+            from wallclub_core.integracoes.api_interna_service import APIInternaService
             try:
-                cliente = Cliente.objects.get(cpf=cpf, canal_id=canal_id)
-                cliente_id = cliente.id
-            except Cliente.DoesNotExist:
+                response = APIInternaService.chamar_api_interna(
+                    metodo='POST',
+                    endpoint='/api/internal/cliente/consultar_por_cpf/',
+                    payload={'cpf': cpf, 'canal_id': canal_id},
+                    contexto='apis'
+                )
+                
+                if response.get('sucesso') and response.get('cliente'):
+                    cliente_id = response['cliente']['id']
+                else:
+                    cliente_id = None
+            except Exception as e:
                 registrar_log('posp2', f'⚠️ [AUTORIZAÇÃO API] Cliente não encontrado para push: cpf={cpf[:3]}***', nivel='WARNING')
                 return resultado  # Retorna sucesso mesmo sem push
             

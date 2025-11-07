@@ -592,10 +592,6 @@ class POSP2Service:
         Replica comportamento completo: consulta cliente, bureau, inserção
         """
         try:
-            # Lazy imports
-            Cliente = apps.get_model('cliente', 'Cliente')
-            from apps.cliente.services import ClienteAuthService
-            
             registrar_log('posp2', '========================================')
             registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} posp2.validar_cpf')
             registrar_log('posp2', '========================================')
@@ -660,102 +656,96 @@ class POSP2Service:
                 'mensagem_cliente': ''
             }
 
-            # 1. Buscar cliente no cadastro usando modelo ORM
+            # 1. Buscar cliente no cadastro usando API interna
             try:
-                cliente = Cliente.objects.filter(cpf=cpf_limpo, canal_id=canal_id).first()
-                if cliente:
-                    resultado['id'] = str(cliente.id)
-                    resultado['celular'] = cliente.celular
-                    registrar_log('posp2', f'posp2.validar_cpf - CONSULTA valida_cpf - CPF encontrado no cadastro, ID: {cliente.id}, Celular: {cliente.celular}')
+                from wallclub_core.integracoes.api_interna_service import APIInternaService
+                
+                # Chamar API interna para buscar cliente
+                response = APIInternaService.chamar_api_interna(
+                    metodo='POST',
+                    endpoint='/api/v1/cliente/consultar_por_cpf/',
+                    payload={
+                        'cpf': cpf_limpo,
+                        'canal_id': canal_id
+                    },
+                    contexto='apis'
+                )
+                
+                if response.get('sucesso') and response.get('cliente'):
+                    cliente_data = response['cliente']
+                    resultado['id'] = str(cliente_data.get('id', ''))
+                    resultado['celular'] = cliente_data.get('celular', '')
+                    tem_firebase_token = bool(cliente_data.get('firebase_token'))
+                    
+                    registrar_log('posp2', f'posp2.validar_cpf - CONSULTA valida_cpf - CPF encontrado no cadastro, ID: {resultado["id"]}, Celular: {resultado["celular"]}')
+                    
+                    # 2. Verificar se possui token Firebase
+                    if tem_firebase_token:
+                        resultado['mensagem'] = 'cpf_cadastrado'
+                        resultado['mensagem_cliente'] = 'CPF autorizado'
+                        registrar_log('posp2', f'posp2.validar_cpf - SAÍDA valida_cpf - CPF já cadastrado: {cpf_limpo}')
+
+                        return {
+                            'sucesso': True,
+                            'mensagem': resultado['mensagem'],
+                            'dados': {
+                                'id': resultado['id'],
+                                'celular': resultado['celular'],
+                            'mensagem_cliente': resultado['mensagem_cliente']
+                        }
+                    }
+                    
+                    # 3. Cliente cadastrado, tem celular, mas sem token firebase (sem app)
+                    if resultado['celular'] and not tem_firebase_token:
+                        resultado['mensagem'] = 'cpf_cadastrado_sem_app'
+                        resultado['mensagem_cliente'] = 'CPF autorizado'
+                        registrar_log('posp2', f'posp2.validar_cpf - SAÍDA valida_cpf - Cliente sem app: {cpf_limpo}')
+
+                        return {
+                            'sucesso': True,
+                            'mensagem': resultado['mensagem'],
+                            'dados': {
+                                'id': resultado['id'],
+                                'celular': resultado['celular'],
+                                'mensagem_cliente': resultado['mensagem_cliente']
+                            }
+                        }
+                    
+                    # 4. Cliente cadastrado mas sem celular
+                    if not resultado['celular']:
+                        resultado['mensagem'] = 'cpf_cadastrado_sem_celular'
+                        resultado['mensagem_cliente'] = 'CPF autorizado'
+                        registrar_log('posp2', f'posp2.validar_cpf - SAÍDA valida_cpf - Cliente sem celular: {cpf_limpo}')
+
+                        return {
+                            'sucesso': True,
+                            'mensagem': resultado['mensagem'],
+                            'dados': {
+                                'id': resultado['id'],
+                                'celular': '',
+                                'mensagem_cliente': resultado['mensagem_cliente']
+                            }
+                        }
                 else:
                     registrar_log('posp2', 'posp2.validar_cpf - CONSULTA valida_cpf - CPF não encontrado no cadastro')
             except Exception as e:
-                registrar_log('posp2', f'posp2.validar_cpf - ERRO ao consultar cliente: {str(e)}', nivel='ERROR')
+                registrar_log('posp2', f'posp2.validar_cpf - ERRO ao consultar cliente via API: {str(e)}', nivel='ERROR')
 
-            # 2. Verificar se cpf esta cadastrado e possui token
+            # 5. CPF não existe no cadastro - consultar bureau via API interna
             try:
-                cliente_com_token = Cliente.objects.filter(
-                    cpf=cpf_limpo,
-                    canal_id=canal_id,
-                    firebase_token__isnull=False
-                ).exclude(firebase_token='').first()
-
-                if cliente_com_token:
-                    resultado['mensagem'] = 'cpf_cadastrado'
-                    resultado['mensagem_cliente'] = 'CPF autorizado'
-                    registrar_log('posp2', f'posp2.validar_cpf - SAÍDA valida_cpf - CPF já cadastrado: {cpf_limpo}')
-
-                    return {
-                        'sucesso': True,
-                        'mensagem': resultado['mensagem'],
-                        'dados': {
-                            'id': resultado['id'],
-                            'celular': resultado['celular'],
-                            'mensagem_cliente': resultado['mensagem_cliente']
-                        }
-                    }
-            except Exception as e:
-                registrar_log('posp2', f'posp2.validar_cpf - ERRO ao verificar token: {str(e)}', nivel='ERROR')
-
-            # 3. Verificar se cpf cadastrado, tem celular, mas sem token firebase (sem app)
-            try:
-                cliente_sem_token = Cliente.objects.filter(
-                    cpf=cpf_limpo,
-                    canal_id=canal_id
-                ).filter(
-                    Q(firebase_token__isnull=True) | Q(firebase_token='')
-                ).exclude(
-                    Q(celular__isnull=True) | Q(celular='')
-                ).first()
-
-                if cliente_sem_token:
-                    resultado['mensagem'] = 'cpf_cadastrado_sem_app'
-                    resultado['mensagem_cliente'] = 'CPF autorizado'
-                    registrar_log('posp2', f'posp2.validar_cpf - SAÍDA valida_cpf - Cliente sem app: {cpf_limpo}')
-
-                    return {
-                        'sucesso': True,
-                        'mensagem': resultado['mensagem'],
-                        'dados': {
-                            'id': cliente_sem_token.id,
-                            'celular': cliente_sem_token.celular or '',
-                            'mensagem_cliente': resultado['mensagem_cliente']
-                        }
-                    }
-            except Exception as e:
-                registrar_log('posp2', f'posp2.validar_cpf - ERRO ao verificar cliente sem token: {str(e)}', nivel='ERROR')
-
-            # 4. Verificar se cpf cadastrado mas sem celular
-            try:
-                cliente_sem_celular = Cliente.objects.filter(
-                    cpf=cpf_limpo,
-                    canal_id=canal_id
-                ).filter(
-                    Q(celular__isnull=True) | Q(celular='')
-                ).first()
-
-                if cliente_sem_celular:
-                    resultado['mensagem'] = 'cpf_cadastrado_sem_celular'
-                    resultado['mensagem_cliente'] = 'CPF autorizado'
-                    registrar_log('posp2', f'posp2.validar_cpf - SAÍDA valida_cpf - Cliente sem celular: {cpf_limpo}')
-
-                    return {
-                        'sucesso': True,
-                        'mensagem': resultado['mensagem'],
-                        'dados': {
-                            'id': cliente_sem_celular.id,
-                            'celular': '',
-                            'mensagem_cliente': resultado['mensagem_cliente']
-                        }
-                    }
-            except Exception as e:
-                registrar_log('posp2', f'posp2.validar_cpf - ERRO ao verificar cliente sem celular: {str(e)}', nivel='ERROR')
-
-            # 5. CPF nao existe, cadastrar e consultar bureau
-            try:
-
-                # Usar método de cadastro que já faz tudo: bureau + inserção + senha + WhatsApp
-                resultado_cadastro = ClienteAuthService.cadastrar(cpf_limpo, '', canal_id)
+                # Chamar API interna para cadastrar cliente (já faz bureau + inserção)
+                response = APIInternaService.chamar_api_interna(
+                    metodo='POST',
+                    endpoint='/api/v1/cliente/cadastrar/',
+                    payload={
+                        'cpf': cpf_limpo,
+                        'celular': '',
+                        'canal_id': canal_id
+                    },
+                    contexto='apis'
+                )
+                
+                resultado_cadastro = response if response else {'sucesso': False, 'mensagem': 'Erro ao chamar API'}
 
                 if not resultado_cadastro['sucesso']:
                     if resultado_cadastro.get('codigo') == 0:
@@ -985,7 +975,7 @@ class POSP2Service:
         """
         try:
             from apps.conta_digital.services import ContaDigitalService
-            from apps.cliente.services import ClienteAuthService
+            from wallclub_core.integracoes.api_interna_service import APIInternaService
 
             if not resultado_calculo.get('sucesso'):
                 return {
@@ -1001,8 +991,13 @@ class POSP2Service:
                     'mensagem': 'Sem cashback a creditar'
                 }
 
-            # Buscar cliente_id
-            resultado_cliente = ClienteAuthService.obter_cliente_id(cpf, canal_id)
+            # Buscar cliente_id via API interna
+            resultado_cliente = APIInternaService.chamar_api_interna(
+                metodo='POST',
+                endpoint='/api/internal/cliente/obter_cliente_id/',
+                payload={'cpf': cpf, 'canal_id': canal_id},
+                contexto='apis'
+            )
             if not resultado_cliente.get('sucesso'):
                 registrar_log('posp2.cashback', f'Cliente não encontrado: {cpf[:3]}***')
                 return {
@@ -1053,8 +1048,7 @@ class POSP2Service:
             Dict[str, Any]: Resultado da operação com sucesso/mensagem
         """
         try:
-            # Lazy import
-            from apps.cliente.services import ClienteAuthService
+            from wallclub_core.integracoes.api_interna_service import APIInternaService
             
             registrar_log('posp2', '========================================')
             registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} posp2.atualiza_celular_envia_msg_app')
@@ -1073,8 +1067,13 @@ class POSP2Service:
             canal_id = dados_terminal['canal_id']
             registrar_log('posp2', f'posp2.atualiza_celular_envia_msg_app - Canal_id obtido do terminal: {canal_id}')
 
-            # a. Obter cliente_id
-            resultado_cliente = ClienteAuthService.obter_cliente_id(cpf, canal_id)
+            # a. Obter cliente_id via API interna
+            resultado_cliente = APIInternaService.chamar_api_interna(
+                metodo='POST',
+                endpoint='/api/internal/cliente/obter_cliente_id/',
+                payload={'cpf': cpf, 'canal_id': canal_id},
+                contexto='apis'
+            )
             if not resultado_cliente.get("sucesso", False):
                 registrar_log('posp2', f'posp2.atualiza_celular_envia_msg_app - Falha ao obter cliente_id: {resultado_cliente.get("mensagem", "")}')
                 return resultado_cliente
@@ -1082,8 +1081,13 @@ class POSP2Service:
             cliente_id = resultado_cliente.get("cliente_id")
             registrar_log('posp2', f'posp2.atualiza_celular_envia_msg_app - Cliente_id obtido: {cliente_id}')
 
-            # b. Atualizar celular do cliente
-            resultado_atualizacao = ClienteAuthService.atualizar_celular_cliente(cliente_id, celular)
+            # b. Atualizar celular do cliente via API interna
+            resultado_atualizacao = APIInternaService.chamar_api_interna(
+                metodo='POST',
+                endpoint='/api/internal/cliente/atualizar_celular/',
+                payload={'cliente_id': cliente_id, 'celular': celular},
+                contexto='apis'
+            )
             if not resultado_atualizacao.get("sucesso", False):
                 registrar_log('posp2', f'posp2.atualiza_celular_envia_msg_app - Falha ao atualizar celular: {resultado_atualizacao.get("mensagem", "")}')
                 return resultado_atualizacao
