@@ -517,3 +517,72 @@ def ajax_pesquisar_cpf(request):
     except Exception as e:
         registrar_log('portais.vendas', f"Erro pesquisar CPF: {str(e)}", nivel='ERROR')
         return JsonResponse({'sucesso': False, 'mensagem': str(e)})
+
+
+# ============================================================================
+# PRIMEIRO ACESSO
+# ============================================================================
+
+def primeiro_acesso_view(request, token):
+    """View para primeiro acesso do vendedor com token"""
+    from portais.controle_acesso.models import PortalUsuario
+    
+    if request.method == 'POST':
+        try:
+            usuario = PortalUsuario.objects.get(
+                token_primeiro_acesso=token,
+                primeiro_acesso_expira__gt=datetime.now()
+            )
+        except PortalUsuario.DoesNotExist:
+            messages.error(request, 'Token inválido ou expirado.')
+            return redirect('vendas:login')
+        
+        senha_atual = request.POST.get('senha_temporaria')
+        nova_senha = request.POST.get('nova_senha')
+        confirmar_senha = request.POST.get('confirmar_senha')
+        
+        # Validar senha atual
+        if not usuario.verificar_senha(senha_atual):
+            messages.error(request, 'Senha temporária incorreta.')
+        elif nova_senha != confirmar_senha:
+            messages.error(request, 'Nova senha e confirmação não coincidem.')
+        else:
+            # Validar complexidade da nova senha
+            from wallclub_core.utilitarios.senha_validator import validar_complexidade_senha
+            senha_valida, mensagem_erro = validar_complexidade_senha(nova_senha)
+            if not senha_valida:
+                messages.error(request, mensagem_erro)
+            else:
+                # Atualizar senha e validar usuário
+                usuario.set_password(nova_senha)
+                usuario.senha_temporaria = False
+                usuario.email_verificado = True
+                usuario.token_primeiro_acesso = None
+                usuario.primeiro_acesso_expira = None
+                usuario.save()
+                
+                registrar_log('portais.vendas', f'PRIMEIRO_ACESSO - Concluído - Usuário: {usuario.email}')
+                messages.success(request, 'Senha alterada com sucesso! Você já pode fazer login normalmente.')
+                return redirect('vendas:login')
+        
+        context = {
+            'usuario': usuario,
+            'token': token
+        }
+        return render(request, 'vendas/primeiro_acesso.html', context)
+    
+    # GET
+    try:
+        usuario = PortalUsuario.objects.get(
+            token_primeiro_acesso=token,
+            primeiro_acesso_expira__gt=datetime.now()
+        )
+    except PortalUsuario.DoesNotExist:
+        messages.error(request, 'Token inválido ou expirado.')
+        return redirect('vendas:login')
+    
+    context = {
+        'usuario': usuario,
+        'token': token
+    }
+    return render(request, 'vendas/primeiro_acesso.html', context)

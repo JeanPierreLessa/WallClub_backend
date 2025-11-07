@@ -12,6 +12,7 @@ urlpatterns = [
     # Autenticação
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('primeiro_acesso/<str:token>/', views.primeiro_acesso_view, name='primeiro_acesso'),
     
     # Dashboard
     path('', views.dashboard, name='dashboard'),
