@@ -92,7 +92,7 @@ def recorrencia_agendar(request):
                 messages.error(request, resultado['mensagem'])
                 
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao agendar recorrência: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao agendar recorrência: {str(e)}", nivel='ERROR')
             messages.error(request, 'Erro ao agendar recorrência. Tente novamente.')
     
     # GET: Renderizar formulário
@@ -132,7 +132,7 @@ def recorrencia_listar(request):
         
         # DEBUG: Verificar filtros aplicados
         registrar_log(
-            'portais.vendas.recorrencia.debug',
+            'portais.vendas',
             f"FILTROS LISTAGEM: loja_id={loja_id}, status={status}",
             nivel='INFO'
         )
@@ -147,7 +147,7 @@ def recorrencia_listar(request):
         
         # DEBUG: Quantidade retornada
         registrar_log(
-            'portais.vendas.recorrencia.debug',
+            'portais.vendas',
             f"RECORRÊNCIAS ENCONTRADAS: {len(recorrencias)}",
             nivel='INFO'
         )
@@ -174,7 +174,7 @@ def recorrencia_listar(request):
         return render(request, 'vendas/recorrencia/lista.html', context)
         
     except Exception as e:
-        registrar_log('portais.vendas.recorrencia', f"Erro ao listar recorrências: {str(e)}", nivel='ERROR')
+        registrar_log('portais.vendas', f"Erro ao listar recorrências: {str(e)}", nivel='ERROR')
         messages.error(request, 'Erro ao carregar recorrências.')
         return render(request, 'vendas/recorrencia/lista.html', {'recorrencias': []})
 
@@ -197,7 +197,7 @@ def recorrencia_pausar(request, recorrencia_id):
             messages.error(request, resultado['mensagem'])
             
     except Exception as e:
-        registrar_log('portais.vendas.recorrencia', f"Erro ao pausar recorrência: {str(e)}", nivel='ERROR')
+        registrar_log('portais.vendas', f"Erro ao pausar recorrência: {str(e)}", nivel='ERROR')
         messages.error(request, 'Erro ao pausar recorrência.')
     
     return redirect('vendas:recorrencia_listar')
@@ -221,7 +221,7 @@ def recorrencia_cancelar(request, recorrencia_id):
             messages.error(request, resultado['mensagem'])
             
     except Exception as e:
-        registrar_log('portais.vendas.recorrencia', f"Erro ao cancelar recorrência: {str(e)}", nivel='ERROR')
+        registrar_log('portais.vendas', f"Erro ao cancelar recorrência: {str(e)}", nivel='ERROR')
         messages.error(request, 'Erro ao cancelar recorrência.')
     
     return redirect('vendas:recorrencia_listar')
@@ -256,7 +256,7 @@ def recorrencia_relatorio_nao_cobrados(request):
         return render(request, 'vendas/recorrencia/relatorio_nao_cobrados.html', context)
         
     except Exception as e:
-        registrar_log('portais.vendas.recorrencia', f"Erro ao gerar relatório: {str(e)}", nivel='ERROR')
+        registrar_log('portais.vendas', f"Erro ao gerar relatório: {str(e)}", nivel='ERROR')
         messages.error(request, 'Erro ao carregar relatório.')
         return render(request, 'vendas/recorrencia/relatorio_nao_cobrados.html', {'nao_cobrados': []})
 
@@ -299,7 +299,7 @@ def recorrencia_detalhe(request, recorrencia_id):
         messages.error(request, 'Recorrência não encontrada.')
         return redirect('vendas:recorrencia_listar')
     except Exception as e:
-        registrar_log('portais.vendas.recorrencia', f"Erro ao exibir detalhe: {str(e)}", nivel='ERROR')
+        registrar_log('portais.vendas', f"Erro ao exibir detalhe: {str(e)}", nivel='ERROR')
         messages.error(request, 'Erro ao carregar detalhes.')
         return redirect('vendas:recorrencia_listar')
 
@@ -345,6 +345,6 @@ def recorrencia_reativar(request, recorrencia_id):
         messages.error(request, 'Recorrência não encontrada.')
         return redirect('vendas:recorrencia_listar')
     except Exception as e:
-        registrar_log('portais.vendas.recorrencia', f"Erro ao reativar: {str(e)}", nivel='ERROR')
+        registrar_log('portais.vendas', f"Erro ao reativar: {str(e)}", nivel='ERROR')
         messages.error(request, 'Erro ao reativar recorrência.')
         return redirect('vendas:recorrencia_listar')

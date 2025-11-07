@@ -1,5 +1,3 @@
-- GRAVE!! Ta removendo dispositivos errados
-- Oferta parou de funcionar nos portais e no app
 - Validar Gestao (tem buraco?)
 - Gestao: contabilizacao de cashback
 - Voucher
@@ -11,12 +9,12 @@
 
 
 Ajuste de nome de log e nivel de log (feito)
-- apps
-    - cliente
-    - conta digital
-    - oauth
-    - ofertas
-    - transacoes
+- apps - ok
+    - cliente - ok
+    - conta digital - ok
+    - oauth - ok
+    - ofertas - ok
+    - transacoes - ok
 - checkout
     - link_pagamento_web
     - link_recorrencia_web

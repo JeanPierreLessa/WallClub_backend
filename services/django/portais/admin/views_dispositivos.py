@@ -74,7 +74,7 @@ def listar_dispositivos(request):
                 'revogado_por': disp.revogado_por
             })
         
-        registrar_log('portais.admin.dispositivos', f"Listados {len(resultado)} dispositivos")
+        registrar_log('portais.admin', f"Listados {len(resultado)} dispositivos")
         
         return JsonResponse({
             'sucesso': True,
@@ -83,7 +83,7 @@ def listar_dispositivos(request):
         })
         
     except Exception as e:
-        registrar_log('portais.admin.dispositivos', f"Erro ao listar dispositivos: {str(e)}", nivel='ERROR')
+        registrar_log('portais.admin', f"Erro ao listar dispositivos: {str(e)}", nivel='ERROR')
         return JsonResponse({'erro': str(e)}, status=500)
 
 
@@ -111,7 +111,7 @@ def revogar_dispositivo(request):
         )
         
         if sucesso:
-            registrar_log('portais.admin.dispositivos', f"Dispositivo revogado: ID {dispositivo_id}")
+            registrar_log('portais.admin', f"Dispositivo revogado: ID {dispositivo_id}")
             return JsonResponse({'sucesso': True, 'mensagem': mensagem})
         else:
             return JsonResponse({'erro': mensagem}, status=400)
@@ -119,7 +119,7 @@ def revogar_dispositivo(request):
     except json.JSONDecodeError:
         return JsonResponse({'erro': 'JSON inválido'}, status=400)
     except Exception as e:
-        registrar_log('portais.admin.dispositivos', f"Erro ao revogar dispositivo: {str(e)}", nivel='ERROR')
+        registrar_log('portais.admin', f"Erro ao revogar dispositivo: {str(e)}", nivel='ERROR')
         return JsonResponse({'erro': str(e)}, status=500)
 
 
@@ -162,7 +162,7 @@ def revogar_todos_dispositivos_usuario(request):
     except json.JSONDecodeError:
         return JsonResponse({'erro': 'JSON inválido'}, status=400)
     except Exception as e:
-        registrar_log('portais.admin.dispositivos', f"Erro ao revogar todos dispositivos: {str(e)}", nivel='ERROR')
+        registrar_log('portais.admin', f"Erro ao revogar todos dispositivos: {str(e)}", nivel='ERROR')
         return JsonResponse({'erro': str(e)}, status=500)
 
 
@@ -221,7 +221,7 @@ def dashboard_dispositivos(request):
             'por_tipo': dispositivos_por_tipo
         }
         
-        registrar_log('portais.admin.dispositivos', "Dashboard de dispositivos consultado")
+        registrar_log('portais.admin', "Dashboard de dispositivos consultado")
         
         return JsonResponse({
             'sucesso': True,
@@ -229,7 +229,7 @@ def dashboard_dispositivos(request):
         })
         
     except Exception as e:
-        registrar_log('portais.admin.dispositivos', f"Erro ao gerar dashboard: {str(e)}", nivel='ERROR')
+        registrar_log('portais.admin', f"Erro ao gerar dashboard: {str(e)}", nivel='ERROR')
         return JsonResponse({'erro': str(e)}, status=500)
 
 
@@ -268,5 +268,5 @@ def buscar_dispositivos_usuario(request):
         })
         
     except Exception as e:
-        registrar_log('portais.admin.dispositivos', f"Erro ao buscar dispositivos do usuário: {str(e)}", nivel='ERROR')
+        registrar_log('portais.admin', f"Erro ao buscar dispositivos do usuário: {str(e)}", nivel='ERROR')
         return JsonResponse({'erro': str(e)}, status=500)
