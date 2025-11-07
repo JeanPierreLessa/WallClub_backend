@@ -288,30 +288,17 @@ PINBANK_TIMEOUT = 30  # Timeout padrão
 EMAIL_CHARSET = 'UTF-8'
 EMAIL_SMTP_DEBUG = 0
 
-# Configuração de Email usando ConfigManager
-def get_email_config():
-    """
-    Retorna configuração de email usando ConfigManager.
-    ConfigManager gerencia automaticamente desenvolvimento (.env) vs produção (AWS Secrets).
-    """
-    from wallclub_core.utilitarios.config_manager import get_config_manager
-    config_manager = get_config_manager()
-    
-    return {
-        'host': config_manager.get('MAILSERVER_URL', 'email-smtp.us-east-1.amazonaws.com'),
-        'user': config_manager.get('MAILSERVER_USERNAME'),
-        'password': config_manager.get('MAILSERVER_PASSWD'),
-    }
+# Configuração de Email - AWS SES usando ConfigManager
+from wallclub_core.utilitarios.config_manager import get_config_manager
+_email_config = get_config_manager().get_email_config()
 
-# Configuração de Email - AWS SES
-_email_config = get_email_config()
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = _email_config['host']
+EMAIL_HOST = _email_config.get('host', 'email-smtp.us-east-1.amazonaws.com')
 EMAIL_PORT = 587
 EMAIL_USE_SSL = False
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = _email_config['user']
-EMAIL_HOST_PASSWORD = _email_config['password']
+EMAIL_HOST_USER = _email_config.get('user')
+EMAIL_HOST_PASSWORD = _email_config.get('password')
 DEFAULT_FROM_EMAIL = 'noreply@wallclub.com.br'
 BASE_URL = 'https://wcadmin.wallclub.com.br'
 
