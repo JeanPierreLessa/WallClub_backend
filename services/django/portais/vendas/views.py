@@ -526,6 +526,7 @@ def ajax_pesquisar_cpf(request):
 def primeiro_acesso_view(request, token):
     """View para primeiro acesso do vendedor com token"""
     from portais.controle_acesso.models import PortalUsuario
+    from datetime import datetime
     
     if request.method == 'POST':
         try:
