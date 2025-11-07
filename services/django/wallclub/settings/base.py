@@ -72,7 +72,7 @@ ROOT_URLCONF = 'wallclub.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # Adicionar diretório global de templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
