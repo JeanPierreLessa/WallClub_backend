@@ -643,7 +643,7 @@ function processarUploadCSV() {
     btnProcessar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processando...';
     btnProcessar.disabled = true;
     
-    fetch('/portal_admin/pagamentos/upload-csv/', {
+    fetch('/pagamentos/upload-csv/', {
         method: 'POST',
         body: formData
     })

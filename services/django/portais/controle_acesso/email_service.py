@@ -60,8 +60,8 @@ class EmailService:
                     # Fallback para portal lojista sem canal específico
                     link_primeiro_acesso = f"{settings.BASE_URL}/portal_lojista/primeiro_acesso/{token}/"
             else:
-                # Portal admin (padrão)
-                link_primeiro_acesso = f"{settings.BASE_URL}/portal_admin/primeiro_acesso/{token}/"
+                # Portal admin responde na raiz (sem /portal_admin/)
+                link_primeiro_acesso = f"{settings.BASE_URL}/primeiro_acesso/{token}/"
             
             # Contexto para o template (forçar canal_id se fornecido)
             contexto_canal = EmailService._obter_contexto_canal(usuario, canal_id)
@@ -112,7 +112,8 @@ class EmailService:
             if portal_destino == 'lojista':
                 link_reset = f"{settings.BASE_URL}/portal_lojista/reset-senha/{token}/"
             else:
-                link_reset = f"{settings.BASE_URL}/portal_admin/reset-senha/{token}/"
+                # Portal admin responde na raiz (sem /portal_admin/)
+                link_reset = f"{settings.BASE_URL}/reset-senha/{token}/"
             
             # Obter contexto do canal para o assunto
             contexto_canal = EmailService._obter_contexto_canal(usuario)

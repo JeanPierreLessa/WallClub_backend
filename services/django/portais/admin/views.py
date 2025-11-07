@@ -312,7 +312,7 @@ def reset_senha_view(request, token):
             usuario.save()
 
             messages.success(request, 'Senha alterada com sucesso! Você já pode fazer login.')
-            return redirect('/portal_lojista/')
+            return redirect('portais_admin:login')
 
         return render(request, 'portais/admin/reset_senha.html', {'token': token})
 

@@ -8,6 +8,15 @@
 - Alteracao em loja (alterar, mudar vendedor, todas as lojas)
 
 
+
+Visao geral dos testes
+- APP OK
+    - android 3.1.4 ok
+    - ios 3.1.4 wall aguardando
+    - android 3.1.4 wall nao enviei
+- POS OK
+    - enviar 2.1.4
+
 Ajuste de nome de log e nivel de log (feito)
 - apps - ok
     - cliente - ok

@@ -23,7 +23,7 @@ def require_portal_login(portal):
             
             if not usuario.pode_acessar_portal(portal):
                 messages.error(request, f'Você não tem permissão para acessar o portal {portal}.')
-                return redirect('/portal_admin/acesso-negado/')
+                return redirect('portais_admin:login')
             
             # Adiciona usuário ao request para uso nas views
             request.portal_usuario = usuario

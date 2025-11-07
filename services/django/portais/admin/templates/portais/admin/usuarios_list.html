@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('modalUserName').textContent = userName;
             
             // Carregar permissões atuais via AJAX
-            fetch(`/portal_admin/usuarios/${userId}/portais/`, {
+            fetch(`/usuarios/${userId}/portais/`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const userName = this.getAttribute('data-user-name');
             
             if (confirm(`🗑️ Tem certeza que deseja remover ${userName}?\n\nEsta ação não pode ser desfeita!`)) {
-                window.location.href = `/portal_admin/usuarios/${userId}/deletar/`;
+                window.location.href = `/usuarios/${userId}/deletar/`;
             }
         });
     });

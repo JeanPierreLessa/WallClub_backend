@@ -335,7 +335,7 @@ def ofertas_disparar(request, oferta_id):
         return JsonResponse({
             'sucesso': False,
             'mensagem': 'Sessão expirada. Por favor, faça login novamente.',
-            'redirect': '/portal_admin/'
+            'redirect': '/'
         }, status=401)
     
     # Verificar permissão admin
@@ -355,7 +355,7 @@ def ofertas_disparar(request, oferta_id):
         return JsonResponse({
             'sucesso': False,
             'mensagem': 'Sessão inválida. Faça login novamente.',
-            'redirect': '/portal_admin/'
+            'redirect': '/'
         }, status=401)
     
     if request.method == 'POST':

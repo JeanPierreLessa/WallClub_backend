@@ -278,25 +278,25 @@ def require_funcionalidade(funcionalidade: str, portal: str = 'admin', nivel_min
             
             if not usuario:
                 messages.error(request, 'Você precisa fazer login para acessar esta página.')
-                return redirect('/portal_admin/login/')
+                return redirect('portais_admin:login')
             
             # Verificar acesso ao portal
             if not usuario.pode_acessar_portal(portal):
                 messages.error(request, f'Você não tem acesso ao portal {portal}.')
-                return redirect('/portal_admin/dashboard/')
+                return redirect('portais_admin:dashboard')
             
             # Verificar se tem permissão para a funcionalidade
             # Para usuários admin, permitir acesso a todas as funcionalidades
             permissoes = usuario.permissoes.filter(portal=portal)
             if not permissoes.exists():
                 messages.error(request, 'Você não tem permissão para acessar este recurso.')
-                return redirect('/portal_admin/dashboard/')
+                return redirect('portais_admin:dashboard')
             
             # Se tem permissão admin no portal, liberar acesso
             tem_admin = permissoes.filter(nivel_acesso='admin').exists()
             if not tem_admin and nivel_minimo == 'admin':
                 messages.error(request, 'Você não tem permissão administrativa para este recurso.')
-                return redirect('/portal_admin/dashboard/')
+                return redirect('portais_admin:dashboard')
             
             # Adicionar informações de controle ao request
             request.portal_usuario = usuario
@@ -332,7 +332,7 @@ def require_secao_permitida(secao):
             
             if not usuario:
                 messages.error(request, 'Você precisa fazer login para acessar esta página.')
-                return redirect('/portal_admin/login/')
+                return redirect('portais_admin:login')
             
             # Obter nível do usuário no portal admin
             nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario, 'admin')
@@ -379,7 +379,7 @@ def require_acesso_padronizado(funcionalidade: str):
             
             if not usuario:
                 messages.error(request, 'Você precisa fazer login para acessar esta página.')
-                return redirect('/portal_admin/login/')
+                return redirect('portais_admin:login')
             
             # Obter nível do usuário no portal admin
             nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario, 'admin')

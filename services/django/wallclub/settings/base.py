@@ -178,9 +178,9 @@ SESSION_COOKIE_HTTPONLY = True  # Prevenir acesso via JavaScript
 SESSION_COOKIE_SAMESITE = 'Lax'  # Proteção CSRF
 
 # URLs de autenticação
-LOGIN_URL = '/portal_admin/'
-LOGIN_REDIRECT_URL = '/portal_admin/'
-LOGOUT_REDIRECT_URL = '/portal_admin/'
+LOGIN_URL = '/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Configuração de Cache
 try:

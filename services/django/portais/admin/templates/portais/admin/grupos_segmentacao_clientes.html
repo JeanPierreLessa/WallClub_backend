@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        fetch(`/portal_admin/grupos-segmentacao/{{ grupo.id }}/adicionar-cliente/`, {
+        fetch(`/grupos-segmentacao/{{ grupo.id }}/adicionar-cliente/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            fetch(`/portal_admin/grupos-segmentacao/{{ grupo.id }}/remover-cliente/${clienteId}/`, {
+            fetch(`/grupos-segmentacao/{{ grupo.id }}/remover-cliente/${clienteId}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken

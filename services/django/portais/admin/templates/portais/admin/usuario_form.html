@@ -445,7 +445,7 @@ function togglePortalReferenceField() {
         
         referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
         
-        fetch(`/portal_admin/${config.endpoint}/`)
+        fetch(`/${config.endpoint}/`)
             .then(response => response.json())
             .then(data => {
                 referenciaSelect.innerHTML = '<option value="">Selecione...</option>';
@@ -503,7 +503,7 @@ function toggleLojistaReferenceField() {
         
         referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
         
-        fetch(`/portal_admin/${config.endpoint}/`)
+        fetch(`/${config.endpoint}/`)
             .then(response => response.json())
             .then(data => {
                 referenciaSelect.innerHTML = '<option value="">Selecione...</option>';
@@ -547,7 +547,7 @@ function toggleRecorrenciaReferenceField() {
         referenceField.style.display = 'block';
         referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
         
-        fetch('/portal_admin/ajax_lojas/')
+        fetch('/ajax_lojas/')
             .then(response => response.json())
             .then(data => {
                 referenciaSelect.innerHTML = '<option value="">Selecione...</option>';
@@ -582,7 +582,7 @@ function toggleVendasReferenceField() {
         recursosField.style.display = 'block';  // ← Mostrar recursos
         referenciaSelect.innerHTML = '<option value="">Carregando...</option>';
         
-        fetch('/portal_admin/ajax_lojas/')
+        fetch('/ajax_lojas/')
             .then(response => response.json())
             .then(data => {
                 referenciaSelect.innerHTML = '<option value="">Selecione...</option>';

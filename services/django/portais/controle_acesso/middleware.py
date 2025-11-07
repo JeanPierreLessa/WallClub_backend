@@ -17,7 +17,7 @@ class PortalSessionMiddleware(SessionMiddleware):
     
     # Mapeamento de URLs para nomes de cookies específicos
     PORTAL_COOKIE_MAPPING = {
-        '/portal_admin/': 'wallclub_admin_session',
+        '/': 'wallclub_admin_session',  # Admin responde na raiz via wcadmin.wallclub.com.br
         '/portal_lojista/': 'wallclub_lojista_session',
         '/portal_corporativo/': 'wallclub_corporativo_session',
         '/portal_vendas/': 'wallclub_vendas_session',
