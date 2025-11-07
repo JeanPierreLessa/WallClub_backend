@@ -1,0 +1,41 @@
+{% extends "emails/vendas/base.html" %}
+
+{% block title %}{{ canal_nome }} - Senha Alterada - Portal Vendas{% endblock %}
+
+{% block header_title %}✅ Senha Alterada com Sucesso{% endblock %}
+{% block header_subtitle %}Portal de Vendas{% endblock %}
+
+{% block content %}
+<p>Olá <strong>{{ usuario.nome }}</strong>,</p>
+
+<div class="alert alert-success">
+    <p><strong>✅ Senha alterada com sucesso!</strong></p>
+    <p>A senha da sua conta no <strong>Portal de Vendas</strong> foi alterada em <strong>{{ data_alteracao }}</strong></p>
+</div>
+
+<p>Este é um email de confirmação para informar que a senha da sua conta foi alterada recentemente.</p>
+
+<div class="info-box">
+    <p><strong>📧 Conta:</strong> {{ usuario.email }}</p>
+    <p><strong>🕐 Data/Hora:</strong> {{ data_alteracao }}</p>
+    <p><strong>💼 Portal:</strong> Vendas</p>
+</div>
+
+<p>Você já pode fazer login no Portal de Vendas com sua nova senha.</p>
+
+<div class="alert">
+    <p><strong>💡 Dicas de Segurança:</strong></p>
+    <ul style="margin: 10px 0 0 0;">
+        <li>Guarde sua senha em local seguro</li>
+        <li>Não compartilhe suas credenciais com ninguém</li>
+        <li>Troque sua senha periodicamente</li>
+        <li>Use senhas diferentes para cada sistema</li>
+    </ul>
+</div>
+
+<div class="alert alert-danger">
+    <p><strong>🚨 Não reconhece esta alteração?</strong></p>
+    <p>Se você <strong>não realizou</strong> esta alteração, sua conta pode estar comprometida.</p>
+    <p>Entre em contato com o suporte <strong>imediatamente</strong>.</p>
+</div>
+{% endblock %}

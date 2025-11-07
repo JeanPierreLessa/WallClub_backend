@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_dispositivos, views_seguranca
+from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_dispositivos, views_seguranca, views_perfil
 
 app_name = 'portais_admin'
 
@@ -10,6 +10,11 @@ urlpatterns = [
     
     # Dashboard
     path('home/', views.dashboard, name='dashboard'),
+    
+    # Perfil e Troca de Senha
+    path('perfil/', views_perfil.perfil_view, name='perfil'),
+    path('perfil/trocar-senha/', views_perfil.AdminTrocarSenhaView.as_view(), name='trocar_senha'),
+    path('perfil/confirmar-troca-senha/', views_perfil.AdminConfirmarTrocaSenhaView.as_view(), name='confirmar_troca_senha'),
     
     # Usuários (REFATORADO - usando views_usuarios.py)
     path('usuarios/', views_usuarios.usuarios_list, name='usuarios_list'),

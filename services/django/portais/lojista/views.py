@@ -359,8 +359,8 @@ class LojistaTrocarSenhaView(View):
         """Envia email com token de confirmação"""
         from portais.controle_acesso.email_service import EmailService
         
-        # Usar método centralizado que já tem toda a lógica
-        EmailService.enviar_email_senha_alterada(usuario, portal_destino='lojista')
+        # Enviar email com token (não é confirmação ainda, é solicitação)
+        EmailService.enviar_email_token_troca_senha(usuario, token, validade_minutos=30, portal_destino='lojista')
 
 
 class LojistaConfirmarTrocaSenhaView(View):

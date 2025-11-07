@@ -1,0 +1,47 @@
+{% extends "emails/lojista/base.html" %}
+
+{% block title %}{{ canal_nome }} - Token de Confirmação - Portal Lojista{% endblock %}
+
+{% block header_title %}🔐 Confirmação de Troca de Senha{% endblock %}
+{% block header_subtitle %}Portal Lojista{% endblock %}
+
+{% block content %}
+<p>Olá <strong>{{ usuario.nome }}</strong>,</p>
+
+<p>Você solicitou a troca de senha da sua conta no <strong>Portal Lojista</strong>.</p>
+
+<div class="alert alert-info">
+    <p><strong>🔑 Seu Token de Confirmação:</strong></p>
+    <p style="text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 4px; font-family: monospace; background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        {{ token }}
+    </p>
+</div>
+
+<p>Digite este token na tela de confirmação para concluir a alteração da sua senha.</p>
+
+<div class="info-box">
+    <p><strong>📧 Conta:</strong> {{ usuario.email }}</p>
+    <p><strong>⏰ Validade:</strong> {{ validade_minutos }} minutos</p>
+    <p><strong>🏪 Portal:</strong> Lojista</p>
+</div>
+
+<div class="alert">
+    <p><strong>⚠️ Importante:</strong></p>
+    <ul style="margin: 10px 0 0 0;">
+        <li>Este token é válido por <strong>{{ validade_minutos }} minutos</strong></li>
+        <li>Use o token apenas uma vez</li>
+        <li>Não compartilhe este token com ninguém</li>
+        <li>Se não solicitou esta alteração, ignore este email</li>
+    </ul>
+</div>
+
+<div class="alert alert-danger">
+    <p><strong>🚨 Não reconhece esta solicitação?</strong></p>
+    <p>Se você <strong>não solicitou</strong> a troca de senha, sua conta pode estar comprometida.</p>
+    <p>Entre em contato com o suporte <strong>imediatamente</strong>.</p>
+</div>
+
+<p style="margin-top: 20px; color: #6c757d; font-size: 14px;">
+    Se você não solicitou esta alteração, ignore este email ou entre em contato com o suporte.
+</p>
+{% endblock %}

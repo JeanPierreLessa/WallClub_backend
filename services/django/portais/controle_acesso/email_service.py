@@ -147,6 +147,54 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
+    def enviar_email_token_troca_senha(usuario, token, validade_minutos=30, portal_destino='lojista'):
+        """
+        Envia email com token para confirmação de troca de senha.
+        Usado no fluxo de 2 etapas dos portais.
+        """
+        try:
+            # Obter contexto do canal para o assunto
+            contexto_canal = EmailService._obter_contexto_canal(usuario)
+            
+            context = {
+                'usuario': usuario,
+                'token': token,
+                'validade_minutos': validade_minutos,
+                **contexto_canal
+            }
+            
+            # Determinar template baseado no portal de destino
+            if portal_destino == 'lojista':
+                template_html = 'emails/lojista/token_troca_senha.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Token de Confirmação - Portal Lojista'
+            elif portal_destino == 'vendas':
+                template_html = 'emails/vendas/token_troca_senha.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Token de Confirmação - Portal Vendas'
+            else:
+                template_html = 'emails/admin/token_troca_senha.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Token de Confirmação - Portal Admin'
+            
+            # Enviar via EmailService centralizado
+            resultado = EmailServiceCore.enviar_email(
+                destinatarios=[usuario.email],
+                assunto=assunto,
+                template_html=template_html,
+                template_context=context,
+                fail_silently=False
+            )
+            
+            if resultado['sucesso']:
+                registrar_log('portais.controle_acesso', f"Email com token de troca de senha enviado para {usuario.email} (portal: {portal_destino})")
+                return True, "Email enviado com sucesso"
+            else:
+                registrar_log('portais.controle_acesso', f"Erro ao enviar email: {resultado['mensagem']}", nivel='ERROR')
+                return False, resultado['mensagem']
+            
+        except Exception as e:
+            registrar_log('portais.controle_acesso', f"Erro ao enviar email com token para {usuario.email}: {str(e)}", nivel='ERROR')
+            return False, f"Erro ao enviar email: {str(e)}"
+    
+    @staticmethod
     def enviar_email_senha_alterada(usuario, portal_destino='admin'):
         """
         Envia email de confirmação após alteração de senha.
@@ -166,6 +214,9 @@ class EmailService:
             if portal_destino == 'lojista':
                 template_html = 'emails/lojista/senha_alterada.html'
                 assunto = f'{contexto_canal["canal_nome"]} - Senha Alterada - Portal Lojista'
+            elif portal_destino == 'vendas':
+                template_html = 'emails/vendas/senha_alterada.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Senha Alterada - Portal Vendas'
             else:
                 template_html = 'emails/admin/senha_alterada.html'
                 assunto = f'{contexto_canal["canal_nome"]} - Senha Alterada - Portal Admin'

@@ -4,6 +4,7 @@ URLs do Portal de Vendas (Checkout)
 from django.urls import path
 from . import views
 from . import views_recorrencia
+from . import views_perfil
 
 app_name = 'vendas'
 
@@ -14,6 +15,11 @@ urlpatterns = [
     
     # Dashboard
     path('', views.dashboard, name='dashboard'),
+    
+    # Perfil e Troca de Senha
+    path('perfil/', views_perfil.perfil_view, name='perfil'),
+    path('perfil/trocar-senha/', views_perfil.VendasTrocarSenhaView.as_view(), name='trocar_senha'),
+    path('perfil/confirmar-troca-senha/', views_perfil.VendasConfirmarTrocaSenhaView.as_view(), name='confirmar_troca_senha'),
     
     # Gestão de Clientes
     path('cliente/novo/', views.cliente_form, name='cliente_novo'),
