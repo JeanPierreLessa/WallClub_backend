@@ -72,7 +72,7 @@ def listar_ofertas(request):
                 'created_at': oferta.created_at.isoformat(),
             })
         
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Lista ofertas - Canal: {canal_id}, Total: {len(ofertas)}")
         
         return JsonResponse({
@@ -82,7 +82,7 @@ def listar_ofertas(request):
         })
         
     except Exception as e:
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Erro ao listar ofertas: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -173,7 +173,7 @@ def criar_oferta(request):
             }, status=400)
         
     except Exception as e:
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Erro ao criar oferta: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -241,7 +241,7 @@ def obter_oferta(request):
         })
         
     except Exception as e:
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Erro ao obter oferta: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -308,7 +308,7 @@ def atualizar_oferta(request):
             }, status=400)
         
     except Exception as e:
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Erro ao atualizar oferta: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -356,7 +356,7 @@ def listar_grupos(request):
                 'created_at': grupo.created_at.isoformat(),
             })
         
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Lista grupos - Canal: {canal_id}, Total: {len(grupos_list)}")
         
         return JsonResponse({
@@ -366,7 +366,7 @@ def listar_grupos(request):
         })
         
     except Exception as e:
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Erro ao listar grupos: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -424,7 +424,7 @@ def criar_grupo(request):
         )
         grupo.save()
         
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Grupo criado - ID: {grupo.id}, Nome: {nome}")
         
         return JsonResponse({
@@ -434,7 +434,7 @@ def criar_grupo(request):
         })
         
     except Exception as e:
-        registrar_log('ofertas.internal_api',
+        registrar_log('apps.ofertas',
                      f"Erro ao criar grupo: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
