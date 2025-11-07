@@ -570,7 +570,7 @@ class CheckoutVendasService:
                     loja = HierarquiaOrganizacionalService.get_loja(loja_id)
                     loja_nome = loja.razao_social if loja else 'Loja'
                     
-                    LinkPagamentoService.enviar_link_pagamento_email(
+                    resultado_email = LinkPagamentoService.enviar_link_pagamento_email(
                         token=token_obj,
                         cliente_email=cliente.email,
                         cliente_nome=cliente.nome,
@@ -578,9 +578,14 @@ class CheckoutVendasService:
                         valor=valor,
                         item_nome=descricao
                     )
-                    registrar_log('portais.vendas', f"Email enviado para {cliente.email}")
+                    
+                    if resultado_email and resultado_email.get('sucesso'):
+                        registrar_log('portais.vendas', f"✅ Email enviado com sucesso para {cliente.email} - Link: {link_url}")
+                    else:
+                        msg_erro = resultado_email.get('mensagem', 'Erro desconhecido') if resultado_email else 'Sem resposta'
+                        registrar_log('portais.vendas', f"❌ Falha ao enviar email: {msg_erro}", nivel='WARNING')
                 except Exception as e:
-                    registrar_log('portais.vendas', f"Erro ao enviar email: {str(e)}", nivel='WARNING')
+                    registrar_log('portais.vendas', f"Erro ao enviar email: {str(e)}", nivel='ERROR')
             
             # Enviar link via WhatsApp/SMS se houver telefone
             if telefone:
