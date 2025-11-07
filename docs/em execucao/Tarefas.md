@@ -11,13 +11,24 @@
 
 
 Ajuste de nome de log e nivel de log (feito)
-apps
-- cliente
-
-comum
-- estr organizacional
-- integracoes
-- middleware
-- oauth
-- seguranca
+- apps
+    - cliente
+    - conta digital
+    - oauth
+    - ofertas
+    - transacoes
+- checkout
+    - link_pagamento_web
+    - link_recorrencia_web
+- parametros_wallclub
+- pinbank
+    - cargas
+- portais
+    - admin
+    - controle_acesso
+    - corporativo
+    - lojista
+    - vendas
+- posp2 - ok
+    - antifraude - ok
 

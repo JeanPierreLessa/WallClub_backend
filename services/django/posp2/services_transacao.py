@@ -76,24 +76,21 @@ class TRDataService:
         """
         try:
             registrar_log('posp2', '========================================')
-            registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} posp2.trdata')
+            registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} - Processamento de Transação')
             registrar_log('posp2', '========================================')
-            registrar_log('posp2', 'posp2.trdata - Iniciando processamento de dados de transação')
-            registrar_log('posp2', 'posp2.trdata - DEBUG: Após logs iniciais')
+            registrar_log('posp2', 'Iniciando processamento de dados de transação')
             
             # Log do JSON de request recebido
-            registrar_log('posp2', f'posp2.trdata - === REQUEST JSON RECEBIDO ===')
-            registrar_log('posp2', f'posp2.trdata - JSON completo: {dados_json}')
-            registrar_log('posp2', f'posp2.trdata - Tamanho do JSON: {len(dados_json)} caracteres')
-            registrar_log('posp2', f'posp2.trdata - =============================')
+            registrar_log('posp2', f'=== REQUEST JSON RECEBIDO ===')
+            registrar_log('posp2', f'JSON completo: {dados_json}')
+            registrar_log('posp2', f'Tamanho do JSON: {len(dados_json)} caracteres')
+            registrar_log('posp2', f'=============================')
             
             # Parse do JSON recebido
-            registrar_log('posp2', 'posp2.trdata - DEBUG: Antes do json.loads')
             try:
                 dados = json.loads(dados_json)
-                registrar_log('posp2', 'posp2.trdata - DEBUG: json.loads executado com sucesso')
             except json.JSONDecodeError as e:
-                registrar_log('posp2', f'posp2.trdata - Erro ao decodificar JSON: {e}')
+                registrar_log('posp2', f'Erro ao decodificar JSON: {e}', nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': f'Erro ao decodificar JSON: {e}'
@@ -114,7 +111,7 @@ class TRDataService:
             autorizacao_id = dados.get('autorizacao_id', '')
             modalidade_wall = dados.get('modalidade_wall', '')
             
-            registrar_log('posp2', f'posp2.trdata - Parâmetros extraídos - Terminal: {terminal}, CPF: {cpf}, '
+            registrar_log('posp2', f'Parâmetros extraídos - Terminal: {terminal}, CPF: {cpf}, '
                         f'Valor Desconto: {valor_desconto_pos}, Valor Cashback: {valor_cashback_pos}, '
                         f'Cashback Concedido: {cashback_concedido_pos}, '
                         f'Autorizacao ID: {autorizacao_id if autorizacao_id else "N/A"}, '
@@ -136,49 +133,49 @@ class TRDataService:
             
             # Log se é venda normal (sem CPF/celular) ou com Wall Club
             if not cpf and not celular:
-                registrar_log('posp2', 'posp2.trdata - Processando VENDA NORMAL (sem CPF/celular)')
+                registrar_log('posp2', 'Processando VENDA NORMAL (sem CPF/celular)')
             else:
-                registrar_log('posp2', 'posp2.trdata - Processando venda COM WALL CLUB (CPF/celular fornecidos)')
+                registrar_log('posp2', 'Processando venda COM WALL CLUB (CPF/celular fornecidos)')
             
             # 3. Parse do JSON trdata (replicando lógica PHP)
             try:
-                registrar_log('posp2', f'posp2.trdata - === DEBUG JSON DECODE ===')
-                registrar_log('posp2', f'posp2.trdata - TrData recebido (primeiros 500 chars): {trdata[:500]}')
-                registrar_log('posp2', f'posp2.trdata - TrData length: {len(trdata)}')
+                registrar_log('posp2', f'=== DEBUG JSON DECODE ===')
+                registrar_log('posp2', f'TrData recebido (primeiros 500 chars): {trdata[:500]}')
+                registrar_log('posp2', f'TrData length: {len(trdata)}')
                 
                 dados_trdata = json.loads(trdata)
                 
-                registrar_log('posp2', 'posp2.trdata - JSON decodificado com sucesso!')
-                registrar_log('posp2', f'posp2.trdata - Campos encontrados: {", ".join(dados_trdata.keys())}')
+                registrar_log('posp2', 'JSON decodificado com sucesso!')
+                registrar_log('posp2', f'Campos encontrados: {", ".join(dados_trdata.keys())}')
                 
                 # Verificar se formaPagamento contém um JSON string
                 if 'formaPagamento' in dados_trdata and isinstance(dados_trdata['formaPagamento'], str):
-                    registrar_log('posp2', 'posp2.trdata - ATENÇÃO: Dados JSON detectados em formaPagamento!')
+                    registrar_log('posp2', 'ATENÇÃO: Dados JSON detectados em formaPagamento!')
                     try:
                         forma_pagamento_data = json.loads(dados_trdata['formaPagamento'])
-                        registrar_log('posp2', 'posp2.trdata - JSON em formaPagamento decodificado com sucesso')
+                        registrar_log('posp2', 'JSON em formaPagamento decodificado com sucesso')
                         
                         # Mesclar os dados de formaPagamento com o objeto principal
                         dados_trdata.update(forma_pagamento_data)
-                        registrar_log('posp2', 'posp2.trdata - Dados extraídos de formaPagamento e mesclados ao objeto principal')
+                        registrar_log('posp2', 'Dados extraídos de formaPagamento e mesclados ao objeto principal')
                     except json.JSONDecodeError:
                         pass
                 
                 
                 # Log dos campos importantes após o processamento
-                registrar_log('posp2', 'posp2.trdata - === CAMPOS APÓS PROCESSAMENTO ===')
-                registrar_log('posp2', f'posp2.trdata - aid: {dados_trdata.get("aid", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', f'posp2.trdata - paymentMethod: {dados_trdata.get("paymentMethod", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', f'posp2.trdata - amount: {dados_trdata.get("amount", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', f'posp2.trdata - brand: {dados_trdata.get("brand", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', f'posp2.trdata - cardNumber: {dados_trdata.get("cardNumber", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', f'posp2.trdata - nsuPinbank: {dados_trdata.get("nsuPinbank", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', f'posp2.trdata - status: {dados_trdata.get("status", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', f'posp2.trdata - totalInstallments: {dados_trdata.get("totalInstallments", "NÃO ENCONTRADO")}')
-                registrar_log('posp2', 'posp2.trdata - ==========================')
+                registrar_log('posp2', '=== CAMPOS APÓS PROCESSAMENTO ===')
+                registrar_log('posp2', f'aid: {dados_trdata.get("aid", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', f'paymentMethod: {dados_trdata.get("paymentMethod", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', f'amount: {dados_trdata.get("amount", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', f'brand: {dados_trdata.get("brand", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', f'cardNumber: {dados_trdata.get("cardNumber", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', f'nsuPinbank: {dados_trdata.get("nsuPinbank", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', f'status: {dados_trdata.get("status", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', f'totalInstallments: {dados_trdata.get("totalInstallments", "NÃO ENCONTRADO")}')
+                registrar_log('posp2', '==========================')
                 
             except json.JSONDecodeError as e:
-                registrar_log('posp2', f'posp2.trdata - Erro ao decodificar trdata JSON: {e}')
+                registrar_log('posp2', f'Erro ao decodificar trdata JSON: {e}', nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': f'Erro ao decodificar trdata JSON: {e}'
@@ -189,7 +186,7 @@ class TRDataService:
             if not valororiginal:
                 valor_operacao = Decimal(str(dados_trdata.get('amount', 0))) / Decimal('100')
                 valororiginal = valor_operacao
-                registrar_log('posp2', f'posp2.trdata - valororiginal não informado, usando valor da operação: {valororiginal}')
+                registrar_log('posp2', f'valororiginal não informado, usando valor da operação: {valororiginal}')
             
             # Mesclar dados_trdata com parâmetros principais
             dados_trdata.update({
@@ -212,16 +209,16 @@ class TRDataService:
             valor_orig_raw = dados_trdata.get('amount', 0)
             # Corrigir valor que vem multiplicado por 100
             valor_orig = Decimal(str(valor_orig_raw)) / Decimal('100')
-            registrar_log('posp2', f'posp2.trdata - Valor original corrigido: {valor_orig_raw} -> {valor_orig}')
+            registrar_log('posp2', f'Valor original corrigido: {valor_orig_raw} -> {valor_orig}')
             brand = dados_trdata.get('brand', '')
             total_installments = dados_trdata.get('totalInstallments', 1)
             
             # Log do paymentMethod recebido
-            registrar_log('posp2', f'posp2.trdata - PaymentMethod da transactiondata: "{payment_method}" (tipo: {type(payment_method)})')
+            registrar_log('posp2', f'PaymentMethod da transactiondata: "{payment_method}" (tipo: {type(payment_method)})')
             
             # 6. Converter PaymentMethod para TipoCompra
             tipo_compra = self.TIPO_COMPRA_MAP.get(payment_method, payment_method or '')
-            registrar_log('posp2', f'posp2.trdata - TipoCompra mapeado: "{tipo_compra}"')
+            registrar_log('posp2', f'TipoCompra mapeado: "{tipo_compra}"')
             
             # 7. Preparar dados para calculadora (formato unificado)
             # Converter hostTimestamp (formato: 20250912130603) para ISO
@@ -230,15 +227,15 @@ class TRDataService:
                 timestamp_str = str(host_timestamp)
                 if len(timestamp_str) == 14:
                     data_transacao_iso = f"{timestamp_str[:4]}-{timestamp_str[4:6]}-{timestamp_str[6:8]}T{timestamp_str[8:10]}:{timestamp_str[10:12]}:{timestamp_str[12:14]}"
-                    registrar_log('posp2', f'posp2.trdata - hostTimestamp convertido: {host_timestamp} -> {data_transacao_iso}')
+                    registrar_log('posp2', f'hostTimestamp convertido: {host_timestamp} -> {data_transacao_iso}')
                 else:
                     # Fallback para timestamp atual se formato inválido
                     data_transacao_iso = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-                    registrar_log('posp2', f'posp2.trdata - hostTimestamp formato inválido ({host_timestamp}), usando timestamp atual: {data_transacao_iso}')
+                    registrar_log('posp2', f'hostTimestamp formato inválido ({host_timestamp}), usando timestamp atual: {data_transacao_iso}')
             else:
                 # Se hostTimestamp está vazio, usar timestamp atual
                 data_transacao_iso = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-                registrar_log('posp2', f'posp2.trdata - hostTimestamp estava vazio ({host_timestamp}), usando timestamp atual: {data_transacao_iso}')
+                registrar_log('posp2', f'hostTimestamp estava vazio ({host_timestamp}), usando timestamp atual: {data_transacao_iso}')
             
             # Usar valororiginal para calculadora se disponível, senão usar amount corrigido
             if valororiginal:
@@ -247,12 +244,12 @@ class TRDataService:
                 if ',' in valor_original_limpo and '.' not in valor_original_limpo:
                     valor_original_limpo = valor_original_limpo.replace(',', '.')
                 valor_para_calculadora = Decimal(valor_original_limpo).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                registrar_log('posp2', f'posp2.trdata - valororiginal convertido: "{valororiginal}" -> {valor_para_calculadora}')
+                registrar_log('posp2', f'valororiginal convertido: "{valororiginal}" -> {valor_para_calculadora}')
             else:
                 valor_para_calculadora = valor_orig
-                registrar_log('posp2', f'posp2.trdata - Usando amount corrigido: {valor_para_calculadora}')
+                registrar_log('posp2', f'Usando amount corrigido: {valor_para_calculadora}')
             
-            registrar_log('posp2', f'posp2.trdata - Valor final para calculadora: {valor_para_calculadora}')
+            registrar_log('posp2', f'Valor final para calculadora: {valor_para_calculadora}')
             
             dados_linha = {
                 'id': dados_trdata.get('id', 0),
@@ -746,11 +743,11 @@ class TRDataService:
             registrar_log('posp2', f'=== DADOS COMPLETOS CHEGANDO NO _gerar_json_resposta ===')
             registrar_log('posp2', f'TODOS OS DADOS:')
             for key in sorted(dados.keys()):
-                registrar_log('posp2', f'  dados[{key}] = {dados[key]}')
+                registrar_log('posp2', f' dados[{key}] = {dados[key]}')
             registrar_log('posp2', f'VALORES CALCULADOS COMPLETOS (130 variáveis):')
             for i in range(131):  # 0 a 130
                 if i in valores_calculados:
-                    registrar_log('posp2', f'  valores_calculados[{i}] = {valores_calculados.get(i)}')
+                    registrar_log('posp2', f' valores_calculados[{i}] = {valores_calculados.get(i)}')
             registrar_log('posp2', f'Valor original para display: {valor_original_display}')
             registrar_log('posp2', f'=== FIM DADOS COMPLETOS ===')
             
@@ -771,13 +768,13 @@ class TRDataService:
                     return "0.00"
             
             registrar_log('posp2', f'Dados básicos extraídos:')
-            registrar_log('posp2', f'  cpf: "{cpf}"')
-            registrar_log('posp2', f'  nome: "{nome}"')
-            registrar_log('posp2', f'  wall: "{wall}"')
-            registrar_log('posp2', f'  forma: "{forma}"')
-            registrar_log('posp2', f'  terminal: "{terminal}"')
-            registrar_log('posp2', f'  nsu: "{nsu}"')
-            registrar_log('posp2', f'  cnpj: "{cnpj}"')
+            registrar_log('posp2', f' cpf: "{cpf}"')
+            registrar_log('posp2', f' nome: "{nome}"')
+            registrar_log('posp2', f' wall: "{wall}"')
+            registrar_log('posp2', f' forma: "{forma}"')
+            registrar_log('posp2', f' terminal: "{terminal}"')
+            registrar_log('posp2', f' nsu: "{nsu}"')
+            registrar_log('posp2', f' cnpj: "{cnpj}"')
             
             # Valores calculados - função segura para converter valores monetários
             def safe_float_convert(value):
@@ -904,13 +901,13 @@ class TRDataService:
             array = {}
             
             # Lógica condicional do PHP
-            registrar_log('posp2', f'posp2.trdata - Iniciando lógica condicional - wall: "{wall}", forma: "{forma}"')
+            registrar_log('posp2', f'Iniciando lógica condicional - wall: "{wall}", forma: "{forma}"')
             
             if wall == 's':  # COM WALL CLUB
-                registrar_log('posp2', f'posp2.trdata - Processando COM WALL CLUB')
+                registrar_log('posp2', f'Processando COM WALL CLUB')
                 
                 if forma in ["PIX", "DEBITO"]:
-                    registrar_log('posp2', f'posp2.trdata - Forma PIX/DEBITO detectada')
+                    registrar_log('posp2', f'Forma PIX/DEBITO detectada')
                     array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj, 
                                                   data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
                     array_update = {
@@ -934,7 +931,7 @@ class TRDataService:
                         "encargos": ""
                     })
                     array.update(array_update)
-                    registrar_log('posp2', f'posp2.trdata - Array PIX/DEBITO criado com {len(array)} campos')
+                    registrar_log('posp2', f'Array PIX/DEBITO criado com {len(array)} campos')
                 
                 elif (forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]) and desconto >= 0:
                     array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj, 
@@ -987,7 +984,7 @@ class TRDataService:
                     array.update(array_update)
                 
             else:  # SEM WALL CLUB (wall != 's') - Venda normal sem CPF
-                registrar_log('posp2', f'posp2.trdata - Processando SEM WALL CLUB - venda normal')
+                registrar_log('posp2', f'Processando SEM WALL CLUB - venda normal')
                 array = self._criar_array_base(dados, valores_calculados, "", "", cnpj, 
                                               data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
                 
@@ -1013,16 +1010,16 @@ class TRDataService:
                     "tarifas": "Tarifas CLUB: --",
                     "encargos": ""
                 })
-                registrar_log('posp2', f'posp2.trdata - Array venda normal criado com {len(array)} campos')
+                registrar_log('posp2', f'Array venda normal criado com {len(array)} campos')
             
-            registrar_log('posp2', f'posp2.trdata - Array final criado com {len(array)} campos')
-            registrar_log('posp2', f'posp2.trdata - Retornando array: {array}')
+            registrar_log('posp2', f'Array final criado com {len(array)} campos')
+            registrar_log('posp2', f'Retornando array: {array}')
             return array
             
         except Exception as e:
-            registrar_log('posp2', f'posp2.trdata - Erro ao gerar JSON resposta: {e}')
+            registrar_log('posp2', f'Erro ao gerar JSON resposta: {e}')
             import traceback
-            registrar_log('posp2', f'posp2.trdata - Traceback completo: {traceback.format_exc()}')
+            registrar_log('posp2', f'Traceback completo: {traceback.format_exc()}')
             return {}
       
     def _converter_tipos_dados(self, dados: Dict) -> Dict:
@@ -1039,71 +1036,71 @@ class TRDataService:
         for field in int_fields:
             if field in dados:
                 dados[field] = int(dados[field]) if dados[field] else 0
-                registrar_log('posp2', f'posp2.trdata - Convertido {field} para inteiro: {dados[field]}')
+                registrar_log('posp2', f'Convertido {field} para inteiro: {dados[field]}')
             else:
                 dados[field] = 0
-                registrar_log('posp2', f'posp2.trdata - Campo {field} não encontrado, usando valor padrão: 0')
+                registrar_log('posp2', f'Campo {field} não encontrado, usando valor padrão: 0')
         
         for field in bool_fields:
             if field in dados:
                 dados[field] = 1 if dados[field] else 0
-                registrar_log('posp2', f'posp2.trdata - Convertido {field} para booleano: {dados[field]}')
+                registrar_log('posp2', f'Convertido {field} para booleano: {dados[field]}')
             else:
                 dados[field] = 0
-                registrar_log('posp2', f'posp2.trdata - Campo {field} não encontrado, usando valor padrão: 0')
+                registrar_log('posp2', f'Campo {field} não encontrado, usando valor padrão: 0')
         
         return dados
     
     def _converter_valor_monetario(self, valor) -> float:
         """Converte valor monetário para float"""
-        registrar_log('posp2', f'posp2.trdata - === CONVERTER VALOR MONETÁRIO ===')
-        registrar_log('posp2', f'posp2.trdata - Valor original: {valor} (tipo: {type(valor)})')
+        registrar_log('posp2', f'=== CONVERTER VALOR MONETÁRIO ===')
+        registrar_log('posp2', f'Valor original: {valor} (tipo: {type(valor)})')
         
         if isinstance(valor, str):
             valor_original = valor
             # Remover formatação monetária brasileira
             valor = valor.replace('R$', '').replace(' ', '').strip()
-            registrar_log('posp2', f'posp2.trdata - Após remover R$ e espaços: {valor}')
+            registrar_log('posp2', f'Após remover R$ e espaços: {valor}')
             
             # Tratar formato brasileiro: R$17,00 -> 17.00
             if ',' in valor and '.' not in valor:
                 # Formato simples: 17,00
                 valor = valor.replace(',', '.')
-                registrar_log('posp2', f'posp2.trdata - Formato simples - após trocar vírgula: {valor}')
+                registrar_log('posp2', f'Formato simples - após trocar vírgula: {valor}')
             elif ',' in valor and '.' in valor:
                 # Formato com milhares: 1.234,56 -> 1234.56
                 # Último ponto/vírgula é decimal
                 if valor.rfind(',') > valor.rfind('.'):
                     # Vírgula é decimal: 1.234,56
                     valor = valor.replace('.', '').replace(',', '.')
-                    registrar_log('posp2', f'posp2.trdata - Formato milhares (vírgula decimal): {valor}')
+                    registrar_log('posp2', f'Formato milhares (vírgula decimal): {valor}')
                 else:
                     # Ponto é decimal: 1,234.56 (formato americano)
                     valor = valor.replace(',', '')
-                    registrar_log('posp2', f'posp2.trdata - Formato americano (ponto decimal): {valor}')
+                    registrar_log('posp2', f'Formato americano (ponto decimal): {valor}')
             
             resultado = float(valor) if valor else 0.0
-            registrar_log('posp2', f'posp2.trdata - Conversão: {valor_original} → {resultado}')
+            registrar_log('posp2', f'Conversão: {valor_original} → {resultado}')
             return resultado
         
-        registrar_log('posp2', f'posp2.trdata - Valor não é string, retornando: {float(valor) if valor else 0.0}')
+        registrar_log('posp2', f'Valor não é string, retornando: {float(valor) if valor else 0.0}')
         return float(valor) if valor else 0.0
     
     def _inserir_transaction_data(self, dados: Dict, resultado: Dict, autorizacao_id: str = '', modalidade_wall: str = '', cashback_concedido: float = 0):
         """Insere dados na tabela transactiondata replicando lógica PHP"""
         try:
-            registrar_log('posp2', f'posp2.trdata - === INÍCIO _inserir_transaction_data ===')
-            registrar_log('posp2', f'posp2.trdata - Dados recebidos: {list(dados.keys())}')
-            registrar_log('posp2', f'posp2.trdata - DEBUG ANTES conversão: valor_desconto={dados.get("valor_desconto")}, valor_cashback={dados.get("valor_cashback")}')
+            registrar_log('posp2', f'=== INÍCIO _inserir_transaction_data ===')
+            registrar_log('posp2', f'Dados recebidos: {list(dados.keys())}')
+            registrar_log('posp2', f'DEBUG ANTES conversão: valor_desconto={dados.get("valor_desconto")}, valor_cashback={dados.get("valor_cashback")}')
             
             # Converter tipos de dados
             dados = self._converter_tipos_dados(dados)
-            registrar_log('posp2', f'posp2.trdata - Dados após conversão: {list(dados.keys())}')
-            registrar_log('posp2', f'posp2.trdata - DEBUG DEPOIS conversão: valor_desconto={dados.get("valor_desconto")}, valor_cashback={dados.get("valor_cashback")}')
+            registrar_log('posp2', f'Dados após conversão: {list(dados.keys())}')
+            registrar_log('posp2', f'DEBUG DEPOIS conversão: valor_desconto={dados.get("valor_desconto")}, valor_cashback={dados.get("valor_cashback")}')
             
             # Converter valor_original para decimal
             valor_original = self._converter_valor_monetario(dados.get('valororiginal', 0))
-            registrar_log('posp2', f'posp2.trdata - Valor original convertido: {valor_original}')
+            registrar_log('posp2', f'Valor original convertido: {valor_original}')
             
             # Preparar dados para inserção usando campos convertidos
             campos_string = ['aid', 'applicationName', 'arqc', 'authorizationCode', 
@@ -1140,31 +1137,31 @@ class TRDataService:
                 'valor_original': valor_original
             }
             
-            registrar_log('posp2', f'posp2.trdata - Dados preparados para inserção - NSU: {dados_para_inserir.get("nsuPinbank")}')
+            registrar_log('posp2', f'Dados preparados para inserção - NSU: {dados_para_inserir.get("nsuPinbank")}')
             
             # Extrair valores de cashback vindos do JSON (já calculados pelo POS)
-            registrar_log('posp2', f'posp2.trdata - DEBUG: valor_desconto do dados dict: {dados.get("valor_desconto")} (tipo: {type(dados.get("valor_desconto"))})')
-            registrar_log('posp2', f'posp2.trdata - DEBUG: valor_cashback do dados dict: {dados.get("valor_cashback")} (tipo: {type(dados.get("valor_cashback"))})')
-            registrar_log('posp2', f'posp2.trdata - DEBUG: cashback_concedido do dados dict: {dados.get("cashback_concedido")} (tipo: {type(dados.get("cashback_concedido"))})')
-            registrar_log('posp2', f'posp2.trdata - DEBUG: Chaves disponíveis em dados: {list(dados.keys())}')
+            registrar_log('posp2', f'DEBUG: valor_desconto do dados dict: {dados.get("valor_desconto")} (tipo: {type(dados.get("valor_desconto"))})')
+            registrar_log('posp2', f'DEBUG: valor_cashback do dados dict: {dados.get("valor_cashback")} (tipo: {type(dados.get("valor_cashback"))})')
+            registrar_log('posp2', f'DEBUG: cashback_concedido do dados dict: {dados.get("cashback_concedido")} (tipo: {type(dados.get("cashback_concedido"))})')
+            registrar_log('posp2', f'DEBUG: Chaves disponíveis em dados: {list(dados.keys())}')
             
             valor_desconto_json = self._converter_valor_monetario(dados.get('valor_desconto', 0))
             valor_cashback_json = self._converter_valor_monetario(dados.get('valor_cashback', 0))
             cashback_concedido_json = self._converter_valor_monetario(cashback_concedido if cashback_concedido else dados.get('cashback_concedido', 0))
             
-            registrar_log('posp2', f'posp2.trdata - Valores extraídos do JSON: desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
+            registrar_log('posp2', f'Valores extraídos do JSON: desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
             
             # Log detalhado dos valores finais que serão inseridos
-            registrar_log('posp2', f'posp2.trdata - VALORES FINAIS PARA INSERT:')
-            registrar_log('posp2', f'posp2.trdata - operador_pos={dados_para_inserir.get("operador_pos")}')
-            registrar_log('posp2', f'posp2.trdata - valor_desconto_json={valor_desconto_json} (tipo: {type(valor_desconto_json)})')
-            registrar_log('posp2', f'posp2.trdata - valor_cashback_json={valor_cashback_json} (tipo: {type(valor_cashback_json)})')
-            registrar_log('posp2', f'posp2.trdata - cashback_concedido_json={cashback_concedido_json} (tipo: {type(cashback_concedido_json)})')
+            registrar_log('posp2', f'VALORES FINAIS PARA INSERT:')
+            registrar_log('posp2', f'operador_pos={dados_para_inserir.get("operador_pos")}')
+            registrar_log('posp2', f'valor_desconto_json={valor_desconto_json} (tipo: {type(valor_desconto_json)})')
+            registrar_log('posp2', f'valor_cashback_json={valor_cashback_json} (tipo: {type(valor_cashback_json)})')
+            registrar_log('posp2', f'cashback_concedido_json={cashback_concedido_json} (tipo: {type(cashback_concedido_json)})')
             
             # Inserir diretamente na tabela transactiondata
             with connection.cursor() as cursor:
                 # Log dos últimos valores que serão inseridos
-                registrar_log('posp2', f'posp2.trdata - Valores do INSERT: operador={dados_para_inserir.get("operador_pos")}, desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
+                registrar_log('posp2', f'Valores do INSERT: operador={dados_para_inserir.get("operador_pos")}, desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
                 
                 cursor.execute("""
                     INSERT INTO transactiondata (
@@ -1226,7 +1223,7 @@ class TRDataService:
                     modalidade_wall if modalidade_wall else None
                 ))
             
-            registrar_log('posp2', f'posp2.trdata - INSERT executado com sucesso - NSU: {dados_para_inserir.get("nsuPinbank")}')
+            registrar_log('posp2', f'INSERT executado com sucesso - NSU: {dados_para_inserir.get("nsuPinbank")}')
             
             # Registrar auditoria da transação
             try:
@@ -1271,13 +1268,13 @@ class TRDataService:
                     registrar_log('posp2', f'❌ [SALDO] Exceção ao debitar: {str(e)}', nivel='ERROR')
                     # NÃO interromper o fluxo
             
-            registrar_log('posp2', f'posp2.trdata - === FIM _inserir_transaction_data ===')
+            registrar_log('posp2', f'=== FIM _inserir_transaction_data ===')
             
             return {'sucesso': True}
             
         except Exception as e:
-            registrar_log('posp2', f'posp2.trdata - ERRO CRÍTICO ao inserir transaction data: {str(e)}')
-            registrar_log('posp2', f'posp2.trdata - Dados que causaram erro: {dados_para_inserir if "dados_para_inserir" in locals() else "N/A"}')
+            registrar_log('posp2', f'ERRO CRÍTICO ao inserir transaction data: {str(e)}')
+            registrar_log('posp2', f'Dados que causaram erro: {dados_para_inserir if "dados_para_inserir" in locals() else "N/A"}')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao gravar dados na base: {e}'
@@ -1295,12 +1292,12 @@ class TRDataService:
             id_fila_extrato = None  # Sempre NULL para transações POS
             
             # Usar data_transacao passada ou datetime.now() como fallback
-            registrar_log('posp2', f'posp2.trdata - _inserir_base_transacoes_gestao recebeu data_transacao: {data_transacao} (tipo: {type(data_transacao)})')
+            registrar_log('posp2', f'_inserir_base_transacoes_gestao recebeu data_transacao: {data_transacao} (tipo: {type(data_transacao)})')
             if data_transacao is None:
                 data_transacao = datetime.now().replace(microsecond=0)
-                registrar_log('posp2', f'posp2.trdata - data_transacao era None, usando datetime.now(): {data_transacao}')
+                registrar_log('posp2', f'data_transacao era None, usando datetime.now(): {data_transacao}')
             else:
-                registrar_log('posp2', f'posp2.trdata - Usando data_transacao recebida: {data_transacao}')
+                registrar_log('posp2', f'Usando data_transacao recebida: {data_transacao}')
             
             # Mapear TODOS os campos calculados para o modelo
             dados_base_gestao = {
@@ -1335,7 +1332,7 @@ class TRDataService:
                             try:
                                 dados_base_gestao[campo_nome] = float(valor_final) if valor_final is not None else None
                             except (ValueError, TypeError) as conv_error:
-                                registrar_log('posp2', f'posp2.trdata - ERRO conversão dict campo {campo_nome}: valor="{valor_final}" tipo={type(valor_final)} erro={conv_error}')
+                                registrar_log('posp2', f'ERRO conversão dict campo {campo_nome}: valor="{valor_final}" tipo={type(valor_final)} erro={conv_error}')
                                 dados_base_gestao[campo_nome] = 0.0
                     # Aplicar tipo baseado no campo
                     elif i in varchar_fields:
@@ -1344,7 +1341,7 @@ class TRDataService:
                         try:
                             dados_base_gestao[campo_nome] = float(valor)
                         except (ValueError, TypeError) as conv_error:
-                            registrar_log('posp2', f'posp2.trdata - ERRO conversão campo {campo_nome}: valor="{valor}" tipo={type(valor)} erro={conv_error}')
+                            registrar_log('posp2', f'ERRO conversão campo {campo_nome}: valor="{valor}" tipo={type(valor)} erro={conv_error}')
                             dados_base_gestao[campo_nome] = 0.0  # Valor padrão
             
             # Mapear campos especiais com sufixos (_A, _B) - APENAS se existem no modelo
@@ -1358,7 +1355,7 @@ class TRDataService:
             # Usar SQL raw para evitar conversão de timezone pelo Django ORM
             from django.db import connection
             
-            registrar_log('posp2', f'posp2.trdata - Dados finais para inserção na BaseTransacoesGestao: data_transacao={dados_base_gestao["data_transacao"]}')
+            registrar_log('posp2', f'Dados finais para inserção na BaseTransacoesGestao: data_transacao={dados_base_gestao["data_transacao"]}')
             
             # Separar data_transacao dos outros campos
             data_transacao_valor = dados_base_gestao.pop('data_transacao')
@@ -1376,8 +1373,8 @@ class TRDataService:
                 cursor.execute(sql, valores)
                 base_id = cursor.lastrowid
                 
-            registrar_log('posp2', f'posp2.trdata - BaseTransacoesGestao inserida com sucesso via SQL raw. ID: {base_id}, data_transacao: {data_transacao_valor}')
+            registrar_log('posp2', f'BaseTransacoesGestao inserida com sucesso via SQL raw. ID: {base_id}, data_transacao: {data_transacao_valor}')
             
         except Exception as e:
-            registrar_log('posp2', f'posp2.trdata - ERRO ao inserir BaseTransacoesGestao: {e}')
+            registrar_log('posp2', f'ERRO ao inserir BaseTransacoesGestao: {e}')
             raise
