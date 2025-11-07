@@ -185,9 +185,9 @@ class ConfigManager:
             secrets = json.loads(secret_string)
             
             config = {
-                'host': secrets.get('WEBSERVER_HOST'),
-                'user': secrets.get('WEBSERVER_USER'),
-                'password': secrets.get('WEBSERVER_PASSWD'),
+                'host': secrets.get('MAILSERVER_URL'),
+                'user': secrets.get('MAILSERVER_USERNAME'),
+                'password': secrets.get('MAILSERVER_PASSWD'),
             }
             
             return config
