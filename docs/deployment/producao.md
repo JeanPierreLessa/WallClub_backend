@@ -1,5 +1,29 @@
 # Deploy Produção - Monorepo WallClub
 
+**Última Atualização:** 07/11/2025
+
+## ⚠️ Mudanças Importantes
+
+### Portal Admin - URLs Sem Prefixo
+
+**Antes:** `https://wcadmin.wallclub.com.br/portal_admin/...`  
+**Agora:** `https://wcadmin.wallclub.com.br/...` (responde na raiz)
+
+**Exemplos:**
+- Login: `https://wcadmin.wallclub.com.br/`
+- Dashboard: `https://wcadmin.wallclub.com.br/home/`
+- Usuários: `https://wcadmin.wallclub.com.br/usuarios/`
+- Reset senha: `https://wcadmin.wallclub.com.br/reset-senha/{token}/`
+- Primeiro acesso: `https://wcadmin.wallclub.com.br/primeiro_acesso/{token}/`
+
+**Motivo:** SubdomainRouterMiddleware roteia `wcadmin.wallclub.com.br` para `wallclub.urls_admin` que responde na raiz.
+
+**Impacto:**
+- ✅ Emails de reset de senha corrigidos
+- ✅ Emails de primeiro acesso corrigidos
+- ✅ Templates HTML atualizados
+- ✅ Redirects internos corrigidos
+
 ## SSH
 ```bash
 # Servidor antigo

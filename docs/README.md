@@ -188,13 +188,15 @@ grep "JWT" docs/architecture/*.md
 ## 🔄 Atualizações
 
 **Última atualização:** 07/11/2025  
-**Versão:** 4.2
+**Versão:** 4.3
 
 **Mudanças recentes:**
+- ✅ Portal Admin sem prefixo `/portal_admin/` (wcadmin.wallclub.com.br responde na raiz)
+- ✅ Sistema de logs unificado por módulo (apps.*, portais.*, posp2, etc.)
+- ✅ SubdomainRouterMiddleware ativo para roteamento por domínio
+- ✅ URLs de reset de senha e primeiro acesso corrigidas
 - ✅ API Interna Cliente (6 endpoints)
-- ✅ DNS unificado `wcapi.wallclub.com.br`
-- ✅ Service helper `APIInternaService`
-- ✅ Total de APIs internas: 32 (antes: 26)
+- ✅ Total de APIs internas: 32
 
 **Changelog:** [CHANGELOG_07_11_2025.md](CHANGELOG_07_11_2025.md)
 

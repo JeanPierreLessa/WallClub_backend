@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 06/11/2025
+**Última Atualização:** 07/11/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 12 subdomínios
@@ -84,10 +84,10 @@ WallClub_backend/
 
 **Porta:** 8005 (interna)  
 **Subdomínios:** 
-- admin.wallclub.com.br / wcadmin.wallclub.com.br
-- vendas.wallclub.com.br / wcvendas.wallclub.com.br
-- lojista.wallclub.com.br / wclojista.wallclub.com.br
-- institucional.wallclub.com.br / wcinstitucional.wallclub.com.br
+- wcadmin.wallclub.com.br (responde na raiz `/`)
+- wcvendas.wallclub.com.br
+- wclojista.wallclub.com.br
+- wcinstitucional.wallclub.com.br
 
 **Módulos:**
 - **portais/admin/** - Portal administrativo
@@ -579,15 +579,16 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025  
-**Última atualização:** 06/11/2025 22:55  
+**Última atualização:** 07/11/2025 12:56  
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (06/11/2025)
+### Atualizações Recentes (07/11/2025)
+- ✅ Portal Admin sem prefixo `/portal_admin/` (responde na raiz via wcadmin.wallclub.com.br)
+- ✅ SubdomainRouterMiddleware ativo (roteamento por domínio)
+- ✅ Sistema de logs unificado (processo único por módulo)
 - ✅ Email Service centralizado com AWS SES
 - ✅ ConfigManager integrado ao email (busca credenciais do Secrets Manager)
 - ✅ Templates de email unificados em `/templates/emails/`
-- ✅ Subdomain Router com suporte a domínios `wc*`
-- ✅ ALLOWED_HOSTS atualizado para todos os subdomínios
 
 ---
 
