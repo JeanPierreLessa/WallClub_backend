@@ -1,4 +1,5 @@
 - Validar Gestao (tem buraco?)
+- Email Aclub nao esta indo com layout correto (portal lojista)
 - Gestao: contabilizacao de cashback
 - Voucher
 - Remover a movimentacao maluca na conta corrente quando fechar pedido. so geracao de cash back com bloqueio e testes de conta digital

@@ -776,6 +776,8 @@ class UsuarioService:
                     # Definir portal destino e canal para email
                     if portal == 'lojista':
                         portal_destino = 'lojista'
+                    elif portal == 'vendas':
+                        portal_destino = 'vendas'
 
                     # Capturar canal_id de admin_canal (tanto admin quanto lojista)
                     if tipo_acesso == 'admin_canal' and referencia:

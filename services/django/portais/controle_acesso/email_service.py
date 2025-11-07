@@ -51,6 +51,9 @@ class EmailService:
             if portal_destino == 'lojista':
                 # Portal lojista usa subdomínio wclojista.wallclub.com.br
                 link_primeiro_acesso = f"https://wclojista.wallclub.com.br/primeiro_acesso/{token}/"
+            elif portal_destino == 'vendas':
+                # Portal vendas usa subdomínio wcvendas.wallclub.com.br
+                link_primeiro_acesso = f"https://wcvendas.wallclub.com.br/primeiro_acesso/{token}/"
             else:
                 # Portal admin responde na raiz (sem /portal_admin/)
                 link_primeiro_acesso = f"{settings.BASE_URL}/primeiro_acesso/{token}/"
@@ -69,6 +72,9 @@ class EmailService:
             if portal_destino == 'lojista':
                 template_html = 'emails/lojista/primeiro_acesso.html'
                 assunto = f'{contexto_canal["canal_nome"]} - Acesso ao Portal Lojista Criado'
+            elif portal_destino == 'vendas':
+                template_html = 'emails/vendas/primeiro_acesso.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Acesso ao Portal Vendas Criado'
             else:
                 template_html = 'emails/admin/primeiro_acesso.html'
                 assunto = f'{contexto_canal["canal_nome"]} - Acesso ao Portal Admin Criado'
