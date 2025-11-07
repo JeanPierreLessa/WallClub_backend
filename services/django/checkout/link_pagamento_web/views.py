@@ -210,6 +210,9 @@ class CheckoutPageView(View):
             })
             
         except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
+            registrar_log("checkout.link_pagamento_web", f"Erro ao processar checkout: {error_detail}", nivel='ERROR')
             log_attempt(token, request, False, str(e))
             return JsonResponse({
                 'error': 'Erro interno'
