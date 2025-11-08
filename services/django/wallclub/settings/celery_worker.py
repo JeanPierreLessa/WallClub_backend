@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     # Core
     'wallclub_core',
     'wallclub_core.oauth',
+    'wallclub_core.estr_organizacional',  # Necessário para model Loja
     
     # TODOS os apps do projeto (para descobrir todas as tasks)
     'apps.cliente',
