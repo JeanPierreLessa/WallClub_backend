@@ -1,9 +1,9 @@
 # ESPECIFICAÇÃO FUNCIONAL - INTEGRAÇÃO OWN FINANCIAL
 
-**Versão:** 1.0  
-**Data:** 04/11/2025  
+**Versão:** 2.0  
+**Data:** 08/11/2025  
 **Responsável:** Product Owner  
-**Status:** Especificação Inicial
+**Status:** Especificação Atualizada - e-SiTef REST
 
 ---
 
@@ -27,22 +27,48 @@
 
 O WallClub atualmente opera exclusivamente com **Pinbank** como gateway/adquirente. A integração com **Own Financial** visa:
 
-1. **Diversificar** adquirentes (reduzir dependência única)
-2. **Ampliar** funcionalidades (gestão de estabelecimentos, equipamentos)
-3. **Oferecer** opções para diferentes perfis de loja
-4. **Negociar** melhores condições comerciais
+1. **Estabelecer Own como gateway prioritário** para todas as novas lojas
+2. **Manter Pinbank como contingência** para lojas existentes
+3. **Ampliar** funcionalidades (gestão de estabelecimentos, equipamentos, antecipação)
+4. **Melhorar** condições comerciais e margens
+
+### Estratégia de Adoção
+
+**Own Financial:** Gateway PRIORITÁRIO
+- Todas as novas lojas entram por Own
+- Funcionalidades completas (credenciamento, equipamentos, antecipação)
+- Melhor custo-benefício
+
+**Pinbank:** Gateway de CONTINGÊNCIA
+- Lojas existentes permanecem (sem migração forçada)
+- Disponível para casos específicos
+- Mantido para redundância
 
 ### O que é Own Financial?
 
 Own Financial é uma **adquirente** que opera através de:
 
-- **Transações:** Via protocolo TEF usando SiTef/CardSE
-- **Gestão:** Via APIs REST para consultas e configurações
+- **Transações Web:** Via **e-SiTef API REST** (Carat)
+- **Transações POS:** Via protocolo TEF usando SiTef/CardSE (físico)
+- **Gestão:** Via APIs REST Own para consultas e configurações
 - **Bandeiras:** Visa, Mastercard, Elo (crédito e débito)
 
 ### Diferencial Principal
 
-Enquanto Pinbank oferece API REST direta, Own Financial opera via **TEF** (protocolo de máquinas de cartão), exigindo software intermediário (SiTef).
+**IMPORTANTE:** Own Financial oferece **duas formas de integração**:
+
+1. **e-SiTef (Carat) - API REST** ✅ **ESCOLHIDA PARA WALLCLUB**
+   - API REST pura (igual Pinbank)
+   - Sem necessidade de servidor SiTef
+   - Perfeito para e-commerce
+   - Tokenização disponível
+   - Confirmação automática ou tardia
+
+2. **SiTef Tradicional - Protocolo TEF**
+   - Para POS físico
+   - Requer servidor SiTef
+   - Protocolo socket complexo
+   - Não será usado no WallClub web
 
 ---
 
@@ -68,12 +94,14 @@ Enquanto Pinbank oferece API REST direta, Own Financial opera via **TEF** (proto
 
 ### Transações
 
-| Aspecto | Pinbank | Own Financial |
-|---------|---------|---------------|
-| Método | API REST | TEF (via SiTef) |
-| Tempo resposta | 1-3s | 3-5s |
-| Tokenização | ✅ Sim | ❌ Não |
+| Aspecto | Pinbank | Own Financial (e-SiTef) |
+|---------|---------|-------------------------|
+| Método | API REST | API REST |
+| Tempo resposta | 1-3s | 2-4s |
+| Tokenização | ✅ Sim | ✅ Sim |
+| Confirmação tardia | ❌ Não | ✅ Sim |
 | Bandeiras | Visa, Master, Elo | Visa, Master, Elo |
+| Complexidade | Baixa | Baixa |
 
 ### Consultas
 
@@ -98,16 +126,17 @@ Enquanto Pinbank oferece API REST direta, Own Financial opera via **TEF** (proto
 
 ### 1. Seleção de Gateway
 
-**Decisão:** WallClub escolhe gateway no cadastro da loja
+**Decisão:** Own Financial como padrão, Pinbank como exceção
 
-**Critérios:**
-- Perfil da loja (online vs físico)
-- Faturamento esperado
-- Necessidades específicas
+**Regras:**
+- **Novas lojas:** Own Financial (automático)
+- **Lojas existentes:** Permanecem no Pinbank (sem migração forçada)
+- **Exceções:** Casos específicos aprovados pelo WallClub
 
-**Regra Inicial:**
-- Padrão: Pinbank
-- Own: Sob demanda
+**Critérios para exceção (Pinbank):**
+- Loja já integrada e operacional
+- Necessidade técnica específica
+- Aprovação comercial
 
 ### 2. Troca de Gateway
 
@@ -191,17 +220,24 @@ Enquanto Pinbank oferece API REST direta, Own Financial opera via **TEF** (proto
 
 ### Processo 2: Transação de Venda
 
-**Pinbank (atual):**
+**Pinbank (contingência):**
 ```
-Cliente → Checkout → Pinbank API → Resposta (1-3s)
+Cliente → Checkout → Pinbank API REST → Resposta (1-3s)
 ```
 
-**Own (novo):**
+**Own Financial (prioritário):**
 ```
-Cliente → Checkout → SiTef → CardSE → Own → Resposta (3-5s)
+Cliente → Checkout → e-SiTef API REST → Own → Resposta (2-4s)
 ```
 
 **Diferença para usuário:** Nenhuma (transparente)
+
+**Fluxo e-SiTef:**
+1. Criar transação (POST /v1/transactions)
+2. Efetivar pagamento (POST /v1/transactions/{nit}/pay)
+3. Opcionalmente confirmar (POST /v1/transactions/{nit}/confirm)
+
+**Confirmação tardia:** Permite validações antes de confirmar o pagamento
 
 ### Processo 3: Consulta Transações
 
@@ -421,27 +457,30 @@ Cliente → Checkout → SiTef → CardSE → Own → Resposta (3-5s)
 - Integração API Own
 - Acompanhamento protocolos
 
-### Fase 3: Infraestrutura TEF (3-4 semanas)
+### Fase 3: Integração e-SiTef REST (2-3 semanas)
 
 **Objetivos:**
-- Instalar SiTef
+- Integrar e-SiTef API REST
 - Processar transações
 
 **Entregas:**
-- SiTef configurado
-- Cliente SiTef (socket)
-- Gateway Own integrado
-- Roteador de gateways
+- Cliente HTTP e-SiTef
+- Serviço de pagamento Own
+- Tokenização de cartões
+- Confirmação tardia
+- Roteador de gateways (Own prioritário)
+- Testes em homologação
 
-### Fase 4: Gestão Equipamentos (2 semanas)
+### Fase 4: Gestão Equipamentos POS (1-2 semanas)
 
 **Objetivos:**
-- Controle de equipamentos
+- Controle de equipamentos físicos (futuro)
 
 **Entregas:**
 - CRUD equipamentos
 - Associação a lojas
 - Histórico
+- **Nota:** Baixa prioridade (e-commerce não usa POS físico)
 
 ### Fase 5: Funcionalidades Extras (2-3 semanas)
 
@@ -481,18 +520,20 @@ Cliente → Checkout → SiTef → CardSE → Own → Resposta (3-5s)
 
 ## ⚠️ RISCOS E MITIGAÇÕES
 
-### Risco 1: Complexidade TEF
+### Risco 1: Complexidade TEF ~~RESOLVIDO~~
 
-**Descrição:** Protocolo TEF mais complexo que API REST
+**Descrição:** ~~Protocolo TEF mais complexo que API REST~~
 
-**Impacto:** Alto  
-**Probabilidade:** Alta
+**Status:** ✅ **RESOLVIDO** - Usando e-SiTef API REST
 
-**Mitigação:**
-- Contratar consultoria especializada
-- Testes extensivos
-- Documentação detalhada
-- Treinamento equipe
+**Impacto:** ~~Alto~~ → **Baixo**  
+**Probabilidade:** ~~Alta~~ → **Nula**
+
+**Solução:**
+- e-SiTef oferece API REST nativa
+- Mesma complexidade do Pinbank
+- Sem necessidade de servidor SiTef
+- Sem protocolo socket/TEF
 
 ### Risco 2: Tempo Credenciamento
 
@@ -506,17 +547,18 @@ Cliente → Checkout → SiTef → CardSE → Own → Resposta (3-5s)
 - Manter Pinbank como padrão
 - Processo de validação interna antes
 
-### Risco 3: Dependência SiTef
+### Risco 3: Dependência e-SiTef
 
-**Descrição:** Licença e manutenção SiTef
+**Descrição:** Licença e disponibilidade e-SiTef (Carat)
 
-**Impacto:** Alto  
-**Probabilidade:** Média
+**Impacto:** Médio  
+**Probabilidade:** Baixa
 
 **Mitigação:**
-- Negociar contrato adequado
-- Plano de contingência
+- Pinbank como contingência automática
+- SLA com Software Express
 - Monitoramento proativo
+- Fallback automático em caso de indisponibilidade
 
 ### Risco 4: Migração de Lojas
 
@@ -530,17 +572,19 @@ Cliente → Checkout → SiTef → CardSE → Own → Resposta (3-5s)
 - Comunicação de impactos
 - Suporte dedicado
 
-### Risco 5: Performance TEF
+### Risco 5: Performance e-SiTef
 
-**Descrição:** TEF pode ser mais lento (3-5s)
+**Descrição:** e-SiTef pode ser ligeiramente mais lento (2-4s vs 1-3s)
 
-**Impacto:** Baixo  
-**Probabilidade:** Alta
+**Impacto:** Muito Baixo  
+**Probabilidade:** Média
 
 **Mitigação:**
-- Otimizar conexões
-- Timeout adequado
+- Diferença mínima (1s)
+- Otimizar conexões HTTP
+- Timeout adequado (30s)
 - Feedback visual ao usuário
+- Cache de tokens
 
 ---
 
