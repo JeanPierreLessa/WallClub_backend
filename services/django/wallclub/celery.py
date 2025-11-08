@@ -78,6 +78,16 @@ app.conf.beat_schedule = {
     # CARGAS PINBANK (Automáticas)
     # ============================================
     
+    # Carga extrato POS - 5x ao dia às 05:13, 09:13, 13:13, 18:13, 22:13
+    'carga-extrato-pos': {
+        'task': 'pinbank.carga_extrato_pos',
+        'schedule': crontab(minute=13, hour='5,9,13,18,22'),  # xx:13 em horários específicos
+        'args': ('72h',),  # Período de 72 horas
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+    
     # Cargas completas - De hora em hora, minuto 5, das 5h às 23h
     'cargas-completas-pinbank': {
         'task': 'pinbank.cargas_completas',
@@ -91,12 +101,12 @@ app.conf.beat_schedule = {
     # CONTA DIGITAL - AUTORIZAÇÕES
     # ============================================
     
-    # Expirar autorizações de saldo - A cada 5 minutos (TESTE - depois ajustar para crontab(minute='*/1'))
+    # Expirar autorizações de saldo - 1x ao dia às 01:00
     'expirar-autorizacoes-saldo': {
         'task': 'apps.conta_digital.expirar_autorizacoes_saldo',
-        'schedule': 300.0,  # A cada 5 minutos (300 segundos)
+        'schedule': crontab(hour=1, minute=0),  # 01:00 todos os dias
         'options': {
-            'expires': 300,  # Expira em 5 minutos
+            'expires': 3600,  # Expira em 1 hora
         }
     },
 }
