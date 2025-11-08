@@ -78,12 +78,12 @@ app.conf.beat_schedule = {
     # CARGAS PINBANK (Automáticas)
     # ============================================
     
-    # Cargas completas - De hora em hora, minuto 5, das 5h às 23h
+    # Cargas completas - A cada 5 minutos (TESTE - depois voltar para crontab(minute=5, hour='5-23'))
     'cargas-completas-pinbank': {
         'task': 'pinbank.cargas_completas',
-        'schedule': crontab(minute=5, hour='5-23'),  # xx:05 das 5h às 23h
+        'schedule': 300.0,  # A cada 5 minutos (300 segundos)
         'options': {
-            'expires': 3600,  # Expira em 1 hora
+            'expires': 300,  # Expira em 5 minutos
         }
     },
 }
