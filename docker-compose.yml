@@ -148,17 +148,17 @@ services:
     networks:
       - wallclub-network
 
-  # Celery Worker - Portais
-  wallclub-celery-worker-portais:
+  # Celery Worker - Unificado (acesso a todos os apps)
+  wallclub-celery-worker:
     build:
       context: .
       dockerfile: Dockerfile.portais
-    container_name: wallclub-celery-worker-portais
-    command: celery -A wallclub worker --loglevel=info --concurrency=2
+    container_name: wallclub-celery-worker
+    command: celery -A wallclub worker --loglevel=info --concurrency=4
     env_file:
       - ./services/django/.env
     environment:
-      - DJANGO_SETTINGS_MODULE=wallclub.settings.portais
+      - DJANGO_SETTINGS_MODULE=wallclub.settings.celery_worker
       - REDIS_HOST=wallclub-redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
@@ -169,33 +169,8 @@ services:
     depends_on:
       - redis
       - wallclub-portais
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: 0.25
-    networks:
-      - wallclub-network
-
-  # Celery Worker - APIs
-  wallclub-celery-worker-apis:
-    build:
-      context: .
-      dockerfile: Dockerfile.apis
-    container_name: wallclub-celery-worker-apis
-    command: celery -A wallclub worker --loglevel=info --concurrency=4
-    env_file:
-      - ./services/django/.env
-    environment:
-      - DJANGO_SETTINGS_MODULE=wallclub.settings.apis
-      - REDIS_HOST=wallclub-redis
-      - REDIS_PORT=6379
-      - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
-    volumes:
-      - ./services/django/logs:/app/logs
-      - ./services/core:/app/services/core:ro
-    depends_on:
-      - redis
       - wallclub-apis
+      - wallclub-pos
     restart: unless-stopped
     mem_limit: 512m
     cpus: 0.5
@@ -206,13 +181,13 @@ services:
   wallclub-celery-beat:
     build:
       context: .
-      dockerfile: Dockerfile.apis
+      dockerfile: Dockerfile.portais
     container_name: wallclub-celery-beat
     command: celery -A wallclub beat --loglevel=info
     env_file:
       - ./services/django/.env
     environment:
-      - DJANGO_SETTINGS_MODULE=wallclub.settings.apis
+      - DJANGO_SETTINGS_MODULE=wallclub.settings.celery_worker
       - REDIS_HOST=wallclub-redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
@@ -222,8 +197,7 @@ services:
       - ./services/core:/app/services/core:ro
     depends_on:
       - redis
-      - wallclub-celery-worker-apis
-      - wallclub-celery-worker-portais
+      - wallclub-celery-worker
     restart: unless-stopped
     mem_limit: 128m
     cpus: 0.25
@@ -244,8 +218,7 @@ services:
       - AWS_DEFAULT_REGION=us-east-1
     depends_on:
       - redis
-      - wallclub-celery-worker-apis
-      - wallclub-celery-worker-portais
+      - wallclub-celery-worker
       - wallclub-celery-beat
     restart: unless-stopped
     mem_limit: 256m
