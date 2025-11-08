@@ -235,8 +235,8 @@ services:
     image: mher/flower:2.0
     container_name: wallclub-flower
     command: celery --broker=redis://wallclub-redis:6379/0 flower --port=5555 --basic_auth=admin:wallclub2025
-    ports:
-      - "5555:5555"
+    expose:
+      - "5555"
     environment:
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
