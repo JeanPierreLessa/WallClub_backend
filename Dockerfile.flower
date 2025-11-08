@@ -1,17 +1,25 @@
-FROM mher/flower:2.0
+FROM python:3.11-slim
 
-USER root
-
-# Instalar AWS CLI e jq
-RUN apk add --no-cache \
-    aws-cli \
+# Instalar dependências
+RUN apt-get update && apt-get install -y \
+    curl \
+    unzip \
     jq \
-    bash
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf aws awscliv2.zip
+
+# Instalar Flower
+RUN pip install --no-cache-dir flower==2.0.1 redis
 
 # Copiar script de entrypoint
 COPY scripts/flower-entrypoint.sh /usr/local/bin/flower-entrypoint.sh
 RUN chmod +x /usr/local/bin/flower-entrypoint.sh
 
-USER nobody
+EXPOSE 5555
 
 ENTRYPOINT ["/usr/local/bin/flower-entrypoint.sh"]

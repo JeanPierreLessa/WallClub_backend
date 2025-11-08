@@ -4,9 +4,7 @@ set -e
 # Buscar credenciais do AWS Secrets Manager
 echo "Buscando credenciais do Flower do AWS Secrets Manager..."
 
-# Assumindo que as credenciais estão no mesmo secret que os outros serviços
-# Ajuste o SECRET_ID conforme necessário
-SECRET_ID="wallclub/production"
+SECRET_ID="wall/prod/db"
 
 # Buscar o secret completo
 SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $SECRET_ID --query SecretString --output text)
