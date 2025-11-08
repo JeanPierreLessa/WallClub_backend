@@ -4,7 +4,7 @@
 **Data:** 05/11/2025  
 **Objetivo:** Documentação completa Fases 1-6 (Segurança + Antifraude + Services + 2FA + Portais + 4 Containers)
 
-**Resultado:** 4 containers independentes, 9 containers totais, 26 APIs internas, Sistema Multi-Portal, 9 regras antifraude
+**Resultado:** 4 containers independentes, 10 containers totais, 26 APIs internas, Sistema Multi-Portal, 9 regras antifraude, Flower monitoring
 
 ---
 
@@ -13,10 +13,11 @@
 ### 📖 Leitura Obrigatória (Ordem Recomendada)
 
 1. **[ARQUITETURA_GERAL.md](1.%20ARQUITETURA_GERAL.md)** (~950 linhas)
-   - ✅ 9 containers orquestrados (4 Django + Redis + 2 Celery + Beat + Nginx)
+   - ✅ 10 containers orquestrados (4 Django + Redis + 2 Celery + Beat + Nginx + Flower)
    - ✅ Fases 1-6 concluídas (Segurança + Antifraude + Services + 2FA + Portais + Containers)
    - ✅ 4 containers Django independentes em produção (portais, pos, apis, riskengine)
-   - ✅ Nginx Gateway com 6 subdomínios (admin, vendas, lojista, api, apipos, checkout)
+   - ✅ Nginx Gateway com 14 subdomínios (incluindo flower.wallclub.com.br)
+   - ✅ Flower: Monitoramento Celery em tempo real (credenciais via AWS Secrets)
    - ✅ Sistema Antifraude completo (score 0-100, 9 regras)
    - ✅ JWT Customizado (18 cenários testados)
    - ✅ Sistema Multi-Portal (3 tabelas, controle hierárquico)
@@ -37,7 +38,7 @@
    - ✅ Sistema Antifraude (9 regras, MaxMind, 3DS)
    - ✅ Sistema Segurança Multi-Portal (6 detectores Celery)
    - ✅ Notificações (WhatsApp, SMS, Push Firebase/APN)
-   - ✅ Arquitetura Docker (9 containers)
+   - ✅ Arquitetura Docker (10 containers: +Flower monitoring)
    - Boas práticas de código
    - **Tempo leitura:** 30 min
 

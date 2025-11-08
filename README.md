@@ -8,8 +8,9 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 **Última Atualização:** 07/11/2025 17:00
 
-### Produção - 9 Containers Orquestrados
-- ✅ **Nginx Gateway** (porta 8005) - 13 subdomínios (incluindo checkout.wallclub.com.br)
+### Produção - 10 Containers Orquestrados
+- ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
+  - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
   - ✅ Portal Vendas: Sistema de primeiro acesso implementado
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
@@ -20,6 +21,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **wallclub-celery-worker-portais**
 - ✅ **wallclub-celery-worker-apis**
 - ✅ **wallclub-celery-beat** (Scheduler)
+- ✅ **wallclub-flower** (Monitoramento Celery) - flower.wallclub.com.br
 
 ### Integrações Externas
 - ✅ **AWS SES** - Email transacional (ConfigManager)
@@ -69,8 +71,8 @@ WallClub_backend/
 │   ├── development/     # Diretrizes de desenvolvimento
 │   ├── em execucao/     # Fases concluídas (1-6)
 │   └── deployment/      # Deploy produção
-├── docker-compose.yml   # 9 containers orquestrados
-├── nginx.conf           # Gateway com 6 subdomínios
+├── docker-compose.yml   # 10 containers orquestrados
+├── nginx.conf           # Gateway com 14 subdomínios
 ├── Dockerfile.portais   # Container portais
 ├── Dockerfile.pos       # Container POS
 ├── Dockerfile.apis      # Container APIs
