@@ -73,6 +73,19 @@ app.conf.beat_schedule = {
             'expires': 3600,
         }
     },
+    
+    # ============================================
+    # CARGAS PINBANK (Automáticas)
+    # ============================================
+    
+    # Cargas completas - De hora em hora, minuto 5, das 5h às 23h
+    'cargas-completas-pinbank': {
+        'task': 'pinbank.cargas_completas',
+        'schedule': crontab(minute=5, hour='5-23'),  # xx:05 das 5h às 23h
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
 }
 
 # Timezone (mesmo do Django)
