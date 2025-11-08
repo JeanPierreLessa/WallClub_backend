@@ -926,7 +926,7 @@ class TRDataService:
                     array_update.update({
                         "vdesconto": f"Valor total pago:\nR$ {formatar_valor_monetario(vdesconto_final)}",
                         "pagoavista": f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valores_calculados.get(16, 0))}",
-                        "vparcela": "",
+                        "vparcela": f"R$ {formatar_valor_monetario(vparcela_ajustado)}",
                         "tarifas": "Tarifas CLUB: -- ",
                         "encargos": ""
                     })
@@ -1006,7 +1006,7 @@ class TRDataService:
                     "desconto": "",  # Vazio para venda normal (igual PHP)
                     "vdesconto": f"Valor total pago:\nR$ {formatar_valor_monetario(valor_transacao)}", # Valor real (igual PHP)
                     "pagoavista": f"{pagoavista_text}: R$ {formatar_valor_monetario(valor_transacao)}",
-                    "vparcela": f"R$ {formatar_valor_monetario(valor_parcela_individual)}" if forma not in ["PIX", "DEBITO"] else "",
+                    "vparcela": f"R$ {formatar_valor_monetario(valor_parcela_individual)}",
                     "tarifas": "Tarifas CLUB: --",
                     "encargos": ""
                 })
