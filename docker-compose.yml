@@ -232,16 +232,18 @@ services:
 
   # Flower - Monitoramento Celery
   flower:
-    image: mher/flower:2.0
+    build:
+      context: .
+      dockerfile: Dockerfile.flower
     container_name: wallclub-flower
-    command: sh -c "celery --broker=redis://wallclub-redis:6379/0 flower --port=5555 --basic_auth=$${FLOWER_USER}:$${FLOWER_PASSWD}"
     expose:
       - "5555"
-    env_file:
-      - ./services/django/.env
     environment:
       - CELERY_BROKER_URL=redis://wallclub-redis:6379/0
       - CELERY_RESULT_BACKEND=redis://wallclub-redis:6379/0
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ~/.aws:/root/.aws:ro
     depends_on:
       - redis
       - wallclub-celery-worker-apis

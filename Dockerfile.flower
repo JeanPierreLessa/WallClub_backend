@@ -1,0 +1,17 @@
+FROM mher/flower:2.0
+
+USER root
+
+# Instalar AWS CLI e jq
+RUN apk add --no-cache \
+    aws-cli \
+    jq \
+    bash
+
+# Copiar script de entrypoint
+COPY scripts/flower-entrypoint.sh /usr/local/bin/flower-entrypoint.sh
+RUN chmod +x /usr/local/bin/flower-entrypoint.sh
+
+USER nobody
+
+ENTRYPOINT ["/usr/local/bin/flower-entrypoint.sh"]
