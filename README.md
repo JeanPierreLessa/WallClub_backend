@@ -6,13 +6,15 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 07/11/2025
+**Última Atualização:** 07/11/2025 17:00
 
 ### Produção - 9 Containers Orquestrados
-- ✅ **Nginx Gateway** (porta 8005) - 12 subdomínios
+- ✅ **Nginx Gateway** (porta 8005) - 13 subdomínios (incluindo checkout.wallclub.com.br)
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
+  - ✅ Portal Vendas: Sistema de primeiro acesso implementado
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
-- ✅ **wallclub-apis** (Mobile + Checkout)
+- ✅ **wallclub-apis** (Mobile + Checkout Web)
+  - ✅ Checkout: Domínio dedicado checkout.wallclub.com.br
 - ✅ **wallclub-riskengine** (Antifraude + MaxMind)
 - ✅ **wallclub-redis** (Cache + Broker)
 - ✅ **wallclub-celery-worker-portais**

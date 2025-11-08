@@ -1,3 +1,16 @@
+## Tarefas Pendentes
+
+### Portal de Vendas (07/11/2025)
+- ✅ Criar sistema de primeiro acesso com link único
+- ✅ Corrigir import datetime em primeiro_acesso_view
+- ✅ Corrigir busca de clientes (import CheckoutClienteTelefone)
+- ✅ Configurar domínio checkout.wallclub.com.br
+- ✅ Adicionar checkout.wallclub.com.br ao ALLOWED_HOSTS
+- ⏳ **Investigar erro "Erro interno" na página de checkout** (em andamento)
+  - Log adicionado para traceback completo
+  - Aguardando novo teste para ver erro detalhado
+
+### Outras Tarefas
 - Validar Gestao (tem buraco?)
 - Email Aclub nao esta indo com layout correto (portal lojista)
 - Gestao: contabilizacao de cashback
@@ -13,7 +26,7 @@
 Visao geral dos testes
 - APP OK
     - android 3.1.4 ok
-    - ios 3.1.4 wall aguardando
+    - ios 3.1.4 wall ok
     - android 3.1.4 wall nao enviei
 - POS OK
     - enviar 2.1.4
