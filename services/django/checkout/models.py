@@ -13,7 +13,7 @@ class CheckoutCliente(models.Model):
     """Cadastro permanente de clientes para checkout"""
     
     loja = models.ForeignKey(
-        'wallclub_core.estr_organizacional.Loja',
+        'wallclub_core.Loja',
         on_delete=models.PROTECT,
         db_column='loja_id',
         related_name='checkout_clientes'
@@ -180,7 +180,7 @@ class CheckoutTransaction(models.Model):
     
     # Relacionamento com loja
     loja = models.ForeignKey(
-        'wallclub_core.estr_organizacional.Loja',
+        'wallclub_core.Loja',
         on_delete=models.PROTECT,
         db_column='loja_id',
         null=False,

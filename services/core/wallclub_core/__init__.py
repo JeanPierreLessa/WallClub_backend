@@ -19,3 +19,10 @@ Componentes:
 """
 
 __version__ = "1.0.0"
+
+# Importar models para registro no Django
+from wallclub_core.estr_organizacional.loja import Loja  # noqa: F401, E402
+from wallclub_core.estr_organizacional.canal import Canal  # noqa: F401, E402
+from wallclub_core.estr_organizacional.regional import Regional  # noqa: F401, E402
+from wallclub_core.estr_organizacional.grupo_economico import GrupoEconomico  # noqa: F401, E402
+from wallclub_core.estr_organizacional.vendedor import Vendedor  # noqa: F401, E402
