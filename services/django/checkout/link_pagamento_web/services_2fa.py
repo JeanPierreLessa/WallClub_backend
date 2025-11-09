@@ -359,12 +359,12 @@ class CheckoutSecurityService:
             
             registrar_log(
                 'checkout.2fa',
-                f'Consultando Risk Engine: {riskengine_url}/antifraude/analisar/'
+                f'Consultando Risk Engine: {riskengine_url}/api/antifraude/analisar/'
             )
             
             # Chamar Risk Engine (com timeout curto)
             response = requests.post(
-                f'{riskengine_url}/antifraude/analisar/',
+                f'{riskengine_url}/api/antifraude/analisar/',
                 json=dados,
                 timeout=3
             )
