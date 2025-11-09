@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     # Local apps
     'wallclub_core',
     'wallclub_core.oauth',
-    'wallclub_core.estr_organizacional',
+    'wallclub_core.estr_organizacional.apps.EstrOrganizacionalConfig',
     'parametros_wallclub',
     'apps.cliente',
     'apps.transacoes',
