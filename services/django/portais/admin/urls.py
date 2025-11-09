@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_dispositivos, views_seguranca, views_perfil
+from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_dispositivos, views_seguranca, views_perfil, views_celery
 
 app_name = 'portais_admin'
 
@@ -127,4 +127,9 @@ urlpatterns = [
     path('seguranca/atividades/<int:atividade_id>/investigar/', views_seguranca.investigar_atividade, name='investigar_atividade'),
     path('seguranca/bloqueios/', views_seguranca.bloqueios_seguranca, name='bloqueios_seguranca'),
     path('seguranca/bloqueios/criar/', views_seguranca.criar_bloqueio, name='criar_bloqueio'),
+    
+    # Monitoramento Celery
+    path('celery/', views_celery.celery_dashboard, name='celery_dashboard'),
+    path('celery/history/', views_celery.celery_task_history, name='celery_task_history'),
+    path('celery/task/<str:task_id>/', views_celery.celery_task_detail, name='celery_task_detail'),
 ]

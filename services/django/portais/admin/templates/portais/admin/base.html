@@ -160,6 +160,13 @@
                                 Bloqueios
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'celery' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'portais_admin:celery_dashboard' %}">
+                                <i class="fas fa-tasks me-2"></i>
+                                Monitoramento Celery
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>

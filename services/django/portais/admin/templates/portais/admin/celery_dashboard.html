@@ -1,0 +1,239 @@
+{% extends "portais/admin/base.html" %}
+{% load static %}
+
+{% block title %}Monitoramento Celery - Portal Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Monitoramento Celery</h2>
+        <div>
+            <span class="text-muted">Atualizado em: {{ agora|date:"d/m/Y H:i:s" }}</span>
+            <button class="btn btn-sm btn-primary ms-3" onclick="location.reload()">
+                <i class="fas fa-sync"></i> Atualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Estatísticas Gerais -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Fila Pendente</h5>
+                    <h2>{{ estatisticas.fila_pendente|default:"0" }}</h2>
+                    <small>Tasks aguardando execução</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Sucesso</h5>
+                    <h2>{{ estatisticas.tasks_sucesso|default:"0" }}</h2>
+                    <small>Tasks concluídas com sucesso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Falhas</h5>
+                    <h2>{{ estatisticas.tasks_falha|default:"0" }}</h2>
+                    <small>Tasks que falharam</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Workers Ativos</h5>
+                    <h2>{{ workers|length }}</h2>
+                    <small>Workers em execução</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Agendadas -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-clock"></i> Tasks Agendadas ({{ tasks_agendadas|length }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Task</th>
+                            <th>Schedule</th>
+                            <th>Argumentos</th>
+                            <th>Próxima Execução</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks_agendadas %}
+                        <tr>
+                            <td><strong>{{ task.nome }}</strong></td>
+                            <td><code>{{ task.task }}</code></td>
+                            <td>{{ task.schedule }}</td>
+                            <td>
+                                {% if task.args %}
+                                    <code>{{ task.args }}</code>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.proxima_execucao %}
+                                    <span class="badge bg-primary">{{ task.proxima_execucao|date:"d/m/Y H:i:s" }}</span>
+                                {% else %}
+                                    <span class="text-muted">Calculando...</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Nenhuma task agendada</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Ativas -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0"><i class="fas fa-spinner fa-spin"></i> Tasks em Execução ({{ tasks_ativas|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if tasks_ativas %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Worker</th>
+                            <th>Task</th>
+                            <th>ID</th>
+                            <th>Argumentos</th>
+                            <th>Início</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks_ativas %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ task.worker }}</span></td>
+                            <td><code>{{ task.nome }}</code></td>
+                            <td><small>{{ task.id|slice:":8" }}...</small></td>
+                            <td><code>{{ task.args|default:"-" }}</code></td>
+                            <td>{{ task.tempo_inicio|default:"N/A" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center text-muted mb-0">Nenhuma task em execução no momento</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Workers -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-server"></i> Workers ({{ workers|length }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Pool</th>
+                            <th>Concorrência</th>
+                            <th>Total Tasks</th>
+                            <th>Filas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for worker in workers %}
+                        <tr>
+                            <td><strong>{{ worker.nome }}</strong></td>
+                            <td>{{ worker.pool|default:"N/A" }}</td>
+                            <td>{{ worker.max_concurrency|default:"N/A" }}</td>
+                            <td>{{ worker.total_tasks|default:"0" }}</td>
+                            <td>
+                                {% if worker.queues %}
+                                    {% for queue in worker.queues %}
+                                        <span class="badge bg-info">{{ queue }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    Nenhum worker ativo ou erro ao conectar
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Links Úteis -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-link"></i> Links Úteis</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Flower (Monitoramento Avançado)</h6>
+                    <a href="https://flower.wallclub.com.br" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-external-link-alt"></i> Abrir Flower
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <h6>Documentação</h6>
+                    <a href="/static/docs/CELERY_TASKS_AGENDADAS.md" target="_blank" class="btn btn-outline-secondary">
+                        <i class="fas fa-book"></i> Ver Documentação
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

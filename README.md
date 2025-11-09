@@ -6,9 +6,9 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 07/11/2025 17:00
+**Última Atualização:** 08/11/2025 20:00
 
-### Produção - 10 Containers Orquestrados
+### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
   - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
@@ -18,9 +18,8 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Checkout: Domínio dedicado checkout.wallclub.com.br
 - ✅ **wallclub-riskengine** (Antifraude + MaxMind)
 - ✅ **wallclub-redis** (Cache + Broker)
-- ✅ **wallclub-celery-worker-portais**
-- ✅ **wallclub-celery-worker-apis**
-- ✅ **wallclub-celery-beat** (Scheduler)
+- ✅ **wallclub-celery-worker** (Unificado - acesso a todos os apps)
+- ✅ **wallclub-celery-beat** (Scheduler - 3 tasks agendadas)
 - ✅ **wallclub-flower** (Monitoramento Celery) - flower.wallclub.com.br
 
 ### Integrações Externas
@@ -243,19 +242,19 @@ WallClub_backend/
 git clone <url>
 cd wallclub
 
-# Django
+# Django (Portais)
 cd services/django
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python manage.py runserver 8003
+DJANGO_SETTINGS_MODULE=wallclub.settings.portais python manage.py runserver 8005
 
 # Risk Engine
 cd services/riskengine
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python manage.py runserver 8004
+python manage.py runserver 8008
 ```
 
 ### Docker (Produção)
@@ -280,8 +279,10 @@ code wallclub.code-workspace
 ```
 
 Estrutura:
-- WallClub Django (Principal - 8003)
-- WallClub Risk Engine (Antifraude - 8004)
+- WallClub Portais (Admin/Vendas/Lojista - 8005)
+- WallClub POS (Terminal POS - 8006)
+- WallClub APIs (Mobile/Checkout - 8007)
+- WallClub Risk Engine (Antifraude - 8008)
 - WallClub Core (Package Compartilhado)
 - Root (Monorepo)
 
