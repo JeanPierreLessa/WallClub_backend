@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # Core
     'wallclub_core',
     'wallclub_core.oauth',
+    'wallclub_core.estr_organizacional.apps.EstrOrganizacionalConfig',
     
     # Apps do container portais
     'portais.admin',
