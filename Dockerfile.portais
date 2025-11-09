@@ -26,6 +26,8 @@ COPY services/core /core
 COPY services/django/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install gunicorn
+# Forçar reinstalação do wallclub_core para pegar mudanças
+RUN pip uninstall -y wallclub_core && pip install --no-cache-dir /core
 
 # Copiar código Django
 COPY services/django /app
