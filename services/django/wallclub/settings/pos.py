@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     # Core
     'wallclub_core',
     'wallclub_core.oauth',
+    'wallclub_core.estr_organizacional',
     
     # Apps do container POS
     'posp2',
