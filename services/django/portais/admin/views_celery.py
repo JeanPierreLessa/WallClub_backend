@@ -32,23 +32,58 @@ def celery_dashboard(request):
     # 1. Tasks Agendadas (hardcoded - baseado no celery.py)
     tasks_agendadas = [
         {
+            'nome': 'processar-recorrencias-diarias',
+            'task': 'portais.vendas.tasks_recorrencia.processar_recorrencias_do_dia',
+            'schedule': 'Diariamente às 08:00',
+            'args': (),
+            'proxima_execucao': None
+        },
+        {
+            'nome': 'retentar-cobrancas-falhadas',
+            'task': 'portais.vendas.tasks_recorrencia.retentar_cobrancas_falhadas',
+            'schedule': 'Diariamente às 10:00',
+            'args': (),
+            'proxima_execucao': None
+        },
+        {
+            'nome': 'notificar-recorrencias-hold',
+            'task': 'portais.vendas.tasks_recorrencia.notificar_recorrencias_hold',
+            'schedule': 'Diariamente às 18:00',
+            'args': (),
+            'proxima_execucao': None
+        },
+        {
+            'nome': 'limpar-recorrencias-antigas',
+            'task': 'portais.vendas.tasks_recorrencia.limpar_recorrencias_antigas',
+            'schedule': 'Domingos às 02:00',
+            'args': (),
+            'proxima_execucao': None
+        },
+        {
+            'nome': 'limpar-dispositivos-expirados',
+            'task': 'apps.cliente.tasks_revalidacao.limpar_dispositivos_expirados',
+            'schedule': 'Diariamente às 03:00',
+            'args': (),
+            'proxima_execucao': None
+        },
+        {
             'nome': 'carga-extrato-pos',
             'task': 'pinbank.carga_extrato_pos',
-            'schedule': 'Crontab: 5x ao dia (05:13, 09:13, 13:13, 18:13, 22:13)',
+            'schedule': '5x ao dia (05:13, 09:13, 13:13, 18:13, 22:13)',
             'args': ('72h',),
             'proxima_execucao': None
         },
         {
             'nome': 'cargas-completas-pinbank',
             'task': 'pinbank.cargas_completas',
-            'schedule': 'Crontab: De hora em hora (xx:05) das 5h às 23h',
+            'schedule': 'De hora em hora (xx:05) das 5h às 23h',
             'args': (),
             'proxima_execucao': None
         },
         {
             'nome': 'expirar-autorizacoes-saldo',
             'task': 'apps.conta_digital.expirar_autorizacoes_saldo',
-            'schedule': 'Crontab: 1x ao dia às 01:00',
+            'schedule': 'Diariamente às 01:00',
             'args': (),
             'proxima_execucao': None
         },
