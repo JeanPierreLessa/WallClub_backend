@@ -48,7 +48,7 @@ class RecorrenciaAgendada(models.Model):
     )
     
     loja = models.ForeignKey(
-        'wallclub_core.Loja',
+        'estr_organizacional.Loja',
         on_delete=models.PROTECT,
         db_column='loja_id',
         related_name='recorrencias'
