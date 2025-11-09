@@ -344,8 +344,24 @@ class CheckoutSecurityService:
         try:
             # Importar service do Risk Engine
             import requests
+            from wallclub_core.oauth.client import obter_token_interno
             
             riskengine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
+            
+            # Obter token OAuth para chamada interna
+            token = obter_token_interno()
+            if not token:
+                registrar_log(
+                    'checkout.2fa',
+                    'Falha ao obter token OAuth - Risk Engine indisponível',
+                    nivel='ERROR'
+                )
+                return {
+                    'score': 0,
+                    'bloqueado': False,
+                    'motivo': 'Risk Engine indisponível',
+                    'detalhes': {}
+                }
             
             # Preparar dados
             dados = {
@@ -366,6 +382,7 @@ class CheckoutSecurityService:
             response = requests.post(
                 f'{riskengine_url}/api/antifraude/analisar/',
                 json=dados,
+                headers={'Authorization': f'Bearer {token}'},
                 timeout=3
             )
             
