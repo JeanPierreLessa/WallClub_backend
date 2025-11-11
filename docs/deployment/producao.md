@@ -70,9 +70,9 @@ docker system df
 
 cd /var/www/WallClub_backend
 git pull origin v2.0.0
-docker-compose build wallclub-portais
+docker-compose build
 docker-compose down
-docker-compose up -d wallclub-portais
+docker-compose up -d
 
 # Rebuild e restart (apenas containers Django)
 docker-compose build --no-cache wallclub-portais wallclub-apis wallclub-pos

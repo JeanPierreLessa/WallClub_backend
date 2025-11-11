@@ -11,6 +11,7 @@ urlpatterns = [
     path('sobre/', views.sobre_view, name='sobre'),
     path('contato/', views.contato_view, name='contato'),
     path('download_app_wall/', views.download_app_view, name='download_app'),
+    path('download_app_aclub/', views.download_app_aclub_view, name='download_app_aclub'),
     path('politica_privacidade/', views.politica_privacidade_view, name='politica_privacidade'),
     path('termos_uso/', views.termos_uso_view, name='termos_uso'),
     path('termo_servico_adesao/', views.termo_servico_adesao_view, name='termo_servico_adesao'),

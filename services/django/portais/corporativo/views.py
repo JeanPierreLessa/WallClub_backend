@@ -32,6 +32,11 @@ def download_app_view(request):
     return render(request, 'portais/corporativo/download_app.html')
 
 
+def download_app_aclub_view(request):
+    """Página para download do app A CLUB"""
+    return render(request, 'portais/corporativo/download_app_aclub.html')
+
+
 def politica_privacidade_view(request):
     """Página de Política de Privacidade"""
     return render(request, 'portais/corporativo/politica_privacidade.html')

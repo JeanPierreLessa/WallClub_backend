@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A CLUB - Download do App</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 40px auto;
+    max-width: 200px;
+    height: auto;
+}
+
+.download-links {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.download-links p {
+    margin: 20px 0;
+}
+
+.download-links img {
+    transition: transform 0.3s ease;
+    border-radius: 8px;
+}
+
+.download-links img:hover {
+    transform: scale(1.05);
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin-top: auto;
+}
+
+footer p {
+    margin: 0;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .logo {
+        max-width: 150px;
+        margin-bottom: 30px;
+    }
+    
+    .download-links img {
+        max-width: 180px;
+        height: auto;
+    }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <img src="{% static 'images/logo_aclub.png' %}" alt="A CLUB" class="logo">
+    
+    <div class="download-links">
+        <p>
+            <a href="https://apps.apple.com/us/app/a-club/id6738631662" target="_blank">
+                <img src="{% static 'images/appstore.png' %}" alt="Download na App Store" width="200">
+            </a>
+        </p>
+        <p>
+            <a href="https://play.google.com/store/apps/details?id=com.agroclub.app&pli=1" target="_blank">
+                <img src="{% static 'images/google.png' %}" alt="Download no Google Play" width="230">
+            </a>
+        </p>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2024 A CLUB - Todos os direitos reservados</p>
+</footer>
+</body>
+</html>
