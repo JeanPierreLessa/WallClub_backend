@@ -48,6 +48,7 @@ def obter_estrutura_colunas_rpr():
     ESTRUTURA COMPLETA DE COLUNAS RPR:
     ==================================
     
+    tipo_operacao
     var9
     var0
     var1
@@ -96,6 +97,9 @@ def obter_estrutura_colunas_rpr():
     var43
     """
     return [
+        # 0: Tipo de transação
+        {'tipo': 'variavel', 'campo': 'tipo_operacao', 'nome': None},
+        
         # 1-13: Variáveis base
         {'tipo': 'variavel', 'campo': 'var9', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var0', 'nome': None},
