@@ -67,7 +67,7 @@ docker system df
 
 ```bash
 # Pull do código
-system prune -a
+
 cd /var/www/WallClub_backend
 git pull origin v2.0.0
 docker-compose build
