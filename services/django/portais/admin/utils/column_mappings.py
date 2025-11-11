@@ -6,6 +6,7 @@ Centraliza os nomes das colunas para evitar duplicação.
 def obter_mapeamento_colunas_completo():
     """Retorna mapeamento completo de todas as colunas (mesmo do views_transacoes.py)"""
     return {
+        "tipo_operacao": "Tipo de Transação",
         "data_transacao": "Data da Transação",
         "var0": "(0) Data da Transação",
         "var1": "(1) Hora da Transação",

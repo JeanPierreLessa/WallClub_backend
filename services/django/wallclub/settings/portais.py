@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'apps.cliente',
     'apps.ofertas',
     'parametros_wallclub',
+    'pinbank',  # Para acesso aos modelos de transações
 ]
 
 # URLs específicas

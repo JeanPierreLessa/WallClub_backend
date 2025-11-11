@@ -218,7 +218,7 @@ def base_transacoes_gestao(request):
 
 @require_secao_permitida('gestao_admin')
 def exportar_transacoes_excel(request):
-    """Exportar transações para Excel"""
+    """Exportar transações para Excel usando SQL direto"""
     try:
         # Aplicar os mesmos filtros da view principal
         filtros = {
@@ -228,9 +228,6 @@ def exportar_transacoes_excel(request):
             'nsu_filtro': request.GET.get('nsu_filtro', ''),
             'incluir_tef': request.GET.get('incluir_tef') == '1'
         }
-        
-        # Lazy import
-        BaseTransacoesGestao = apps.get_model('pinbank', 'BaseTransacoesGestao')
         
         # Construir queryset (mesmo código da view principal)
         queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
@@ -294,6 +291,10 @@ def exportar_transacoes_excel(request):
         dados = []
         for transacao in queryset:
             item = {}
+            # Adicionar tipo_operacao como primeira coluna
+            if hasattr(transacao, 'tipo_operacao'):
+                item['tipo_operacao'] = getattr(transacao, 'tipo_operacao')
+            
             # Adicionar var0 até var130 com variantes _A e _B na ordem correta
             for i in range(131):  # var0 até var130
                 campo = f'var{i}'
@@ -415,6 +416,10 @@ def exportar_transacoes_csv(request):
     dados = []
     for transacao in queryset:
         item = {}
+        # Adicionar tipo_operacao como primeira coluna
+        if hasattr(transacao, 'tipo_operacao'):
+            item['tipo_operacao'] = getattr(transacao, 'tipo_operacao')
+        
         # Adicionar var0 até var130 com variantes _A e _B na ordem correta
         for i in range(131):  # var0 até var130
             campo = f'var{i}'
@@ -521,6 +526,10 @@ def _processar_export_background(request, queryset, formato, total_registros):
                     for transacao in batch:
                         # Montar item exatamente como na tela
                         item = {}
+                        # Adicionar tipo_operacao como primeira coluna
+                        if hasattr(transacao, 'tipo_operacao'):
+                            item['tipo_operacao'] = getattr(transacao, 'tipo_operacao')
+                        
                         # Adicionar var0 até var130 com variantes _A e _B na ordem correta
                         for i in range(131):  # var0 até var130
                             campo = f'var{i}'
