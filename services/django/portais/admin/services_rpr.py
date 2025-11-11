@@ -481,7 +481,9 @@ class RPRService:
             params.append(filtros['nsu'])
         
         # Filtro tipo_operacao (Credenciadora/Wallet)
-        if not filtros.get('incluir_tef'):
+        incluir_tef_valor = filtros.get('incluir_tef')
+        registrar_log('portais.admin', f"RPR - incluir_tef valor: {incluir_tef_valor}, tipo: {type(incluir_tef_valor)}")
+        if not incluir_tef_valor:
             where_conditions.append("tipo_operacao = 'Wallet'")
         
         where_clause = " AND ".join(where_conditions)
