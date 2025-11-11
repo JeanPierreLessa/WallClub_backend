@@ -1,0 +1,155 @@
+{% extends 'portais/corporativo/base.html' %}
+{% load static %}
+
+{% block title %}Termo de Serviço e Adesão | Wall Club{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text" style="text-align: center;">
+                    <h1 class="hero-title">Termo de Serviço e Adesão ao Wall Club</h1>
+                    <p class="hero-subtitle">Credenciamento e Adesão ao Serviço de Recebimentos, Gestão de Cashbacks e Promoções</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Content Section -->
+    <section class="features">
+        <div class="container">
+            <div class="content-block" style="max-width: 900px; margin: 0 auto;">
+                
+                <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    
+                    <div style="margin-bottom: 30px;">
+                        <p style="color: #555; line-height: 1.8; text-align: justify;">
+                            Este Termo de Serviço descreve os termos e condições aplicáveis ao uso dos serviços oferecidos pela <strong>WALL BENEFÍCIOS E INSTITUIÇÃO DE PAGAMENTOS LTDA</strong> ("<strong>WALL CLUB</strong>") e/ou suas entidades afiliadas ("<strong>Afiliadas</strong>") para habilitação e integração do Parceiro ao sistema da WALL CLUB, que efetiva as operações de captura, roteamento, processamento e liquidação financeira de operações de pagamentos e recebimentos em nome de terceiros ("<strong>Sistema WALL CLUB</strong>").
+                        </p>
+                        <p style="color: #555; line-height: 1.8; text-align: justify;">
+                            Este Termo de Serviço está vinculado aos Termos e Condições Gerais ("<strong>Termo Geral</strong>"). Mediante a aceitação do respectivo Termo Geral (<a href="{% url 'portais_corporativo:termos_uso' %}" style="color: #0066cc;">www.wallclub.com.br</a>) e contratação do Sistema WALL CLUB, o Parceiro aceita as políticas e regras aqui descritas.
+                        </p>
+                        <p style="color: #d32f2f; line-height: 1.8; text-align: justify; font-weight: 600;">
+                            A ACEITAÇÃO DO TERMO GERAL E DESTE TERMO DE SERVIÇO É ABSOLUTAMENTE INDISPENSÁVEL À UTILIZAÇÃO DOS SERVIÇOS.
+                        </p>
+                    </div>
+
+                    <h2 style="color: #0066cc; font-size: 24px; font-weight: 600; margin-bottom: 15px; margin-top: 35px;">I – Objeto</h2>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>1.1.</strong> A WALL CLUB opera, dentre outras atividades, na gestão e operacionalização de pagamentos e recebimentos em nome de terceiros, oferecendo o chamado serviço de carteira de pagamentos e a abertura de contas de pagamento pré-pagas ("<strong>Contas de Pagamento</strong>") e gerenciamento de moeda eletrônica para fins de aporte e transferência de moeda eletrônica, processamento de dados e realização de transações, por meio de plataforma digital própria ("<strong>Plataforma Digital</strong>").
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>1.2.</strong> Nos termos deste Termo de Serviço, o Parceiro contrata junto à WALL CLUB os seguintes serviços ("<strong>Serviços</strong>"):
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>1.2.1. Tecnologia.</strong> O Parceiro, ao aderir a este Termo de Serviço, solicita sua habilitação e integração ao Sistema WALL CLUB, para que possa fazer uso de tecnologia e serviços relacionados às transações, de modo que os clientes do Parceiro possam efetuar os pagamentos relacionados à compra e/ou venda de bens, produtos e/ou serviços do Parceiro através da rede habilitada pela WALL CLUB.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>1.3.</strong> O Parceiro deverá possuir os hardwares e softwares necessários à realização de transações pelo Sistema WALL CLUB, arcando com todos os custos daí decorrentes.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>1.4.</strong> O Parceiro não poderá utilizar-se dos serviços da WALL CLUB para atividades relacionadas, direta ou indiretamente, com fraudes a instituições financeiras, bancos ou integrantes do mercado de meio de pagamentos ou do Sistema WALL CLUB.
+                    </p>
+
+                    <h2 style="color: #0066cc; font-size: 24px; font-weight: 600; margin-bottom: 15px; margin-top: 35px;">II – Aporte e Realização de Pagamentos</h2>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>2.1.</strong> Os recursos dos pagadores a serem utilizados pelo Sistema WALL CLUB, para a realização dos pagamentos contratados, deverão ser disponibilizados para a WALL CLUB previamente aos respectivos pagamentos para os quais deverão ser utilizados e serão registrados pela WALL em conta apartada de recursos em trânsito de terceiros.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        Estes recursos serão repassados ao Parceiro, observados os descontos aplicáveis, conforme previsto neste Termo de Serviço e/ou nos acordos comerciais eventualmente firmados entre as partes, e serão disponibilizados pela WALL CLUB diretamente em conta corrente ou de pagamentos de titularidade do Parceiro.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>2.1.1.</strong> Caso o Parceiro pretenda receber os valores das vendas parceladas em prazo inferior ao cronograma de pagamento escolhido pelo seu cliente, a WALL CLUB poderá oferecer a opção de antecipação de recebíveis, mediante a aplicação de uma taxa de desconto.
+                    </p>
+
+                    <h2 style="color: #0066cc; font-size: 24px; font-weight: 600; margin-bottom: 15px; margin-top: 35px;">III – Cancelamento e Contestação de Transações</h2>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>3.1.</strong> O Parceiro declara e garante que será integralmente responsável pela veracidade, precisão e conformidade das informações e detalhes das relações comerciais com seus clientes, no que tange à qualidade, quantidade, segurança, adequação, preço, prazo, entrega, funcionalidade e garantias dos produtos e/ou serviços adquiridos ou comercializados utilizando o Sistema WALL CLUB.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>3.2.</strong> Todas as reclamações e contestações decorrentes da venda de mercadorias ou prestação de serviços (desacordo comercial) que deram origem às transações deverão ser dirimidas diretamente entre o Parceiro e seus clientes.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>3.3.</strong> O Parceiro será informado pela WALL CLUB, por e-mail, da abertura da contestação por seu cliente. O chargeback originado de fraudes será arcado pela WALL CLUB.
+                    </p>
+
+                    <h2 style="color: #0066cc; font-size: 24px; font-weight: 600; margin-bottom: 15px; margin-top: 35px;">IV – Hipóteses de Retenção e Compensação de Valores</h2>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>4.1.</strong> O Parceiro reconhece e concorda que a WALL CLUB, a seu exclusivo critério, terá o direito de: (i) reter quaisquer quantias devidas ao Parceiro para garantir, de forma integral, quaisquer pagamentos que sejam devidos à WALL CLUB; e (ii) compensar, com quaisquer quantias devidas ao Parceiro, débitos de qualquer natureza do Parceiro perante a WALL CLUB.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>4.2.</strong> Havendo indícios de irregularidade na transação, a WALL CLUB poderá reter temporariamente e compensar os respectivos valores com créditos ou futuros pagamentos que deveriam ser realizados ao Parceiro.
+                    </p>
+
+                    <h2 style="color: #0066cc; font-size: 24px; font-weight: 600; margin-bottom: 15px; margin-top: 35px;">V – Remuneração</h2>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>5.1.</strong> Em contrapartida à prestação dos Serviços, o Parceiro pagará à WALL CLUB os valores de remuneração aplicáveis, que incluem, mas não se limitam a: (i) percentual sobre o valor da transação ("<strong>MDR</strong>"); (ii) taxa de antecipação de pagamento; (iii) tarifa de Pix ou transferência; (iv) tarifas de disparos promocionais; (v) tarifas de carga de cashback; (vi) taxa de pagamento de fornecedor com recebíveis.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>5.2.</strong> Os valores cobrados pela WALL CLUB são variáveis de acordo com a natureza de cada operação realizada e poderão ser reajustados ou alterados, encontrando-se sempre disponíveis para consulta pelo Parceiro no aplicativo da WALL CLUB.
+                    </p>
+
+                    <h2 style="color: #0066cc; font-size: 24px; font-weight: 600; margin-bottom: 15px; margin-top: 35px;">VI – Oferta de Cashback</h2>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>6.1.</strong> As partes poderão oferecer um percentual de cashback aos clientes que efetuarem transações nos estabelecimentos do Parceiro, através do Sistema WALL CLUB.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>6.2.</strong> As condições de marketing e financiamento das ações de cashback serão definidas de comum acordo entre as partes, a cada negociação, no ambiente eletrônico autenticado do Parceiro.
+                    </p>
+
+                    <h2 style="color: #0066cc; font-size: 24px; font-weight: 600; margin-bottom: 15px; margin-top: 35px;">VII – Rescisão</h2>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>7.1.</strong> O relacionamento entre WALL CLUB e Parceiro será por prazo indeterminado, com início a partir da assinatura de contrato entre as partes ou do aceite do Termo Geral pelo Parceiro, e poderá ser rescindido imotivadamente, por qualquer uma das partes, mediante aviso prévio de 30 (trinta) dias.
+                    </p>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>7.2.</strong> A WALL CLUB poderá cancelar imediatamente e sem aviso prévio o cadastro do Parceiro, e rescindir o relacionamento, se ocorrer alguma das seguintes hipóteses:
+                    </p>
+                    <ul style="color: #555; line-height: 1.8; margin-bottom: 15px; padding-left: 30px;">
+                        <li>Omissão de qualquer informação para fins do cadastro;</li>
+                        <li>Fornecimento de informação falsa ou incorreta para fins do cadastro;</li>
+                        <li>Falta de atualização das informações cadastrais, em caso de alterações;</li>
+                        <li>Suspeita de fraude;</li>
+                        <li>Decretação de falência, pedido de recuperação judicial ou extrajudicial ou insolvência civil;</li>
+                        <li>Descumprimento de qualquer condição deste Termo de Serviço e/ou do Termo Geral.</li>
+                    </ul>
+                    
+                    <p style="color: #555; line-height: 1.8; margin-bottom: 15px; text-align: justify;">
+                        <strong>7.3.</strong> Em qualquer hipótese de rescisão do Contrato, o Parceiro continuará responsável pelo pagamento dos valores devidos em até 30 (trinta) dias, com relação às transações realizadas, bem como à remuneração devida à WALL CLUB conforme este Termo de Serviço.
+                    </p>
+
+                    <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin-top: 40px; text-align: center;">
+                        <p style="color: #333; font-weight: 600; margin-bottom: 10px;">Última atualização: Novembro de 2024</p>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 0;">Wall Benefícios e Instituição de Pagamentos LTDA</p>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 0;">CNPJ: 54.430.621/0001-34</p>
+                    </div>
+
+                    <div style="margin-top: 30px; padding: 20px; background-color: #e3f2fd; border-left: 4px solid #0066cc; border-radius: 4px;">
+                        <p style="color: #555; margin: 0; font-size: 14px;">
+                            <strong>Nota:</strong> Este documento apresenta uma versão resumida do Termo de Serviço e Adesão. Para acessar o documento completo, entre em contato com <a href="mailto:atendimento@wallclub.com.br" style="color: #0066cc;">atendimento@wallclub.com.br</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

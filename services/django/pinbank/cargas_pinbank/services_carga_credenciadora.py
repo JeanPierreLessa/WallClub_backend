@@ -251,9 +251,9 @@ class CargaCredenciadoraService:
 
         # DEBUG: Verificar se var45 está em valores
         if 45 in valores:
-            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 encontrado em valores: '{valores[45]}'")
+            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 encontrado em valores: '{valores[45]}'", nivel='DEBUG')
         else:
-            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 NÃO encontrado em valores", nivel='ERROR')
+            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 NÃO encontrado em valores", nivel='DEBUG')
 
         # Mapear valores numerados para campos var0-var130
         for i in range(131):  # 0 a 130
@@ -280,9 +280,9 @@ class CargaCredenciadoraService:
                         
         # DEBUG: Verificar se var45 foi mapeado
         if 'var45' in campos:
-            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 mapeado para campo: '{campos['var45']}'")
+            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 mapeado para campo: '{campos['var45']}'", nivel='DEBUG')
         else:
-            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 NÃO foi mapeado para campo", nivel='ERROR')
+            registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 NÃO foi mapeado para campo", nivel='DEBUG')
 
         # Mapear campos especiais
         if 'banco' in valores:

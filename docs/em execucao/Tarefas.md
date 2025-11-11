@@ -43,8 +43,9 @@ Ajuste de nome de log e nivel de log (feito)
     - link_pagamento_web
     - link_recorrencia_web
 - parametros_wallclub
-- pinbank
-    - cargas
+- pinbank - ok
+    - cargas - ok
+    - transacoes - ok
 - portais
     - admin
     - controle_acesso
@@ -53,4 +54,6 @@ Ajuste de nome de log e nivel de log (feito)
     - vendas
 - posp2 - ok
     - antifraude - ok
+- sistema bancario
+- wallclub
 

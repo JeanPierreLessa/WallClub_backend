@@ -6,20 +6,22 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 08/11/2025 20:00
+**Última Atualização:** 09/11/2025 13:30
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
   - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
   - ✅ Portal Vendas: Sistema de primeiro acesso implementado
+  - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
 - ✅ **wallclub-apis** (Mobile + Checkout Web)
   - ✅ Checkout: Domínio dedicado checkout.wallclub.com.br
+  - ⚠️ Checkout 2FA: Integração com Risk Engine (requer modalidade no payload)
 - ✅ **wallclub-riskengine** (Antifraude + MaxMind)
 - ✅ **wallclub-redis** (Cache + Broker)
 - ✅ **wallclub-celery-worker** (Unificado - acesso a todos os apps)
-- ✅ **wallclub-celery-beat** (Scheduler - 3 tasks agendadas)
+- ✅ **wallclub-celery-beat** (Scheduler - 8 tasks agendadas)
 - ✅ **wallclub-flower** (Monitoramento Celery) - flower.wallclub.com.br
 
 ### Integrações Externas
@@ -94,6 +96,8 @@ WallClub_backend/
 
 **Módulos:**
 - **portais/admin/** - Portal administrativo
+  - Dashboard Celery (`/celery/`) - Monitoramento de tasks agendadas e workers
+  - Dashboard Antifraude - Revisão manual de transações
 - **portais/lojista/** - Portal lojista
 - **portais/vendas/** - Portal vendas/checkout interno
 - **portais/corporativo/** - Portal institucional público
@@ -132,6 +136,9 @@ WallClub_backend/
 - **apps/ofertas/** - Sistema de Ofertas Push
 - **apps/transacoes/** - Transações mobile
 - **checkout/** - Checkout Web + 2FA WhatsApp + Recorrências
+  - Integração com Risk Engine para análise de risco
+  - Rate limiting por telefone/IP
+  - Validação progressiva de limites
 
 **Settings:** `wallclub.settings.apis`
 

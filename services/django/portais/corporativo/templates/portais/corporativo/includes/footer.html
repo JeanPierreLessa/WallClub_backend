@@ -11,10 +11,10 @@
             <div class="footer-links">
                 <h3>Central de Ajuda</h3>
                 <ul>
-                    <li><a href="{% static 'docs/wall_termos_de_uso_geral.pdf' %}" rel="nofollow">Termos de Uso Geral</a></li>
-                    <li><a href="{% static 'docs/wall_termo_de_servico_e_de_adesao.pdf' %}" rel="nofollow">Termo de Serviço e de Adesão ao Wall Club</a></li>
-                    <li><a href="#" rel="nofollow">Política de Proteção de Dados</a></li>
-                    <li><a href="#" rel="nofollow">Política de Privacidade</a></li>
+                    <li><a href="{% url 'portais_corporativo:termos_uso' %}" rel="nofollow">Termos de Uso Geral</a></li>
+                    <li><a href="{% url 'portais_corporativo:termo_servico_adesao' %}" rel="nofollow">Termo de Serviço e de Adesão ao Wall Club</a></li>
+                    <li><a href="{% url 'portais_corporativo:politica_privacidade' %}" rel="nofollow">Política de Proteção de Dados</a></li>
+                    <li><a href="{% url 'portais_corporativo:politica_privacidade' %}" rel="nofollow">Política de Privacidade</a></li>
                     <li><a href="#" rel="nofollow">Política de Prevenção à Lavagem de Dinheiro</a></li>
                     <li><a href="#" rel="nofollow">Ouvidoria</a></li>
                 </ul>

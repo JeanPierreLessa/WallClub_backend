@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.core.mail import send_mail
+from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,6 +32,21 @@ def download_app_view(request):
     return render(request, 'portais/corporativo/download_app.html')
 
 
+def politica_privacidade_view(request):
+    """Página de Política de Privacidade"""
+    return render(request, 'portais/corporativo/politica_privacidade.html')
+
+
+def termos_uso_view(request):
+    """Página de Termos de Uso Geral"""
+    return render(request, 'portais/corporativo/termos_uso.html')
+
+
+def termo_servico_adesao_view(request):
+    """Página de Termo de Serviço e Adesão ao Wall Club"""
+    return render(request, 'portais/corporativo/termo_servico_adesao.html')
+
+
 def contato_view(request):
     """Página de contato com processamento de formulário"""
     if request.method == 'POST':
@@ -48,11 +65,53 @@ def contato_view(request):
                     'message': 'Por favor, preencha todos os campos obrigatórios.'
                 })
             
-            # Log da mensagem recebida
-            logger.info(f"Contato recebido - Nome: {name}, Email: {email}, Tipo: {contact_type}")
+            # Traduzir tipo de contato
+            tipo_texto = 'Consumidor' if contact_type == 'consumer' else 'Lojista/Comerciante'
             
-            # TODO: Implementar envio de email ou salvamento no banco
-            # Por enquanto, apenas retorna sucesso
+            # Log da mensagem recebida
+            logger.info(f"Contato recebido - Nome: {name}, Email: {email}, Tipo: {tipo_texto}")
+            
+            # Montar corpo do email
+            assunto = f'[WallClub Contato] Mensagem de {tipo_texto} - {name}'
+            corpo_email = f"""
+Nova mensagem recebida através do formulário de contato do site WallClub:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DADOS DO CONTATO:
+• Nome: {name}
+• Email: {email}
+• Telefone: {phone}
+• Tipo: {tipo_texto}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MENSAGEM:
+
+{message}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Esta mensagem foi enviada através do site: https://wcinstitucional.wallclub.com.br/contato/
+            """
+            
+            # Enviar email
+            try:
+                destinatarios = ['atendimento@wallclub.com.br', 'jp.ferreira@wallclub.com.br']
+                
+                send_mail(
+                    subject=assunto,
+                    message=corpo_email,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=destinatarios,
+                    fail_silently=False,
+                )
+                
+                logger.info(f"Email de contato enviado com sucesso para {destinatarios}")
+                
+            except Exception as email_error:
+                logger.error(f"Erro ao enviar email de contato: {str(email_error)}")
+                # Continuar mesmo se o email falhar - pelo menos logamos a mensagem
             
             return JsonResponse({
                 'success': True,

@@ -1,6 +1,6 @@
 # Deploy Produção - Monorepo WallClub
 
-**Última Atualização:** 07/11/2025
+**Última Atualização:** 09/11/2025
 
 ## ⚠️ Mudanças Importantes
 
@@ -15,6 +15,8 @@
 - Usuários: `https://wcadmin.wallclub.com.br/usuarios/`
 - Reset senha: `https://wcadmin.wallclub.com.br/reset-senha/{token}/`
 - Primeiro acesso: `https://wcadmin.wallclub.com.br/primeiro_acesso/{token}/`
+- **Dashboard Celery:** `https://wcadmin.wallclub.com.br/celery/`
+- **Dashboard Antifraude:** `https://wcadmin.wallclub.com.br/antifraude/`
 
 **Motivo:** SubdomainRouterMiddleware roteia `wcadmin.wallclub.com.br` para `wallclub.urls_admin` que responde na raiz.
 
@@ -23,6 +25,8 @@
 - ✅ Emails de primeiro acesso corrigidos
 - ✅ Templates HTML atualizados
 - ✅ Redirects internos corrigidos
+- ✅ Dashboard Celery implementado (monitoramento de tasks e workers)
+- ⚠️ Dashboard Celery: tasks agendadas não aparecem (em investigação)
 
 ## SSH
 ```bash
@@ -86,6 +90,21 @@ docker-compose restart wallclub-portais wallclub-apis wallclub-pos wallclub-risk
 
 
 ## Logs e Monitoramento
+
+### Dashboards Web
+- **Celery:** `https://wcadmin.wallclub.com.br/celery/`
+  - Tasks agendadas (8 configuradas no celery.py)
+  - Workers ativos
+  - Estatísticas de execução
+  - ⚠️ Tasks agendadas não aparecem (em investigação)
+- **Flower:** `https://flower.wallclub.com.br/`
+  - Monitoramento completo do Celery
+  - Tasks em tempo real
+- **Antifraude:** `https://wcadmin.wallclub.com.br/antifraude/`
+  - Revisão manual de transações
+  - Blacklist/Whitelist
+
+### Logs de Containers
 ```bash
 # Status de todos os containers
 docker ps
@@ -95,10 +114,22 @@ docker logs wallclub-portais --tail 100 -f
 docker logs wallclub-apis --tail 100 -f
 docker logs wallclub-pos --tail 100 -f
 docker logs wallclub-riskengine --tail 100 -f
-docker logs wallclub-celery-worker-portais --tail 100 -f
-docker logs wallclub-celery-worker-apis --tail 100 -f
+docker logs wallclub-celery-worker --tail 100 -f
 docker logs wallclub-celery-beat --tail 100 -f
 docker logs nginx --tail 100 -f
+```
+
+### Logs de Aplicação
+```bash
+# Logs do Django (por módulo)
+tail -f services/django/logs/portais.admin.log
+tail -f services/django/logs/portais.vendas.log
+tail -f services/django/logs/checkout.2fa.log
+tail -f services/django/logs/posp2.log
+
+# Flush Redis (limpar cache e filas)
+docker exec wallclub-redis redis-cli FLUSHALL
+docker-compose restart wallclub-celery-worker wallclub-celery-beat
 ```
 
 ## Arquitetura de Roteamento (Híbrida)
