@@ -76,14 +76,8 @@ def exportar_excel(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, s
         top=Side(style='thin'), bottom=Side(style='thin')
     )
     
-    # Título
+    # Cabeçalhos começam na linha 1 (sem título)
     linha_atual = 1
-    if titulo:
-        ws.merge_cells(f'A1:{get_column_letter(len(dados[0]))}1')
-        ws['A1'] = titulo
-        ws['A1'].font = Font(bold=True, size=16)
-        ws['A1'].alignment = Alignment(horizontal="center")
-        linha_atual = 3
     
     # Cabeçalhos
     colunas = list(dados[0].keys())
@@ -431,14 +425,8 @@ def criar_excel_em_arquivo(caminho_arquivo: str, dados: List[Dict], cabecalhos: 
         top=Side(style='thin'), bottom=Side(style='thin')
     )
     
-    # Título
+    # Cabeçalhos começam na linha 1 (sem título)
     linha_atual = 1
-    if titulo:
-        ws.merge_cells(f'A1:{get_column_letter(len(dados[0]))}1')
-        ws['A1'] = titulo
-        ws['A1'].font = Font(bold=True, size=16)
-        ws['A1'].alignment = Alignment(horizontal="center")
-        linha_atual = 3
     
     # Cabeçalhos
     colunas = list(dados[0].keys())
