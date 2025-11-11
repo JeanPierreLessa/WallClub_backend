@@ -10,6 +10,12 @@
   - Log adicionado para traceback completo
   - Aguardando novo teste para ver erro detalhado
 
+### Gestão Admin (10/11/2025)
+- ✅ Filtro "Incluir transações Credenciadora" usando campo `tipo_operacao`
+- ✅ Coluna "Tipo de Transação" adicionada como primeira coluna (tabela + exports)
+- ✅ App `pinbank` adicionado ao INSTALLED_APPS do container portais
+- ⏳ **Testar exports (Excel/CSV) após adicionar app pinbank**
+
 ### Outras Tarefas
 - Validar Gestao (tem buraco?)
 - ajeitar pra tirar o sms

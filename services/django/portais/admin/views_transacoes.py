@@ -220,6 +220,9 @@ def base_transacoes_gestao(request):
 def exportar_transacoes_excel(request):
     """Exportar transações para Excel usando SQL direto"""
     try:
+        # Import do modelo
+        from pinbank.models import BaseTransacoesGestao
+        
         # Aplicar os mesmos filtros da view principal
         filtros = {
             'data_inicial': request.GET.get('data_inicial', date.today().replace(day=1).strftime('%Y-%m-%d')),
@@ -340,6 +343,9 @@ def exportar_transacoes_excel(request):
 @require_secao_permitida('gestao_admin')
 def exportar_transacoes_csv(request):
     """Exportar transações para CSV com proteção contra timeout"""
+    # Import do modelo
+    from pinbank.models import BaseTransacoesGestao
+    
     # Aplicar os mesmos filtros da view principal
     filtros = {
         'data_inicial': request.GET.get('data_inicial', date.today().replace(day=1).strftime('%Y-%m-%d')),
@@ -348,9 +354,6 @@ def exportar_transacoes_csv(request):
         'nsu_filtro': request.GET.get('nsu_filtro', ''),
         'incluir_tef': request.GET.get('incluir_tef') == '1'
     }
-    
-    # Lazy import
-    BaseTransacoesGestao = apps.get_model('pinbank', 'BaseTransacoesGestao')
     
     # Construir queryset (mesmo código da view principal)
     queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
