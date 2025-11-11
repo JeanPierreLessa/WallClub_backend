@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Nginx - Gateway (única porta externa)
   nginx:
