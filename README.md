@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 09/11/2025 13:30
+**Última Atualização:** 10/11/2025 22:56
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -594,7 +594,17 @@ Proprietary - WallClub © 2025
 **Última atualização:** 07/11/2025 12:56  
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (07/11/2025)
+### Atualizações Recentes (10/11/2025)
+- ✅ **Gestão Admin:** Filtro por tipo de transação (Wallet/Credenciadora)
+  - Campo `tipo_operacao` adicionado como primeira coluna (tabela + exports)
+  - Checkbox "Incluir transações Credenciadora" no RPR e Gestão Admin
+  - App `pinbank` adicionado ao INSTALLED_APPS do container portais
+- ✅ **Exports Excel:** Removidas linhas inúteis (título + linha em branco)
+  - Headers começam direto na linha 1
+- ✅ **RPR:** JavaScript alinhado com filtros padrão do servidor
+  - Tabela AJAX usa mesmos filtros que métricas (mês corrente)
+
+### Atualizações Anteriores (07/11/2025)
 - ✅ Portal Admin sem prefixo `/portal_admin/` (responde na raiz via wcadmin.wallclub.com.br)
 - ✅ SubdomainRouterMiddleware ativo (roteamento por domínio)
 - ✅ Sistema de logs unificado (processo único por módulo)

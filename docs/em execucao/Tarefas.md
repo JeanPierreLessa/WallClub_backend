@@ -14,7 +14,9 @@
 - ✅ Filtro "Incluir transações Credenciadora" usando campo `tipo_operacao`
 - ✅ Coluna "Tipo de Transação" adicionada como primeira coluna (tabela + exports)
 - ✅ App `pinbank` adicionado ao INSTALLED_APPS do container portais
-- ⏳ **Testar exports (Excel/CSV) após adicionar app pinbank**
+- ✅ Exports (Excel/CSV) funcionando corretamente
+- ✅ Excel sem linhas inúteis (headers na linha 1)
+- ✅ RPR com filtros JavaScript alinhados ao servidor
 
 ### Outras Tarefas
 - Validar Gestao (tem buraco?)

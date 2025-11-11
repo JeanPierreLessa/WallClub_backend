@@ -3,7 +3,7 @@
 Script para executar cargas completas sequencialmente:
 1. Carga extrato POS (30min)
 2. Carga base gestão (recalcula variáveis)
-3. Carga TEF (transações sem transactiondata)
+3. Carga Credenciadora (transações de terminais não cadastrados)
 
 Uso:
     python pinbank/cargas_pinbank/executar_cargas_completas.py
@@ -72,8 +72,8 @@ def main():
             'descricao': 'Carga base gestão (recálculo de variáveis - 10000 registros)'
         },
         {
-            'comando_args': ['carga_tef', '--limite=10000'],
-            'descricao': 'Carga TEF (transações sem transactiondata - 10000 registros)'
+            'comando_args': ['carga_credenciadora', '--limite=10000'],
+            'descricao': 'Carga Credenciadora (transações de terminais não cadastrados - 10000 registros)'
         },
         {
             'comando_args': ['ajustes_manuais_base'],

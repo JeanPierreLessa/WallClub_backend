@@ -329,8 +329,8 @@ class CalculadoraBaseCredenciadora:
                 valores[35] = self._format_decimal(0, 2)
 
             # Variável 36 - ValorTaxaAdm da Pinbank (CORRIGIDO - antes usava param_12)
-            # Valor já vem em percentual (0.89 = 0.89%), não dividir por 100
-            valores[36] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaAdm'], 4), 4)
+            # Valor vem em percentual (2.60 = 2.6%), dividir por 100 para obter decimal (0.026)
+            valores[36] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaAdm'], 4) / 100, 4)
 
             # Variável 37 - var19 * var36
             if valores[19] is None:
@@ -345,8 +345,8 @@ class CalculadoraBaseCredenciadora:
                 valores[38] = self._format_decimal(valores[19] - valores[37], 2)
 
             # Variável 39 - ValorTaxaMes da Pinbank (CORRIGIDO - antes usava param_13)
-            # Valor já vem em percentual (1.99 = 1.99%), não dividir por 100
-            valores[39] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaMes'], 4), 4)
+            # Valor vem em percentual (2.60 = 2.6%), dividir por 100 para obter decimal (0.026)
+            valores[39] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaMes'], 4) / 100, 4)
 
             # NOTA: var40, var41, var42 serão calculadas após var44 estar disponível
             # var41 = var19 - var37 - var44 (depende de var44)
@@ -409,8 +409,8 @@ class CalculadoraBaseCredenciadora:
             else:
                 valores[88] = self._format_decimal(valores[87] * valores[19], 2)
 
-            # var89 - ValorTaxaAdm da Pinbank
-            valores[89] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaAdm'], 4), 4)
+            # var89 - ValorTaxaAdm da Pinbank (dividir por 100 para converter percentual em decimal)
+            valores[89] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaAdm'], 4) / 100, 4)
 
             # var90 - var89 * var19
             if valores[19] is None:
@@ -424,8 +424,8 @@ class CalculadoraBaseCredenciadora:
                 param_wall_4 = 0
             valores[91] = self._format_decimal(self._to_decimal(param_wall_4, 4), 4)
 
-            # Variável 92 - ValorTaxaMes da Pinbank
-            valores[92] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaMes'], 4), 4)
+            # Variável 92 - ValorTaxaMes da Pinbank (dividir por 100 para converter percentual em decimal)
+            valores[92] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaMes'], 4) / 100, 4)
 
             # Variável 78 - Cópia da 91
             valores[78] = valores[91]
