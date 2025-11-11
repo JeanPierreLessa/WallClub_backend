@@ -302,9 +302,9 @@ def relatorio_producao_receita(request):
         where_conditions.append("var6 = %s")
         params.append(filtros['loja'])
     
-    # Filtro TEF
+    # Filtro tipo_operacao (Credenciadora/Wallet)
     if not filtros['incluir_tef']:
-        where_conditions.append("(var130 != 'TEF' OR var130 IS NULL)")
+        where_conditions.append("tipo_operacao = 'Wallet'")
     
     where_clause = " AND ".join(where_conditions)
     

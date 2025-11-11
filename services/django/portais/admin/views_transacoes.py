@@ -93,9 +93,9 @@ def base_transacoes_gestao(request):
         where_conditions.append("var9 LIKE %s")
         params.append(f"%{filtros['nsu_filtro']}%")
     
-    # Filtro TEF
+    # Filtro tipo_operacao (Credenciadora/Wallet)
     if not filtros['incluir_tef']:
-        where_conditions.append("(var130 != 'TEF' OR var130 IS NULL)")
+        where_conditions.append("tipo_operacao = 'Wallet'")
     
     where_clause = " AND ".join(where_conditions)
     
@@ -258,9 +258,9 @@ def exportar_transacoes_excel(request):
         if filtros['nsu_filtro']:
             queryset = queryset.filter(var9__icontains=filtros['nsu_filtro'])
         
-        # Filtro TEF
+        # Filtro tipo_operacao
         if not filtros['incluir_tef']:
-            queryset = queryset.exclude(var130='TEF')
+            queryset = queryset.filter(tipo_operacao='Wallet')
         
         # Ordenação por data
         queryset = queryset.extra(
@@ -379,9 +379,9 @@ def exportar_transacoes_csv(request):
     if filtros['nsu_filtro']:
         queryset = queryset.filter(var9__icontains=filtros['nsu_filtro'])
     
-    # Filtro TEF
+    # Filtro tipo_operacao
     if not filtros['incluir_tef']:
-        queryset = queryset.exclude(var130='TEF')
+        queryset = queryset.filter(tipo_operacao='Wallet')
     
     # Ordenação por data
     queryset = queryset.extra(
