@@ -480,9 +480,9 @@ class RPRService:
             where_conditions.append("var9 = %s")
             params.append(filtros['nsu'])
         
-        # Filtro TEF
+        # Filtro tipo_operacao (Credenciadora/Wallet)
         if not filtros.get('incluir_tef'):
-            where_conditions.append("(var130 != 'TEF' OR var130 IS NULL)")
+            where_conditions.append("tipo_operacao = 'Wallet'")
         
         where_clause = " AND ".join(where_conditions)
         
