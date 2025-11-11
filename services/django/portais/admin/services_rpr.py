@@ -490,13 +490,11 @@ class RPRService:
         registrar_log('portais.admin', f"RPR - WHERE clause: {where_clause}")
         registrar_log('portais.admin', f"RPR - Params: {params}")
         
-        # Query para contar total
+        # Query para contar total (contar NSUs distintos)
         count_sql = f"""
-            SELECT COUNT(*) FROM (
-                SELECT var9, ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                FROM baseTransacoesGestao
-                WHERE {where_clause}
-            ) t WHERE rn = 1
+            SELECT COUNT(DISTINCT var9)
+            FROM baseTransacoesGestao
+            WHERE {where_clause}
         """
         
         with connection.cursor() as cursor:
