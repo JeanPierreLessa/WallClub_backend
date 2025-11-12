@@ -1,5 +1,8 @@
 FROM nginx:1.25-alpine
 
+# Remover configuração padrão que conflita
+RUN rm -f /etc/nginx/conf.d/default.conf
+
 # Copiar configuração customizada
 COPY nginx.conf /etc/nginx/nginx.conf
 
