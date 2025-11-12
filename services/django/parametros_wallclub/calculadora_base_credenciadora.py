@@ -13,6 +13,7 @@ from wallclub_core.utilitarios.funcoes_gerais import proxima_sexta_feira
 from django.db import connection
 from wallclub_core.utilitarios.log_control import registrar_log, log_esta_habilitado
 from wallclub_core.database.queries import TransacoesQueries
+from pinbank.models import BaseTransacoesGestao
 
 # logger removido - usando registrar_log
 
