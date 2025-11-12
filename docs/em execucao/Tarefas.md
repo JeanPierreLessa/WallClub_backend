@@ -20,7 +20,6 @@
 
 ### Outras Tarefas
 - Validar Gestao (tem buraco?)
-- ajeitar pra tirar o sms
 - Email Aclub nao esta indo com layout correto (portal lojista)
 - Gestao: contabilizacao de cashback
 - Voucher
