@@ -49,7 +49,8 @@ Ajuste de nome de log e nivel de log (feito)
 - checkout
     - link_pagamento_web
     - link_recorrencia_web
-- parametros_wallclub
+- parametros_wallclub - ok
+    - calculadora_base_gestao - ok
 - pinbank - ok
     - cargas - ok
     - transacoes - ok

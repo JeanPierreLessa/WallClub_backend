@@ -57,13 +57,13 @@ class CalculadoraBaseCredenciadora:
 
             # Capturar informações da Loja, canal e plano
             nsu_operacao = dados_linha['NsuOperacao']
-            
+
             # Usar info_loja de dados_linha se já existir (Credenciadora/Checkout), senão buscar (Wallet)
             if 'info_loja' in dados_linha:
                 info_loja = dados_linha['info_loja']
             else:
                 info_loja = self.pinbank_service.pega_info_loja(nsu_operacao)
-            
+
             # Usar info_canal de dados_linha se já existir (Credenciadora/Checkout), senão buscar (Wallet)
             if 'info_canal' in dados_linha:
                 info_canal = dados_linha['info_canal']
@@ -136,7 +136,7 @@ class CalculadoraBaseCredenciadora:
                     valores[69] = "Pendente"  # Default para pendente
             else:
                 valores[69] = descricao_status
-            
+
             # Variável 70 - DataCancelamento (CORRIGIDO - adicionar validação e conversão)
             descricao_status_transacao = dados_linha.get('DescricaoStatus')
             if descricao_status_transacao == 'TRANS. CANCELADA POSTERIOR':
@@ -651,7 +651,7 @@ class CalculadoraBaseCredenciadora:
             param_14 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 14, wall)
             if param_14 is None:
                 param_14 = 0
-            
+
             if valores[19] is None:
                 valores[60] = None
             else:
@@ -706,36 +706,30 @@ class CalculadoraBaseCredenciadora:
             # Se já foi setada uma vez, não mexer mais (preservar data do primeiro pagamento)
             nsu_operacao = dados_linha['NsuOperacao']
             descricao_status_pag = str(dados_linha.get('DescricaoStatusPagamento', '')).strip()
-            
-            registrar_log('parametros_wallclub.calculadora_base_credenciadora', 
-                         f"DEBUG var45 - NSU: {nsu_operacao}, Status: '{descricao_status_pag}'")
-            
+
             try:
                 registro_existente = BaseTransacoesGestao.objects.filter(var9=nsu_operacao).first()
-                registrar_log('parametros_wallclub.calculadora_base_credenciadora', 
-                             f"DEBUG var45 - Registro existente: {registro_existente is not None}, "
-                             f"var45 existente: '{registro_existente.var45 if registro_existente else 'N/A'}'")
-                
+
                 if registro_existente and registro_existente.var45:
                     # Preservar data existente
                     valores[45] = registro_existente.var45
-                    registrar_log('parametros_wallclub.calculadora_base_credenciadora', 
-                                 f"DEBUG var45 - Preservando data existente: {valores[45]}")
+                    registrar_log('parametros_wallclub.calculadora_base_gestao',
+                                 f"var45 preservada para NSU {nsu_operacao}: {valores[45]}",
+                                 nivel='DEBUG')
                 else:
                     # Primeira vez ou não tinha data: calcular
                     if descricao_status_pag.startswith('Pago'):
                         from datetime import datetime
                         valores[45] = datetime.now().strftime('%d/%m/%Y')
-                        registrar_log('parametros_wallclub.calculadora_base_credenciadora', 
-                                     f"DEBUG var45 - Calculando nova data (Pago): {valores[45]}")
+                        registrar_log('parametros_wallclub.calculadora_base_gestao',
+                                     f"var45 calculada para NSU {nsu_operacao} (Pago): {valores[45]}",
+                                     nivel='DEBUG')
                     else:
                         valores[45] = ''
-                        registrar_log('parametros_wallclub.calculadora_base_credenciadora', 
-                                     f"DEBUG var45 - Status não é Pago, deixando vazio")
             except Exception as e:
                 # Se houver erro na busca, calcular normalmente
-                registrar_log('parametros_wallclub.calculadora_base_credenciadora', 
-                             f"DEBUG var45 - Erro na busca: {str(e)}", nivel='ERROR')
+                registrar_log('parametros_wallclub.calculadora_base_gestao',
+                             f"Erro ao buscar var45 para NSU {nsu_operacao}: {str(e)}", nivel='ERROR')
                 if descricao_status_pag.startswith('Pago'):
                     from datetime import datetime
                     valores[45] = datetime.now().strftime('%d/%m/%Y')

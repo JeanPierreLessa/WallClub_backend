@@ -561,7 +561,7 @@ class CalculadoraDesconto:
         from wallclub_core.utilitarios.log_control import registrar_log
         message_str = str(message) if message is not None else "None"
         self.logs.append(message_str)
-        registrar_log('parametros_wallclub', f"CalculadoraDesconto: {message_str}")
+        registrar_log('parametros_wallclub', f"CalculadoraDesconto: {message_str}", nivel='DEBUG')
 
     def calcular_cashback(self, valor_original: float, data: str, forma: str,
                          parcelas: int, id_loja: int, percentual_cashback: float = 5.0) -> Dict[str, Any]:
