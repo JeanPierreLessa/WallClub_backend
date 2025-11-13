@@ -393,6 +393,12 @@ class CadastroService:
                 # Remover OTP do cache
                 cache.delete(cache_key)
 
+                # DEBUG: Verificar se device_fingerprint foi recebido
+                registrar_log('apps.cliente',
+                    f"🔍 DEBUG validar_otp_cadastro: device_fingerprint={'SIM' if device_fingerprint else 'NÃO'}, "
+                    f"ip={ip_address}, user_agent={user_agent[:50] if user_agent else 'vazio'}",
+                    nivel='INFO')
+
                 # Registrar dispositivo como confiável (se fornecido)
                 if device_fingerprint:
                     from wallclub_core.seguranca.services_device import DeviceManagementService
@@ -416,8 +422,12 @@ class CadastroService:
                             f"✅ Dispositivo registrado no cadastro: cliente={cliente.id}, device={device_fingerprint[:8]}...")
                     except Exception as e:
                         # Não falhar o cadastro se dispositivo não for registrado
+                        import traceback
                         registrar_log('apps.cliente',
-                            f"⚠️ Erro ao registrar dispositivo no cadastro: {str(e)}", nivel='WARNING')
+                            f"⚠️ Erro ao registrar dispositivo no cadastro: {str(e)}\n{traceback.format_exc()}", nivel='ERROR')
+                else:
+                    registrar_log('apps.cliente',
+                        f"⚠️ device_fingerprint NÃO foi enviado pelo app no validar_otp_cadastro", nivel='WARNING')
 
                 registrar_log('apps.cliente',
                     f"✅ Cadastro concluído: {cpf_limpo[:3]}***, ID={cliente.id}")
