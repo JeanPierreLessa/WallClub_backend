@@ -71,7 +71,8 @@ def pagamentos_list(request):
 def pagamentos_upload_csv(request):
     """
     Processa upload de CSV com dados de pagamentos
-    Estrutura esperada: nsu,var44,var45,var58,var59,var66,var71,var100,var111,var112
+    Estrutura esperada: nsu;var44;var45;var58;var59;var66;var71;var100;var111;var112
+    Separador: ponto-e-vírgula (;)
     """
     try:
         if 'arquivo_csv' not in request.FILES:
@@ -91,11 +92,11 @@ def pagamentos_upload_csv(request):
             except UnicodeDecodeError:
                 return JsonResponse({'success': False, 'error': 'Erro de codificação do arquivo'})
         
-        # Processar CSV
+        # Processar CSV com separador ponto-e-vírgula
         pagamentos = []
         linhas_erro = []
         
-        reader = csv.DictReader(io.StringIO(conteudo))
+        reader = csv.DictReader(io.StringIO(conteudo), delimiter=';')
         
         # Verificar se tem as colunas necessárias
         colunas_esperadas = ['nsu', 'var44', 'var45', 'var58', 'var59', 'var66', 'var71', 'var100', 'var111', 'var112']
@@ -104,7 +105,7 @@ def pagamentos_upload_csv(request):
         if not all(col in colunas_arquivo for col in colunas_esperadas):
             return JsonResponse({
                 'success': False, 
-                'error': f'CSV deve conter as colunas: {", ".join(colunas_esperadas)}'
+                'error': f'CSV deve conter as colunas (separadas por ponto-e-vírgula): {"; ".join(colunas_esperadas)}'
             })
         
         for i, linha in enumerate(reader, 1):

@@ -249,7 +249,7 @@ Cadastro → Senha SMS (4 dígitos) → Login → JWT 30 dias → Biometria
 ```
 
 **Fluxo de Dispositivos:**
-- **Clientes:** Limite de 1 dispositivo confiável (validade 30 dias)
+- **Clientes:** Limite de 5 dispositivos confiáveis (validade 30 dias) - atualizado 12/11/2025
 - **Vendedores/Lojistas:** Limite de 2 dispositivos
 - **Admins:** Sem limite
 
@@ -282,7 +282,28 @@ Cadastro → Senha SMS (4 dígitos) → Login → JWT 30 dias → Biometria
 
 **Documentação:** `docs/fluxo_login_revalidacao.md`
 
-### 9.1. BYPASS 2FA - TESTES APPLE/GOOGLE (31/10/2025):
+### 9.1. REGISTRO DE DISPOSITIVO NO CADASTRO (12/11/2025):
+**Objetivo:** Evitar pedir OTP duas vezes (cadastro + primeiro login)
+
+**Implementação:**
+- Endpoint `POST /api/v1/cliente/cadastro/validar_otp/` registra dispositivo automaticamente
+- Payload esperado do app:
+  ```json
+  {
+    "cpf": "12345678900",
+    "codigo": "123456",
+    "canal_id": 1,
+    "device_fingerprint": "6aa0e9bd51366b1c2e6d50b7e86beb9f"
+  }
+  ```
+
+**Fluxo:**
+1. Cliente faz cadastro → valida OTP → dispositivo registrado ✅
+2. Cliente faz login → dispositivo já existe → sem OTP ✅
+
+**Arquivos:** `apps/cliente/views_cadastro.py`, `apps/cliente/services_cadastro.py`
+
+### 9.2. BYPASS 2FA - TESTES APPLE/GOOGLE (31/10/2025):
 **Objetivo:** Permitir que revisores Apple/Google testem app sem dependência de SMS/WhatsApp
 
 **Implementação:**

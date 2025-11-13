@@ -97,6 +97,16 @@ app.conf.beat_schedule = {
         }
     },
     
+    # Migração financeiro → pagamentos_efetuados - De hora em hora, minuto 15
+    'migrar-financeiro-pagamentos': {
+        'task': 'pinbank.migrar_financeiro_pagamentos',
+        'schedule': crontab(minute=15),  # xx:15 de hora em hora (24h)
+        'kwargs': {'limite': 1000},  # Processar 1000 registros por vez
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+    
     # ============================================
     # CONTA DIGITAL - AUTORIZAÇÕES
     # ============================================

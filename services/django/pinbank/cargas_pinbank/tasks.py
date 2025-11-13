@@ -135,3 +135,21 @@ def carga_credenciadora_task(self):
     except Exception as e:
         logger.error(f"[{datetime.now()}] Erro na carga credenciadora: {str(e)}")
         raise
+
+
+@shared_task(bind=True, name='pinbank.migrar_financeiro_pagamentos')
+def migrar_financeiro_pagamentos_task(self, limite=1000):
+    """
+    Task para migrar dados de wclub.financeiro para wallclub.pagamentos_efetuados
+    
+    Args:
+        limite: Número máximo de registros a processar por execução (padrão: 1000)
+    """
+    try:
+        logger.info(f"[{datetime.now()}] Iniciando migração financeiro → pagamentos_efetuados - limite: {limite}")
+        call_command('migrar_financeiro_pagamentos', f'--limite={limite}')
+        logger.info(f"[{datetime.now()}] Migração financeiro → pagamentos_efetuados concluída com sucesso")
+        return {'status': 'success', 'limite': limite}
+    except Exception as e:
+        logger.error(f"[{datetime.now()}] Erro na migração financeiro → pagamentos_efetuados: {str(e)}")
+        raise

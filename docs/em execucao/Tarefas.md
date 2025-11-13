@@ -18,12 +18,19 @@
 - ✅ Excel sem linhas inúteis (headers na linha 1)
 - ✅ RPR com filtros JavaScript alinhados ao servidor
 
+### Melhorias Implementadas (12/11/2025)
+- ✅ IP real capturado através do Load Balancer (Nginx configurado)
+- ✅ Limite de dispositivos aumentado de 2 para 5 por cliente
+- ✅ POS não cria mais senha inútil (hash dummy até cadastro completo no app)
+- ✅ Código preparado para registrar dispositivo no cadastro (aguarda app enviar device_fingerprint)
+
 ### Outras Tarefas
 - Email Aclub nao esta indo com layout correto (portal lojista)
 - Gestao: contabilizacao de cashback
 - Voucher
 - Testar concessao de cashback
 - nao envia mensagem de baixar app no checkout
+- ⏳ App: Adicionar device_fingerprint no payload de POST /api/v1/cliente/cadastro/validar_otp/
 - configurar nginx para receber ip real e ver alguns temmplates de remover cliente_auth
 - UK em loja (remover felipe)
 - Alteracao em loja (alterar, mudar vendedor, todas as lojas)
