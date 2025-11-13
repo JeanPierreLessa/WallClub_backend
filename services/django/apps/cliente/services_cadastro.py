@@ -398,13 +398,19 @@ class CadastroService:
                     from wallclub_core.seguranca.services_device import DeviceManagementService
                     
                     try:
+                        # Montar dados do dispositivo conforme esperado pelo service
+                        dados_dispositivo = {
+                            'device_fingerprint': device_fingerprint,
+                            'user_agent': user_agent or '',
+                            'nome_dispositivo': 'Dispositivo do Cadastro'
+                        }
+                        
                         DeviceManagementService.registrar_dispositivo(
                             user_id=cliente.id,
                             tipo_usuario='cliente',
-                            device_fingerprint=device_fingerprint,
-                            ip_address=ip_address or '0.0.0.0',
-                            user_agent=user_agent or '',
-                            nome_dispositivo='Dispositivo do Cadastro'
+                            dados_dispositivo=dados_dispositivo,
+                            ip_registro=ip_address or '0.0.0.0',
+                            marcar_confiavel=True
                         )
                         registrar_log('apps.cliente',
                             f"✅ Dispositivo registrado no cadastro: cliente={cliente.id}, device={device_fingerprint[:8]}...")
