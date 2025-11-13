@@ -331,14 +331,19 @@ class CadastroService:
             }
 
     @staticmethod
-    def validar_otp_cadastro(cpf: str, codigo: str, canal_id: int) -> dict:
+    def validar_otp_cadastro(cpf: str, codigo: str, canal_id: int, device_fingerprint: str = None, 
+                            ip_address: str = None, user_agent: str = None) -> dict:
         """
         Valida OTP + finaliza cadastro (marca cadastro_completo=TRUE)
+        + Registra dispositivo como confiável
 
         Args:
             cpf: CPF do cliente
             codigo: Código OTP
             canal_id: ID do canal
+            device_fingerprint: Fingerprint do dispositivo (opcional)
+            ip_address: IP do cliente (opcional)
+            user_agent: User agent do cliente (opcional)
 
         Returns:
             dict com resultado
@@ -387,6 +392,26 @@ class CadastroService:
 
                 # Remover OTP do cache
                 cache.delete(cache_key)
+
+                # Registrar dispositivo como confiável (se fornecido)
+                if device_fingerprint:
+                    from wallclub_core.seguranca.services_device import DeviceManagementService
+                    
+                    try:
+                        DeviceManagementService.registrar_dispositivo(
+                            user_id=cliente.id,
+                            tipo_usuario='cliente',
+                            device_fingerprint=device_fingerprint,
+                            ip_address=ip_address or '0.0.0.0',
+                            user_agent=user_agent or '',
+                            nome_dispositivo='Dispositivo do Cadastro'
+                        )
+                        registrar_log('apps.cliente',
+                            f"✅ Dispositivo registrado no cadastro: cliente={cliente.id}, device={device_fingerprint[:8]}...")
+                    except Exception as e:
+                        # Não falhar o cadastro se dispositivo não for registrado
+                        registrar_log('apps.cliente',
+                            f"⚠️ Erro ao registrar dispositivo no cadastro: {str(e)}", nivel='WARNING')
 
                 registrar_log('apps.cliente',
                     f"✅ Cadastro concluído: {cpf_limpo[:3]}***, ID={cliente.id}")

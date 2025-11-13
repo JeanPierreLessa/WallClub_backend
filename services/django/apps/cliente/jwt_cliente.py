@@ -322,7 +322,9 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
         ip_address = None
         user_agent = None
         if request:
-            ip_address = request.META.get('REMOTE_ADDR')
+            # Capturar IP real considerando proxies/load balancers
+            from .views import get_client_ip
+            ip_address = get_client_ip(request)
             user_agent = request.META.get('HTTP_USER_AGENT', '')
         
         # CRÍTICO: Revogar apenas access tokens anteriores (preservar refresh tokens)

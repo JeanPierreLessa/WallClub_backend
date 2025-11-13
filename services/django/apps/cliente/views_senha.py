@@ -73,7 +73,7 @@ def solicitar_troca_senha(request):
             user_id=cliente_id,
             tipo_usuario='cliente',
             telefone=cliente.celular,
-            ip_solicitacao=request.META.get('REMOTE_ADDR')
+            ip_solicitacao=get_client_ip(request)
         )
         
         if not resultado_otp['success']:

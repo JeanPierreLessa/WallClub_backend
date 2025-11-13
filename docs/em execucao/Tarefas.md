@@ -19,7 +19,6 @@
 - ✅ RPR com filtros JavaScript alinhados ao servidor
 
 ### Outras Tarefas
-- Validar Gestao (tem buraco?)
 - Email Aclub nao esta indo com layout correto (portal lojista)
 - Gestao: contabilizacao de cashback
 - Voucher

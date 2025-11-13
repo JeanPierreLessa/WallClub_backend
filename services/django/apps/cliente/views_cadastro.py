@@ -177,6 +177,7 @@ def validar_otp_cadastro(request):
         cpf = request.data.get('cpf')
         codigo = request.data.get('codigo')
         canal_id = request.data.get('canal_id')
+        device_fingerprint = request.data.get('device_fingerprint')
         
         if not cpf or not codigo or not canal_id:
             return Response({
@@ -184,7 +185,19 @@ def validar_otp_cadastro(request):
                 'mensagem': 'CPF, código e canal_id são obrigatórios'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        resultado = CadastroService.validar_otp_cadastro(cpf, codigo, canal_id)
+        # Capturar IP e user agent para registrar dispositivo
+        from .views import get_client_ip
+        ip_address = get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        resultado = CadastroService.validar_otp_cadastro(
+            cpf, 
+            codigo, 
+            canal_id,
+            device_fingerprint=device_fingerprint,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
         
         if resultado['sucesso']:
             return Response(resultado, status=status.HTTP_200_OK)

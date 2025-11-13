@@ -507,7 +507,7 @@ class ClienteAuth2FAService:
             mensagem_device = ''
 
             if marcar_confiavel:
-                # Verificar limite de dispositivos (cliente: máximo 2)
+                # Verificar limite de dispositivos (cliente: máximo 5)
                 dispositivos = DeviceManagementService.listar_dispositivos(
                     user_id=cliente_id,
                     tipo_usuario='cliente'
@@ -532,13 +532,13 @@ class ClienteAuth2FAService:
                         break
 
                 # Se já existe, pode renovar (não conta no limite)
-                if not dispositivo_existente and len(dispositivos) >= 2:
-                    # Cliente já tem 2 dispositivos e este é um novo: não permitir
+                if not dispositivo_existente and len(dispositivos) >= 5:
+                    # Cliente já tem 5 dispositivos e este é um novo: não permitir
                     registrar_log('apps.cliente',
-                        f"Tentativa de adicionar 3º dispositivo bloqueada: cliente={cliente_id}")
+                        f"Tentativa de adicionar 6º dispositivo bloqueada: cliente={cliente_id}")
                     return {
                         'sucesso': False,
-                        'mensagem': 'Você já possui 2 dispositivos cadastrados. Remova um deles antes de adicionar outro.',
+                        'mensagem': 'Você já possui 5 dispositivos cadastrados. Remova um deles antes de adicionar outro.',
                         'codigo': 'LIMITE_DISPOSITIVOS'
                     }
 

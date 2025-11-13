@@ -23,14 +23,13 @@ class ClienteAuthService:
     @staticmethod
     def cadastrar(cpf, celular, canal_id, email=None):
         """
-        LEGADO: Usado por POS e integrações externas
-        TODO FUTURO: Remover geração/envio de senha quando app legado for descontinuado
+        Cadastro via POS - apenas para liberar uso de saldo/cashback
+        Cliente deve fazer cadastro completo no app para definir senha
         
         Cadastra novo cliente seguindo o fluxo padronizado:
         1. Verifica se CPF já existe no canal
         2. Consulta Bureau de Crédito
-        3. Cria cliente com dados do Bureau
-        4. Envia senha via WhatsApp (SERÁ REMOVIDO)
+        3. Cria cliente com dados do Bureau (SEM SENHA)
         
         Returns:
             dict: {"sucesso": bool, "codigo": int, "mensagem": str}
@@ -60,84 +59,33 @@ class ClienteAuthService:
                 registrar_log('apps.cliente', f"CPF reprovado pelo Bureau: {cpf_limpo}")
                 return {"sucesso": False, "codigo": 0, "mensagem": "CPF não aprovado pelo Bureau de Crédito"}
             
-            # Gerar senha temporária de 4 dígitos
-            senha = SenhaService.gerar_senha_temporaria()
+            # Criar cliente SEM SENHA (será definida no cadastro completo do app)
+            # Hash dummy para manter compatibilidade com campo NOT NULL
+            from django.contrib.auth.hashers import make_password
+            hash_dummy = make_password(None)  # Hash de senha vazia
             
-            # Criar cliente (sem campo marca - deprecated)
             cliente = Cliente(
                 cpf=cpf_limpo,
                 canal_id=canal_id,
                 nome=dados_bureau['nome'],
                 celular=celular,
-                email=email,  # Sem condição que pode converter para string vazia
+                email=email or '',
                 nome_mae=dados_bureau['mae'],
                 dt_nascimento=dados_bureau['nascimento'] if dados_bureau['nascimento'] else None,
-                signo=dados_bureau['signo']
+                signo=dados_bureau['signo'],
+                hash_senha=hash_dummy  # Hash dummy - cliente deve fazer cadastro no app
             )
-            cliente.set_password(senha)
             cliente.save()
             
-            # Criar registro de autenticação com senha temporária
+            # Criar registro de autenticação
             ClienteAuth.objects.create(
                 cliente=cliente,
-                senha_temporaria=True,  # ← Marcar como senha temporária
+                senha_temporaria=False,
                 last_password_change=None
             )
             
-            # Enviar senha via WhatsApp e SMS
-            whatsapp_enviado = True  # Default para celular vazio
-            if celular and celular.strip():
-                # Buscar template WhatsApp do banco
-                from wallclub_core.integracoes.messages_template_service import MessagesTemplateService
-                template_whatsapp = MessagesTemplateService.preparar_whatsapp(
-                    canal_id=canal_id,
-                    id_template='senha_acesso',
-                    senha=senha,
-                    url_ref=senha
-                )
-                
-                if template_whatsapp:
-                    whatsapp_enviado = WhatsAppService.envia_whatsapp(
-                        numero_telefone=celular,
-                        canal_id=canal_id,
-                        nome_template=template_whatsapp['nome_template'],
-                        idioma_template=template_whatsapp['idioma'],
-                        parametros_corpo=template_whatsapp['parametros_corpo'],
-                        parametros_botao=template_whatsapp['parametros_botao']
-                    )
-                else:
-                    registrar_log('apps.cliente', f"Template WhatsApp 'senha_acesso' não encontrado para canal {canal_id}")
-                    whatsapp_enviado = False
-                
-                # Buscar template SMS do banco
-                template_sms = MessagesTemplateService.preparar_sms(
-                    canal_id=canal_id,
-                    id_template='senha_acesso',
-                    senha=senha
-                )
-                
-                if template_sms:
-                    sms_resultado = enviar_sms(
-                        telefone=celular,
-                        mensagem=template_sms['mensagem'],
-                        assunto=template_sms['assunto']
-                    )
-                else:
-                    registrar_log('apps.cliente', f"Template SMS 'senha_acesso' não encontrado para canal {canal_id}")
-                    sms_resultado = {'status': 'failure', 'message': 'Template não encontrado'}
-                
-                if sms_resultado.get('status') != 'success':
-                    registrar_log('apps.cliente', f"Falha no SMS: {sms_resultado.get('message')}")
-                
-                if not whatsapp_enviado:
-                    registrar_log('apps.cliente', f"Falha no WhatsApp para CPF: {cpf_limpo}")
-                
-                if not whatsapp_enviado and sms_resultado.get('status') != 'success':
-                    registrar_log('apps.cliente', f"Falha WhatsApp e SMS para CPF: {cpf_limpo}")
-            else:
-                registrar_log('apps.cliente', f"Celular vazio - CPF: {cpf_limpo}")
-                
-            registrar_log('apps.cliente', f"Cliente cadastrado: {cpf_limpo} - ID: {cliente.id}")
+            registrar_log('apps.cliente', 
+                f"Cliente cadastrado via POS (sem senha): {cpf_limpo[:3]}***, ID={cliente.id}, Canal={canal_id}")
             
             return {
                 "sucesso": True,

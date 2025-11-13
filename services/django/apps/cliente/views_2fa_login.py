@@ -82,7 +82,9 @@ def solicitar_codigo_2fa_login(request):
     try:
         auth_token = request.data.get('auth_token')
         device_fingerprint = request.data.get('device_fingerprint')  # Não usar default vazio
-        ip_address = request.META.get('REMOTE_ADDR')
+        # Capturar IP real considerando proxies/load balancers
+        from .views import get_client_ip
+        ip_address = get_client_ip(request)
 
         if not auth_token:
             return Response({
@@ -140,7 +142,9 @@ def validar_codigo_2fa_login(request):
         device_fingerprint = request.data.get('device_fingerprint')
         marcar_confiavel = request.data.get('marcar_confiavel', True)
         nome_dispositivo = request.data.get('nome_dispositivo')  # Opcional
-        ip_address = request.META.get('REMOTE_ADDR')
+        # Capturar IP real considerando proxies/load balancers
+        from .views import get_client_ip
+        ip_address = get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT')
 
         if not all([auth_token, codigo, device_fingerprint]):
