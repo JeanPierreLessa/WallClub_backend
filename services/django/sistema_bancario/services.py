@@ -164,12 +164,17 @@ class PagamentoService:
             # Criar pagamento
             pagamento = PagamentoEfetuado.objects.create(**dados_validados)
             
+            # Atualizar pinbankExtratoPOS.lido = 0 para reprocessar
+            from pinbank.cargas_pinbank.models import PinbankExtratoPOS
+            PinbankExtratoPOS.objects.filter(nsuoperacao=nsu_int).update(lido=0)
+            
             # Log de auditoria bancária
             registrar_log(
                 'sistema_bancario.pagamentos',
                 f'Pagamento criado - NSU: {nsu_int} - Usuário: {usuario.nome} - '
                 f'Valores: var44={dados_validados.get("var44")}, var58={dados_validados.get("var58")}, '
-                f'var111={dados_validados.get("var111")}, var112={dados_validados.get("var112")}'
+                f'var111={dados_validados.get("var111")}, var112={dados_validados.get("var112")} - '
+                f'PinbankExtratoPOS.lido atualizado para 0'
             )
             
             return pagamento

@@ -522,7 +522,16 @@ function salvarPagamentos() {
             if (!valor) return null;
             const valorStr = String(valor).trim();
             if (valorStr === '') return null;
-            const limpo = valorStr.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.').trim();
+            
+            // Remove R$ e espaços
+            let limpo = valorStr.replace(/R\$\s?/g, '').trim();
+            
+            // Se tem vírgula, é formato BR (1.322,27) - remove pontos e troca vírgula por ponto
+            if (limpo.includes(',')) {
+                limpo = limpo.replace(/\./g, '').replace(',', '.');
+            }
+            // Se não tem vírgula, mantém o ponto como decimal (1.69)
+            
             return limpo || null;
         };
         
