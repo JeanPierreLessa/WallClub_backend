@@ -382,7 +382,7 @@ def pagamentos_ajax_check_nsu(request):
         return JsonResponse({'exists': False, 'error': 'NSU deve ser um número'})
 
 
-@require_secao_permitida('pagamentos')
+@require_acesso_padronizado('pagamentos_create')
 @require_http_methods(["POST"])
 def pagamentos_bulk_create(request):
     """
