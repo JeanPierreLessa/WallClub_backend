@@ -562,7 +562,12 @@ function salvarPagamentos() {
             // Recarregar página para mostrar mensagens do Django
             window.location.reload();
         } else {
-            alert('Erro ao salvar: ' + (data.message || 'Erro desconhecido'));
+            console.error('Erro completo:', data);
+            let mensagemErro = 'Erro ao salvar: ' + (data.message || 'Erro desconhecido');
+            if (data.errors && data.errors.length > 0) {
+                mensagemErro += '\n\nDetalhes:\n' + data.errors.join('\n');
+            }
+            alert(mensagemErro);
         }
     })
     .catch(error => {
