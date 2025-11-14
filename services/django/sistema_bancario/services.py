@@ -166,7 +166,7 @@ class PagamentoService:
             
             # Atualizar pinbankExtratoPOS.lido = 0 para reprocessar
             from pinbank.cargas_pinbank.models import PinbankExtratoPOS
-            PinbankExtratoPOS.objects.filter(nsuoperacao=nsu_int).update(lido=0)
+            PinbankExtratoPOS.objects.filter(NsuOperacao=nsu_int).update(Lido=0)
             
             # Log de auditoria bancária
             registrar_log(
