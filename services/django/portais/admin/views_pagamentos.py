@@ -183,7 +183,6 @@ def pagamentos_upload_csv(request):
         # Resetar reader novamente
         conteudo_io = io.StringIO(conteudo)
         reader = csv.DictReader(conteudo_io, delimiter=';')
-        next(reader)  # Pular header
         
         for i, linha in enumerate(reader, 1):
             nsu = int(linha.get('nsu', '').strip())
