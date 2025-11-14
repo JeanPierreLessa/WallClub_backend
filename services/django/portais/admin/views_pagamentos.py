@@ -108,89 +108,112 @@ def pagamentos_upload_csv(request):
                 'error': f'CSV deve conter as colunas (separadas por ponto-e-vírgula): {"; ".join(colunas_esperadas)}'
             })
         
+        # Processar campos decimais
+        def processar_decimal(valor, nome_campo, linha_num):
+            if not valor or valor.strip() == '':
+                return None
+            try:
+                from decimal import Decimal, ROUND_HALF_UP
+                valor_limpo = valor.strip().replace(',', '.')
+                return Decimal(valor_limpo).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            except ValueError:
+                raise ValueError(f'Linha {linha_num}: {nome_campo} deve ser um número válido (valor: "{valor}")')
+        
+        # Processar campos texto
+        def processar_texto(valor, max_length=20):
+            if not valor:
+                return ''
+            texto = str(valor).strip()
+            return texto[:max_length] if len(texto) > max_length else texto
+        
+        # FASE 1: VALIDAR TODAS AS LINHAS (tudo ou nada)
+        registrar_log('portais.admin', f'PAGAMENTOS CSV - Iniciando validação de {sum(1 for _ in reader)} linhas')
+        
+        # Resetar reader
+        conteudo_io = io.StringIO(conteudo)
+        reader = csv.DictReader(conteudo_io, delimiter=';')
+        next(reader)  # Pular header
+        
         for i, linha in enumerate(reader, 1):
             try:
-                # Log das chaves disponíveis na linha
-                registrar_log('portais.admin', f'PAGAMENTOS CSV - Linha {i} - Chaves disponíveis: {list(linha.keys())}')
-                registrar_log('portais.admin', f'PAGAMENTOS CSV - Linha {i} - Dados brutos: {linha}')
-                
                 # Validar NSU (obrigatório)
                 nsu = linha.get('nsu', '').strip()
                 if not nsu:
                     linhas_erro.append(f'Linha {i}: NSU é obrigatório')
                     continue
                 
-                # Log para debug
-                registrar_log('portais.admin', f'PAGAMENTOS CSV - Processando linha {i}: {linha}')
-                
                 try:
-                    nsu = int(nsu)
+                    nsu_int = int(nsu)
                 except ValueError:
-                    linhas_erro.append(f'Linha {i}: NSU deve ser um número')
+                    linhas_erro.append(f'Linha {i}: NSU deve ser um número (valor: "{nsu}")')
                     continue
                 
-                # Processar campos decimais
-                def processar_decimal(valor, nome_campo):
-                    if not valor or valor.strip() == '':
-                        return None
-                    try:
-                        from decimal import Decimal, ROUND_HALF_UP
-                        valor_limpo = valor.strip().replace(',', '.')
-                        return Decimal(valor_limpo).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                    except ValueError:
-                        linhas_erro.append(f'Linha {i}: {nome_campo} deve ser um número válido')
-                        return None
-                
-                # Processar campos texto
-                def processar_texto(valor, max_length=20):
-                    if not valor:
-                        return ''
-                    texto = str(valor).strip()
-                    return texto[:max_length] if len(texto) > max_length else texto
-                
-                # Extrair valores dos campos
-                var44 = processar_decimal(linha.get('var44', ''), 'var44')
-                var45 = processar_texto(linha.get('var45', ''))
-                var58 = processar_decimal(linha.get('var58', ''), 'var58')
-                var59 = processar_texto(linha.get('var59', ''))
-                var66 = processar_texto(linha.get('var66', ''))
-                var71 = processar_texto(linha.get('var71', ''))
-                var100 = processar_texto(linha.get('var100', ''))
-                var111 = processar_decimal(linha.get('var111', ''), 'var111')
-                var112 = processar_decimal(linha.get('var112', ''), 'var112')
-                
-                # Log dos valores após processamento
-                registrar_log('portais.admin', f'PAGAMENTOS CSV - Valores processados - NSU: {nsu}, var44: {var44}, var45: {var45}, var58: {var58}, var59: {var59}, var66: {var66}, var71: {var71}, var100: {var100}, var111: {var111}, var112: {var112}')
-                
-                pagamento = {
-                    'nsu': nsu,
-                    'var44': var44,
-                    'var45': var45,
-                    'var58': var58,
-                    'var59': var59,
-                    'var66': var66,
-                    'var71': var71,
-                    'var100': var100,
-                    'var111': var111,
-                    'var112': var112,
-                }
-                
-                pagamentos.append(pagamento)
+                # Validar campos decimais (sem processar ainda)
+                try:
+                    if linha.get('var44', '').strip():
+                        processar_decimal(linha.get('var44', ''), 'var44', i)
+                    if linha.get('var58', '').strip():
+                        processar_decimal(linha.get('var58', ''), 'var58', i)
+                    if linha.get('var111', '').strip():
+                        processar_decimal(linha.get('var111', ''), 'var111', i)
+                    if linha.get('var112', '').strip():
+                        processar_decimal(linha.get('var112', ''), 'var112', i)
+                except ValueError as e:
+                    linhas_erro.append(str(e))
+                    continue
                 
             except Exception as e:
-                linhas_erro.append(f'Linha {i}: Erro ao processar - {str(e)}')
+                linhas_erro.append(f'Linha {i}: Erro ao validar - {str(e)}')
         
+        # Se houver erros, retornar ANTES de processar qualquer linha
         if linhas_erro:
+            registrar_log('portais.admin', f'PAGAMENTOS CSV - Validação falhou com {len(linhas_erro)} erro(s)', level='WARNING')
             return JsonResponse({
                 'success': False, 
-                'error': f'Erros encontrados:\n' + '\n'.join(linhas_erro[:10])  # Mostrar apenas os primeiros 10 erros
+                'error': f'Arquivo contém erros. Nenhum registro foi processado.\n\n' + '\n'.join(linhas_erro)
             })
+        
+        # FASE 2: PROCESSAR TODAS AS LINHAS (validação passou)
+        registrar_log('portais.admin', f'PAGAMENTOS CSV - Validação OK. Processando linhas...')
+        
+        # Resetar reader novamente
+        conteudo_io = io.StringIO(conteudo)
+        reader = csv.DictReader(conteudo_io, delimiter=';')
+        next(reader)  # Pular header
+        
+        for i, linha in enumerate(reader, 1):
+            nsu = int(linha.get('nsu', '').strip())
+            
+            # Extrair valores dos campos
+            var44 = processar_decimal(linha.get('var44', ''), 'var44', i)
+            var45 = processar_texto(linha.get('var45', ''))
+            var58 = processar_decimal(linha.get('var58', ''), 'var58', i)
+            var59 = processar_texto(linha.get('var59', ''))
+            var66 = processar_texto(linha.get('var66', ''))
+            var71 = processar_texto(linha.get('var71', ''))
+            var100 = processar_texto(linha.get('var100', ''))
+            var111 = processar_decimal(linha.get('var111', ''), 'var111', i)
+            var112 = processar_decimal(linha.get('var112', ''), 'var112', i)
+            
+            pagamento = {
+                'nsu': nsu,
+                'var44': var44,
+                'var45': var45,
+                'var58': var58,
+                'var59': var59,
+                'var66': var66,
+                'var71': var71,
+                'var100': var100,
+                'var111': var111,
+                'var112': var112,
+            }
+            
+            pagamentos.append(pagamento)
         
         if not pagamentos:
             return JsonResponse({'success': False, 'error': 'Nenhum pagamento válido encontrado no CSV'})
         
-        # Log para debug
-        registrar_log('portais.admin', f'PAGAMENTOS CSV - Retornando {len(pagamentos)} pagamentos: {pagamentos}')
+        registrar_log('portais.admin', f'PAGAMENTOS CSV - ✅ {len(pagamentos)} pagamentos processados com sucesso')
         
         return JsonResponse({
             'success': True, 

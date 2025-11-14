@@ -273,7 +273,8 @@
                         <label for="arquivoCSV" class="form-label">Arquivo CSV</label>
                         <input type="file" class="form-control" id="arquivoCSV" name="arquivo_csv" accept=".csv" required>
                         <div class="form-text">
-                            <strong>Formato esperado:</strong> nsu,var44,var45,var58,var59,var66,var71,var100,var111,var112
+                            <strong>Formato esperado (separador ponto-e-vírgula):</strong><br>
+                            nsu;var44;var45;var58;var59;var66;var71;var100;var111;var112
                         </div>
                     </div>
                     <div class="alert alert-info">
@@ -673,11 +674,27 @@ function processarUploadCSV() {
             // Fechar modal
             bootstrap.Modal.getInstance(document.getElementById('modalUploadCSV')).hide();
             
-            // Mostrar mensagem de sucesso
-            alert(`${data.pagamentos.length} pagamentos carregados com sucesso!`);
+            // Criar mensagem detalhada com lista de registros
+            let mensagem = `✅ ${data.pagamentos.length} pagamentos processados com sucesso!\n\n`;
+            mensagem += '═══════════════════════════════════════\n';
+            mensagem += 'REGISTROS PROCESSADOS:\n';
+            mensagem += '═══════════════════════════════════════\n\n';
+            
+            data.pagamentos.forEach((pag, idx) => {
+                mensagem += `${idx + 1}. NSU: ${pag.nsu}`;
+                if (pag.var44) mensagem += ` | Valor: R$ ${pag.var44}`;
+                if (pag.var45) mensagem += ` | Data: ${pag.var45}`;
+                mensagem += '\n';
+            });
+            
+            mensagem += '\n═══════════════════════════════════════\n';
+            mensagem += 'Os registros foram carregados na tabela.\n';
+            mensagem += 'Clique em "Salvar Todos" para confirmar.';
+            
+            alert(mensagem);
         } else {
             console.error('Erro do servidor:', data.error);
-            alert('Erro ao processar CSV: ' + data.error);
+            alert('❌ Erro ao processar CSV:\n\n' + data.error);
         }
     })
     .catch(error => {
