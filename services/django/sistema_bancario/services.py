@@ -166,7 +166,11 @@ class PagamentoService:
             
             # Atualizar pinbankExtratoPOS.lido = 0 para reprocessar
             from pinbank.cargas_pinbank.models import PinbankExtratoPOS
-            PinbankExtratoPOS.objects.filter(NsuOperacao=nsu_int).update(Lido=0)
+            from django.utils import timezone
+            PinbankExtratoPOS.objects.filter(NsuOperacao=nsu_int).update(
+                Lido=0,
+                updated_at=timezone.now()
+            )
             
             # Log de auditoria bancária
             registrar_log(
