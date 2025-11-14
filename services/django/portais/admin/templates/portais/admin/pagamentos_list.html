@@ -674,24 +674,7 @@ function processarUploadCSV() {
             // Fechar modal
             bootstrap.Modal.getInstance(document.getElementById('modalUploadCSV')).hide();
             
-            // Criar mensagem detalhada com lista de registros
-            let mensagem = `✅ ${data.pagamentos.length} pagamentos processados com sucesso!\n\n`;
-            mensagem += '═══════════════════════════════════════\n';
-            mensagem += 'REGISTROS PROCESSADOS:\n';
-            mensagem += '═══════════════════════════════════════\n\n';
-            
-            data.pagamentos.forEach((pag, idx) => {
-                mensagem += `${idx + 1}. NSU: ${pag.nsu}`;
-                if (pag.var44) mensagem += ` | Valor: R$ ${pag.var44}`;
-                if (pag.var45) mensagem += ` | Data: ${pag.var45}`;
-                mensagem += '\n';
-            });
-            
-            mensagem += '\n═══════════════════════════════════════\n';
-            mensagem += 'Os registros foram carregados na tabela.\n';
-            mensagem += 'Clique em "Salvar Todos" para confirmar.';
-            
-            alert(mensagem);
+            // SEM ALERTA - usuário clica em "Salvar Todos" quando quiser
         } else {
             console.error('Erro do servidor:', data.error);
             alert('❌ Erro ao processar CSV:\n\n' + data.error);
