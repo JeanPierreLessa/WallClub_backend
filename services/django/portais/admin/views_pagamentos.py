@@ -408,12 +408,15 @@ def pagamentos_bulk_create(request):
                 try:
                     # Validar NSU obrigatório
                     nsu = pagamento_data.get('nsu')
-                    if not nsu:
+                    if nsu is None or nsu == '':
                         errors.append(f'Linha {i+1}: NSU é obrigatório')
                         continue
                     
-                    # Converter NSU para string se necessário
-                    nsu = str(nsu).strip()
+                    # Converter NSU para string
+                    nsu = str(nsu).strip() if nsu else None
+                    if not nsu:
+                        errors.append(f'Linha {i+1}: NSU é obrigatório')
+                        continue
                     
                     # Verificar se NSU já existe usando serviço
                     if PagamentoService.verificar_nsu_existe(nsu):
@@ -439,7 +442,7 @@ def pagamentos_bulk_create(request):
                     # Campos de texto opcionais
                     for campo in ['var45', 'var59', 'var66', 'var71', 'var100']:
                         valor = pagamento_data.get(campo)
-                        if valor:
+                        if valor is not None and valor != '':
                             dados_pagamento[campo] = str(valor).strip()
                         else:
                             dados_pagamento[campo] = None

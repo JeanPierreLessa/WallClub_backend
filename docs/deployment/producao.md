@@ -74,6 +74,13 @@ docker-compose build wallclub-portais --no-cache
 docker-compose down
 docker-compose up -d wallclub-portais
 
+cd /var/www/WallClub_backend
+git pull origin v2.0.0
+docker-compose build wallclub-portais --no-cache
+docker-compose up -d wallclub-portais
+
+
+
 # Rebuild e restart (apenas containers Django)
 docker-compose build --no-cache wallclub-portais wallclub-apis wallclub-pos
 docker-compose down
