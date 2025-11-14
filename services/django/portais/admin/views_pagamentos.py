@@ -456,13 +456,22 @@ def pagamentos_bulk_create(request):
                         else:
                             dados_pagamento[campo] = str(valor).strip()
                     
+                    # LOG: Dados que serão enviados ao serviço
+                    registrar_log('portais.admin', f'BULK CREATE - Dados preparados: {dados_pagamento}')
+                    
                     # Criar pagamento usando serviço
                     PagamentoService.criar_pagamento(dados_pagamento, request.portal_usuario)
                     created_count += 1
                     
+                    registrar_log('portais.admin', f'BULK CREATE - Linha {i+1} salva com sucesso')
+                    
                 except ValueError as e:
+                    registrar_log('portais.admin', f'BULK CREATE - ValueError na linha {i+1}: {str(e)}', level='ERROR')
                     errors.append(f'Linha {i+1}: NSU inválido - {str(e)}')
                 except Exception as e:
+                    registrar_log('portais.admin', f'BULK CREATE - Exception na linha {i+1}: {str(e)}', level='ERROR')
+                    import traceback
+                    registrar_log('portais.admin', f'BULK CREATE - Traceback: {traceback.format_exc()}', level='ERROR')
                     errors.append(f'Linha {i+1}: Erro - {str(e)}')
         
         if errors:
