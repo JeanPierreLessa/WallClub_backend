@@ -466,12 +466,12 @@ def pagamentos_bulk_create(request):
                     registrar_log('portais.admin', f'BULK CREATE - Linha {i+1} salva com sucesso')
                     
                 except ValueError as e:
-                    registrar_log('portais.admin', f'BULK CREATE - ValueError na linha {i+1}: {str(e)}', level='ERROR')
+                    registrar_log('portais.admin', f'BULK CREATE - ValueError na linha {i+1}: {str(e)}', nivel='ERROR')
                     errors.append(f'Linha {i+1}: NSU inválido - {str(e)}')
                 except Exception as e:
-                    registrar_log('portais.admin', f'BULK CREATE - Exception na linha {i+1}: {str(e)}', level='ERROR')
+                    registrar_log('portais.admin', f'BULK CREATE - Exception na linha {i+1}: {str(e)}', nivel='ERROR')
                     import traceback
-                    registrar_log('portais.admin', f'BULK CREATE - Traceback: {traceback.format_exc()}', level='ERROR')
+                    registrar_log('portais.admin', f'BULK CREATE - Traceback: {traceback.format_exc()}', nivel='ERROR')
                     errors.append(f'Linha {i+1}: Erro - {str(e)}')
         
         if errors:
