@@ -519,20 +519,29 @@ function salvarPagamentos() {
         
         // Função auxiliar para processar valores monetários
         const processarValor = (valor) => {
-            if (!valor || valor.trim() === '') return null;
-            const limpo = valor.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.').trim();
+            if (!valor) return null;
+            const valorStr = String(valor).trim();
+            if (valorStr === '') return null;
+            const limpo = valorStr.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.').trim();
             return limpo || null;
+        };
+        
+        // Função auxiliar para processar texto
+        const processarTexto = (valor) => {
+            if (!valor) return null;
+            const valorStr = String(valor).trim();
+            return valorStr === '' ? null : valorStr;
         };
         
         const pagamento = {
             nsu: nsu,
             var44: processarValor(inputs[1].value),
-            var45: inputs[2].value.trim() || null,
+            var45: processarTexto(inputs[2].value),
             var58: processarValor(inputs[3].value),
-            var59: inputs[4].value.trim() || null,
-            var66: inputs[5].value.trim() || null,
-            var71: inputs[6].value.trim() || null,
-            var100: inputs[7].value.trim() || null,
+            var59: processarTexto(inputs[4].value),
+            var66: processarTexto(inputs[5].value),
+            var71: processarTexto(inputs[6].value),
+            var100: processarTexto(inputs[7].value),
             var111: processarValor(inputs[8].value),
             var112: processarValor(inputs[9].value)
         };
