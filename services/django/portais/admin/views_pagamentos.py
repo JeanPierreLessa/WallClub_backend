@@ -451,10 +451,10 @@ def pagamentos_bulk_create(request):
                     # Campos de texto opcionais
                     for campo in ['var45', 'var59', 'var66', 'var71', 'var100']:
                         valor = pagamento_data.get(campo)
-                        if valor is not None and valor != '':
-                            dados_pagamento[campo] = str(valor).strip()
-                        else:
+                        if valor is None or valor == '':
                             dados_pagamento[campo] = None
+                        else:
+                            dados_pagamento[campo] = str(valor).strip()
                     
                     # Criar pagamento usando serviço
                     PagamentoService.criar_pagamento(dados_pagamento, request.portal_usuario)
