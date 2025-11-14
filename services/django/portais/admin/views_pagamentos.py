@@ -394,6 +394,10 @@ def pagamentos_bulk_create(request):
         data = json.loads(request.body)
         pagamentos_data = data.get('pagamentos', [])
         
+        # LOG: Ver o que está chegando
+        registrar_log('portais.admin', f'BULK CREATE - Recebidos {len(pagamentos_data)} pagamentos')
+        registrar_log('portais.admin', f'BULK CREATE - Primeiro pagamento: {pagamentos_data[0] if pagamentos_data else "vazio"}')
+        
         if not pagamentos_data:
             return JsonResponse({
                 'success': False,
@@ -406,8 +410,13 @@ def pagamentos_bulk_create(request):
         with transaction.atomic():
             for i, pagamento_data in enumerate(pagamentos_data):
                 try:
+                    # LOG: Ver dados da linha
+                    registrar_log('portais.admin', f'BULK CREATE - Linha {i+1}: {pagamento_data}')
+                    
                     # Validar NSU obrigatório
                     nsu = pagamento_data.get('nsu')
+                    registrar_log('portais.admin', f'BULK CREATE - NSU recebido: {nsu} (tipo: {type(nsu).__name__})')
+                    
                     if nsu is None or nsu == '':
                         errors.append(f'Linha {i+1}: NSU é obrigatório')
                         continue
