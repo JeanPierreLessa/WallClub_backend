@@ -155,8 +155,11 @@ class PagamentoService:
             # Validar campos de texto
             campos_texto = ['var45', 'var59', 'var66', 'var71', 'var100']
             for campo in campos_texto:
-                valor = dados_pagamento.get(campo, '').strip()
-                dados_validados[campo] = valor if valor else None
+                valor = dados_pagamento.get(campo)
+                if valor is None or valor == '':
+                    dados_validados[campo] = None
+                else:
+                    dados_validados[campo] = str(valor).strip()
             
             # Criar pagamento
             pagamento = PagamentoEfetuado.objects.create(**dados_validados)

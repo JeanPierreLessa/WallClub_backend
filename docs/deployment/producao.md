@@ -76,7 +76,7 @@ docker-compose up -d wallclub-portais
 
 cd /var/www/WallClub_backend
 git pull origin v2.0.0
-docker-compose build wallclub-portais --no-cache
+docker-compose build wallclub-portais
 docker-compose up -d wallclub-portais
 
 
