@@ -127,15 +127,19 @@ def pagamentos_upload_csv(request):
             return texto[:max_length] if len(texto) > max_length else texto
         
         # FASE 1: VALIDAR TODAS AS LINHAS (tudo ou nada)
-        registrar_log('portais.admin', f'PAGAMENTOS CSV - Iniciando validação de {sum(1 for _ in reader)} linhas')
+        # Contar linhas primeiro
+        linhas_totais = sum(1 for _ in reader)
+        registrar_log('portais.admin', f'PAGAMENTOS CSV - Iniciando validação de {linhas_totais} linhas')
         
         # Resetar reader
         conteudo_io = io.StringIO(conteudo)
         reader = csv.DictReader(conteudo_io, delimiter=';')
-        next(reader)  # Pular header
         
         for i, linha in enumerate(reader, 1):
             try:
+                # LOG: Ver linha sendo processada
+                registrar_log('portais.admin', f'PAGAMENTOS CSV - Validando linha {i}: NSU={linha.get("nsu", "").strip()}')
+                
                 # Validar NSU (obrigatório)
                 nsu = linha.get('nsu', '').strip()
                 if not nsu:
