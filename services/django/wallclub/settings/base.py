@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'checkout.link_recorrencia_web',
     'pinbank',
     'pinbank.cargas_pinbank',
+    'adquirente_own',
+    'adquirente_own.cargas_own',
     'posp2',
     'portais.admin',
     'portais.lojista',

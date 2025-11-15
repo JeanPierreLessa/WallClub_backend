@@ -1,9 +1,9 @@
 # PLANO DE REPLICAÇÃO - ESTRUTURA PINBANK → OWN FINANCIAL
 
-**Versão:** 1.0  
+**Versão:** 2.0  
 **Data:** 15/11/2025  
 **Objetivo:** Replicar toda estrutura do módulo Pinbank para Own Financial  
-**Status:** Planejamento
+**Status:** ✅ FASE 1-4 CONCLUÍDAS
 
 ---
 
@@ -38,17 +38,24 @@ pinbank/
     └── tasks.py
 ```
 
-### Own (Nova)
+### Own (Implementada) ✅
 ```
 adquirente_own/
-├── models.py                           # (vazio ou específico Own)
+├── models.py                           # (vazio - models em cargas_own)
 ├── services.py                         # OwnService (OAuth 2.0)
-├── services_transacoes_pagamento.py   # TransacoesOwnService (e-SiTef)
+├── services_transacoes_pagamento.py   # TransacoesOwnService (API OPPWA)
 └── cargas_own/
     ├── models.py                       # OwnExtratoTransacoes, Liquidacoes, Credenciais
+    ├── services.py                     # Utilitários
     ├── services_carga_transacoes.py    # Consulta transações API Own
     ├── services_carga_liquidacoes.py   # Consulta liquidações API Own
-    └── tasks.py
+    ├── tasks.py                        # 4 Celery tasks
+    ├── executar_cargas_completas.py    # Orquestrador
+    └── management/
+        └── commands/
+            ├── carga_transacoes_own.py
+            ├── carga_liquidacoes_own.py
+            └── carga_base_gestao_own.py
 ```
 
 ---
@@ -112,48 +119,59 @@ Credenciais de acesso às APIs Own.
 
 ## 📦 FASES DE IMPLEMENTAÇÃO
 
-### FASE 1: Estrutura Base (3 dias)
-- [ ] Criar módulo `adquirente_own/`
-- [ ] Criar submódulo `cargas_own/`
-- [ ] Criar models (3 tabelas novas)
-- [ ] Modificar BaseTransacoesGestao
-- [ ] Executar migrations
-- [ ] Registrar apps no settings
+### ✅ FASE 1: Estrutura Base (CONCLUÍDA)
+- [x] Criar módulo `adquirente_own/`
+- [x] Criar submódulo `cargas_own/`
+- [x] Criar models (3 tabelas novas)
+- [x] Modificar BaseTransacoesGestao (campo `adquirente`)
+- [x] Script SQL criado (`001_criar_tabelas_own.sql`)
+- [x] Registrar apps no settings
 
-### FASE 2: Services Base (5 dias)
-- [ ] `OwnService` (autenticação OAuth 2.0)
-- [ ] Métodos de requisição autenticada
-- [ ] Cache de tokens
-- [ ] Testes de conectividade
+### ✅ FASE 2: Services Base (CONCLUÍDA)
+- [x] `OwnService` (autenticação OAuth 2.0)
+- [x] Métodos de requisição autenticada
+- [x] Cache de tokens (4 minutos)
+- [x] Obtenção de credenciais por loja
 
-### FASE 3: Transações E-commerce (7 dias)
-- [ ] `TransacoesOwnService` (e-SiTef API)
-- [ ] Pagamento débito (DB)
-- [ ] Tokenização (PA + Registration)
-- [ ] Estorno (RF)
-- [ ] Integração com checkout
+### ✅ FASE 3: Transações E-commerce (CONCLUÍDA)
+- [x] `TransacoesOwnService` (API OPPWA REST)
+- [x] Pagamento débito (DB) - `create_payment_debit()`
+- [x] Tokenização (PA + Registration) - `create_payment_with_tokenization()`
+- [x] Pagamento recorrente - `create_payment_with_registration()`
+- [x] Estorno (RF) - `refund_payment()`
+- [x] Consulta status - `consultar_status_pagamento()`
 
-### FASE 4: Cargas Automáticas (7 dias)
-- [ ] `CargaTransacoesOwnService`
-- [ ] `CargaLiquidacoesOwnService`
-- [ ] Celery tasks
-- [ ] Management commands
-- [ ] Popular BaseTransacoesGestao
+### ✅ FASE 4: Cargas Automáticas (CONCLUÍDA)
+- [x] `CargaTransacoesOwnService`
+- [x] `CargaLiquidacoesOwnService`
+- [x] `OwnCargasUtilService` (utilitários)
+- [x] Celery tasks (4 tasks)
+  - [x] `carga_transacoes_own_diaria`
+  - [x] `carga_liquidacoes_own_diaria`
+  - [x] `carga_transacoes_own_periodo`
+  - [x] `sincronizar_status_pagamentos_own`
+- [x] Management commands (3 commands)
+  - [x] `carga_transacoes_own.py`
+  - [x] `carga_liquidacoes_own.py`
+  - [x] `carga_base_gestao_own.py`
+- [x] Orquestrador `executar_cargas_completas.py`
+- [x] Popular BaseTransacoesGestao
 
-### FASE 5: Roteador de Gateways (3 dias)
+### ⏳ FASE 5: Roteador de Gateways (PENDENTE)
 - [ ] `GatewayRouter` no checkout
 - [ ] Campo `gateway_ativo` em Loja
 - [ ] Adaptar services de checkout
 - [ ] Testes de roteamento
 
-### FASE 6: Testes e Homologação (5 dias)
+### ⏳ FASE 6: Testes e Homologação (PENDENTE)
+- [ ] Executar script SQL no banco
 - [ ] Testes unitários
 - [ ] Testes de integração
 - [ ] Testes em sandbox Own
 - [ ] Lojas piloto
-- [ ] Documentação
+- [ ] Documentação de uso
 
-**TOTAL: ~30 dias (6 semanas)**
+**PROGRESSO: 4/6 fases concluídas (67%)**
 
 ---
 
@@ -167,12 +185,13 @@ Credenciais de acesso às APIs Own.
 | Cache | Não | Sim (4min) |
 
 ### Transações E-commerce
-| Aspecto | Pinbank | Own (e-SiTef) |
-|---------|---------|---------------|
-| API | Proprietária | OPPWA (Carat) |
+| Aspecto | Pinbank | Own (OPPWA) |
+|---------|---------|-------------|
+| API | Proprietária | OPPWA (API REST) |
 | Criptografia | AES custom | HTTPS nativo |
 | Payload | JSON | x-www-form-urlencoded |
 | Endpoint | `/Transacoes/EfetuarTransacao` | `/v1/payments` |
+| Payment Types | Proprietários | DB, PA, RF, RV, RB |
 
 ### Consultas
 | Aspecto | Pinbank | Own |
@@ -185,11 +204,14 @@ Credenciais de acesso às APIs Own.
 
 ## 📝 PRÓXIMOS PASSOS
 
-1. **Validar este plano** com o time técnico
-2. **Criar branch** `feature/adquirente-own`
-3. **Iniciar FASE 1** (estrutura base)
-4. **Documentar decisões** técnicas durante implementação
-5. **Manter Pinbank intacto** (zero risco para produção)
+1. ✅ ~~Validar este plano com o time técnico~~
+2. ✅ ~~Criar branch `integracao_own`~~
+3. ✅ ~~Iniciar FASE 1-4 (estrutura base, services, transações, cargas)~~
+4. ⏳ **Executar script SQL** no banco de dados
+5. ⏳ **Implementar FASE 5** (Roteador de Gateways)
+6. ⏳ **Implementar FASE 6** (Testes e Homologação)
+7. ⏳ **Configurar credenciais** Own em AWS Secrets Manager
+8. ⏳ **Testes em sandbox** Own Financial
 
 ---
 

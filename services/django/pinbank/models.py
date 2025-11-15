@@ -19,6 +19,12 @@ class BaseTransacoesGestao(models.Model):
         null=True,
         blank=True
     )
+    adquirente = models.CharField(
+        max_length=20,
+        choices=[('PINBANK', 'Pinbank'), ('OWN', 'Own Financial')],
+        default='PINBANK',
+        db_index=True
+    )
     data_transacao = models.DateTimeField(null=True, blank=True, db_index=True)
     
     # Variáveis string (var0-var12, var43, var45, etc.)
