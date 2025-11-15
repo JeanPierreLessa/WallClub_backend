@@ -103,31 +103,44 @@ class OwnLiquidacoes(models.Model):
 
 
 class CredenciaisExtratoContaOwn(models.Model):
-    """Credenciais de acesso às APIs Own Financial"""
+    """
+    Credenciais OAuth 2.0 do cliente White Label (WallClub)
+    
+    Cada registro representa um conjunto de credenciais para acessar APIs Own.
+    As lojas individuais são identificadas via docParceiro nas consultas.
+    """
     
     id = models.AutoField(primary_key=True)
-    nome = models.CharField(max_length=256)
-    cnpj = models.CharField(max_length=14, db_index=True)
+    
+    # Identificação do Cliente White Label
+    nome = models.CharField(max_length=256, help_text='Nome do cliente White Label')
+    cnpj_white_label = models.CharField(
+        max_length=14, 
+        unique=True,
+        db_index=True,
+        help_text='CNPJ do cliente White Label (usado como cnpjCliente nas APIs)'
+    )
     
     # OAuth 2.0 (APIs Adquirência)
-    client_id = models.CharField(max_length=256)
-    client_secret = models.CharField(max_length=512)
-    scope = models.CharField(max_length=256)
+    client_id = models.CharField(max_length=256, help_text='Identificador do cliente Own')
+    client_secret = models.CharField(max_length=512, help_text='Chave secreta OAuth 2.0')
+    scope = models.CharField(max_length=256, help_text='Escopo de integração liberado')
     
-    # e-SiTef (Transações)
-    entity_id = models.CharField(max_length=100)
-    access_token = models.CharField(max_length=512)
+    # e-SiTef (Transações E-commerce)
+    entity_id = models.CharField(max_length=100, help_text='Entity ID para transações e-SiTef')
+    access_token = models.CharField(max_length=512, help_text='Access token e-SiTef')
+    
+    # Ambiente
     environment = models.CharField(
         max_length=10,
         choices=[('TEST', 'Test'), ('LIVE', 'Live')],
-        default='LIVE'
+        default='LIVE',
+        db_index=True,
+        help_text='Ambiente: LIVE ou TEST'
     )
     
-    # Relacionamento
-    cliente_id = models.IntegerField(null=True, blank=True, db_index=True)
-    
     # Controle
-    ativo = models.BooleanField(default=True)
+    ativo = models.BooleanField(default=True, help_text='Credencial ativa')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
@@ -136,9 +149,9 @@ class CredenciaisExtratoContaOwn(models.Model):
         verbose_name = 'Credencial Own'
         verbose_name_plural = 'Credenciais Own'
         indexes = [
-            models.Index(fields=['cliente_id']),
-            models.Index(fields=['cnpj']),
+            models.Index(fields=['cnpj_white_label']),
+            models.Index(fields=['environment']),
         ]
     
     def __str__(self):
-        return f"{self.nome} - {self.cnpj}"
+        return f"{self.nome} - {self.cnpj_white_label} ({self.environment})"

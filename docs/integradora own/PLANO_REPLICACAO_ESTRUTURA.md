@@ -17,8 +17,9 @@ Criar módulo `adquirente_own/` replicando a estrutura completa do `pinbank/`, a
 2. ✅ Criar novas tabelas: `ownExtratoTransacoes`, `ownLiquidacoes`, `credenciaisExtratoContaOwn`
 3. ✅ Replicar services de transações e-commerce
 4. ✅ Replicar services de cargas automáticas
-5. ✅ Criar roteador de gateways no checkout
-6. ✅ Manter convivência pacífica entre Pinbank e Own
+5. ✅ **Implementar webhooks Own** (tempo real + double-check diário)
+6. ✅ Criar roteador de gateways no checkout
+7. ✅ Manter convivência pacífica entre Pinbank e Own
 
 ---
 
@@ -44,12 +45,14 @@ adquirente_own/
 ├── models.py                           # (vazio - models em cargas_own)
 ├── services.py                         # OwnService (OAuth 2.0)
 ├── services_transacoes_pagamento.py   # TransacoesOwnService (API OPPWA)
+├── views_webhook.py                    # Webhooks Own (tempo real)
+├── urls_webhook.py                     # URLs dos webhooks
 └── cargas_own/
     ├── models.py                       # OwnExtratoTransacoes, Liquidacoes, Credenciais
     ├── services.py                     # Utilitários
     ├── services_carga_transacoes.py    # Consulta transações API Own
     ├── services_carga_liquidacoes.py   # Consulta liquidações API Own
-    ├── tasks.py                        # 4 Celery tasks
+    ├── tasks.py                        # 4 Celery tasks (double-check)
     ├── executar_cargas_completas.py    # Orquestrador
     └── management/
         └── commands/
@@ -107,13 +110,15 @@ Armazena liquidações consultadas da API Own.
 
 ### 4. credenciaisExtratoContaOwn (CRIAR NOVA)
 
-Credenciais de acesso às APIs Own.
+Credenciais OAuth 2.0 do cliente White Label (WallClub).
 
 **Campos principais:**
+- `cnpj_white_label` (UNIQUE) - CNPJ do cliente White Label
 - `client_id`, `client_secret`, `scope` (OAuth 2.0)
 - `entity_id`, `access_token` (e-SiTef)
 - `environment` (TEST/LIVE)
-- `cliente_id` (FK para Loja)
+
+**Observação:** As credenciais são únicas por cliente White Label (WallClub). As lojas individuais são identificadas via `docParceiro` nas consultas às APIs.
 
 ---
 
@@ -145,9 +150,9 @@ Credenciais de acesso às APIs Own.
 - [x] `CargaTransacoesOwnService`
 - [x] `CargaLiquidacoesOwnService`
 - [x] `OwnCargasUtilService` (utilitários)
-- [x] Celery tasks (4 tasks)
-  - [x] `carga_transacoes_own_diaria`
-  - [x] `carga_liquidacoes_own_diaria`
+- [x] Celery tasks (4 tasks) - **Ajustadas para double-check**
+  - [x] `carga_transacoes_own_diaria` (double-check às 02:00)
+  - [x] `carga_liquidacoes_own_diaria` (double-check às 02:30)
   - [x] `carga_transacoes_own_periodo`
   - [x] `sincronizar_status_pagamentos_own`
 - [x] Management commands (3 commands)
@@ -156,6 +161,17 @@ Credenciais de acesso às APIs Own.
   - [x] `carga_base_gestao_own.py`
 - [x] Orquestrador `executar_cargas_completas.py`
 - [x] Popular BaseTransacoesGestao
+
+### ✅ FASE 4.5: Webhooks Tempo Real (CONCLUÍDA)
+- [x] `views_webhook.py` - 3 endpoints webhook
+  - [x] `/webhook/transacao/` - Recebe vendas em tempo real
+  - [x] `/webhook/liquidacao/` - Recebe liquidações em tempo real
+  - [x] `/webhook/cadastro/` - Recebe status de credenciamento
+- [x] `urls_webhook.py` - Roteamento dos webhooks
+- [x] Validação de payloads e detecção de duplicatas
+- [x] Parse de datas nos formatos Own
+- [x] Logs detalhados e transações atômicas
+- [x] Tasks Celery ajustadas para double-check diário
 
 ### ⏳ FASE 5: Roteador de Gateways (PENDENTE)
 - [ ] `GatewayRouter` no checkout
@@ -171,7 +187,7 @@ Credenciais de acesso às APIs Own.
 - [ ] Lojas piloto
 - [ ] Documentação de uso
 
-**PROGRESSO: 4/6 fases concluídas (67%)**
+**PROGRESSO: 4.5/6 fases concluídas (75%)**
 
 ---
 
@@ -199,6 +215,8 @@ Credenciais de acesso às APIs Own.
 | Transações | Via extrato POS | API `/transacoes/v2/buscaTransacoesGerais` |
 | Liquidações | Não tem endpoint específico | API `/parceiro/v2/consultaLiquidacoes` |
 | Antecipação | Não disponível | Dados detalhados |
+| Webhooks | Não disponível | ✅ Tempo real (transações, liquidações, cadastro) |
+| Frequência | Polling 30min | Webhook (tempo real) + Double-check diário |
 
 ---
 
@@ -207,11 +225,17 @@ Credenciais de acesso às APIs Own.
 1. ✅ ~~Validar este plano com o time técnico~~
 2. ✅ ~~Criar branch `integracao_own`~~
 3. ✅ ~~Iniciar FASE 1-4 (estrutura base, services, transações, cargas)~~
-4. ⏳ **Executar script SQL** no banco de dados
-5. ⏳ **Implementar FASE 5** (Roteador de Gateways)
-6. ⏳ **Implementar FASE 6** (Testes e Homologação)
-7. ⏳ **Configurar credenciais** Own em AWS Secrets Manager
-8. ⏳ **Testes em sandbox** Own Financial
+4. ✅ ~~Implementar webhooks Own (tempo real)~~
+5. ⏳ **Executar script SQL** no banco de dados
+6. ⏳ **Incluir URLs dos webhooks no `urls.py` principal**
+7. ⏳ **Cadastrar URLs dos webhooks no suporte Own:**
+   - `https://api.wallclub.com.br/own/webhook/transacao/`
+   - `https://api.wallclub.com.br/own/webhook/liquidacao/`
+   - `https://api.wallclub.com.br/own/webhook/cadastro/`
+8. ⏳ **Implementar FASE 5** (Roteador de Gateways)
+9. ⏳ **Implementar FASE 6** (Testes e Homologação)
+10. ⏳ **Configurar credenciais** Own em AWS Secrets Manager
+11. ⏳ **Testes em sandbox** Own Financial
 
 ---
 
@@ -219,9 +243,12 @@ Credenciais de acesso às APIs Own.
 
 1. **Não quebrar Pinbank**: Toda modificação em código compartilhado deve ser retrocompatível
 2. **Campo adquirente**: Garantir que todas queries existentes continuem funcionando
-3. **Credenciais**: Usar AWS Secrets Manager (não hardcode)
-4. **Logs**: Prefixo `own.*` para facilitar debug
-5. **Testes**: Ambiente sandbox Own antes de produção
+3. **Credenciais White Label**: As credenciais OAuth são únicas por cliente White Label (WallClub), não por loja
+4. **Credenciais**: Usar AWS Secrets Manager (não hardcode)
+5. **Logs**: Prefixo `own.*` para facilitar debug
+6. **Testes**: Ambiente sandbox Own antes de produção
+7. **Webhooks**: URLs devem ser públicas e retornar status 200/204
+8. **Double-check**: Tasks Celery diárias alertam se encontrarem transações perdidas
 
 ---
 

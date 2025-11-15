@@ -214,7 +214,7 @@ class CargaLiquidacoesOwnService:
             
             # Consultar liquidações
             result = self.consultar_liquidacoes(
-                cnpj_cliente=credencial.cnpj,
+                cnpj_cliente=credencial.cnpj_white_label,
                 data_pagamento_real=data_pagamento
             )
             

@@ -180,12 +180,12 @@ class OwnService:
                 'mensagem': f'Erro na comunicação: {str(e)}'
             }
     
-    def obter_credenciais_loja(self, loja_id: int) -> Optional[Dict[str, Any]]:
+    def obter_credenciais_white_label(self, environment: str = 'LIVE') -> Optional[Dict[str, Any]]:
         """
-        Obtém credenciais Own da loja
+        Obtém credenciais Own do cliente White Label (WallClub)
         
         Args:
-            loja_id: ID da loja
+            environment: 'LIVE' ou 'TEST'
             
         Returns:
             Dict com credenciais ou None
@@ -194,12 +194,12 @@ class OwnService:
         
         try:
             credencial = CredenciaisExtratoContaOwn.objects.filter(
-                cliente_id=loja_id,
+                environment=environment,
                 ativo=True
             ).first()
             
             if not credencial:
-                registrar_log('own.credenciais', f'❌ Credenciais não encontradas para loja {loja_id}', nivel='ERROR')
+                registrar_log('own.credenciais', f'❌ Credenciais não encontradas para ambiente {environment}', nivel='ERROR')
                 return None
             
             return {
@@ -208,7 +208,8 @@ class OwnService:
                 'scope': credencial.scope,
                 'entity_id': credencial.entity_id,
                 'access_token': credencial.access_token,
-                'environment': credencial.environment
+                'environment': credencial.environment,
+                'cnpj_white_label': credencial.cnpj_white_label
             }
             
         except Exception as e:

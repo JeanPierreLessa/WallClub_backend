@@ -217,7 +217,7 @@ class CargaTransacoesOwnService:
             
             # Buscar transações
             result = self.buscar_transacoes_gerais(
-                cnpj_cliente=credencial.cnpj,
+                cnpj_cliente=credencial.cnpj_white_label,
                 data_inicial=data_inicial,
                 data_final=data_final
             )

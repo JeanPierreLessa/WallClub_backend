@@ -10,28 +10,40 @@ from wallclub_core.utilitarios.log_control import registrar_log
 @shared_task(name='adquirente_own.carga_transacoes_diaria')
 def carga_transacoes_own_diaria():
     """
-    Carga diária de transações Own Financial
-    Executa às 02:00 (após carga Pinbank)
+    Double-check diário de transações Own Financial
+    
+    Executa às 02:00 para garantir integridade dos dados.
+    O webhook recebe transações em tempo real, esta task apenas
+    identifica e recupera transações que possam ter sido perdidas.
     """
     from adquirente_own.cargas_own.services_carga_transacoes import CargaTransacoesOwnService
+    from adquirente_own.cargas_own.models import OwnExtratoTransacoes
     
-    registrar_log('own.tasks', '🚀 Iniciando task: carga_transacoes_own_diaria')
+    registrar_log('own.tasks', '🔍 Iniciando double-check: transações Own')
     
     try:
         service = CargaTransacoesOwnService()
         resultado = service.executar_carga_diaria()
         
-        registrar_log('own.tasks', f'✅ Task concluída: {resultado}')
+        # Contar quantas eram novas (não vieram via webhook)
+        total_api = resultado.get('total_transacoes', 0)
+        total_processadas = resultado.get('total_processadas', 0)
+        novas = total_processadas  # Transações que não existiam no banco
+        
+        if novas > 0:
+            registrar_log('own.tasks', f'⚠️ Double-check encontrou {novas} transações perdidas!', nivel='WARNING')
+        else:
+            registrar_log('own.tasks', '✅ Double-check OK: nenhuma transação perdida')
         
         return {
             'sucesso': True,
-            'total_transacoes': resultado.get('total_transacoes', 0),
-            'total_processadas': resultado.get('total_processadas', 0),
+            'total_api': total_api,
+            'novas_encontradas': novas,
             'timestamp': datetime.now().isoformat()
         }
         
     except Exception as e:
-        registrar_log('own.tasks', f'❌ Erro na task: {str(e)}', nivel='ERROR')
+        registrar_log('own.tasks', f'❌ Erro no double-check: {str(e)}', nivel='ERROR')
         return {
             'sucesso': False,
             'erro': str(e),
@@ -42,28 +54,39 @@ def carga_transacoes_own_diaria():
 @shared_task(name='adquirente_own.carga_liquidacoes_diaria')
 def carga_liquidacoes_own_diaria():
     """
-    Carga diária de liquidações Own Financial
-    Executa às 02:30 (após carga de transações)
+    Double-check diário de liquidações Own Financial
+    
+    Executa às 02:30 para garantir integridade dos dados.
+    O webhook recebe liquidações em tempo real, esta task apenas
+    identifica e recupera liquidações que possam ter sido perdidas.
     """
     from adquirente_own.cargas_own.services_carga_liquidacoes import CargaLiquidacoesOwnService
     
-    registrar_log('own.tasks', '🚀 Iniciando task: carga_liquidacoes_own_diaria')
+    registrar_log('own.tasks', '🔍 Iniciando double-check: liquidações Own')
     
     try:
         service = CargaLiquidacoesOwnService()
         resultado = service.executar_carga_diaria()
         
-        registrar_log('own.tasks', f'✅ Task concluída: {resultado}')
+        # Contar quantas eram novas (não vieram via webhook)
+        total_api = resultado.get('total_liquidacoes', 0)
+        total_processadas = resultado.get('total_processadas', 0)
+        novas = total_processadas  # Liquidações que não existiam no banco
+        
+        if novas > 0:
+            registrar_log('own.tasks', f'⚠️ Double-check encontrou {novas} liquidações perdidas!', nivel='WARNING')
+        else:
+            registrar_log('own.tasks', '✅ Double-check OK: nenhuma liquidação perdida')
         
         return {
             'sucesso': True,
-            'total_liquidacoes': resultado.get('total_liquidacoes', 0),
-            'total_processadas': resultado.get('total_processadas', 0),
+            'total_api': total_api,
+            'novas_encontradas': novas,
             'timestamp': datetime.now().isoformat()
         }
         
     except Exception as e:
-        registrar_log('own.tasks', f'❌ Erro na task: {str(e)}', nivel='ERROR')
+        registrar_log('own.tasks', f'❌ Erro no double-check: {str(e)}', nivel='ERROR')
         return {
             'sucesso': False,
             'erro': str(e),
