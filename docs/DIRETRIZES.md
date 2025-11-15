@@ -46,6 +46,7 @@
 - ❌ Usar dados hardcoded (só quando explícito)
 - ❌ Assumir o que o usuário quer
 - ❌ **EXPOR CREDENCIAIS EM CÓDIGO OU DOCUMENTOS** (usar AWS Secrets Manager)
+- ❌ **CRIAR DOCUMENTOS (README, guias, tutoriais) SEM SOLICITAÇÃO EXPLÍCITA**
 
 ### Controle de Escopo Absoluto
 

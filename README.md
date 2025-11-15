@@ -498,55 +498,16 @@ Nginx Gateway (porta 8005)
 - Testes end-to-end automatizados
 - Kubernetes (migração futura)
 
-## Documentação
+## 📚 Documentação
 
-📚 **Para documentação completa, consulte o [Índice de Documentação](docs/README.md)**
+**Documentação Técnica Principal:**
+- **[ARQUITETURA.md](docs/ARQUITETURA.md)** - Como o sistema funciona (containers, integrações, fluxos)
+- **[DIRETRIZES.md](docs/DIRETRIZES.md)** - Como desenvolver (regras, padrões, boas práticas)
 
-### Estrutura Consolidada
-
-A documentação foi reorganizada em uma estrutura única no diretório `/docs`:
-
-```
-docs/
-├── architecture/              # Arquitetura e Visão Integrada
-│   ├── README.md             # Índice e navegação
-│   ├── 1. ARQUITETURA_GERAL.md
-│   ├── 2. DIRETRIZES_UNIFICADAS.md
-│   └── 3. INTEGRACOES.md
-├── development/               # Diretrizes de Desenvolvimento
-│   ├── django-diretrizes.md
-│   └── riskengine-diretrizes.md
-├── services/                  # READMEs Detalhados
-│   ├── django-readme.md
-│   └── riskengine-readme.md
-├── setup/                     # Configuração
-│   └── local.md              # Setup desenvolvimento local
-└── deployment/                # Deploy
-    └── producao.md           # Procedimentos de deploy
-```
-
-### Guias Principais
-
-**Para Começar:**
+**Guias Específicos:**
 - [Setup Local](docs/setup/local.md) - Configuração do ambiente de desenvolvimento
-- [Arquitetura Geral](docs/architecture/1.%20ARQUITETURA_GERAL.md) - Visão completa do sistema
-
-**Desenvolvimento:**
-- [Diretrizes Django](docs/development/django-diretrizes.md) - Padrões e boas práticas Django
-- [Diretrizes Risk Engine](docs/development/riskengine-diretrizes.md) - Padrões antifraude
-- [Integrações](docs/architecture/3.%20INTEGRACOES.md) - APIs e serviços externos
-
-**Operações:**
 - [Deploy Produção](docs/deployment/producao.md) - Procedimentos de deploy
-- [README Django](docs/services/django-readme.md) - Documentação completa do Django
-- [README Risk Engine](docs/services/riskengine-readme.md) - Documentação completa do Risk Engine
-
-### Documentação nos Serviços
-
-Cada serviço mantém documentação técnica específica:
-- **Django:** `services/django/docs/` - Planos estruturados, fases concluídas
-- **Risk Engine:** `services/riskengine/docs/` - Engine antifraude, executados
-- **Core:** `services/core/README.md` - Package compartilhado
+- [Histórico de Fases](docs/em%20execucao/) - Documentação das fases concluídas (1-6)
 
 ## Versionamento
 
@@ -594,7 +555,16 @@ Proprietary - WallClub © 2025
 **Última atualização:** 07/11/2025 12:56  
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (10/11/2025)
+### Atualizações Recentes (14/11/2025)
+- ✅ **Upload de Pagamentos via CSV** - Sistema completo de importação em lote
+  - Validação em 2 fases (tudo ou nada)
+  - Tabela editável com validação de NSU duplicado em tempo real
+  - Processamento automático de valores decimais (formato BR e US)
+  - Integração automática com PinbankExtratoPOS (marca Lido=0 para reprocessamento)
+  - Salvamento em lote com transação atômica
+  - Documentação completa em `docs/em execucao/UPLOAD_PAGAMENTOS_CSV.md`
+
+### Atualizações Anteriores (10/11/2025)
 - ✅ **Gestão Admin:** Filtro por tipo de transação (Wallet/Credenciadora)
   - Campo `tipo_operacao` adicionado como primeira coluna (tabela + exports)
   - Checkbox "Incluir transações Credenciadora" no RPR e Gestão Admin
