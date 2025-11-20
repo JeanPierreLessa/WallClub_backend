@@ -164,7 +164,7 @@ Tabela específica para transações POS via SDK Ágilli (Own Financial).
 - [x] Cache de tokens (4 minutos)
 - [x] Obtenção de credenciais por loja
 
-### ✅ FASE 3: Transações E-commerce e POS (CONCLUÍDA)
+### ⚠️ FASE 3: Transações E-commerce e POS (PARCIALMENTE CONCLUÍDA)
 - [x] `TransacoesOwnService` (API OPPWA REST - E-commerce)
   - [x] Pagamento débito (DB) - `create_payment_debit()`
   - [x] Tokenização (PA + Registration) - `create_payment_with_tokenization()`
@@ -177,6 +177,11 @@ Tabela específica para transações POS via SDK Ágilli (Own Financial).
   - [x] Geração de slip de impressão formatado
   - [x] Suporte a Wall Club (desconto, cashback, saldo usado)
   - [x] Captura de comprovantes Ágilli (customerTicket, estabTicket, e2ePixId)
+  - [ ] **🔴 BLOQUEADOR: CalculadoraBaseGestao hardcoded para Pinbank**
+    - Calculadora não suporta `transactiondata_own`
+    - Retorna valores zerados (vparcela, tarifas, encargos, etc)
+    - Necessário refatorar para aceitar múltiplas fontes de dados
+    - Ver detalhes em `docs/integradora own/API_TRDATA_OWN.md`
 
 ### ✅ FASE 4: Cargas Automáticas (CONCLUÍDA)
 - [x] `CargaTransacoesOwnService`

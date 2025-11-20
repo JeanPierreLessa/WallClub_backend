@@ -84,21 +84,34 @@ def pagamentos_upload_csv(request):
     Separador: ponto-e-vírgula (;)
     """
     try:
+        registrar_log('portais.admin', '========================================')
+        registrar_log('portais.admin', 'PAGAMENTOS CSV - Upload iniciado')
+        registrar_log('portais.admin', f'FILES recebidos: {list(request.FILES.keys())}')
+        registrar_log('portais.admin', f'POST recebido: {list(request.POST.keys())}')
+        
         if 'arquivo_csv' not in request.FILES:
+            registrar_log('portais.admin', '❌ Nenhum arquivo enviado (campo arquivo_csv não encontrado)', nivel='ERROR')
             return JsonResponse({'success': False, 'error': 'Nenhum arquivo enviado'})
         
         arquivo = request.FILES['arquivo_csv']
+        registrar_log('portais.admin', f'Arquivo recebido: {arquivo.name} (tamanho: {arquivo.size} bytes)')
         
         if not arquivo.name.lower().endswith('.csv'):
+            registrar_log('portais.admin', f'❌ Arquivo não é CSV: {arquivo.name}', nivel='ERROR')
             return JsonResponse({'success': False, 'error': 'Arquivo deve ser CSV'})
         
         # Ler conteúdo do arquivo
         try:
             conteudo = arquivo.read().decode('utf-8')
+            registrar_log('portais.admin', f'Arquivo decodificado com UTF-8 ({len(conteudo)} caracteres)')
         except UnicodeDecodeError:
+            registrar_log('portais.admin', 'Falha UTF-8, tentando latin-1...')
             try:
+                arquivo.seek(0)  # Voltar ao início do arquivo
                 conteudo = arquivo.read().decode('latin-1')
-            except UnicodeDecodeError:
+                registrar_log('portais.admin', f'Arquivo decodificado com latin-1 ({len(conteudo)} caracteres)')
+            except UnicodeDecodeError as e:
+                registrar_log('portais.admin', f'❌ Erro de codificação: {str(e)}', nivel='ERROR')
                 return JsonResponse({'success': False, 'error': 'Erro de codificação do arquivo'})
         
         # Processar CSV com separador ponto-e-vírgula
@@ -234,7 +247,10 @@ def pagamentos_upload_csv(request):
         })
         
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Erro interno: {str(e)}'})
+        import traceback
+        registrar_log('portais.admin', f'❌ PAGAMENTOS CSV - Erro ao processar arquivo: {str(e)}', nivel='ERROR')
+        registrar_log('portais.admin', f'Traceback completo: {traceback.format_exc()}', nivel='ERROR')
+        return JsonResponse({'success': False, 'error': f'Erro ao processar arquivo CSV.'})
 
 
 

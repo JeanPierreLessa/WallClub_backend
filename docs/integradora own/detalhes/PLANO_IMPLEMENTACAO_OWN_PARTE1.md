@@ -1,9 +1,9 @@
 # PLANO DE IMPLEMENTAÇÃO - INTEGRAÇÃO OWN FINANCIAL
 
-**Versão:** 1.0  
-**Data:** 14/11/2025  
+**Versão:** 1.1  
+**Data:** 20/11/2025  
 **Responsável:** Tech Lead WallClub  
-**Status:** Especificação Técnica Completa
+**Status:** Em Implementação - Com Bloqueadores
 
 ---
 
@@ -390,6 +390,70 @@ def cobrar_recorrencia_own(recorrencia_id):
   "standingInstruction.initialTransactionId": "8ac7a4a18d1234567890abcdef"
 }
 ```
+
+---
+
+## 🔴 BLOQUEADORES IDENTIFICADOS
+
+### 1. CalculadoraBaseGestao Hardcoded para Pinbank
+
+**Arquivo:** `parametros_wallclub/calculadora_base_gestao.py`
+
+**Problema:**
+A classe `CalculadoraBaseGestao` está hardcoded para buscar dados exclusivamente da tabela `transactiondata` (Pinbank). Não há suporte para processar transações da tabela `transactiondata_own`.
+
+**Impacto no POS Own:**
+- Endpoint `/trdata_own/` funciona mas retorna valores zerados
+- Calculadora falha com erro: `Loja não encontrada para NSU {nsu}`
+- JSON de resposta retorna:
+  - `vparcela`: R$ 0.00
+  - `tarifas`: R$ 0.00  
+  - `encargos`: R$ 0.00
+  - `vdesconto`: R$ 0.00
+  - `pagoavista`: R$ 0.00
+
+**Causa raiz:**
+```python
+# calculadora_base_gestao.py (linha ~50)
+def calcular_valores_primarios(self, dados_linha):
+    # Busca hardcoded na tabela transactiondata
+    cursor.execute("""
+        SELECT ... FROM transactiondata t
+        INNER JOIN terminais term ON t.terminal = term.terminal
+        WHERE t.NsuOperacao = %s  -- Campo nsuPinbank
+    """, [dados_linha['NsuOperacao']])
+```
+
+**Soluções possíveis:**
+
+**Opção A - Refatorar Calculadora (RECOMENDADO):**
+```python
+def calcular_valores_primarios(self, dados_linha, tabela='transactiondata'):
+    if tabela == 'transactiondata_own':
+        # Query para Own
+        cursor.execute("""
+            SELECT ... FROM transactiondata_own t
+            INNER JOIN terminais term ON t.terminal = term.terminal
+            WHERE t.txTransactionId = %s
+        """, [dados_linha['txTransactionId']])
+    else:
+        # Query original Pinbank
+        cursor.execute("""
+            SELECT ... FROM transactiondata t
+            ...
+        """)
+```
+
+**Opção B - Calcular Manualmente (TEMPORÁRIO):**
+- Implementar cálculos diretamente no `TRDataOwnService`
+- Não usar `CalculadoraBaseGestao`
+- Manter paridade com lógica Pinbank
+
+**Decisão:** Fazer outros ajustes primeiro, depois resolver calculadora
+
+**Referências:**
+- `docs/integradora own/API_TRDATA_OWN.md` (seção Problemas Conhecidos)
+- `services/django/posp2/services_transacao_own.py` (linha ~186)
 
 ---
 

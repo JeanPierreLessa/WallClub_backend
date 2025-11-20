@@ -348,3 +348,55 @@ Isso garante que a mesma transação não seja processada duas vezes.
 3. **Timestamps**: `terminalTimestamp` e `hostTimestamp` devem ser Unix timestamp
 4. **Valores em centavos**: `amount` e `originalAmount` devem estar em centavos (ex: 990 = R$9,90)
 5. **Autenticação**: Usa o mesmo token OAuth do endpoint Pinbank
+
+---
+
+## PROBLEMAS CONHECIDOS E PENDÊNCIAS
+
+### 1. CalculadoraBaseGestao Hardcoded para Pinbank
+
+**Status:** 🔴 BLOQUEADOR
+
+**Problema:**
+A classe `CalculadoraBaseGestao` (em `parametros_wallclub/calculadora_base_gestao.py`) está hardcoded para buscar dados da tabela `transactiondata` (Pinbank). Ela não consegue processar transações da tabela `transactiondata_own`.
+
+**Erro observado:**
+```
+[ERROR] ERRO na calculadora: Loja não encontrada para NSU 000128
+```
+
+**Causa:**
+- A calculadora busca a loja pelo campo `nsuPinbank` na tabela `transactiondata`
+- Transações Own usam `txTransactionId` na tabela `transactiondata_own`
+- A calculadora não tem suporte para múltiplas fontes de dados
+
+**Impacto:**
+- Sem a calculadora, os 130+ valores calculados retornam vazios (`valores_calculados = {}`)
+- O JSON de resposta retorna valores zerados:
+  - `vparcela`: R$ 0.00
+  - `tarifas`: R$ 0.00
+  - `encargos`: R$ 0.00
+  - `vdesconto`: R$ 0.00
+  - `pagoavista`: R$ 0.00
+
+**Solução necessária:**
+1. Refatorar `CalculadoraBaseGestao` para aceitar fonte de dados como parâmetro
+2. Criar método abstrato que busca dados de `transactiondata` OU `transactiondata_own`
+3. Passar tabela de origem como argumento: `calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata_own')`
+
+**Workaround temporário:**
+Atualmente o endpoint funciona mas retorna valores zerados. Para ajustes futuros, será necessário:
+- Calcular valores manualmente (sem usar a calculadora)
+- OU refatorar a calculadora para suportar múltiplas fontes
+
+**Prioridade:** ALTA - Deve ser resolvido antes de ir para produção
+
+---
+
+### 2. Próximos Ajustes Planejados
+
+Antes de resolver o problema da calculadora, outros ajustes serão feitos:
+- [ ] Validações adicionais de campos obrigatórios
+- [ ] Melhorias no tratamento de erros
+- [ ] Logs mais detalhados
+- [ ] Testes de integração
