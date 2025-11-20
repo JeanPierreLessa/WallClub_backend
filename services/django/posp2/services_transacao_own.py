@@ -170,7 +170,12 @@ class TRDataOwnService:
             # 9. Buscar informações da loja
             info_loja = self._buscar_info_loja(terminal)
             
-            # 10. Gerar JSON de resposta para impressão do slip
+            # 10. Buscar nome do cliente (se CPF informado)
+            nome = ''
+            if cpf:
+                nome = self._buscar_nome_cliente(cpf)
+            
+            # 11. Gerar JSON de resposta para impressão do slip
             json_resposta = self._gerar_slip_impressao(dados_para_inserir, info_loja, cpf, nome)
             
             # 11. Retornar dados completos para comprovante
@@ -260,7 +265,6 @@ class TRDataOwnService:
                     FROM terminais t
                     INNER JOIN lojas l ON t.loja_id = l.id
                     WHERE t.terminal = %s
-                    LIMIT 1
                 """, [terminal])
                 
                 row = cursor.fetchone()
@@ -271,24 +275,32 @@ class TRDataOwnService:
                         'cnpj': row[2]
                     }
         except Exception as e:
-            registrar_log('posp2.own', f'Erro ao buscar loja: {e}', nivel='WARNING')
+            registrar_log('posp2.own', f'Erro ao buscar loja: {e}', nivel='ERROR')
         
-        return {}
+        return {
+            'id': None,
+            'nome_fantasia': '',
+            'cnpj': ''
+        }
     
-    def _converter_valor_monetario(self, valor: Any) -> Decimal:
-        """Converte valor monetário para Decimal"""
-        if isinstance(valor, (int, float, Decimal)):
-            return Decimal(str(valor))
+    def _buscar_nome_cliente(self, cpf: str) -> str:
+        """Busca nome do cliente pelo CPF"""
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT nome
+                    FROM clientes
+                    WHERE cpf = %s
+                    LIMIT 1
+                """, [cpf])
+                
+                row = cursor.fetchone()
+                if row:
+                    return row[0] or ''
+        except Exception as e:
+            registrar_log('posp2.own', f'Erro ao buscar nome cliente: {e}', nivel='ERROR')
         
-        if isinstance(valor, str):
-            # Remove formatação brasileira
-            valor_limpo = valor.replace('R$', '').replace('.', '').replace(',', '.').strip()
-            try:
-                return Decimal(valor_limpo)
-            except:
-                return Decimal('0')
-        
-        return Decimal('0')
+        return ''
     
     def _gerar_slip_impressao(self, dados: Dict[str, Any], info_loja: Dict[str, Any], 
                               cpf: str, nome: str) -> Dict[str, Any]:
