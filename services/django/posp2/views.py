@@ -185,6 +185,7 @@ def processar_dados_transacao(request):
     return JsonResponse(resultado)
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
 @handle_api_errors
