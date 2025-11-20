@@ -464,10 +464,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 total_creditos = sum(safe_float_convert(row.get('Vl Líq(R$)', 0)) for row in results if row.get('Tipo') == 'Crédito')
                 total_debitos = sum(abs(safe_float_convert(row.get('Vl Líq(R$)', 0))) for row in results if row.get('Tipo') == 'Débito')
                 
-                # Totais dos lançamentos manuais
+                # Totais dos lançamentos manuais (valor já vem com sinal correto)
                 total_lancamentos = sum(safe_float_convert(row.get('Valor(R$)', 0)) for row in lancamentos_manuais)
                 total_lancamentos_creditos = sum(safe_float_convert(row.get('Valor(R$)', 0)) for row in lancamentos_manuais if row.get('Tipo') == 'Crédito')
-                total_lancamentos_debitos = sum(abs(safe_float_convert(row.get('Valor(R$)', 0))) for row in lancamentos_manuais if row.get('Tipo') == 'Débito')
+                total_lancamentos_debitos = sum(safe_float_convert(row.get('Valor(R$)', 0)) for row in lancamentos_manuais if row.get('Tipo') == 'Débito')
                 
                 totais = {
                     'total_bruto': total_bruto,

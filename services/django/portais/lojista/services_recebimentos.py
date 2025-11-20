@@ -151,7 +151,7 @@ class RecebimentoService:
             
             # Somar valor (considerar tipo de lançamento)
             valor = Decimal(str(lancamento.valor)) if lancamento.valor else Decimal('0.00')
-            if lancamento.tipo_lancamento == 'debito':
+            if lancamento.tipo_lancamento == 'D':
                 valor = -valor
             
             recebimentos_por_data[data_key]['valor_total'] += valor
@@ -189,7 +189,7 @@ class RecebimentoService:
         Returns:
             list: Lista de transações da data
         """
-        from wallclub_core.database.queries import TransacoesQueries
+        from django.apps import apps
         
         # Tentar formatos de data
         data_obj = None
@@ -205,6 +205,9 @@ class RecebimentoService:
         
         # Formatar data conforme está no banco (DD/MM/YYYY)
         data_formatada = data_obj.strftime('%d/%m/%Y')
+        
+        # Lazy import do modelo
+        BaseTransacoesGestao = apps.get_model('pinbank', 'BaseTransacoesGestao')
         
         # Buscar transações
         filtros = Q(var6__in=lojas_ids) & Q(var45=data_formatada)
@@ -263,7 +266,7 @@ class RecebimentoService:
         results = []
         for lancamento in lancamentos:
             valor = Decimal(str(lancamento.valor)) if lancamento.valor else Decimal('0.00')
-            if lancamento.tipo_lancamento == 'debito':
+            if lancamento.tipo_lancamento == 'D':
                 valor = -valor
             
             results.append({
