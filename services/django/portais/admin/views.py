@@ -67,7 +67,7 @@ def logout_view(request):
     AutenticacaoService.limpar_sessao_portal(request)
     registrar_log('portais.admin', f'LOGOUT - Usuário: {usuario_nome} - IP: {request.META.get("REMOTE_ADDR", "N/A")}')
     messages.info(request, 'Logout realizado com sucesso.')
-    return redirect('portais_admin:login')
+    return redirect('/')
 
 @require_admin_access
 def dashboard(request):
