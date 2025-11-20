@@ -61,6 +61,7 @@ docker ps
 
 ## Deploy de Rotina (Atualizar Código)
 ## Prune
+docker system prune -a
 docker image prune -a
 docker system prune -a --volumes
 docker system df

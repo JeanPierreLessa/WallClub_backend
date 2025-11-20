@@ -217,7 +217,7 @@ class RecebimentoService:
         for transacao in transacoes:
             results.append({
                 'nsu': transacao.var9,
-                'loja_id': transacao.var6,
+                'loja_id': int(transacao.var6) if transacao.var6 else None,
                 'valor_transacao': transacao.var19,
                 'valor_recebimento': transacao.var44,  # var44 é o valor correto
                 'data_transacao': transacao.data_transacao,

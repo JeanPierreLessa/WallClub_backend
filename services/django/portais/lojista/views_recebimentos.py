@@ -388,9 +388,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                     tipo = 'Crédito' if vl_liquido >= 0 else 'Débito'
                     
                     # Buscar nome da loja
-                    nome_loja = f"Loja {transacao['loja_id']}"
+                    loja_id = int(transacao['loja_id']) if transacao.get('loja_id') else None
+                    nome_loja = f"Loja {loja_id}"
                     for loja_info in lojas_acessiveis:
-                        if loja_info.get('id') == transacao['loja_id']:
+                        if loja_info.get('id') == loja_id:
                             nome_loja = loja_info.get('nome', nome_loja)
                             break
                     
@@ -421,9 +422,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 lancamentos_manuais = []
                 for lancamento in lancamentos_list:
                     # Buscar nome da loja
-                    nome_loja = f"Loja {lancamento['loja_id']}"
+                    loja_id = int(lancamento['loja_id']) if lancamento.get('loja_id') else None
+                    nome_loja = f"Loja {loja_id}"
                     for loja_info in lojas_acessiveis:
-                        if loja_info.get('id') == lancamento['loja_id']:
+                        if loja_info.get('id') == loja_id:
                             nome_loja = loja_info.get('nome', nome_loja)
                             break
                     
