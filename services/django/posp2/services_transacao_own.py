@@ -183,40 +183,58 @@ class TRDataOwnService:
             
             registrar_log('posp2', f'✅ Transação Own inserida: ID={transaction_id}, TxID={tx_transaction_id}')
             
-            # 9. CALCULAR VALORES (IGUAL AO PINBANK)
-            calculadora = CalculadoraBaseGestao()
-            
-            # Preparar dados_linha para calculadora (formato igual ao Pinbank)
-            dados_linha = {
-                'id': transaction_id,
-                'DataTransacao': dados_para_inserir['datahora'].strftime('%Y-%m-%dT%H:%M:%S'),
-                'SerialNumber': terminal,
-                'idTerminal': terminal,
-                'cpf': cpf,
-                'TipoCompra': self.TIPO_COMPRA_MAP.get(dados_para_inserir['paymentMethod'], dados_para_inserir['paymentMethod']),
-                'NsuOperacao': dados_para_inserir['nsuHost'],
-                'nsuAcquirer': dados_para_inserir['txTransactionId'],
-                'valor_original': valor_original,
-                'ValorBruto': valor_original,
-                'ValorBrutoParcela': valor_original,
-                'Bandeira': dados_para_inserir['brand'],
-                'NumeroTotalParcelas': dados_para_inserir['totalInstallments'],
-                'ValorTaxaAdm': 0,
-                'ValorTaxaMes': 0,
-                'ValorSplit': 0,
-                'DescricaoStatus': 'Processado',
-                'DescricaoStatusPagamento': 'Pendente',
-                'IdStatusPagamento': 1,
-                'DataCancelamento': None,
-                'DataFuturaPagamento': None
-            }
-            
-            try:
-                valores_calculados = calculadora.calcular_valores_primarios(dados_linha)
-                registrar_log('posp2', f'Calculadora executada - {len(valores_calculados)} valores')
-            except Exception as e:
-                registrar_log('posp2', f'ERRO na calculadora: {e}', nivel='ERROR')
-                valores_calculados = {}
+            # 9. BUSCAR DADOS DA TRANSAÇÃO INSERIDA PARA CALCULADORA
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT t.id, t.datahora, t.terminal, t.cpf, t.paymentMethod, t.nsuHost,
+                           t.txTransactionId, t.valor_original, t.brand, t.totalInstallments,
+                           l.id as loja_id, l.canal_id
+                    FROM transactiondata_own t
+                    INNER JOIN terminais term ON t.terminal = term.terminal
+                    INNER JOIN loja l ON term.loja_id = l.id
+                    WHERE t.id = %s
+                """, [transaction_id])
+                
+                row = cursor.fetchone()
+                if not row:
+                    registrar_log('posp2', 'Erro: transação não encontrada após inserção', nivel='ERROR')
+                    valores_calculados = {}
+                else:
+                    # Preparar dados_linha para calculadora
+                    dados_linha = {
+                        'id': row[0],
+                        'DataTransacao': row[1].strftime('%Y-%m-%dT%H:%M:%S'),
+                        'SerialNumber': row[2],
+                        'idTerminal': row[2],
+                        'cpf': row[3] or '',
+                        'TipoCompra': self.TIPO_COMPRA_MAP.get(row[4], row[4]),
+                        'NsuOperacao': row[5],
+                        'nsuAcquirer': row[6],
+                        'valor_original': Decimal(str(row[7])),
+                        'ValorBruto': Decimal(str(row[7])),
+                        'ValorBrutoParcela': Decimal(str(row[7])),
+                        'Bandeira': row[8],
+                        'NumeroTotalParcelas': row[9],
+                        'ValorTaxaAdm': 0,
+                        'ValorTaxaMes': 0,
+                        'ValorSplit': 0,
+                        'DescricaoStatus': 'Processado',
+                        'DescricaoStatusPagamento': 'Pendente',
+                        'IdStatusPagamento': 1,
+                        'DataCancelamento': None,
+                        'DataFuturaPagamento': None,
+                        'loja_id': row[10],
+                        'canal_id': row[11]
+                    }
+                    
+                    # Calcular valores
+                    calculadora = CalculadoraBaseGestao()
+                    try:
+                        valores_calculados = calculadora.calcular_valores_primarios(dados_linha)
+                        registrar_log('posp2', f'Calculadora executada - {len(valores_calculados)} valores')
+                    except Exception as e:
+                        registrar_log('posp2', f'ERRO na calculadora: {e}', nivel='ERROR')
+                        valores_calculados = {}
             
             # 10. Buscar informações da loja
             info_loja = self._buscar_info_loja(terminal)
