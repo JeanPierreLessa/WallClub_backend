@@ -253,6 +253,7 @@ def pagamentos_upload_csv(request):
         
         registrar_log('portais.admin', f'PAGAMENTOS CSV - ✅ {len(pagamentos)} pagamentos processados com sucesso')
         
+        # Retornar pagamentos para exibição na tela (usuário ainda precisa confirmar)
         return JsonResponse({
             'success': True, 
             'pagamentos': pagamentos,
@@ -522,6 +523,32 @@ def pagamentos_bulk_create(request):
                 'errors': errors,
                 'created': created_count
             })
+        
+        # Executar carga automática da base de gestão após criar pagamentos
+        if created_count > 0:
+            try:
+                registrar_log('portais.admin', f'🔄 Iniciando carga automática da base de gestão para {created_count} pagamento(s)...')
+                from pinbank.cargas_pinbank.services import CargaBaseGestaoService
+                
+                service = CargaBaseGestaoService()
+                registros_processados = service.carregar_valores_primarios(limite=created_count * 2)
+                
+                registrar_log('portais.admin', f'✅ Carga base gestão concluída: {registros_processados} registros processados')
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'{created_count} pagamento(s) criado(s) e {registros_processados} registro(s) processado(s) na base de gestão',
+                    'created': created_count,
+                    'processed': registros_processados
+                })
+            except Exception as e:
+                registrar_log('portais.admin', f'⚠️ Pagamentos criados mas erro na carga: {str(e)}', nivel='WARNING')
+                return JsonResponse({
+                    'success': True,
+                    'message': f'{created_count} pagamento(s) criado(s) com sucesso (carga automática falhou)',
+                    'created': created_count,
+                    'warning': f'Erro na carga: {str(e)}'
+                })
         
         return JsonResponse({
             'success': True,
