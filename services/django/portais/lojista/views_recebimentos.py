@@ -998,7 +998,7 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
                 # Buscar nome da loja pelo loja_id
                 nome_loja = '-'
                 if lancamento.loja_id:
-                    loja_encontrada = next((loja for loja in lojas_acesso if loja['id'] == lancamento.loja_id), None)
+                    loja_encontrada = next((loja for loja in lojas_acessiveis if loja['id'] == lancamento.loja_id), None)
                     if loja_encontrada:
                         nome_loja = loja_encontrada['nome']
                 
