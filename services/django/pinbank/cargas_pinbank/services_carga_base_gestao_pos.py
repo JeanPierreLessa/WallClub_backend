@@ -7,7 +7,7 @@ Usa CalculadoraBaseGestao
 from typing import Dict, Any
 from django.db import connection, transaction
 from .models import PinbankExtratoPOS
-from pinbank.models import BaseTransacoesGestao, BaseTransacoesGestaoErroCarga
+from gestao_financeira.models import BaseTransacoesGestao, BaseTransacoesGestaoErroCarga
 from wallclub_core.utilitarios.log_control import registrar_log
 
 

@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'portais.corporativo',
     'portais.controle_acesso',
     'portais.vendas',
-    'sistema_bancario',
+    'gestao_financeira',
 ]
 
 # Configurações de upload para formulários com muitos campos

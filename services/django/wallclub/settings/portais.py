@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'portais.corporativo',
     'portais.controle_acesso',
     'portais.vendas',
-    'sistema_bancario',
+    'gestao_financeira',
     
     # Dependências (portais usa checkout, ofertas, parametros)
     'checkout',

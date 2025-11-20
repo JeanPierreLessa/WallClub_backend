@@ -145,7 +145,7 @@ class CargaLiquidacoesOwnService:
             True se atualizado com sucesso
         """
         from adquirente_own.cargas_own.models import OwnExtratoTransacoes
-        from pinbank.models import BaseTransacoesGestao
+        from gestao_financeira.models import BaseTransacoesGestao
         
         try:
             # Buscar transação correspondente

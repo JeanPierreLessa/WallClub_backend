@@ -30,7 +30,7 @@ class RecebimentoService:
             dict: Recebimentos agrupados por data com totalizadores
         """
         from wallclub_core.database.queries import TransacoesQueries
-        from sistema_bancario.models import LancamentoManual
+        from gestao_financeira.models import LancamentoManual
         
         # Com GROUP BY e LIMIT, não precisa mais exigir filtros
         
@@ -207,7 +207,7 @@ class RecebimentoService:
         data_formatada = data_obj.strftime('%d/%m/%Y')
         
         # Lazy import do modelo
-        BaseTransacoesGestao = apps.get_model('pinbank', 'BaseTransacoesGestao')
+        BaseTransacoesGestao = apps.get_model('gestao_financeira', 'BaseTransacoesGestao')
         
         # Buscar transações
         filtros = Q(var6__in=lojas_ids) & Q(var45=data_formatada)
@@ -245,7 +245,7 @@ class RecebimentoService:
         Returns:
             list: Lista de lançamentos da data
         """
-        from sistema_bancario.models import LancamentoManual
+        from gestao_financeira.models import LancamentoManual
         
         # Tentar formatos de data
         data_obj = None

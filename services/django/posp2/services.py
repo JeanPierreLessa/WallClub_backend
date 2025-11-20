@@ -24,7 +24,7 @@ from django.apps import apps
 from wallclub_core.integracoes.whatsapp_service import WhatsAppService
 from wallclub_core.integracoes.sms_service import enviar_sms
 from wallclub_core.integracoes.messages_template_service import MessagesTemplateService
-from pinbank.models import BaseTransacoesGestao
+from gestao_financeira.models import BaseTransacoesGestao
 from wallclub_core.seguranca.validador_cpf import ValidadorCPFService
 
 class POSP2Service:

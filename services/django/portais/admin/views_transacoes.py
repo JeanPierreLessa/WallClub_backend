@@ -221,7 +221,7 @@ def exportar_transacoes_excel(request):
     """Exportar transações para Excel usando SQL direto"""
     try:
         # Import do modelo
-        from pinbank.models import BaseTransacoesGestao
+        from gestao_financeira.models import BaseTransacoesGestao
         
         # Aplicar os mesmos filtros da view principal
         filtros = {
@@ -344,7 +344,7 @@ def exportar_transacoes_excel(request):
 def exportar_transacoes_csv(request):
     """Exportar transações para CSV com proteção contra timeout"""
     # Import do modelo
-    from pinbank.models import BaseTransacoesGestao
+    from gestao_financeira.models import BaseTransacoesGestao
     
     # Aplicar os mesmos filtros da view principal
     filtros = {

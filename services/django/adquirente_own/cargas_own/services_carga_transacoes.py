@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from django.db import transaction
 from adquirente_own.services import OwnService
 from adquirente_own.cargas_own.models import OwnExtratoTransacoes
-from pinbank.models import BaseTransacoesGestao
+from gestao_financeira.models import BaseTransacoesGestao
 from wallclub_core.utilitarios.log_control import registrar_log
 
 

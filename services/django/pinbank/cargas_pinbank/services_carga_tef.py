@@ -186,7 +186,7 @@ class CargaTEFService:
             Número de registros inseridos
         """
         try:
-            from pinbank.models import BaseTransacoesGestao
+            from gestao_financeira.models import BaseTransacoesGestao
 
             registros_inseridos = 0
             total_transacoes = len(transacoes_tef)

@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'portais.corporativo',
     'portais.controle_acesso',
     'portais.vendas',
-    'sistema_bancario',
+    'gestao_financeira',
 ]
 
 # URLs não são necessárias para worker (não recebe HTTP)

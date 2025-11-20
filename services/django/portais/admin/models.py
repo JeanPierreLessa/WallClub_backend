@@ -4,11 +4,11 @@ from decimal import Decimal
 
 # MODELOS REMOVIDOS - DUPLICAÇÕES ELIMINADAS
 #
-# BaseTransacoesGestao: Movido para pinbank.cargas_pinbank.models
-# - Use: from pinbank.models import BaseTransacoesGestao
+# BaseTransacoesGestao: Movido para gestao_financeira.models
+# - Use: from gestao_financeira.models import BaseTransacoesGestao
 #
 # Terminal: Movido para posp2.models  
 # - Use: from posp2.models import Terminal
 #
-# Pagamento: Removido - usar sistema_bancario.models.PagamentoEfetuado
-# - Use: from sistema_bancario.models import PagamentoEfetuado
+# Pagamento: Removido - usar gestao_financeira.models.PagamentoEfetuado
+# - Use: from gestao_financeira.models import PagamentoEfetuado

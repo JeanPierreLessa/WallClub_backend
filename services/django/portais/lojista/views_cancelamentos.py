@@ -359,7 +359,7 @@ class LojistaCancelamentosExportView(View):
             # Usar SQL direto sem modelo
             from wallclub_core.database.queries import TransacoesQueries
             # Query já está sendo construída via SQL raw abaixo
-            from pinbank.models import BaseTransacoesGestao
+            from gestao_financeira.models import BaseTransacoesGestao
             vendas_queryset = BaseTransacoesGestao.objects.filter(filtros).extra(
                 select={'data_transacao': "STR_TO_DATE(var0, '%%d/%%m/%%Y')"},
                 where=["""

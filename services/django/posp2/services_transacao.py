@@ -12,7 +12,7 @@ from wallclub_core.utilitarios.funcoes_gerais import calcular_cet
 from parametros_wallclub.services import ParametrosService
 from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
 from pinbank.services import PinbankService
-from pinbank.models import BaseTransacoesGestao
+from gestao_financeira.models import BaseTransacoesGestao
 from wallclub_core.utilitarios.log_control import registrar_log
 from wallclub_core.services.auditoria_service import AuditoriaService
 from django.apps import apps
@@ -1285,7 +1285,7 @@ class TRDataService:
         Insere dados calculados na tabela baseTransacoesGestao
         """
         try:
-            from pinbank.models import BaseTransacoesGestao
+            from gestao_financeira.models import BaseTransacoesGestao
             
             # Para chamadas POS: idFilaExtrato sempre NULL
             # Para carga Pinbank: idFilaExtrato vem dos dados
