@@ -1,12 +1,4 @@
 
-
-Gestao
-aumentar tamanho da coluna do gestao
-
-POS
-tirar o texto com encargos nas simulacoes  (mantem so com desconto)
-
-
 --> Portal lojista <---
 - Tela de recebimento
     - Lancamento manual aparecendo ok
@@ -19,9 +11,16 @@ tirar o texto com encargos nas simulacoes  (mantem so com desconto)
     - Campos de pagamento preenchidos
     - Tirar totalizador/coluna TAXA ADMIN e VALOR LIQUIDO
     - remover coluna Status Transacao
+    ->> esta trazendo muitas transacoes (tem algo errado!)
 
 - Cancelamento
     - Removidas colunas TAXA ADM e STATUS TRANS
 
 - Ofertas
     - ocultada por enquanto
+
+--> Portal admin <---
+- aumentei o tamanho da coluna. se vc colocar o mouse em cima do nome da coluna aparece o nome todo
+
+--> POS <---
+- removido sem juros e com encargos, so ficou com desconto

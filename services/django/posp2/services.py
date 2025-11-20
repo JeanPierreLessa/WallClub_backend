@@ -150,9 +150,9 @@ class POSP2Service:
             valor_original = Decimal(str(valor)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
             # Definir nomenclatura de retorno (igual ao PHP)
-            sem_desconto = "(s/juros)"
+            sem_desconto = ""
             com_desconto = "(c/desconto)"
-            com_encargos = "(c/encargos)"
+            com_encargos = ""
 
             # Usar calculadora do parametros_wallclub
             from parametros_wallclub.services import CalculadoraDesconto
@@ -425,9 +425,9 @@ class POSP2Service:
                 }
 
             # Definir nomenclatura de retorno (igual ao PHP)
-            sem_desconto = "(s/juros)"
+            sem_desconto = ""
             com_desconto = "(c/desconto)"
-            com_encargos = "(c/encargos)"
+            com_encargos = ""
 
             # Converter valor para Decimal com precisão exata
             valor_original = Decimal(str(valoro)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
