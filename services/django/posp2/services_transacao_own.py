@@ -9,13 +9,27 @@ from decimal import Decimal
 from typing import Dict, Any, Optional
 from django.db import connection
 from wallclub_core.utilitarios.log_control import registrar_log
+from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
+from parametros_wallclub.services import ParametrosService
 
 
 class TRDataOwnService:
     """
     Service para processar dados de transações Own/Ágilli
     Endpoint: /trdata_own/
+    Replicando EXATAMENTE a lógica do TRDataService (Pinbank)
     """
+    
+    # Mapeamento centralizado de PaymentMethod para TipoCompra (IGUAL AO PINBANK)
+    TIPO_COMPRA_MAP = {
+        'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST': 'PARCELADO SEM JUROS',
+        'CREDIT_ONE_INSTALLMENT': 'A VISTA',
+        'DEBIT': 'DEBITO',
+        'CASH': 'PIX'
+    }
+    
+    def __init__(self):
+        self.parametros_service = ParametrosService()
     
     def processar_dados_transacao(self, dados_json: str) -> Dict[str, Any]:
         """
@@ -96,8 +110,9 @@ class TRDataOwnService:
                     'mensagem': f'Transação já processada: {tx_transaction_id}'
                 }
             
-            # 6. Converter valor original
-            valor_original = self._converter_valor_monetario(valororiginal)
+            # 6. Converter valor original (usar amount em centavos, não valororiginal)
+            amount_centavos = int(dados_trdata.get('amount', 0))
+            valor_original = amount_centavos / 100.0  # Converter centavos para reais
             
             # 7. Preparar dados para inserção
             dados_para_inserir = {
@@ -168,16 +183,62 @@ class TRDataOwnService:
             
             registrar_log('posp2', f'✅ Transação Own inserida: ID={transaction_id}, TxID={tx_transaction_id}')
             
-            # 9. Buscar informações da loja
+            # 9. CALCULAR VALORES (IGUAL AO PINBANK)
+            calculadora = CalculadoraBaseGestao()
+            
+            # Preparar dados_linha para calculadora (formato igual ao Pinbank)
+            dados_linha = {
+                'id': transaction_id,
+                'DataTransacao': dados_para_inserir['datahora'].strftime('%Y-%m-%dT%H:%M:%S'),
+                'SerialNumber': terminal,
+                'idTerminal': terminal,
+                'cpf': cpf,
+                'TipoCompra': self.TIPO_COMPRA_MAP.get(dados_para_inserir['paymentMethod'], dados_para_inserir['paymentMethod']),
+                'NsuOperacao': dados_para_inserir['nsuHost'],
+                'nsuAcquirer': dados_para_inserir['txTransactionId'],
+                'valor_original': valor_original,
+                'ValorBruto': valor_original,
+                'ValorBrutoParcela': valor_original,
+                'Bandeira': dados_para_inserir['brand'],
+                'NumeroTotalParcelas': dados_para_inserir['totalInstallments'],
+                'ValorTaxaAdm': 0,
+                'ValorTaxaMes': 0,
+                'ValorSplit': 0,
+                'DescricaoStatus': 'Processado',
+                'DescricaoStatusPagamento': 'Pendente',
+                'IdStatusPagamento': 1,
+                'DataCancelamento': None,
+                'DataFuturaPagamento': None
+            }
+            
+            try:
+                valores_calculados = calculadora.calcular_valores_primarios(dados_linha)
+                registrar_log('posp2', f'Calculadora executada - {len(valores_calculados)} valores')
+            except Exception as e:
+                registrar_log('posp2', f'ERRO na calculadora: {e}', nivel='ERROR')
+                valores_calculados = {}
+            
+            # 10. Buscar informações da loja
             info_loja = self._buscar_info_loja(terminal)
             
-            # 10. Buscar nome do cliente (se CPF informado)
-            nome = ''
-            if cpf:
-                nome = self._buscar_nome_cliente(cpf)
+            # 11. Usar o método do Pinbank para gerar slip (EXATAMENTE IGUAL)
+            from .services_transacao import TRDataService
+            trdata_service = TRDataService()
             
-            # 11. Gerar JSON de resposta para impressão do slip
-            json_resposta = self._gerar_slip_impressao(dados_para_inserir, info_loja, cpf, nome)
+            # Preparar dados no formato que o Pinbank espera
+            dados_pinbank_format = {
+                **dados_trdata,
+                'cpf': cpf,
+                'terminal': terminal,
+                'nsuPinbank': dados_para_inserir['nsuHost'],
+                'nsuAcquirer': dados_para_inserir['txTransactionId'],
+                'authorizationCode': dados_para_inserir['authorizationCode'],
+                'valororiginal': valororiginal,
+                'autorizacao_id': autorizacao_id,
+                'cashback_concedido': cashback_concedido_pos
+            }
+            
+            json_resposta = trdata_service._gerar_slip_impressao(dados_pinbank_format, valores_calculados, info_loja)
             
             # 12. Retornar dados completos para comprovante
             resposta_final = {
@@ -396,18 +457,13 @@ class TRDataOwnService:
             "nsu": dados['nsuHost']
         }
         
-        # Se tem CPF (Wall Club)
+        # Replicar EXATAMENTE o formato do /trdata/ original
         if cpf and cpf.strip():
+            # COM WALL CLUB
             array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original)}"
             
             if valor_desconto > 0:
                 array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(valor_desconto)}"
-            
-            if saldo_usado > 0:
-                array["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_usado)}"
-            
-            if cashback_concedido > 0:
-                array["cashback_concedido"] = f"Cashback concedido: R$ {formatar_valor_monetario(cashback_concedido)}"
             
             array["vdesconto"] = f"Valor total pago:\nR$ {formatar_valor_monetario(valor_final)}"
             array["pagoavista"] = f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valor_final)}"
@@ -415,9 +471,12 @@ class TRDataOwnService:
             array["tarifas"] = "Tarifas CLUB: -- "
             array["encargos"] = ""
         else:
-            # Venda normal sem Wall Club
-            array["voriginal"] = f"Valor da transação: R$ {formatar_valor_monetario(valor_original)}"
-            array["pagoavista"] = f"Valor pago à loja: R$ {formatar_valor_monetario(valor_original)}"
-            array["vparcela"] = f"R$ {formatar_valor_monetario(valor_original / parcelas if parcelas > 0 else valor_original)}"
+            # SEM WALL CLUB
+            array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original)}"
+            array["vdesconto"] = f"Valor total pago:\nR$ {formatar_valor_monetario(valor_original)}"
+            array["pagoavista"] = f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valor_original)}"
+            array["vparcela"] = f"R$ {formatar_valor_monetario(valor_parcela)}"
+            array["tarifas"] = ""
+            array["encargos"] = ""
         
         return array
