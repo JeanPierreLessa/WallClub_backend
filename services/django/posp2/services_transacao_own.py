@@ -25,15 +25,15 @@ class TRDataOwnService:
             dados_json: JSON bruto com todos os dados da requisição
         """
         try:
-            registrar_log('posp2.own', '========================================')
-            registrar_log('posp2.own', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} - Processamento Transação Own')
-            registrar_log('posp2.own', '========================================')
+            registrar_log('posp2', '========================================')
+            registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} - Processamento Transação Own')
+            registrar_log('posp2', '========================================')
             
             # Parse do JSON recebido
             try:
                 dados = json.loads(dados_json)
             except json.JSONDecodeError as e:
-                registrar_log('posp2.own', f'Erro ao decodificar JSON: {e}', nivel='ERROR')
+                registrar_log('posp2', f'Erro ao decodificar JSON: {e}', nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': f'Erro ao decodificar JSON: {e}'
@@ -54,7 +54,7 @@ class TRDataOwnService:
             autorizacao_id = dados.get('autorizacao_id', '')
             modalidade_wall = dados.get('modalidade_wall', '')
             
-            registrar_log('posp2.own', f'Terminal: {terminal}, CPF: {cpf}, Valor: {valororiginal}')
+            registrar_log('posp2', f'📥 Recebido request /trdata_own/ - Terminal: {terminal}, CPF: {cpf}, Valor: {valororiginal}')
             
             # 2. Validar dados obrigatórios
             if not trdata or not terminal or not valororiginal:
@@ -66,9 +66,9 @@ class TRDataOwnService:
             # 3. Parse do JSON trdata
             try:
                 dados_trdata = json.loads(trdata)
-                registrar_log('posp2.own', f'TrData decodificado - Campos: {", ".join(dados_trdata.keys())}')
+                registrar_log('posp2', f'TrData decodificado - Campos: {", ".join(dados_trdata.keys())}')
             except json.JSONDecodeError as e:
-                registrar_log('posp2.own', f'Erro ao decodificar trdata: {e}', nivel='ERROR')
+                registrar_log('posp2', f'Erro ao decodificar trdata: {e}', nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': f'Erro ao decodificar trdata: {e}'
@@ -77,7 +77,7 @@ class TRDataOwnService:
             # 4. Validar SDK
             sdk = dados_trdata.get('sdk', '')
             if sdk != 'agilli':
-                registrar_log('posp2.own', f'⚠️ SDK inválido: {sdk} (esperado: agilli)', nivel='WARNING')
+                registrar_log('posp2', f'⚠️ SDK inválido: {sdk} (esperado: agilli)', nivel='WARNING')
             
             # 5. Extrair campos específicos Own
             tx_transaction_id = dados_trdata.get('txTransactionId', '')
@@ -89,7 +89,7 @@ class TRDataOwnService:
             
             # Verificar duplicidade
             if self._transacao_existe(tx_transaction_id):
-                registrar_log('posp2.own', f'⚠️ Transação duplicada: {tx_transaction_id}', nivel='WARNING')
+                registrar_log('posp2', f'⚠️ Transação duplicada: {tx_transaction_id}', nivel='WARNING')
                 return {
                     'sucesso': False,
                     'mensagem': f'Transação já processada: {tx_transaction_id}'
@@ -165,7 +165,7 @@ class TRDataOwnService:
                     'mensagem': 'Erro ao inserir transação no banco'
                 }
             
-            registrar_log('posp2.own', f'✅ Transação Own inserida: ID={transaction_id}, TxID={tx_transaction_id}')
+            registrar_log('posp2', f'✅ Transação Own inserida: ID={transaction_id}, TxID={tx_transaction_id}')
             
             # 9. Buscar informações da loja
             info_loja = self._buscar_info_loja(terminal)
@@ -187,11 +187,14 @@ class TRDataOwnService:
             
         except Exception as e:
             import traceback
-            registrar_log('posp2.own', f'ERRO: {str(e)}', nivel='ERROR')
-            registrar_log('posp2.own', f'TRACEBACK: {traceback.format_exc()}', nivel='ERROR')
+            erro_completo = traceback.format_exc()
+            registrar_log('posp2', f'❌ ERRO CRÍTICO ao processar transação: {e}', nivel='ERROR')
+            registrar_log('posp2', f'Traceback completo:\n{erro_completo}', nivel='ERROR')
+            print(f"[ERRO TRDataOwnService] {e}")
+            print(erro_completo)
             return {
                 'sucesso': False,
-                'mensagem': f'Erro ao processar transação: {str(e)}'
+                'mensagem': f'Erro ao processar transação: {e}'
             }
     
     def _transacao_existe(self, tx_transaction_id: str) -> bool:
@@ -253,7 +256,7 @@ class TRDataOwnService:
                 return cursor.lastrowid
                 
         except Exception as e:
-            registrar_log('posp2.own', f'Erro ao inserir transação: {e}', nivel='ERROR')
+            registrar_log('posp2', f'Erro ao inserir transação: {e}', nivel='ERROR')
             return None
     
     def _buscar_info_loja(self, terminal: str) -> Dict[str, Any]:
@@ -275,7 +278,7 @@ class TRDataOwnService:
                         'cnpj': row[2]
                     }
         except Exception as e:
-            registrar_log('posp2.own', f'Erro ao buscar loja: {e}', nivel='ERROR')
+            registrar_log('posp2', f'Erro ao buscar loja: {e}', nivel='ERROR')
         
         return {
             'id': None,
@@ -298,9 +301,29 @@ class TRDataOwnService:
                 if row:
                     return row[0] or ''
         except Exception as e:
-            registrar_log('posp2.own', f'Erro ao buscar nome cliente: {e}', nivel='ERROR')
+            registrar_log('posp2', f'Erro ao buscar nome cliente: {e}', nivel='ERROR')
         
         return ''
+    
+    def _converter_valor_monetario(self, valor) -> float:
+        """Converte valor monetário para float"""
+        if isinstance(valor, str):
+            # Remover formatação monetária brasileira
+            valor = valor.replace('R$', '').replace(' ', '').strip()
+            
+            # Tratar formato brasileiro: R$17,00 -> 17.00
+            if ',' in valor and '.' not in valor:
+                valor = valor.replace(',', '.')
+            elif ',' in valor and '.' in valor:
+                # Formato com milhares: 1.234,56 -> 1234.56
+                if valor.rfind(',') > valor.rfind('.'):
+                    valor = valor.replace('.', '').replace(',', '.')
+                else:
+                    valor = valor.replace(',', '')
+            
+            return float(valor) if valor else 0.0
+        
+        return float(valor) if valor else 0.0
     
     def _gerar_slip_impressao(self, dados: Dict[str, Any], info_loja: Dict[str, Any], 
                               cpf: str, nome: str) -> Dict[str, Any]:
