@@ -176,10 +176,25 @@ def atualiza_celular_envia_msg_app(request):
 @require_oauth_posp2
 @handle_api_errors
 def processar_dados_transacao(request):
-    """Processa dados de transação e gera comprovante"""
+    """Processa dados de transação Pinbank e gera comprovante"""
     dados_json = request.body.decode('utf-8')
     
     service = TRDataService()
+    resultado = service.processar_dados_transacao(dados_json)
+    
+    return JsonResponse(resultado)
+
+
+@require_http_methods(["POST"])
+@require_oauth_posp2
+@handle_api_errors
+def processar_dados_transacao_own(request):
+    """Processa dados de transação Own/Ágilli e gera comprovante"""
+    from .services_transacao_own import TRDataOwnService
+    
+    dados_json = request.body.decode('utf-8')
+    
+    service = TRDataOwnService()
     resultado = service.processar_dados_transacao(dados_json)
     
     return JsonResponse(resultado)

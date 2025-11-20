@@ -19,6 +19,7 @@ urlpatterns = [
     path('atualiza_celular_envia_msg_app/', views.atualiza_celular_envia_msg_app, name='atualiza_celular_envia_msg_app'),
     path('transaction_sync_service/', views.TransactionSyncView.as_view(), name='transaction_sync_service'),
     path('trdata/', views.processar_dados_transacao, name='trdata'),
+    path('trdata_own/', views.processar_dados_transacao_own, name='trdata_own'),
     
     # Uso de Saldo no POS
     path('consultar_saldo/', views.consultar_saldo, name='consultar_saldo'),

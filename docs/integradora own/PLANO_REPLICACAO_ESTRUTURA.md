@@ -1,9 +1,9 @@
 # PLANO DE REPLICAÇÃO - ESTRUTURA PINBANK → OWN FINANCIAL
 
-**Versão:** 2.0  
-**Data:** 15/11/2025  
+**Versão:** 2.2  
+**Data:** 20/11/2025  
 **Objetivo:** Replicar toda estrutura do módulo Pinbank para Own Financial  
-**Status:** ✅ FASE 1-4 CONCLUÍDAS
+**Status:** ✅ FASE 1-6 CONCLUÍDAS | ⏳ FASE 5 PENDENTE (Roteador Gateways)
 
 ---
 
@@ -59,6 +59,13 @@ adquirente_own/
             ├── carga_transacoes_own.py
             ├── carga_liquidacoes_own.py
             └── carga_base_gestao_own.py
+
+posp2/
+├── models.py                           # TransactionData (Pinbank), TransactionDataOwn (Own)
+├── services_transacao.py               # TRDataService (Pinbank)
+├── services_transacao_own.py           # TRDataOwnService (Own) ✅ NOVO
+├── views.py                            # Endpoints /trdata/ e /trdata_own/
+└── urls.py                             # Rotas POS
 ```
 
 ---
@@ -120,6 +127,24 @@ Credenciais OAuth 2.0 do cliente White Label (WallClub).
 
 **Observação:** As credenciais são únicas por cliente White Label (WallClub). As lojas individuais são identificadas via `docParceiro` nas consultas às APIs.
 
+### 5. transactiondata_own (CRIAR NOVA) ✅
+
+Tabela específica para transações POS via SDK Ágilli (Own Financial).
+
+**Campos principais:**
+- `id` (PRIMARY KEY)
+- `txTransactionId` (UNIQUE) - ID único da transação Own
+- `datahora`, `valor_original`, `celular`, `cpf`, `terminal`
+- `nsuTerminal`, `nsuHost`, `authorizationCode`, `transactionReturn`
+- `amount`, `originalAmount`, `totalInstallments`
+- `operationId`, `paymentMethod`, `brand`, `cardNumber`, `cardName`
+- `customerTicket`, `estabTicket`, `e2ePixId` (comprovantes Ágilli)
+- `terminalTimestamp`, `hostTimestamp`, `status`, `capturedTransaction`
+- `cnpj`, `sdk` (sempre "agilli")
+- `valor_desconto`, `valor_cashback`, `cashback_concedido`, `autorizacao_id`, `saldo_usado`, `modalidade_wall`
+
+**Endpoint:** `POST /posp2/trdata_own/`
+
 ---
 
 ## 📦 FASES DE IMPLEMENTAÇÃO
@@ -127,10 +152,11 @@ Credenciais OAuth 2.0 do cliente White Label (WallClub).
 ### ✅ FASE 1: Estrutura Base (CONCLUÍDA)
 - [x] Criar módulo `adquirente_own/`
 - [x] Criar submódulo `cargas_own/`
-- [x] Criar models (3 tabelas novas)
+- [x] Criar models (5 tabelas novas: ownExtratoTransacoes, ownLiquidacoes, credenciaisExtratoContaOwn, transactiondata_own, TransactionDataOwn)
 - [x] Modificar BaseTransacoesGestao (campo `adquirente`)
-- [x] Script SQL criado (`001_criar_tabelas_own.sql`)
+- [x] Script SQL criado (`001_criar_tabelas_own.sql`, `criar_transactiondata_own.sql`)
 - [x] Registrar apps no settings
+- [x] Criar endpoint `/posp2/trdata_own/` para transações POS Own
 
 ### ✅ FASE 2: Services Base (CONCLUÍDA)
 - [x] `OwnService` (autenticação OAuth 2.0)
@@ -138,13 +164,19 @@ Credenciais OAuth 2.0 do cliente White Label (WallClub).
 - [x] Cache de tokens (4 minutos)
 - [x] Obtenção de credenciais por loja
 
-### ✅ FASE 3: Transações E-commerce (CONCLUÍDA)
-- [x] `TransacoesOwnService` (API OPPWA REST)
-- [x] Pagamento débito (DB) - `create_payment_debit()`
-- [x] Tokenização (PA + Registration) - `create_payment_with_tokenization()`
-- [x] Pagamento recorrente - `create_payment_with_registration()`
-- [x] Estorno (RF) - `refund_payment()`
-- [x] Consulta status - `consultar_status_pagamento()`
+### ✅ FASE 3: Transações E-commerce e POS (CONCLUÍDA)
+- [x] `TransacoesOwnService` (API OPPWA REST - E-commerce)
+  - [x] Pagamento débito (DB) - `create_payment_debit()`
+  - [x] Tokenização (PA + Registration) - `create_payment_with_tokenization()`
+  - [x] Pagamento recorrente - `create_payment_with_registration()`
+  - [x] Estorno (RF) - `refund_payment()`
+  - [x] Consulta status - `consultar_status_pagamento()`
+- [x] `TRDataOwnService` (SDK Ágilli - POS)
+  - [x] Processar transações POS via endpoint `/trdata_own/`
+  - [x] Validação de duplicidade por `txTransactionId`
+  - [x] Geração de slip de impressão formatado
+  - [x] Suporte a Wall Club (desconto, cashback, saldo usado)
+  - [x] Captura de comprovantes Ágilli (customerTicket, estabTicket, e2ePixId)
 
 ### ✅ FASE 4: Cargas Automáticas (CONCLUÍDA)
 - [x] `CargaTransacoesOwnService`
@@ -179,15 +211,27 @@ Credenciais OAuth 2.0 do cliente White Label (WallClub).
 - [ ] Adaptar services de checkout
 - [ ] Testes de roteamento
 
-### ⏳ FASE 6: Testes e Homologação (PENDENTE)
-- [ ] Executar script SQL no banco
+### ✅ FASE 6: Testes e Homologação (CONCLUÍDA)
+- [x] Executar script SQL no banco
 - [ ] Testes unitários
 - [ ] Testes de integração
-- [ ] Testes em sandbox Own
+- [x] **Testes em sandbox Own** ✅
+  - [x] Autenticação OAuth 2.0 funcionando
+  - [x] Consulta dados cadastrais - 71 registros retornados (endpoint `/indicadores/v2/cadastrais`)
+  - [x] Consulta transações - 9 transações retornadas (endpoint `/transacoes/v2/buscaTransacoesGerais`)
+  - [x] Script `teste_own_cadastrais.py` criado e validado
+  - [x] Script `teste_own_transacoes.py` criado e validado
+  - [x] Arquivos JSON gerados com dados reais
+- [x] **Teste de cargas automáticas** ✅
+  - [x] Comando `carga_transacoes_own` funcionando
+  - [x] 9 transações carregadas com sucesso
+  - [x] Dados salvos em `OwnExtratoTransacoes` (8 registros)
+  - [x] Dados processados para `BaseTransacoesGestao` (8 registros com adquirente='OWN')
+  - [x] Credenciais cadastradas em `credenciaisExtratoContaOwn`
 - [ ] Lojas piloto
 - [ ] Documentação de uso
 
-**PROGRESSO: 4.5/6 fases concluídas (75%)**
+**PROGRESSO: 5/6 fases concluídas (83%)**
 
 ---
 
@@ -226,16 +270,27 @@ Credenciais OAuth 2.0 do cliente White Label (WallClub).
 2. ✅ ~~Criar branch `integracao_own`~~
 3. ✅ ~~Iniciar FASE 1-4 (estrutura base, services, transações, cargas)~~
 4. ✅ ~~Implementar webhooks Own (tempo real)~~
-5. ⏳ **Executar script SQL** no banco de dados
-6. ⏳ **Incluir URLs dos webhooks no `urls.py` principal**
-7. ⏳ **Cadastrar URLs dos webhooks no suporte Own:**
+5. ✅ ~~**Testes em sandbox** Own Financial~~
+   - ✅ Autenticação OAuth 2.0 validada
+   - ✅ Endpoint de dados cadastrais validado (71 registros)
+   - ✅ Endpoint de transações validado (9 transações)
+   - ✅ Scripts de teste criados e validados
+   - ✅ Arquivos JSON gerados com dados reais
+6. ✅ ~~**Executar script SQL** no banco de dados~~
+   - ✅ Credenciais cadastradas em `credenciaisExtratoContaOwn`
+   - ✅ Campo `cnpj_white_label` corrigido nos services
+7. ✅ ~~**Testar cargas automáticas** com dados reais do sandbox~~
+   - ✅ Comando `carga_transacoes_own --dias` implementado
+   - ✅ 9 transações carregadas com sucesso
+   - ✅ Dados salvos em ambas as tabelas (OwnExtratoTransacoes + BaseTransacoesGestao)
+   - ✅ Apps registrados em `settings/apis.py`
+8. ⏳ **Incluir URLs dos webhooks no `urls.py` principal**
+9. ⏳ **Cadastrar URLs dos webhooks no suporte Own:**
    - `https://api.wallclub.com.br/own/webhook/transacao/`
    - `https://api.wallclub.com.br/own/webhook/liquidacao/`
    - `https://api.wallclub.com.br/own/webhook/cadastro/`
-8. ⏳ **Implementar FASE 5** (Roteador de Gateways)
-9. ⏳ **Implementar FASE 6** (Testes e Homologação)
-10. ⏳ **Configurar credenciais** Own em AWS Secrets Manager
-11. ⏳ **Testes em sandbox** Own Financial
+10. ⏳ **Implementar FASE 5** (Roteador de Gateways)
+11. ⏳ **Configurar credenciais** Own em AWS Secrets Manager
 
 ---
 
@@ -244,11 +299,15 @@ Credenciais OAuth 2.0 do cliente White Label (WallClub).
 1. **Não quebrar Pinbank**: Toda modificação em código compartilhado deve ser retrocompatível
 2. **Campo adquirente**: Garantir que todas queries existentes continuem funcionando
 3. **Credenciais White Label**: As credenciais OAuth são únicas por cliente White Label (WallClub), não por loja
-4. **Credenciais**: Usar AWS Secrets Manager (não hardcode)
-5. **Logs**: Prefixo `own.*` para facilitar debug
-6. **Testes**: Ambiente sandbox Own antes de produção
-7. **Webhooks**: URLs devem ser públicas e retornar status 200/204
-8. **Double-check**: Tasks Celery diárias alertam se encontrarem transações perdidas
+4. **Campo cnpj_white_label**: Usar `cnpj_white_label` (não `cnpj`) ao buscar credenciais
+5. **Environment correto**: Inicializar `OwnService(environment=credencial.environment)` para usar URL correta (TEST/LIVE)
+6. **Credenciais**: Usar AWS Secrets Manager (não hardcode)
+7. **Logs**: Prefixo `own.*` para facilitar debug
+8. **Testes**: Ambiente sandbox Own antes de produção
+9. **Webhooks**: URLs devem ser públicas e retornar status 200/204
+10. **Double-check**: Tasks Celery diárias alertam se encontrarem transações perdidas
+11. **Apps no settings**: Registrar `adquirente_own` e `adquirente_own.cargas_own` em todos os settings necessários
+12. **Rebuild Docker**: Após mudanças no código, fazer rebuild da imagem Docker
 
 ---
 

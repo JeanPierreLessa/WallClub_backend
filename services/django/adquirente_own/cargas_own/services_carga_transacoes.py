@@ -41,7 +41,7 @@ class CargaTransacoesOwnService:
         
         # Obter credenciais
         credencial = CredenciaisExtratoContaOwn.objects.filter(
-            cnpj=cnpj_cliente,
+            cnpj_white_label=cnpj_cliente,
             ativo=True
         ).first()
         
@@ -64,8 +64,11 @@ class CargaTransacoesOwnService:
         
         registrar_log('own.carga', f'📥 Buscando transações: {data_inicial} a {data_final}')
         
+        # Inicializar service com environment correto
+        own_service = OwnService(environment=credencial.environment)
+        
         # Fazer requisição
-        response = self.own_service.fazer_requisicao_autenticada(
+        response = own_service.fazer_requisicao_autenticada(
             method='POST',
             endpoint='/transacoes/v2/buscaTransacoesGerais',
             client_id=credencial.client_id,
@@ -205,7 +208,7 @@ class CargaTransacoesOwnService:
         
         # Buscar credenciais ativas
         if cnpj_cliente:
-            credenciais = CredenciaisExtratoContaOwn.objects.filter(cnpj=cnpj_cliente, ativo=True)
+            credenciais = CredenciaisExtratoContaOwn.objects.filter(cnpj_white_label=cnpj_cliente, ativo=True)
         else:
             credenciais = CredenciaisExtratoContaOwn.objects.filter(ativo=True)
         

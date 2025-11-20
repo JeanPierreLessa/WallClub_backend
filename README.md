@@ -28,7 +28,8 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS SES** - Email transacional (ConfigManager)
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
-- ✅ **Pinbank** - Gateway de pagamento
+- ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
+- ✅ **Own Financial** - Gateway de pagamento (Adquirência) - QA/Sandbox
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 
@@ -114,12 +115,19 @@ WallClub_backend/
 ### 2. Container POS (wallclub-pos)
 
 **Porta:** 8006 (interna)  
-**Subdomínios:** apipos.wallclub.com.br / wcapipos.wallclub.com.br
+**Subdomínio:** wcapipos.wallclub.com.br (REMOVIDO - agora usa wcapi.wallclub.com.br)
 
 **Módulos:**
 - **posp2/** - Terminal POS (OAuth 2.0)
+  - `/trdata/` - Endpoint transações Pinbank
+  - `/trdata_own/` - Endpoint transações Own/Ágilli ✅ NOVO
+  - Models: TransactionData (Pinbank), TransactionDataOwn (Own)
 - **pinbank/** - Integração Pinbank + Cargas automáticas
-- **parametros_wallclub/** - Parâmetros financeiros (3.840 configs)
+- **adquirente_own/** - Integração Own Financial ✅ NOVO
+  - E-commerce (API OPPWA)
+  - Webhooks tempo real
+  - Cargas automáticas (transações + liquidações)
+- **parametros_wallclub/** - Sistema de parâmetros financeiros (3.840 configurações)
 
 **Settings:** `wallclub.settings.pos`
 
@@ -555,7 +563,18 @@ Proprietary - WallClub © 2025
 **Última atualização:** 07/11/2025 12:56  
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (14/11/2025)
+### Atualizações Recentes (20/11/2025)
+- ✅ **Integração Own Financial** - Gateway de adquirência em QA/Sandbox
+  - OAuth 2.0 com token cache (5min validade, 4min cache)
+  - APIs de consulta: transações, liquidações, dados cadastrais
+  - Cargas automáticas com comando `carga_transacoes_own --dias N`
+  - Webhooks tempo real (transações, liquidações, cadastro)
+  - Tabelas: `OwnExtratoTransacoes`, `OwnLiquidacoes`, `credenciaisExtratoContaOwn`
+  - Campo `adquirente` em `BaseTransacoesGestao` (PINBANK/OWN)
+  - 9 transações carregadas com sucesso no teste
+  - Documentação em `docs/integradora own/PLANO_REPLICACAO_ESTRUTURA.md`
+
+### Atualizações Anteriores (14/11/2025)
 - ✅ **Upload de Pagamentos via CSV** - Sistema completo de importação em lote
   - Validação em 2 fases (tudo ou nada)
   - Tabela editável com validação de NSU duplicado em tempo real

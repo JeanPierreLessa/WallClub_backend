@@ -168,7 +168,10 @@ Internet (80/443)
 
 **Funcionalidades:**
 - `posp2/` - Terminal POS (OAuth 2.0)
+  - `/trdata/` - Endpoint transações Pinbank
+  - `/trdata_own/` - Endpoint transações Own/Ágilli ✅ NOVO
 - `pinbank/` - Integração Pinbank + Cargas
+- `adquirente_own/` - Integração Own Financial ✅ NOVO
 - `parametros_wallclub/` - Parâmetros financeiros (3.840 configs)
 
 **Comunicação:**
@@ -687,11 +690,21 @@ wallclub_django/
 │   ├── models.py
 │   └── services.py            # CalculadoraDesconto
 ├── posp2/                      # Terminal POS (OAuth)
-│   ├── services_transacao.py  # TRDataService
+│   ├── models.py              # TransactionData, TransactionDataOwn
+│   ├── services_transacao.py  # TRDataService (Pinbank)
+│   ├── services_transacao_own.py # TRDataOwnService (Own) ✅ NOVO
 │   └── services_conta_digital.py # Autorização saldo
-├── pinbank/cargas_pinbank/     # Cargas automáticas
+├── pinbank/cargas_pinbank/     # Cargas automáticas Pinbank
 │   ├── services.py            # Extrato POS
 │   └── services_ajustes_manuais.py
+├── adquirente_own/             # Integração Own Financial ✅ NOVO
+│   ├── services.py            # OwnService (OAuth 2.0)
+│   ├── services_transacoes_pagamento.py # E-commerce OPPWA
+│   ├── views_webhook.py       # Webhooks tempo real
+│   └── cargas_own/            # Cargas automáticas Own
+│       ├── models.py          # OwnExtratoTransacoes, Liquidacoes
+│       ├── services_carga_transacoes.py
+│       └── services_carga_liquidacoes.py
 ├── portais/                    # 4 Portais web
 │   ├── controle_acesso/       # Multi-portal
 │   ├── admin/                 # 45+ templates

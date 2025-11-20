@@ -28,12 +28,18 @@ class Command(BaseCommand):
             help='Data final (formato: YYYY-MM-DD)'
         )
         parser.add_argument(
+            '--dias',
+            type=int,
+            help='Número de dias retroativos (ex: --dias 7 busca últimos 7 dias)'
+        )
+        parser.add_argument(
             '--diaria',
             action='store_true',
             help='Executa carga diária (ontem)'
         )
 
     def handle(self, *args, **options):
+        from datetime import timedelta
         service = CargaTransacoesOwnService()
         
         if options['diaria']:
@@ -42,18 +48,23 @@ class Command(BaseCommand):
             resultado = service.executar_carga_diaria(cnpj_cliente=options.get('cnpj'))
             
         else:
-            # Carga por período
-            if not options['data_inicial'] or not options['data_final']:
-                self.stdout.write(self.style.ERROR('❌ Informe --data-inicial e --data-final'))
+            # Determinar período
+            if options.get('dias'):
+                # Usar dias retroativos
+                data_final = datetime.now()
+                data_inicial = data_final - timedelta(days=options['dias'])
+            elif options['data_inicial'] and options['data_final']:
+                # Usar datas específicas
+                data_inicial = datetime.strptime(options['data_inicial'], '%Y-%m-%d')
+                data_final = datetime.strptime(options['data_final'], '%Y-%m-%d')
+            else:
+                self.stdout.write(self.style.ERROR('❌ Informe --dias OU --data-inicial e --data-final'))
                 return
             
             cnpj = options.get('cnpj')
             if not cnpj:
                 self.stdout.write(self.style.ERROR('❌ Informe --cnpj para carga por período'))
                 return
-            
-            data_inicial = datetime.strptime(options['data_inicial'], '%Y-%m-%d')
-            data_final = datetime.strptime(options['data_final'], '%Y-%m-%d')
             
             self.stdout.write(self.style.SUCCESS(f'🔄 Buscando transações: {data_inicial.date()} a {data_final.date()}'))
             

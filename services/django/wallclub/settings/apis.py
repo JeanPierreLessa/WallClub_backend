@@ -48,6 +48,10 @@ INSTALLED_APPS = [
     'checkout.link_pagamento_web',
     'checkout.link_recorrencia_web',
     'parametros_wallclub',  # Necessário para CalculadoraDesconto (usado por checkout)
+    'pinbank',
+    'pinbank.cargas_pinbank',
+    'adquirente_own',
+    'adquirente_own.cargas_own',
 ]
 
 # URLs específicas
