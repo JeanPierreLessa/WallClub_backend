@@ -1096,7 +1096,7 @@ tr:hover {
 .data-table th {
     background: #65C97A;
     color: white;
-    padding: 12px 10px;
+    padding: 12px 12px;
     text-align: left;
     font-weight: 600;
     position: sticky;
@@ -1104,17 +1104,17 @@ tr:hover {
     z-index: 10;
     border-right: 1px solid rgba(255,255,255,0.2);
     white-space: nowrap;
-    min-width: 120px;
+    min-width: 150px;
 }
 
 .data-table td {
-    padding: 8px 10px;
+    padding: 8px 12px;
     border-bottom: 1px solid #eee;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
-    min-width: 120px;
+    max-width: 250px;
+    min-width: 150px;
 }
 
 .data-table tr:hover {
