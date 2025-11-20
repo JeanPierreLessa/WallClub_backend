@@ -28,6 +28,7 @@ class TRDataOwnService:
             registrar_log('posp2', '========================================')
             registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} - Processamento Transação Own')
             registrar_log('posp2', '========================================')
+            registrar_log('posp2', f'JSON Recebido: {dados_json}')
             
             # Parse do JSON recebido
             try:
@@ -264,9 +265,9 @@ class TRDataOwnService:
         try:
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT l.id, l.nome_fantasia, l.cnpj
-                    FROM terminais t
-                    INNER JOIN lojas l ON t.loja_id = l.id
+                    SELECT l.id, l.razao_social, l.cnpj
+                    FROM terminal t
+                    INNER JOIN loja l ON t.loja_id = l.id
                     WHERE t.terminal = %s
                 """, [terminal])
                 
@@ -292,7 +293,7 @@ class TRDataOwnService:
             with connection.cursor() as cursor:
                 cursor.execute("""
                     SELECT nome
-                    FROM clientes
+                    FROM cliente
                     WHERE cpf = %s
                     LIMIT 1
                 """, [cpf])
