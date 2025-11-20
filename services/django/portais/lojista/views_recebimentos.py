@@ -410,11 +410,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         'Custo Antec(R$)': 0,
                         'Parcela': transacao.get('parcelas', 0) or 0,
                         'Prazo Total': transacao.get('parcelas', 0) or 0,
-                        'Plano': '-',
+                        'Plano': transacao.get('plano', '-') or '-',
                         'Bandeira': transacao.get('bandeira', '-') or '-',
                         'NSU': transacao.get('nsu', '-') or '-',
-                        'NOP': '-',
-                        'Status Trans.': '-'
+                        'NOP': '-'
                     }
                     results.append(row_dict)
                 
@@ -589,7 +588,6 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                         <th>Plano</th>
                                         <th>Bandeira</th>
                                         <th>NSU</th>
-                                        <th>Status Trans.</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -612,7 +610,6 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                         <td>{recebimento.get("Plano", "-")}</td>
                                         <td>{recebimento.get("Bandeira", "-")}</td>
                                         <td>{recebimento.get("NSU", "-")}</td>
-                                        <td>{recebimento.get("Status Trans.", "-")}</td>
                                     </tr>
                 '''
         
@@ -887,10 +884,10 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                     'Valor Bruto (R$)': valor_bruto,
                     'Valor Líquido (R$)': valor_liquido,
                     'Valor Rebate (R$)': valor_rebate,
-                    'Plano': transacao.var8 or '-',
-                    'Bandeira': transacao.var12 or '-',
-                    'Status': transacao.var68 or '-',
-                    'Loja': transacao.var5 or '-'
+                    'Plano': transacao.get('plano', '-') or '-',
+                    'Bandeira': transacao.get('bandeira', '-') or '-',
+                    'Parcelas': transacao.get('parcelas', '-') or '-',
+                    'Loja ID': transacao.get('loja_id', '-')
                 })
             
             # Coletar nomes únicos das lojas para o rodapé

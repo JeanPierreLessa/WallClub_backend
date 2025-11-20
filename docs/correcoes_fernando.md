@@ -31,4 +31,6 @@ tirar o texto com encargos nas simulacoes  (mantem so com desconto)
 - Tela de recebimento
     - Lancamento manual aparecendo ok
     - Texto trocado de "Total Recebido" para "Total Líquido"
+    - Ajustada coluna PLANO
+    - Removida coluna Status transacao
 - Tela de vendas lojist

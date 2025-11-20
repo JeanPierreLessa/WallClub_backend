@@ -224,6 +224,7 @@ class RecebimentoService:
                 'data_recebimento': transacao.var45,
                 'bandeira': transacao.var4,
                 'parcelas': transacao.var13,
+                'plano': transacao.var12,
             })
         
         registrar_log(
