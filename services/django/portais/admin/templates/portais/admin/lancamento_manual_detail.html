@@ -29,32 +29,51 @@
                         <dd class="col-sm-9">{{ lancamento.id }}</dd>
                         <dt class="col-sm-3">Loja:</dt>
                         <dd class="col-sm-9">{{ loja_nome|default:"N/A" }}</dd>
+                        <dt class="col-sm-3">Usuário:</dt>
+                        <dd class="col-sm-9">{{ usuario_nome|default:"N/A" }}</dd>
                         <dt class="col-sm-3">Tipo:</dt>
                         <dd class="col-sm-9">
                             {% if lancamento.tipo_lancamento == 'C' %}
-                                Crédito
+                            Crédito
                             {% else %}
-                                Débito
+                            Débito
                             {% endif %}
                         </dd>
                         <dt class="col-sm-3">Valor:</dt>
-                        <dd class="col-sm-9 fs-5 fw-bold" style="color: var(--primary-color);">R$ {{ lancamento.valor|floatformat:2 }}</dd>
+                        <dd class="col-sm-9" class="fs-5 fw-bold" style="color: var(--primary-color);">R$ {{
+                            lancamento.valor|floatformat:2 }}</dd>
                         <dt class="col-sm-3">Status:</dt>
                         <dd class="col-sm-9">
-                            <form id="formStatus" style="display: inline-block;">
-                                <div class="d-flex align-items-center gap-2">
-                                    <select class="form-select form-select-sm" id="status" name="status" style="width: auto;">
-                                        <option value="processado" {% if lancamento.status == 'processado' %}selected{% endif %}>Processado</option>
-                                        <option value="pendente" {% if lancamento.status == 'pendente' %}selected{% endif %}>Pendente</option>
-                                        <option value="cancelado" {% if lancamento.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
-                                    </select>
-                                    <button type="button" class="btn btn-success btn-sm" onclick="salvarStatus()">
-                                        <i class="fas fa-save me-1"></i> Salvar
-                                    </button>
-                                </div>
-                            </form>
+                            {% if lancamento.status == 'pendente' %}
+                            Pendente
+                            {% elif lancamento.status == 'processado' %}
+                            Processado
+                            {% else %}
+                            Cancelado
+                            {% endif %}
                         </dd>
                     </dl>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Valor:</strong></td>
+                            <td class="fs-5 fw-bold" style="color: var(--primary-color);">R$ {{
+                                lancamento.valor|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>
+                                {% if lancamento.status == 'pendente' %}
+                                Pendente
+                                {% elif lancamento.status == 'processado' %}
+                                Processado
+                                {% else %}
+                                Cancelado
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
                 </div>
                 <div class="col-md-6">
                     <table class="table table-borderless">
@@ -133,29 +152,29 @@
                     </thead>
                     <tbody>
                         {% for item in historico %}
-                        <tr {% if item.id == lancamento.id %}style="background-color: #fff3cd;"{% endif %}>
+                        <tr {% if item.id==lancamento.id %}style="background-color: #fff3cd;" {% endif %}>
                             <td>
                                 {% if item.id == lancamento.id %}
-                                    <strong>{{ item.id }}</strong> <small>(atual)</small>
+                                <strong>{{ item.id }}</strong> <small>(atual)</small>
                                 {% else %}
-                                    {{ item.id }}
+                                {{ item.id }}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if item.tipo_lancamento == 'C' %}
-                                    Crédito
+                                Crédito
                                 {% else %}
-                                    Débito
+                                Débito
                                 {% endif %}
                             </td>
                             <td class="monetary">R$ {{ item.valor|floatformat:2 }}</td>
                             <td>
                                 {% if item.status == 'pendente' %}
-                                    Pendente
+                                Pendente
                                 {% elif item.status == 'processado' %}
-                                    Processado
+                                Processado
                                 {% else %}
-                                    Cancelado
+                                Cancelado
                                 {% endif %}
                             </td>
                             <td>{{ item.data_lancamento|date:"d/m/Y H:i" }}</td>
@@ -170,54 +189,4 @@
     {% endif %}
 </div>
 
-<script>
-function salvarStatus() {
-    const statusSelect = document.getElementById('status');
-    const novoStatus = statusSelect.value;
-    const lancamentoId = {{ lancamento.id }};
-    
-    // Desabilitar botão durante salvamento
-    const btnSalvar = event.target;
-    btnSalvar.disabled = true;
-    btnSalvar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Salvando...';
-    
-    fetch(`/lancamentos_manuais/${lancamentoId}/atualizar/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            status: novoStatus
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Feedback visual
-            statusSelect.style.backgroundColor = '#d4edda';
-            btnSalvar.innerHTML = '<i class="fas fa-check me-1"></i> Salvo!';
-            
-            setTimeout(() => {
-                statusSelect.style.backgroundColor = '';
-                btnSalvar.innerHTML = '<i class="fas fa-save me-1"></i> Salvar';
-                btnSalvar.disabled = false;
-                
-                // Recarregar página para atualizar "Atualizado em"
-                location.reload();
-            }, 1500);
-        } else {
-            alert('Erro ao atualizar status: ' + data.message);
-            btnSalvar.innerHTML = '<i class="fas fa-save me-1"></i> Salvar';
-            btnSalvar.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Erro ao atualizar status');
-        btnSalvar.innerHTML = '<i class="fas fa-save me-1"></i> Salvar';
-        btnSalvar.disabled = false;
-    });
-}
-</script>
 {% endblock %}

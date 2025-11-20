@@ -25,12 +25,12 @@
 
 <!-- Mensagens -->
 {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
 {% endif %}
 
 <!-- Formulário -->
@@ -41,7 +41,7 @@
                 <div class="card-body">
                     <form id="formLancamentoManual" method="post">
                         {% csrf_token %}
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -49,14 +49,16 @@
                                     <select class="form-select" id="loja_id" name="loja_id" required>
                                         <option value="">Selecione uma loja...</option>
                                         {% for loja in lojas %}
-                                            <option value="{{ loja.id }}">{{ loja.razao_social|default:"Loja sem nome" }} (ID: {{ loja.id }})</option>
+                                        <option value="{{ loja.id }}">{{ loja.razao_social|default:"Loja sem nome" }}
+                                            (ID: {{ loja.id }})</option>
                                         {% endfor %}
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="tipo_lancamento" class="form-label required-field">Tipo de Lançamento</label>
+                                    <label for="tipo_lancamento" class="form-label required-field">Tipo de
+                                        Lançamento</label>
                                     <select class="form-select" id="tipo_lancamento" name="tipo_lancamento" required>
                                         <option value="">Selecione...</option>
                                         <option value="C">Crédito</option>
@@ -65,7 +67,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -83,49 +85,49 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="valor" class="form-label required-field">Valor</label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
-                                        <input type="text" class="form-control" id="valor" name="valor" required 
-                                               pattern="[0-9]+([,\.][0-9]{1,2})?" 
-                                               placeholder="0,00">
+                                        <input type="text" class="form-control" id="valor" name="valor" required
+                                            pattern="[0-9]+([,\.][0-9]{1,2})?" placeholder="0,00">
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="motivo" class="form-label">Motivo</label>
-                                    <input type="text" class="form-control" id="motivo" name="motivo" maxlength="100" 
-                                           placeholder="Ex: Ajuste de saldo, Correção de erro...">
+                                    <input type="text" class="form-control" id="motivo" name="motivo" maxlength="100"
+                                        placeholder="Ex: Ajuste de saldo, Correção de erro...">
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="descricao" class="form-label required-field">Descrição</label>
-                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required 
-                                      placeholder="Descreva detalhadamente o motivo do lançamento manual..."></textarea>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required
+                                placeholder="Descreva detalhadamente o motivo do lançamento manual..."></textarea>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="observacoes" class="form-label">Observações</label>
-                            <textarea class="form-control" id="observacoes" name="observacoes" rows="3" 
-                                      placeholder="Observações adicionais (opcional)..."></textarea>
+                            <textarea class="form-control" id="observacoes" name="observacoes" rows="3"
+                                placeholder="Observações adicionais (opcional)..."></textarea>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="referencia_externa" class="form-label">Referência Externa</label>
-                            <input type="text" class="form-control" id="referencia_externa" name="referencia_externa" 
-                                   maxlength="50" placeholder="Ex: Ticket #123, Protocolo ABC...">
+                            <input type="text" class="form-control" id="referencia_externa" name="referencia_externa"
+                                maxlength="50" placeholder="Ex: Ticket #123, Protocolo ABC...">
                             <div class="form-text">Referência para rastreabilidade (opcional)</div>
                         </div>
-                        
+
                         <div class="btn-group">
-                            <a href="{% url 'portais_admin:lancamentos_manuais_list' %}" class="btn btn-secondary btn-colorido">
+                            <a href="{% url 'portais_admin:lancamentos_manuais_list' %}"
+                                class="btn btn-secondary btn-colorido">
                                 <i class="fas fa-times me-1"></i> Cancelar
                             </a>
                             <button type="submit" class="btn btn-success btn-colorido">

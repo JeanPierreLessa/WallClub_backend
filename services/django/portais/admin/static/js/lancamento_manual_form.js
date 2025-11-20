@@ -3,14 +3,14 @@
  * Segue diretrizes técnicas: arquivo separado, nomenclatura snake_case
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('formLancamentoManual');
     const valorInput = document.getElementById('valor');
-    
+
     if (form) {
         form.addEventListener('submit', processar_formulario_lancamento);
     }
-    
+
     if (valorInput) {
         valorInput.addEventListener('input', formatar_campo_valor);
     }
@@ -22,17 +22,17 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function processar_formulario_lancamento(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
-    
+
     // Validar campos obrigatórios
     if (!validar_campos_obrigatorios(formData)) {
         return;
     }
-    
+
     // Converter FormData para objeto JSON
     const dados = converter_form_data_para_json(formData);
-    
+
     // Fazer requisição AJAX
     enviar_dados_lancamento(dados);
 }
@@ -44,7 +44,7 @@ function processar_formulario_lancamento(e) {
  */
 function validar_campos_obrigatorios(formData) {
     const campos_obrigatorios = ['loja_id', 'tipo_lancamento', 'valor', 'descricao'];
-    
+
     for (const campo of campos_obrigatorios) {
         if (!formData.get(campo)) {
             mostrar_modal_erro(`Campo ${campo.replace('_', ' ')} é obrigatório`);
@@ -73,7 +73,7 @@ function converter_form_data_para_json(formData) {
  */
 function enviar_dados_lancamento(dados) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
+
     fetch(window.location.pathname.replace('/novo/', '/criar/'), {
         method: 'POST',
         headers: {
@@ -82,21 +82,20 @@ function enviar_dados_lancamento(dados) {
         },
         body: JSON.stringify(dados)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            mostrar_modal_sucesso(data.message, function() {
-                // Redirecionar para página de detalhes do lançamento criado
-                window.location.href = `/lancamentos_manuais/${data.lancamento_id}/`;
-            });
-        } else {
-            mostrar_modal_erro('Erro: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        mostrar_modal_erro('Erro interno. Verifique o console para mais detalhes.');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrar_modal_sucesso(data.message, function () {
+                    window.location.href = '/lancamentos_manuais/';
+                });
+            } else {
+                mostrar_modal_erro('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            mostrar_modal_erro('Erro interno. Verifique o console para mais detalhes.');
+        });
 }
 
 /**
@@ -105,18 +104,18 @@ function enviar_dados_lancamento(dados) {
  */
 function formatar_campo_valor(e) {
     let value = e.target.value.replace(/[^\d,\.]/g, '');
-    
+
     // Permite apenas uma vírgula ou ponto
     let parts = value.split(/[,\.]/);
     if (parts.length > 2) {
         value = parts[0] + ',' + parts[1];
     }
-    
+
     // Limita a 2 casas decimais
     if (parts[1] && parts[1].length > 2) {
         value = parts[0] + ',' + parts[1].substring(0, 2);
     }
-    
+
     e.target.value = value;
 }
 
