@@ -75,7 +75,7 @@ docker-compose down
 docker-compose up -d
 
 cd /var/www/WallClub_backend
-git pull origin v2.0.0
+git pull origin integracao_own
 docker-compose build wallclub-portais
 docker-compose up -d wallclub-portais
 

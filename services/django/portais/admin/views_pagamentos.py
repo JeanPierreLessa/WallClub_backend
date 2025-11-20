@@ -868,31 +868,44 @@ def lancamento_manual_detail(request, lancamento_id):
     """
     Exibe detalhes de um lançamento manual específico.
     """
-    from wallclub_core.estr_organizacional.loja import Loja
-    from portais.controle_acesso.models import PortalUsuario
-    
-    lancamento = get_object_or_404(LancamentoManual, id=lancamento_id)
-    
-    # Buscar dados relacionados manualmente
-    # Usar método centralizado get_loja
-    loja = Loja.get_loja(lancamento.loja_id)
-    if loja:
-        loja_nome = loja.razao_social or f'Loja {lancamento.loja_id}'
-    else:
-        loja_nome = f'Loja {lancamento.loja_id} (não encontrada)'
-    
     try:
-        usuario = PortalUsuario.objects.get(id=lancamento.id_usuario)
-        usuario_nome = usuario.nome or f'Usuário {lancamento.id_usuario}'
-    except PortalUsuario.DoesNotExist:
-        usuario_nome = f'Usuário {lancamento.id_usuario} (não encontrado)'
+        from wallclub_core.estr_organizacional.loja import Loja
+        from portais.controle_acesso.models import PortalUsuario
+        
+        lancamento = get_object_or_404(LancamentoManual, id=lancamento_id)
+        
+        # Buscar dados relacionados manualmente
+        # Usar método centralizado get_loja
+        loja = Loja.get_loja(lancamento.loja_id)
+        if loja:
+            loja_nome = loja.razao_social or f'Loja {lancamento.loja_id}'
+        else:
+            loja_nome = f'Loja {lancamento.loja_id} (não encontrada)'
+        
+        try:
+            usuario = PortalUsuario.objects.get(id=lancamento.id_usuario)
+            usuario_nome = usuario.nome or f'Usuário {lancamento.id_usuario}'
+        except PortalUsuario.DoesNotExist:
+            usuario_nome = f'Usuário {lancamento.id_usuario} (não encontrado)'
+        
+        # Buscar histórico com tratamento de erro
+        try:
+            historico = LancamentoManualService.obter_historico_loja(lancamento.loja_id)
+        except Exception as e:
+            registrar_log('portais.admin', f'Erro ao buscar histórico da loja {lancamento.loja_id}: {str(e)}', nivel='WARNING')
+            historico = []
+        
+        context = {
+            'lancamento': lancamento,
+            'loja_nome': loja_nome,
+            'usuario_nome': usuario_nome,
+            'historico': historico,
+        }
+        return render(request, 'portais/admin/lancamento_manual_detail.html', context)
     
-    historico = LancamentoManualService.obter_historico_loja(lancamento.loja_id)
-    
-    context = {
-        'lancamento': lancamento,
-        'loja_nome': loja_nome,
-        'usuario_nome': usuario_nome,
-        'historico': historico,
-    }
-    return render(request, 'portais/admin/lancamento_manual_detail.html', context)
+    except Exception as e:
+        registrar_log('portais.admin', f'Erro ao exibir detalhes do lançamento {lancamento_id}: {str(e)}', nivel='ERROR')
+        import traceback
+        registrar_log('portais.admin', f'Traceback: {traceback.format_exc()}', nivel='ERROR')
+        messages.error(request, f'Erro ao carregar detalhes do lançamento: {str(e)}')
+        return redirect('portais_admin:lancamentos_manuais_list')
