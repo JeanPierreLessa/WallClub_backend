@@ -66,11 +66,13 @@
                     <i class="fas fa-credit-card me-2"></i>Terminais
                 </a>
             </li>
+            {% comment %}
             <li class="nav-item">
                 <a class="nav-link {% if current_page == 'ofertas' %}active{% endif %}" href="{% url 'lojista:ofertas_list' %}">
                     <i class="fas fa-gift me-2"></i>Ofertas
                 </a>
             </li>
+            {% endcomment %}
             <li class="nav-item">
                 <a class="nav-link {% if current_page == 'perfil' %}active{% endif %}" href="{% url 'lojista:perfil' %}">
                     <i class="fas fa-user me-2"></i>Perfil
@@ -147,11 +149,13 @@
                         <i class="fas fa-credit-card me-2"></i>Terminais
                     </a>
                 </li>
+                {% comment %}
                 <li class="nav-item">
                     <a class="nav-link {% if current_page == 'ofertas' %}active{% endif %}" href="{% url 'lojista:ofertas_list' %}">
                         <i class="fas fa-gift me-2"></i>Ofertas
                     </a>
                 </li>
+                {% endcomment %}
                 <li class="nav-item">
                     <a class="nav-link {% if current_page == 'perfil' %}active{% endif %}" href="{% url 'lojista:perfil' %}">
                         <i class="fas fa-user me-2"></i>Perfil

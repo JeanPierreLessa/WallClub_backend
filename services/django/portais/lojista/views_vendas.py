@@ -236,11 +236,13 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                             var10 as nop,
                             var13 as parcelas,
                             var19 as vl_bruto,
-                            var37 as taxa_adm,
                             var41 as custo_antec,
                             var42 as vl_liq_previsto,
                             var44 as vl_liq_pago,
-                            var68 as status
+                            var68 as status,
+                            var8 as plano,
+                            var45 as data_pgto,
+                            var121 as status_pgto
                         FROM (
                             SELECT *,
                                    ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
@@ -261,7 +263,7 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                         rows = cursor.fetchall()
                         
                         for row in rows:
-                            data_transacao, loja_id, nsu, nop, parcelas, vl_bruto, taxa_adm, custo_antec, vl_liq_previsto, vl_liq_pago, status = row
+                            data_transacao, loja_id, nsu, nop, parcelas, vl_bruto, custo_antec, vl_liq_previsto, vl_liq_pago, status, plano, data_pgto, status_pgto = row
                             
                             # Data e hora formatadas
                             data_formatada = data_transacao.strftime('%d/%m/%Y') if data_transacao else '-'
@@ -276,12 +278,12 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                                 'Hora': hora_formatada,
                                 'Loja': nome_loja,
                                 'Vl. Bruto(R$)': float(vl_bruto or 0),
-                                'Vl. Líq. Previsto(R$)': float(vl_liq_previsto or 0),
                                 'Vl. Líq. Pago(R$)': float(vl_liq_pago or 0),
+                                'Status Pgto': status_pgto or '-',
+                                'Data Pgto': data_pgto or '-',
+                                'Plano': plano or '-',
                                 'Núm. Parcelas': int(parcelas or 0),
-                                'Taxa Adm(R$)': float(taxa_adm or 0),
                                 'Custo Antec(R$)': float(custo_antec or 0),
-                                'Status Trans.': status or '-',
                                 'NSU': nsu or '-',
                                 'NOP': nop or '-'
                             })
@@ -290,11 +292,9 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                 sql_totais = f"""
                     SELECT 
                         SUM(CAST(var19 AS DECIMAL(15,2))) as total_bruto,
-                        SUM(CAST(var42 AS DECIMAL(15,2))) as total_liquido,
-                        SUM(CAST(var37 AS DECIMAL(15,2))) as total_taxa_adm,
                         SUM(CAST(var44 AS DECIMAL(15,2))) as total_pago
                     FROM (
-                        SELECT var19, var42, var37, var44,
+                        SELECT var19, var44,
                                ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
                         FROM baseTransacoesGestao 
                         WHERE {where_clause}
@@ -307,9 +307,7 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                     
                 totais = {
                     'total_bruto': float(totais_row[0] or 0),
-                    'total_liquido': float(totais_row[1] or 0),
-                    'total_taxa_adm': float(totais_row[2] or 0),
-                    'total_pago': float(totais_row[3] or 0)
+                    'total_pago': float(totais_row[1] or 0)
                 }
                 
                 # Query de contagem para paginação
@@ -398,14 +396,12 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
         
         cards = [
             ('Total Bruto', totais['total_bruto'], 'bg-primary'),
-            ('Total Líquido', totais['total_liquido'], 'bg-success'),
-            ('Total Taxa Adm', totais['total_taxa_adm'], 'bg-warning text-dark'),
             ('Total Pago', totais['total_pago'], 'bg-info')
         ]
         
         for titulo, valor, classe in cards:
             html += f'''
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <div class="card {classe} text-white">
                     <div class="card-body py-2 text-center">
                         <h5 class="card-title" style="font-size: 14px; margin-bottom: 5px;">{titulo}</h5>
@@ -454,15 +450,12 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                         <th>Data</th>
                         <th>Hora</th>
                         <th>Vl Bruto(R$)</th>
-                        <th>Vl Liq Previsto(R$)</th>
                         <th>Vl Liq Pago(R$)</th>
                         <th>Status Pgto</th>
                         <th>Data Pgto</th>
                         <th>Plano</th>
                         <th>Núm. Parcelas</th>
-                        <th>Taxa Adm(R$)</th>
                         <th>NSU</th>
-                        <th>Status Trans.</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -475,15 +468,12 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                 <td>{venda.get("Data", "-")}</td>
                 <td>{venda.get("Hora", "-")}</td>
                 <td>R$ {safe_float_convert(venda.get("Vl Bruto(R$)", 0)):,.2f}</td>
-                <td>R$ {safe_float_convert(venda.get("Vl Liq Previsto(R$)", 0)):,.2f}</td>
                 <td>R$ {safe_float_convert(venda.get("Vl Liq Pago(R$)", 0)):,.2f}</td>
                 <td>{venda.get("Status Pgto", "-")}</td>
                 <td>{venda.get("Data Pgto", "-")}</td>
                 <td>{venda.get("Plano", "-")}</td>
                 <td>{venda.get("Núm. Parcelas", "-")}</td>
-                <td>R$ {safe_float_convert(venda.get("Taxa Adm(R$)", 0)):,.2f}</td>
                 <td>{venda.get("NSU", "-")}</td>
-                <td>{venda.get("Status Trans.", "-")}</td>
             </tr>
             '''
         
@@ -723,15 +713,11 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                     'Data': data_formatada,
                     'Hora': hora_formatada,
                     'Vl Bruto(R$)': vl_bruto,
-                    'Vl Liq Previsto(R$)': vl_liq_previsto,
                     'Vl Liq Pago(R$)': vl_liq_pago,
                     'Status Pgto': venda['var121'] or '-',
                     'Data Pgto': data_pgto or '-',
                     'Plano': venda['var8'] or '-',
                     'Núm. Parcelas': num_parcelas,
-                    'Taxa Adm(R$)': taxa_adm,
-                    'Custo Antec(R$)': custo_antec,
-                    'Status Trans.': venda['var68'] or '-',
                     'NSU': venda['var9'] or '-',
                     'NOP': venda['var10'] or '-'
                 }
@@ -742,7 +728,7 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
             lojas_incluidas.sort()  # Ordenar alfabeticamente
             
             # Definir colunas monetárias para formatação
-            colunas_monetarias = ['Vl Bruto(R$)', 'Vl Liq Previsto(R$)', 'Vl Liq Pago(R$)', 'Taxa Adm(R$)', 'Custo Antec(R$)']
+            colunas_monetarias = ['Vl Bruto(R$)', 'Vl Liq Pago(R$)']
             
             nome_arquivo = f"vendas_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             
