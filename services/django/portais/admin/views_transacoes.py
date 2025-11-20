@@ -20,7 +20,7 @@ from portais.controle_acesso.controle_acesso import require_funcionalidade, requ
 from portais.controle_acesso.filtros import FiltrosAcessoService
 from .utils.column_mappings import obter_mapeamento_colunas_completo, obter_colunas_monetarias_gestao_financeira
 from wallclub_core.utilitarios.export_utils import exportar_excel, exportar_csv
-from sistema_bancario.models import PagamentoEfetuado
+from gestao_financeira.models import PagamentoEfetuado
 from django.apps import apps
 
 @require_acesso_padronizado('base_transacoes_gestao')

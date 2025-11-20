@@ -16,7 +16,7 @@ import os
 from typing import Dict, List, Any, Optional, Tuple
 
 from wallclub_core.database.queries import TransacoesQueries
-from sistema_bancario.models import LancamentoManual
+from gestao_financeira.models import LancamentoManual
 from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
 from wallclub_core.estr_organizacional.canal import Canal
 from wallclub_core.utilitarios.log_control import registrar_log

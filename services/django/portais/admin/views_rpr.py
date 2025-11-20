@@ -19,7 +19,7 @@ from wallclub_core.database.queries import TransacoesQueries
 from wallclub_core.estr_organizacional.loja import Loja
 from wallclub_core.estr_organizacional.canal import Canal
 from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
-from sistema_bancario.models import LancamentoManual
+from gestao_financeira.models import LancamentoManual
 from .utils.column_mappings import (
     obter_mapeamento_colunas_rpr, 
     obter_colunas_monetarias_rpr

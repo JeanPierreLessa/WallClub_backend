@@ -21,9 +21,9 @@ from portais.controle_acesso.controle_acesso import require_funcionalidade, requ
 from wallclub_core.utilitarios.log_control import registrar_log
 from django.apps import apps
 
-from sistema_bancario.models import PagamentoEfetuado, LancamentoManual
-from sistema_bancario.services import PagamentoService
-from sistema_bancario.services_lancamento_manual import LancamentoManualService
+from gestao_financeira.models import PagamentoEfetuado, LancamentoManual
+from gestao_financeira.services import PagamentoService
+from gestao_financeira.services_lancamento_manual import LancamentoManualService
 
 
 @require_secao_permitida('pagamentos')
