@@ -6,6 +6,7 @@ class BaseTransacoesGestao(models.Model):
     """Modelo para base de transações de gestão - Estrutura exata da tabela MySQL"""
     
     class Meta:
+        app_label = 'gestao_financeira'
         db_table = 'baseTransacoesGestao'
         verbose_name = 'Base Transação Gestão'
         verbose_name_plural = 'Base Transações Gestão'
@@ -200,6 +201,7 @@ class BaseTransacoesGestaoErroCarga(models.Model):
     mensagem = models.CharField(max_length=256, null=True, blank=True)
 
     class Meta:
+        app_label = 'gestao_financeira'
         db_table = 'baseTransacoesGestaoErroCarga'
         verbose_name = 'Erro Carga Transação'
         verbose_name_plural = 'Erros Carga Transações'
@@ -229,6 +231,7 @@ class PagamentoEfetuado(models.Model):
     user = models.ForeignKey('controle_acesso.PortalUsuario', on_delete=models.PROTECT, verbose_name="Usuário")
     
     class Meta:
+        app_label = 'gestao_financeira'
         db_table = 'pagamentos_efetuados'
         verbose_name = 'Pagamento Efetuado'
         verbose_name_plural = 'Pagamentos Efetuados'
@@ -292,6 +295,7 @@ class LancamentoManual(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
+        app_label = 'gestao_financeira'
         db_table = 'lancamento_manual'
         indexes = [
             models.Index(fields=['loja_id'], name='idx_lancamento_loja'),
