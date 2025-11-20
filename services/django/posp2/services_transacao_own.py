@@ -266,7 +266,7 @@ class TRDataOwnService:
             with connection.cursor() as cursor:
                 cursor.execute("""
                     SELECT l.id, l.razao_social, l.cnpj
-                    FROM terminal t
+                    FROM terminais t
                     INNER JOIN loja l ON t.loja_id = l.id
                     WHERE t.terminal = %s
                 """, [terminal])
