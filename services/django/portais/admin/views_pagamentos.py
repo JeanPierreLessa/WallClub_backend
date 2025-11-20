@@ -159,11 +159,18 @@ def pagamentos_upload_csv(request):
         
         for i, linha in enumerate(reader, 1):
             try:
-                # LOG: Ver linha sendo processada
-                registrar_log('portais.admin', f'PAGAMENTOS CSV - Validando linha {i}: NSU={linha.get("nsu", "").strip()}')
-                
                 # Validar NSU (obrigatório)
                 nsu = linha.get('nsu', '').strip()
+                
+                # IGNORAR linhas completamente vazias (todos os campos vazios)
+                if not nsu and not any(linha.get(col, '').strip() for col in linha.keys()):
+                    registrar_log('portais.admin', f'PAGAMENTOS CSV - Linha {i} vazia, ignorando')
+                    continue
+                
+                # LOG: Ver linha sendo processada
+                registrar_log('portais.admin', f'PAGAMENTOS CSV - Validando linha {i}: NSU={nsu}')
+                
+                # NSU obrigatório para linhas não vazias
                 if not nsu:
                     linhas_erro.append(f'Linha {i}: NSU é obrigatório')
                     continue
@@ -207,7 +214,13 @@ def pagamentos_upload_csv(request):
         reader = csv.DictReader(conteudo_io, delimiter=';')
         
         for i, linha in enumerate(reader, 1):
-            nsu = int(linha.get('nsu', '').strip())
+            nsu_str = linha.get('nsu', '').strip()
+            
+            # IGNORAR linhas completamente vazias (mesmo check da validação)
+            if not nsu_str and not any(linha.get(col, '').strip() for col in linha.keys()):
+                continue
+            
+            nsu = int(nsu_str)
             
             # Extrair valores dos campos
             var44 = processar_decimal(linha.get('var44', ''), 'var44', i)
