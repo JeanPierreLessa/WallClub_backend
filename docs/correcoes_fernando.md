@@ -25,3 +25,10 @@ aumentar tamanho da coluna do gestao
 
 POS
 tirar o texto com encargos nas simulacoes  (mantem so com desconto)
+
+
+Ajustes
+- Tela de recebimento
+    - Lancamento manual aparecendo ok
+    - Texto trocado de "Total Recebido" para "Total Líquido"
+- Tela de vendas lojist

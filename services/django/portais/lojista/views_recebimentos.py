@@ -139,7 +139,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
             ('Total Repasse', total_repasse, 'bg-primary'),
             ('Total Rebate', total_rebate, 'bg-success'),
             ('Total Outros Lançamentos', total_outros_lancamentos, 'bg-warning text-dark'),
-            ('Total Recebido', total_liquido, 'bg-info')
+            ('Total Líquido', total_liquido, 'bg-info')
         ]
         
         for titulo, valor, classe in cards:
@@ -301,6 +301,9 @@ class LojistaRecebimentosDetalhesView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Adicionar marca do canal se disponível
+        context['marca'] = self.request.session.get('marca_canal', '')
         
         # Obter data do parâmetro GET e converter para formato brasileiro
         data_recebimento = self.request.GET.get('data', '')
@@ -516,7 +519,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
             ('Total Repasse', totais['total_liquido'], 'bg-primary'),
             ('Total Rebate', 0, 'bg-success'),
             ('Total Outros Lançamentos', totais['total_lancamentos'], 'bg-warning text-dark'),
-            ('Total Recebido', totais['total_geral'], 'bg-info'),
+            ('Total Líquido', totais['total_geral'], 'bg-info'),
         ]
         
         for titulo, valor, classe in cards:
