@@ -51,7 +51,8 @@ urlpatterns = [
     path('parametros/template/', views_importacao.download_template_csv, name='parametros_template'),
     
     # Pagamentos
-    path('pagamentos/', views_pagamentos.pagamentos_list, name='pagamentos_list'),
+    path('pagamentos/', views_pagamentos.pagamentos_list, name='pagamentos_list'),  # Carga CSV
+    path('pagamentos/buscar/', views_pagamentos.pagamentos_busca, name='pagamentos_busca'),  # Busca
     path('pagamentos/novo/', views_pagamentos.pagamentos_create, name='pagamentos_create'),
     path('pagamentos/<int:pagamento_id>/editar/', views_pagamentos.pagamentos_edit, name='pagamentos_edit'),
     path('pagamentos/<int:pagamento_id>/excluir/', views_pagamentos.pagamentos_delete, name='pagamentos_delete'),

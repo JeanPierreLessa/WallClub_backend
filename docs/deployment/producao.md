@@ -69,10 +69,10 @@ docker system df
 # Pull do código
 
 cd /var/www/WallClub_backend
-git pull origin v2.0.0
-docker-compose build --no-cache
+git pull origin integracao_own
+docker-compose build
 docker-compose down
-docker-compose up -d wallclub-portais
+docker-compose up -d
 
 cd /var/www/WallClub_backend
 git pull origin v2.0.0

@@ -25,145 +25,100 @@
         <form method="get" class="filters-form d-flex align-items-end gap-3">
             <div class="form-group">
                 <label for="nsu">NSU</label>
-                <input type="text" 
-                       id="nsu"
-                       name="nsu" 
-                       value="{{ search_nsu }}" 
-                       placeholder="Digite o NSU..." 
-                       maxlength="10"
-                       pattern="[0-9]{1,10}"
-                       class="form-control">
+                <input type="text" id="nsu" name="nsu" value="{{ search_nsu }}" placeholder="Digite o NSU..."
+                    maxlength="10" pattern="[0-9]{1,10}" class="form-control">
             </div>
             <div class="form-group">
                 <label for="data_inicio">Data Início</label>
-                <input type="date" 
-                       id="data_inicio"
-                       name="data_inicio" 
-                       value="{{ search_data_inicio }}"
-                       class="form-control">
+                <input type="date" id="data_inicio" name="data_inicio" value="{{ search_data_inicio }}"
+                    class="form-control">
             </div>
             <div class="form-group">
                 <label for="data_fim">Data Fim</label>
-                <input type="date" 
-                       id="data_fim"
-                       name="data_fim" 
-                       value="{{ search_data_fim }}"
-                       class="form-control">
+                <input type="date" id="data_fim" name="data_fim" value="{{ search_data_fim }}" class="form-control">
             </div>
             <div class="form-group">
                 <button type="submit" class="btn btn-success btn-colorido">
                     <i class="fas fa-search me-1"></i> Buscar
                 </button>
-                {% tem_acesso 'pagamentos_list' as pode_listar %}
-                {% if pode_listar %}
-                <button type="button" class="btn btn-info btn-colorido ms-2" id="btn-buscar-lancamentos" onclick="buscarLancamentosManual()" disabled>
-                    <i class="fas fa-search-plus me-1"></i> Buscar lançamentos manuais
-                </button>
-                {% endif %}
                 {% tem_acesso 'pagamentos_create' as pode_criar %}
                 {% if pode_criar %}
-                <button type="button" class="btn btn-primary btn-colorido ms-2" onclick="abrirModalUpload()">
-                    <i class="fas fa-upload me-1"></i> Adicionar pagamento (CSV)
-                </button>
-                <button type="button" class="btn btn-warning btn-colorido ms-2" onclick="adicionarLancamentoManual()">
-                    <i class="fas fa-hand-holding-usd me-1"></i> Adicionar Lançamento Manual
-                </button>
+                <a href="{% url 'portais_admin:pagamentos_carga' %}" class="btn btn-primary btn-colorido ms-2">
+                    <i class="fas fa-upload me-1"></i> Carregar Pagamentos (CSV)
+                </a>
                 {% endif %}
             </div>
         </form>
     </div>
 
-    <!-- Tabela Editável de Pagamentos -->
+    <!-- Resultados da Busca -->
+    {% if pagamentos %}
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header">
             <h5 class="mb-0">
-                <i class="fas fa-table me-2"></i>
-                Cadastro de Pagamentos
+                <i class="fas fa-list me-2"></i>
+                Resultados da Busca
             </h5>
-            <div>
-                <button type="button" class="btn btn-success btn-sm me-2" onclick="salvarPagamentos()">
-                    <i class="fas fa-save me-1"></i> Salvar Todos
-                </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="limparTabela()">
-                    <i class="fas fa-trash me-1"></i> Limpar
-                </button>
-            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th title="NSU">NSU *</th>
-                            <th title="(44) Valor pago Repasse Loja">(44) Valor pago Repa...</th>
-                            <th title="(45) Dt Realiz Pagto Repasse Loja">(45) Dt Realiz Pagto...</th>
-                            <th title="(58) Vl Rebate Total Wall Pago">(58) Vl Rebate Total...</th>
-                            <th title="(59) Dt Realiz Pagto Rebate Total">(59) Dt Realiz Pagto...</th>
-                            <th title="(66) Motivo Difer.Pagto Rebate Wall">(66) Motivo Difer.Pa...</th>
-                            <th title="(71) Motivo Cancelamento">(71) Motivo Cancelam...</th>
-                            <th title="(100) Motivo Dif. Valor a Rec x Valor Recebido">(100) Motivo Dif. V...</th>
-                            <th title="(111A) Despesa Charge Back / Fraude Realizada (R$)">(111A) Despesa Charg...</th>
-                            <th title="(112) Outras Despesas / Ajustes FinanceirosWall (R$)">(112) Outras Despesa...</th>
+                            <th>NSU</th>
+                            <th>(44) Valor Repasse</th>
+                            <th>(45) Dt Pagto Repasse</th>
+                            <th>(58) Vl Rebate</th>
+                            <th>(59) Dt Pagto Rebate</th>
+                            <th>(66) Motivo Difer.</th>
+                            <th>(71) Motivo Cancel.</th>
+                            <th>(100) Motivo Dif.</th>
+                            <th>(111A) Despesa CB</th>
+                            <th>(112) Outras Desp.</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="corpoTabela">
-                        <!-- Linhas editáveis serão adicionadas aqui via JavaScript -->
+                    <tbody>
+                        {% for pagamento in pagamentos %}
+                        <tr>
+                            <td><strong>{{ pagamento.nsu }}</strong></td>
+                            <td>{% if pagamento.var44 %}R$ {{ pagamento.var44|floatformat:2 }}{% else %}-{% endif %}
+                            </td>
+                            <td>{{ pagamento.var45|default:"-" }}</td>
+                            <td>{% if pagamento.var58 %}R$ {{ pagamento.var58|floatformat:2 }}{% else %}-{% endif %}
+                            </td>
+                            <td>{{ pagamento.var59|default:"-" }}</td>
+                            <td>{{ pagamento.var66|default:"-" }}</td>
+                            <td>{{ pagamento.var71|default:"-" }}</td>
+                            <td>{{ pagamento.var100|default:"-" }}</td>
+                            <td>{% if pagamento.var111 %}R$ {{ pagamento.var111|floatformat:2 }}{% else %}-{% endif %}
+                            </td>
+                            <td>{% if pagamento.var112 %}R$ {{ pagamento.var112|floatformat:2 }}{% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% tem_acesso 'pagamentos_edit' as pode_editar %}
+                                {% if pode_editar %}
+                                <a href="{% url 'portais_admin:pagamentos_edit' pagamento.id %}"
+                                    class="btn btn-sm btn-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% tem_acesso 'pagamentos_delete' as pode_excluir %}
+                                {% if pode_excluir %}
+                                <button type="button" class="btn btn-sm btn-danger btn-excluir"
+                                    data-pagamento-id="{{ pagamento.id }}" data-pagamento-nsu="{{ pagamento.nsu }}"
+                                    title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    
-    <!-- Script para preencher tabela editável com resultados da busca -->
-    {% if pagamentos %}
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Limpar tabela editável primeiro
-        limparTabela();
-        
-        // Dados dos pagamentos encontrados
-        const pagamentos = [
-        {% for pagamento in pagamentos %}
-        {
-            nsu: '{{ pagamento.nsu }}',
-            var44: '{{ pagamento.var44|default:"" }}',
-            var45: '{{ pagamento.var45|default:"" }}',
-            var58: '{{ pagamento.var58|default:"" }}',
-            var59: '{{ pagamento.var59|default:"" }}',
-            var66: '{{ pagamento.var66|default:"" }}',
-            var71: '{{ pagamento.var71|default:"" }}',
-            var100: '{{ pagamento.var100|default:"" }}',
-            var111: '{{ pagamento.var111|default:"" }}',
-            var112: '{{ pagamento.var112|default:"" }}'
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-        ];
-        
-        // Preencher tabela editável com os dados
-        pagamentos.forEach(function(pagamento) {
-            adicionarLinhaPagamento();
-            const linhas = document.querySelectorAll('#corpoTabela tr');
-            const ultimaLinha = linhas[linhas.length - 1];
-            const inputs = ultimaLinha.querySelectorAll('input');
-            
-            // Preencher campos
-            inputs[0].value = pagamento.nsu; // NSU
-            inputs[1].value = pagamento.var44 ? 'R$ ' + parseFloat(pagamento.var44).toFixed(2).replace('.', ',') : ''; // var44
-            inputs[2].value = pagamento.var45; // var45
-            inputs[3].value = pagamento.var58 ? 'R$ ' + parseFloat(pagamento.var58).toFixed(2).replace('.', ',') : ''; // var58
-            inputs[4].value = pagamento.var59; // var59
-            inputs[5].value = pagamento.var66; // var66
-            inputs[6].value = pagamento.var71; // var71
-            inputs[7].value = pagamento.var100; // var100
-            inputs[8].value = pagamento.var111 ? 'R$ ' + parseFloat(pagamento.var111).toFixed(2).replace('.', ',') : ''; // var111
-            inputs[9].value = pagamento.var112 ? 'R$ ' + parseFloat(pagamento.var112).toFixed(2).replace('.', ',') : ''; // var112
-            
-            // Aplicar máscara monetária nos campos que precisam
-            aplicarMascaraMonetaria(ultimaLinha);
-        });
-    });
-    </script>
 
     <!-- Informações de resultado e Paginação -->
     {% if pagamentos %}
@@ -171,7 +126,8 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="text-muted">
-                    <small>{{ total_registros }} registro{{ total_registros|pluralize }} encontrado{{ total_registros|pluralize }}</small>
+                    <small>{{ total_registros }} registro{{ total_registros|pluralize }} encontrado{{
+                        total_registros|pluralize }}</small>
                 </div>
                 {% if pagamentos.has_other_pages %}
                 <div>
@@ -185,42 +141,48 @@
             <nav aria-label="Navegação de páginas">
                 <ul class="pagination justify-content-center">
                     {% if pagamentos.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
-                                <i class="fas fa-angle-double-left"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ pagamentos.previous_page_number }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
-                                <i class="fas fa-angle-left"></i>
-                            </a>
-                        </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page=1{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ pagamentos.previous_page_number }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
                     {% endif %}
 
                     {% for num in pagamentos.paginator.page_range %}
-                        {% if pagamentos.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                        {% elif num > pagamentos.number|add:'-3' and num < pagamentos.number|add:'3' %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">{{ num }}</a>
-                            </li>
+                    {% if pagamentos.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > pagamentos.number|add:'-3' and num < pagamentos.number|add:'3' %} <li
+                        class="page-item">
+                        <a class="page-link"
+                            href="?page={{ num }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">{{
+                            num }}</a>
+                        </li>
                         {% endif %}
-                    {% endfor %}
+                        {% endfor %}
 
-                    {% if pagamentos.has_next %}
+                        {% if pagamentos.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ pagamentos.next_page_number }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
+                            <a class="page-link"
+                                href="?page={{ pagamentos.next_page_number }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
                                 <i class="fas fa-angle-right"></i>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ pagamentos.paginator.num_pages }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
+                            <a class="page-link"
+                                href="?page={{ pagamentos.paginator.num_pages }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
                                 <i class="fas fa-angle-double-right"></i>
                             </a>
                         </li>
-                    {% endif %}
+                        {% endif %}
                 </ul>
             </nav>
             {% endif %}
@@ -271,7 +233,8 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="arquivoCSV" class="form-label">Arquivo CSV</label>
-                        <input type="file" class="form-control" id="arquivoCSV" name="arquivo_csv" accept=".csv" required>
+                        <input type="file" class="form-control" id="arquivoCSV" name="arquivo_csv" accept=".csv"
+                            required>
                         <div class="form-text">
                             <strong>Formato esperado (separador ponto-e-vírgula):</strong><br>
                             nsu;var44;var45;var58;var59;var66;var71;var100;var111;var112
@@ -304,478 +267,451 @@
 </div>
 
 <script>
-// Contador para IDs únicos das linhas
-let contadorLinhas = 0;
+    // Contador para IDs únicos das linhas
+    let contadorLinhas = 0;
 
-// Função para adicionar nova linha editável
-function adicionarLinhaPagamento() {
-    contadorLinhas++;
-    const tbody = document.getElementById('corpoTabela');
-    const novaLinha = document.createElement('tr');
-    novaLinha.id = `linha-${contadorLinhas}`;
-    
-    novaLinha.innerHTML = `
+    // Função para adicionar nova linha editável
+    function adicionarLinhaPagamento() {
+        contadorLinhas++;
+        const tbody = document.getElementById('corpoTabela');
+        const novaLinha = document.createElement('tr');
+        novaLinha.id = `linha-${contadorLinhas}`;
+
+        novaLinha.innerHTML = `
         <td>
-            <input type="text" class="form-control form-control-sm" 
-                   name="nsu_${contadorLinhas}" 
-                   placeholder="NSU" 
-                   required 
+            <input type="text" class="form-control form-control-sm"
+                   name="nsu_${contadorLinhas}"
+                   placeholder="NSU"
+                   required
                    maxlength="10"
                    pattern="[0-9]{1,10}"
                    data-linha="${contadorLinhas}">
             <div class="nsu-status" id="status-${contadorLinhas}"></div>
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm currency-input" 
-                   name="var44_${contadorLinhas}" 
+            <input type="text" class="form-control form-control-sm currency-input"
+                   name="var44_${contadorLinhas}"
                    placeholder="R$ 0,00">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm" 
-                   name="var45_${contadorLinhas}" 
+            <input type="text" class="form-control form-control-sm"
+                   name="var45_${contadorLinhas}"
                    placeholder="DD/MM/YYYY">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm currency-input" 
-                   name="var58_${contadorLinhas}" 
+            <input type="text" class="form-control form-control-sm currency-input"
+                   name="var58_${contadorLinhas}"
                    placeholder="R$ 0,00">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm" 
-                   name="var59_${contadorLinhas}" 
+            <input type="text" class="form-control form-control-sm"
+                   name="var59_${contadorLinhas}"
                    placeholder="DD/MM/YYYY">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm" 
-                   name="var66_${contadorLinhas}" 
-                   placeholder="Motivo" 
+            <input type="text" class="form-control form-control-sm"
+                   name="var66_${contadorLinhas}"
+                   placeholder="Motivo"
                    maxlength="20">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm" 
-                   name="var71_${contadorLinhas}" 
-                   placeholder="Motivo" 
+            <input type="text" class="form-control form-control-sm"
+                   name="var71_${contadorLinhas}"
+                   placeholder="Motivo"
                    maxlength="20">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm" 
-                   name="var100_${contadorLinhas}" 
-                   placeholder="Motivo" 
+            <input type="text" class="form-control form-control-sm"
+                   name="var100_${contadorLinhas}"
+                   placeholder="Motivo"
                    maxlength="20">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm currency-input" 
-                   name="var111_${contadorLinhas}" 
+            <input type="text" class="form-control form-control-sm currency-input"
+                   name="var111_${contadorLinhas}"
                    placeholder="R$ 0,00">
         </td>
         <td>
-            <input type="text" class="form-control form-control-sm currency-input" 
-                   name="var112_${contadorLinhas}" 
+            <input type="text" class="form-control form-control-sm currency-input"
+                   name="var112_${contadorLinhas}"
                    placeholder="R$ 0,00">
         </td>
         <td>
-            <button type="button" class="btn btn-outline-danger btn-sm btn-remover-linha" 
+            <button type="button" class="btn btn-outline-danger btn-sm btn-remover-linha"
                     data-linha="${contadorLinhas}">
                 <i class="fas fa-trash"></i>
             </button>
         </td>
     `;
-    
-    tbody.appendChild(novaLinha);
-    
-    // Aplicar máscaras aos campos monetários da nova linha
-    aplicarMascaraMonetaria(novaLinha);
-    
-    // Adicionar event listener para verificação de NSU
-    const inputNsu = novaLinha.querySelector('input[name^="nsu_"]');
-    inputNsu.addEventListener('blur', function() {
-        verificarNSU(this, contadorLinhas);
-    });
-}
 
-// Event listeners para botões dinâmicos
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.btn-excluir')) {
-        const btn = e.target.closest('.btn-excluir');
-        const id = btn.dataset.pagamentoId;
-        const nsu = btn.dataset.pagamentoNsu;
-        confirmarExclusao(id, nsu);
-    }
-    
-    if (e.target.closest('.btn-remover-linha')) {
-        const btn = e.target.closest('.btn-remover-linha');
-        const linha = btn.dataset.linha;
-        removerLinha(linha);
-    }
-});
+        tbody.appendChild(novaLinha);
 
-// Função para remover linha
-function removerLinha(id) {
-    const linha = document.getElementById(`linha-${id}`);
-    if (linha) {
-        linha.remove();
-    }
-}
+        // Aplicar máscaras aos campos monetários da nova linha
+        aplicarMascaraMonetaria(novaLinha);
 
-// Função para limpar toda a tabela
-function limparTabela() {
-    const tbody = document.getElementById('corpoTabela');
-    const linhas = tbody.querySelectorAll('tr');
-    
-    // Se não há linhas ou todas estão vazias, limpa sem perguntar
-    let temDados = false;
-    linhas.forEach(linha => {
-        const inputs = linha.querySelectorAll('input');
-        inputs.forEach(input => {
-            if (input.value.trim()) {
-                temDados = true;
-            }
+        // Adicionar event listener para verificação de NSU
+        const inputNsu = novaLinha.querySelector('input[name^="nsu_"]');
+        inputNsu.addEventListener('blur', function () {
+            verificarNSU(this, contadorLinhas);
         });
-    });
-    
-    if (!temDados || confirm('Tem certeza que deseja limpar toda a tabela?')) {
-        tbody.innerHTML = '';
-        contadorLinhas = 0;
     }
-}
 
-// Função para verificar se NSU já existe
-function verificarNSU(input, linhaId) {
-    const nsu = input.value.trim();
-    const statusDiv = document.getElementById(`status-${linhaId}`);
-    
-    if (!nsu) {
-        statusDiv.innerHTML = '';
-        return;
-    }
-    
-    statusDiv.innerHTML = '<small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Verificando...</small>';
-    
-    fetch(`{% url 'portais_admin:pagamentos_ajax_check_nsu' %}?nsu=${nsu}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.exists) {
-                statusDiv.innerHTML = '<small class="text-danger"><i class="fas fa-times"></i> NSU já existe</small>';
-                input.classList.add('is-invalid');
-            } else {
-                statusDiv.innerHTML = '<small class="text-success"><i class="fas fa-check"></i> Disponível</small>';
-                input.classList.remove('is-invalid');
-            }
-        })
-        .catch(error => {
-            statusDiv.innerHTML = '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Erro</small>';
-        });
-}
-
-// Função para aplicar máscara monetária
-function aplicarMascaraMonetaria(container) {
-    const inputs = container.querySelectorAll('.currency-input');
-    inputs.forEach(input => {
-        input.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value) {
-                value = (value / 100).toFixed(2);
-                value = value.replace('.', ',');
-                value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            }
-            e.target.value = value;
-        });
-        
-        input.addEventListener('blur', function(e) {
-            if (e.target.value && !e.target.value.includes(',')) {
-                e.target.value = e.target.value + ',00';
-            }
-        });
-    });
-}
-
-// Função para salvar todos os pagamentos
-function salvarPagamentos() {
-    const linhas = document.querySelectorAll('#corpoTabela tr');
-    
-    if (linhas.length === 0) {
-        alert('Adicione pelo menos um pagamento antes de salvar.');
-        return;
-    }
-    
-    const pagamentos = [];
-    let temErro = false;
-    
-    linhas.forEach((linha, index) => {
-        const inputs = linha.querySelectorAll('input');
-        const nsu = inputs[0].value.trim();
-        
-        if (!nsu) {
-            alert(`NSU é obrigatório na linha ${index + 1}`);
-            temErro = true;
-            return;
+    // Event listeners para botões dinâmicos
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.btn-excluir')) {
+            const btn = e.target.closest('.btn-excluir');
+            const id = btn.dataset.pagamentoId;
+            const nsu = btn.dataset.pagamentoNsu;
+            confirmarExclusao(id, nsu);
         }
-        
-        if (inputs[0].classList.contains('is-invalid')) {
-            alert(`NSU ${nsu} já existe. Corrija antes de salvar.`);
-            temErro = true;
-            return;
+
+        if (e.target.closest('.btn-remover-linha')) {
+            const btn = e.target.closest('.btn-remover-linha');
+            const linha = btn.dataset.linha;
+            removerLinha(linha);
         }
-        
-        // Função auxiliar para processar valores monetários
-        const processarValor = (valor) => {
-            if (!valor) return null;
-            const valorStr = String(valor).trim();
-            if (valorStr === '') return null;
-            
-            // Remove R$ e espaços
-            let limpo = valorStr.replace(/R\$\s?/g, '').trim();
-            
-            // Se tem vírgula, é formato BR (1.322,27) - remove pontos e troca vírgula por ponto
-            if (limpo.includes(',')) {
-                limpo = limpo.replace(/\./g, '').replace(',', '.');
-            }
-            // Se não tem vírgula, mantém o ponto como decimal (1.69)
-            
-            return limpo || null;
-        };
-        
-        // Função auxiliar para processar texto
-        const processarTexto = (valor) => {
-            if (!valor) return null;
-            const valorStr = String(valor).trim();
-            return valorStr === '' ? null : valorStr;
-        };
-        
-        const pagamento = {
-            nsu: nsu,
-            var44: processarValor(inputs[1].value),
-            var45: processarTexto(inputs[2].value),
-            var58: processarValor(inputs[3].value),
-            var59: processarTexto(inputs[4].value),
-            var66: processarTexto(inputs[5].value),
-            var71: processarTexto(inputs[6].value),
-            var100: processarTexto(inputs[7].value),
-            var111: processarValor(inputs[8].value),
-            var112: processarValor(inputs[9].value)
-        };
-        
-        pagamentos.push(pagamento);
     });
-    
-    if (temErro) {
-        return;
-    }
-    
-    // Enviar dados via AJAX
-    fetch('{% url "portais_admin:pagamentos_bulk_create" %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: JSON.stringify({pagamentos: pagamentos})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`${data.created} pagamento(s) criado(s) com sucesso!`);
-            document.getElementById('corpoTabela').innerHTML = '';
-            contadorLinhas = 0;
-            // Recarregar página para mostrar mensagens do Django
-            window.location.reload();
-        } else {
-            console.error('Erro completo:', data);
-            let mensagemErro = 'Erro ao salvar: ' + (data.message || 'Erro desconhecido');
-            if (data.errors && data.errors.length > 0) {
-                mensagemErro += '\n\nDetalhes:\n' + data.errors.join('\n');
-            }
-            alert(mensagemErro);
+
+    // Função para remover linha
+    function removerLinha(id) {
+        const linha = document.getElementById(`linha-${id}`);
+        if (linha) {
+            linha.remove();
         }
-    })
-    .catch(error => {
-        alert('Erro de conexão: ' + error.message);
-    });
-}
-
-// Função para confirmar exclusão (corrigida)
-function confirmarExclusao(pagamentoId, nsu) {
-    document.getElementById('nsuToDelete').textContent = 'NSU ' + nsu;
-    document.getElementById('deleteForm').action = '{% url "portais_admin:pagamentos_delete" 0 %}'.replace('0', pagamentoId);
-    
-    var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    modal.show();
-}
-
-// Função para verificar filtros e habilitar/desabilitar botão
-function verificarFiltrosLancamentos() {
-    const nsu = document.getElementById('nsu').value.trim();
-    const dataInicio = document.getElementById('data_inicio').value.trim();
-    const dataFim = document.getElementById('data_fim').value.trim();
-    
-    const temNsu = nsu !== '';
-    const temRangeDatas = dataInicio !== '' && dataFim !== '';
-    
-    const btnBuscarLancamentos = document.getElementById('btn-buscar-lancamentos');
-    if (temNsu || temRangeDatas) {
-        btnBuscarLancamentos.disabled = false;
-        btnBuscarLancamentos.classList.remove('disabled');
-    } else {
-        btnBuscarLancamentos.disabled = true;
-        btnBuscarLancamentos.classList.add('disabled');
     }
-}
 
-// Inicializar página
-document.addEventListener('DOMContentLoaded', function() {
-    // Adicionar primeira linha automaticamente
-    adicionarLinhaPagamento();
-    
-    // Adicionar token CSRF se não existir
-    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = '{{ csrf_token }}';
-        document.body.appendChild(csrfInput);
-    }
-    
-    // Adicionar event listeners para verificar filtros
-    document.getElementById('nsu').addEventListener('input', verificarFiltrosLancamentos);
-    document.getElementById('data_inicio').addEventListener('change', verificarFiltrosLancamentos);
-    document.getElementById('data_fim').addEventListener('change', verificarFiltrosLancamentos);
-    
-    // Verificar estado inicial
-    verificarFiltrosLancamentos();
-});
+    // Função para limpar toda a tabela
+    function limparTabela() {
+        const tbody = document.getElementById('corpoTabela');
+        const linhas = tbody.querySelectorAll('tr');
 
-// Função para abrir modal de upload
-function abrirModalUpload() {
-    const modal = new bootstrap.Modal(document.getElementById('modalUploadCSV'));
-    modal.show();
-}
-
-// Função para processar upload do CSV
-function processarUploadCSV() {
-    const arquivo = document.getElementById('arquivoCSV').files[0];
-    
-    if (!arquivo) {
-        alert('Por favor, selecione um arquivo CSV.');
-        return;
-    }
-    
-    if (!arquivo.name.toLowerCase().endsWith('.csv')) {
-        alert('Por favor, selecione um arquivo CSV válido.');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('arquivo_csv', arquivo);
-    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-    
-    // Mostrar loading
-    const btnProcessar = document.querySelector('#modalUploadCSV .btn-primary');
-    const textoOriginal = btnProcessar.innerHTML;
-    btnProcessar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processando...';
-    btnProcessar.disabled = true;
-    
-    fetch('/pagamentos/upload-csv/', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Resposta do servidor:', data);
-        if (data.success) {
-            // Limpar tabela atual
-            document.getElementById('corpoTabela').innerHTML = '';
-            contadorLinhas = 0;
-            
-            console.log('Pagamentos recebidos:', data.pagamentos);
-            
-            // Adicionar linhas do CSV
-            data.pagamentos.forEach((pagamento, index) => {
-                console.log(`Adicionando pagamento ${index + 1}:`, pagamento);
-                console.log('Valores específicos:', {
-                    nsu: pagamento.nsu,
-                    var45: pagamento.var45,
-                    var59: pagamento.var59,
-                    var111: pagamento.var111,
-                    var112: pagamento.var112
-                });
-                adicionarLinhaPagamentoComDados(pagamento);
+        // Se não há linhas ou todas estão vazias, limpa sem perguntar
+        let temDados = false;
+        linhas.forEach(linha => {
+            const inputs = linha.querySelectorAll('input');
+            inputs.forEach(input => {
+                if (input.value.trim()) {
+                    temDados = true;
+                }
             });
-            
-            // Fechar modal
-            bootstrap.Modal.getInstance(document.getElementById('modalUploadCSV')).hide();
-            
-            // SEM ALERTA - usuário clica em "Salvar Todos" quando quiser
-        } else {
-            console.error('Erro do servidor:', data.error);
-            alert('❌ Erro ao processar CSV:\n\n' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Erro ao processar arquivo CSV.');
-    })
-    .finally(() => {
-        // Restaurar botão
-        btnProcessar.innerHTML = textoOriginal;
-        btnProcessar.disabled = false;
-    });
-}
+        });
 
-// Função para adicionar linha com dados do CSV
-function adicionarLinhaPagamentoComDados(dados) {
-    console.log('Função adicionarLinhaPagamentoComDados chamada com:', dados);
-    
-    contadorLinhas++;
-    const tbody = document.getElementById('corpoTabela');
-    const novaLinha = document.createElement('tr');
-    novaLinha.id = `linha-${contadorLinhas}`;
-    
-    // Debug dos valores específicos
-    console.log('NSU recebido:', dados.nsu, 'tipo:', typeof dados.nsu);
-    console.log('var45 recebido:', dados.var45, 'tipo:', typeof dados.var45);
-    console.log('var59 recebido:', dados.var59, 'tipo:', typeof dados.var59);
-    console.log('var111 recebido:', dados.var111, 'tipo:', typeof dados.var111);
-    console.log('var112 recebido:', dados.var112, 'tipo:', typeof dados.var112);
-    
-    novaLinha.innerHTML = `
+        if (!temDados || confirm('Tem certeza que deseja limpar toda a tabela?')) {
+            tbody.innerHTML = '';
+            contadorLinhas = 0;
+        }
+    }
+
+    // Função para verificar se NSU já existe
+    function verificarNSU(input, linhaId) {
+        const nsu = input.value.trim();
+        const statusDiv = document.getElementById(`status-${linhaId}`);
+
+        if (!nsu) {
+            statusDiv.innerHTML = '';
+            return;
+        }
+
+        statusDiv.innerHTML = '<small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Verificando...</small>';
+
+        fetch(`{% url 'portais_admin:pagamentos_ajax_check_nsu' %}?nsu=${nsu}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    statusDiv.innerHTML = '<small class="text-danger"><i class="fas fa-times"></i> NSU já existe</small>';
+                    input.classList.add('is-invalid');
+                } else {
+                    statusDiv.innerHTML = '<small class="text-success"><i class="fas fa-check"></i> Disponível</small>';
+                    input.classList.remove('is-invalid');
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Erro</small>';
+            });
+    }
+
+    // Função para aplicar máscara monetária
+    function aplicarMascaraMonetaria(container) {
+        const inputs = container.querySelectorAll('.currency-input');
+        inputs.forEach(input => {
+            input.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value) {
+                    value = (value / 100).toFixed(2);
+                    value = value.replace('.', ',');
+                    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                }
+                e.target.value = value;
+            });
+
+            input.addEventListener('blur', function (e) {
+                if (e.target.value && !e.target.value.includes(',')) {
+                    e.target.value = e.target.value + ',00';
+                }
+            });
+        });
+    }
+
+    // Função para salvar todos os pagamentos
+    function salvarPagamentos() {
+        const linhas = document.querySelectorAll('#corpoTabela tr');
+
+        if (linhas.length === 0) {
+            alert('Adicione pelo menos um pagamento antes de salvar.');
+            return;
+        }
+
+        const pagamentos = [];
+        let temErro = false;
+
+        linhas.forEach((linha, index) => {
+            const inputs = linha.querySelectorAll('input');
+            const nsu = inputs[0].value.trim();
+
+            if (!nsu) {
+                alert(`NSU é obrigatório na linha ${index + 1}`);
+                temErro = true;
+                return;
+            }
+
+            if (inputs[0].classList.contains('is-invalid')) {
+                alert(`NSU ${nsu} já existe. Corrija antes de salvar.`);
+                temErro = true;
+                return;
+            }
+
+            // Função auxiliar para processar valores monetários
+            const processarValor = (valor) => {
+                if (!valor) return null;
+                const valorStr = String(valor).trim();
+                if (valorStr === '') return null;
+
+                // Remove R$ e espaços
+                let limpo = valorStr.replace(/R\$\s?/g, '').trim();
+
+                // Se tem vírgula, é formato BR (1.322,27) - remove pontos e troca vírgula por ponto
+                if (limpo.includes(',')) {
+                    limpo = limpo.replace(/\./g, '').replace(',', '.');
+                }
+                // Se não tem vírgula, mantém o ponto como decimal (1.69)
+
+                return limpo || null;
+            };
+
+            // Função auxiliar para processar texto
+            const processarTexto = (valor) => {
+                if (!valor) return null;
+                const valorStr = String(valor).trim();
+                return valorStr === '' ? null : valorStr;
+            };
+
+            const pagamento = {
+                nsu: nsu,
+                var44: processarValor(inputs[1].value),
+                var45: processarTexto(inputs[2].value),
+                var58: processarValor(inputs[3].value),
+                var59: processarTexto(inputs[4].value),
+                var66: processarTexto(inputs[5].value),
+                var71: processarTexto(inputs[6].value),
+                var100: processarTexto(inputs[7].value),
+                var111: processarValor(inputs[8].value),
+                var112: processarValor(inputs[9].value)
+            };
+
+            pagamentos.push(pagamento);
+        });
+
+        if (temErro) {
+            return;
+        }
+
+        // Enviar dados via AJAX
+        fetch('{% url "portais_admin:pagamentos_bulk_create" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ pagamentos: pagamentos })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`${data.created} pagamento(s) criado(s) com sucesso!`);
+                    document.getElementById('corpoTabela').innerHTML = '';
+                    contadorLinhas = 0;
+                    // Recarregar página para mostrar mensagens do Django
+                    window.location.reload();
+                } else {
+                    console.error('Erro completo:', data);
+                    let mensagemErro = 'Erro ao salvar: ' + (data.message || 'Erro desconhecido');
+                    if (data.errors && data.errors.length > 0) {
+                        mensagemErro += '\n\nDetalhes:\n' + data.errors.join('\n');
+                    }
+                    alert(mensagemErro);
+                }
+            })
+            .catch(error => {
+                alert('Erro de conexão: ' + error.message);
+            });
+    }
+
+    // Função para confirmar exclusão (corrigida)
+    function confirmarExclusao(pagamentoId, nsu) {
+        document.getElementById('nsuToDelete').textContent = 'NSU ' + nsu;
+        document.getElementById('deleteForm').action = '{% url "portais_admin:pagamentos_delete" 0 %}'.replace('0', pagamentoId);
+
+        var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+
+    // Inicializar página
+    document.addEventListener('DOMContentLoaded', function () {
+        // Adicionar primeira linha automaticamente
+        adicionarLinhaPagamento();
+
+        // Adicionar token CSRF se não existir
+        if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}';
+            document.body.appendChild(csrfInput);
+        }
+    });
+
+    // Função para abrir modal de upload
+    function abrirModalUpload() {
+        const modal = new bootstrap.Modal(document.getElementById('modalUploadCSV'));
+        modal.show();
+    }
+
+    // Função para processar upload do CSV
+    function processarUploadCSV() {
+        const arquivo = document.getElementById('arquivoCSV').files[0];
+
+        if (!arquivo) {
+            alert('Por favor, selecione um arquivo CSV.');
+            return;
+        }
+
+        if (!arquivo.name.toLowerCase().endsWith('.csv')) {
+            alert('Por favor, selecione um arquivo CSV válido.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('arquivo_csv', arquivo);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        // Mostrar loading
+        const btnProcessar = document.querySelector('#modalUploadCSV .btn-primary');
+        const textoOriginal = btnProcessar.innerHTML;
+        btnProcessar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processando...';
+        btnProcessar.disabled = true;
+
+        fetch('/pagamentos/upload-csv/', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Resposta do servidor:', data);
+                if (data.success) {
+                    // Limpar tabela atual
+                    document.getElementById('corpoTabela').innerHTML = '';
+                    contadorLinhas = 0;
+
+                    console.log('Pagamentos recebidos:', data.pagamentos);
+
+                    // Adicionar linhas do CSV
+                    data.pagamentos.forEach((pagamento, index) => {
+                        console.log(`Adicionando pagamento ${index + 1}:`, pagamento);
+                        console.log('Valores específicos:', {
+                            nsu: pagamento.nsu,
+                            var45: pagamento.var45,
+                            var59: pagamento.var59,
+                            var111: pagamento.var111,
+                            var112: pagamento.var112
+                        });
+                        adicionarLinhaPagamentoComDados(pagamento);
+                    });
+
+                    // Fechar modal
+                    bootstrap.Modal.getInstance(document.getElementById('modalUploadCSV')).hide();
+
+                    // SEM ALERTA - usuário clica em "Salvar Todos" quando quiser
+                } else {
+                    console.error('Erro do servidor:', data.error);
+                    alert('❌ Erro ao processar CSV:\n\n' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao processar arquivo CSV.');
+            })
+            .finally(() => {
+                // Restaurar botão
+                btnProcessar.innerHTML = textoOriginal;
+                btnProcessar.disabled = false;
+            });
+    }
+
+    // Função para adicionar linha com dados do CSV
+    function adicionarLinhaPagamentoComDados(dados) {
+        console.log('Função adicionarLinhaPagamentoComDados chamada com:', dados);
+
+        contadorLinhas++;
+        const tbody = document.getElementById('corpoTabela');
+        const novaLinha = document.createElement('tr');
+        novaLinha.id = `linha-${contadorLinhas}`;
+
+        // Debug dos valores específicos
+        console.log('NSU recebido:', dados.nsu, 'tipo:', typeof dados.nsu);
+        console.log('var45 recebido:', dados.var45, 'tipo:', typeof dados.var45);
+        console.log('var59 recebido:', dados.var59, 'tipo:', typeof dados.var59);
+        console.log('var111 recebido:', dados.var111, 'tipo:', typeof dados.var111);
+        console.log('var112 recebido:', dados.var112, 'tipo:', typeof dados.var112);
+
+        novaLinha.innerHTML = `
         <td>
-            <input type="text" name="nsu_${contadorLinhas}" value="${dados.nsu !== null && dados.nsu !== undefined ? dados.nsu : ''}" 
+            <input type="text" name="nsu_${contadorLinhas}" value="${dados.nsu !== null && dados.nsu !== undefined ? dados.nsu : ''}"
                    class="form-control form-control-sm" required maxlength="10" pattern="[0-9]+" style="width: 10ch;">
         </td>
         <td>
-            <input type="text" name="var44_${contadorLinhas}" value="${dados.var44 !== null && dados.var44 !== undefined ? dados.var44 : ''}" 
+            <input type="text" name="var44_${contadorLinhas}" value="${dados.var44 !== null && dados.var44 !== undefined ? dados.var44 : ''}"
                    class="form-control form-control-sm valor-monetario" maxlength="10">
         </td>
         <td>
-            <input type="text" name="var45_${contadorLinhas}" value="${dados.var45 !== null && dados.var45 !== undefined ? dados.var45 : ''}" 
+            <input type="text" name="var45_${contadorLinhas}" value="${dados.var45 !== null && dados.var45 !== undefined ? dados.var45 : ''}"
                    class="form-control form-control-sm" maxlength="20">
         </td>
         <td>
-            <input type="text" name="var58_${contadorLinhas}" value="${dados.var58 !== null && dados.var58 !== undefined ? dados.var58 : ''}" 
+            <input type="text" name="var58_${contadorLinhas}" value="${dados.var58 !== null && dados.var58 !== undefined ? dados.var58 : ''}"
                    class="form-control form-control-sm valor-monetario" maxlength="10">
         </td>
         <td>
-            <input type="text" name="var59_${contadorLinhas}" value="${dados.var59 !== null && dados.var59 !== undefined ? dados.var59 : ''}" 
+            <input type="text" name="var59_${contadorLinhas}" value="${dados.var59 !== null && dados.var59 !== undefined ? dados.var59 : ''}"
                    class="form-control form-control-sm" maxlength="20">
         </td>
         <td>
-            <input type="text" name="var66_${contadorLinhas}" value="${dados.var66 !== null && dados.var66 !== undefined ? dados.var66 : ''}" 
+            <input type="text" name="var66_${contadorLinhas}" value="${dados.var66 !== null && dados.var66 !== undefined ? dados.var66 : ''}"
                    class="form-control form-control-sm" maxlength="20">
         </td>
         <td>
-            <input type="text" name="var71_${contadorLinhas}" value="${dados.var71 !== null && dados.var71 !== undefined ? dados.var71 : ''}" 
+            <input type="text" name="var71_${contadorLinhas}" value="${dados.var71 !== null && dados.var71 !== undefined ? dados.var71 : ''}"
                    class="form-control form-control-sm" maxlength="20">
         </td>
         <td>
-            <input type="text" name="var100_${contadorLinhas}" value="${dados.var100 !== null && dados.var100 !== undefined ? dados.var100 : ''}" 
+            <input type="text" name="var100_${contadorLinhas}" value="${dados.var100 !== null && dados.var100 !== undefined ? dados.var100 : ''}"
                    class="form-control form-control-sm" maxlength="20">
         </td>
         <td>
-            <input type="text" name="var111_${contadorLinhas}" value="${dados.var111 !== null && dados.var111 !== undefined ? dados.var111 : ''}" 
+            <input type="text" name="var111_${contadorLinhas}" value="${dados.var111 !== null && dados.var111 !== undefined ? dados.var111 : ''}"
                    class="form-control form-control-sm valor-monetario" maxlength="10">
         </td>
         <td>
-            <input type="text" name="var112_${contadorLinhas}" value="${dados.var112 !== null && dados.var112 !== undefined ? dados.var112 : ''}" 
+            <input type="text" name="var112_${contadorLinhas}" value="${dados.var112 !== null && dados.var112 !== undefined ? dados.var112 : ''}"
                    class="form-control form-control-sm valor-monetario" maxlength="10">
         </td>
         <td>
@@ -784,49 +720,18 @@ function adicionarLinhaPagamentoComDados(dados) {
             </button>
         </td>
     `;
-    
-    tbody.appendChild(novaLinha);
-    
-    // Aplicar máscaras aos campos monetários da nova linha
-    aplicarMascaraMonetaria(novaLinha);
-    
-    // Adicionar event listener para verificação de NSU
-    const inputNsu = novaLinha.querySelector('input[name^="nsu_"]');
-    inputNsu.addEventListener('blur', function() {
-        verificarNSU(this, contadorLinhas);
-    });
-}
 
-// ===================== FUNÇÕES LANÇAMENTOS MANUAIS =====================
+        tbody.appendChild(novaLinha);
 
-function buscarLancamentosManual() {
-    // Verificar se há filtros obrigatórios
-    const nsu = document.getElementById('nsu').value.trim();
-    const dataInicio = document.getElementById('data_inicio').value.trim();
-    const dataFim = document.getElementById('data_fim').value.trim();
-    
-    const temNsu = nsu !== '';
-    const temRangeDatas = dataInicio !== '' && dataFim !== '';
-    
-    if (!temNsu && !temRangeDatas) {
-        alert('Para buscar lançamentos manuais, é necessário informar:\n- NSU específico, OU\n- Range completo de datas (início E fim)');
-        return;
+        // Aplicar máscaras aos campos monetários da nova linha
+        aplicarMascaraMonetaria(novaLinha);
+
+        // Adicionar event listener para verificação de NSU
+        const inputNsu = novaLinha.querySelector('input[name^="nsu_"]');
+        inputNsu.addEventListener('blur', function () {
+            verificarNSU(this, contadorLinhas);
+        });
     }
-    
-    // Construir URL com parâmetros
-    const params = new URLSearchParams();
-    if (nsu) params.append('nsu', nsu);
-    if (dataInicio) params.append('data_inicio', dataInicio);
-    if (dataFim) params.append('data_fim', dataFim);
-    
-    // Redirecionar para a página de listagem de lançamentos manuais
-    const url = "{% url 'portais_admin:lancamentos_manuais_list' %}?" + params.toString();
-    window.location.href = url;
-}
 
-function adicionarLancamentoManual() {
-    // Redirecionar para a página de formulário
-    window.location.href = "{% url 'portais_admin:lancamento_manual_form' %}";
-}
 </script>
 {% endblock %}

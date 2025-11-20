@@ -81,10 +81,19 @@
                         {% tem_secao_permitida 'pagamentos' as pode_pagamentos %}
                         {% if pode_pagamentos %}
                         <li class="nav-item">
-                            <a class="nav-link {% if 'pagamentos' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'portais_admin:pagamentos_list' %}">
+                            <a class="nav-link {% if 'pagamentos' in request.resolver_match.url_name and 'lancamentos_manuais' not in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'portais_admin:pagamentos_busca' %}">
                                 <i class="fas fa-money-bill-wave me-2"></i>
                                 Pagamentos
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if request.session.portal_usuario_nivel == 'admin_total' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'lancamentos_manuais' in request.resolver_match.url_name or 'lancamento_manual' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'portais_admin:lancamentos_manuais_list' %}">
+                                <i class="fas fa-hand-holding-usd me-2"></i>
+                                Lançamentos Manuais
                             </a>
                         </li>
                         {% endif %}

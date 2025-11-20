@@ -1,0 +1,753 @@
+{
+  "info": {
+    "name": "Api-wl-agilli-export-WALL BENEFICIOS",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticacao",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer OGFjN2E0Yzc4MjIzZGE3YjAxODIyNWU5OWI3ODAzNmR8WXN6UzlFemtOag==",
+            "disabled": true,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/v2/auth",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "v2",
+            "auth"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"client_id\": \"54430621000134-api-acquirer.wl\",\n    \"client_secret\": \"qLzQ5AI89DKY6SvEyz6DvJ1gtm5ECl5N\",\n    \"scope\": \"wl.api_acquirer.api\",\n    \"grant_type\":\"client_credentials\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Busca Parcela",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTg4OTMyODIsImlhdCI6MTc1ODg5Mjk4MiwianRpIjoiYzZjN2ZmODgtNTgwOS00YmUwLWI0ZjYtODQwZmJhNTg5MmNlIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjcwY2Q4MjU1LTMyZGUtNDAxYi1hZGI5LWUzNGY4ZWM1OWE1OSIsInR5cCI6IkJlYXJlciIsImF6cCI6IjU0MzgyMzcyMDAwMTU5LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19WMl9BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQ0FEQVNUUk9fRUNPTU1FUkNFX1BBUkFfUEFSQ0VJUk9TX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0FDRVNTT1NfQUNJX1BBUkFfUEFSQ0VJUk9TIiwiUk9MRV9XRUJIT09LX0FDRUlURV9BUElfV0wiLCJST0xFX1BST0NFU1NBX0NSRURFTkNJQU1FTlRPX1NBTEVTX0ZPUkNFIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19BUElfV0wiLCJST0xFX0JZX0NOUEpfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9BUElfV0wiLCJST0xFX0NPTkZJR1VSQV9FUVVJUEFNRU5UT19BUElfV0wiLCJST0xFX0NSRURFTkNJQU1FTlRPX1dMIiwiUk9MRV9DQU5DRUxBX1JFR0lTVFJPX1NQTElUX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9SRUxBVE9SSU9fRVNUT1JOT19BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNTQzODIzNzIwMDAxNTktYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiNTQzODIzNzIwMDAxNTktYXBpLWFjcXVpcmVyLndsIn0.a6NE3TsLjbtiK9b3xTUuUAH5iFPy3aJqARB5MJrKLG_Wwni5WAUUbC3Uv9AHaU6-6zA7UZfUN_y1bh19quyOB6gX2D1izKNCGmET0GVkmTY3cRjuEhkumzIBkS_xYDrL4gwkN-JNjB_uLweErRhOrqGA7pSOwcEASndqVjQYf9LD-tW2Hr50WugWxq8eBw0megwVyGclfl6ZnoaexHEZklucJ0vqvFqLrefYa3N0e3deY93sZzQdGQY2au9JYLe04YVR-hOfBImWyLsBk4JI_-9_HKtsTKNpJ8sGw-wQ_PV6Mq4yVPgJwAhYonu4FdrZVtHQMxATQUtl64h6QUFAwA",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/transacoes/v2/buscaParcela?codigoLancamento=1596906596",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "transacoes",
+            "v2",
+            "buscaParcela"
+          ],
+          "query": [
+            {
+              "key": "codigoLancamento",
+              "value": "1596906596"
+            },
+            {
+              "key": "identificadorTransacao",
+              "value": ""
+            },
+            {
+              "key": "numeroTitulo",
+              "value": ""
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "Configura equipamento",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3MzczOTk3MjAsImlhdCI6MTczNzM5OTQyMCwianRpIjoiYzQ4YjgwZTgtMDg3My00ODAxLWE1MTEtNzBhMmYyNzZkM2Y3IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6Ijc0NWRmN2ViLTI5MDktNDFlMy04ZTM3LWVkYzIyYjE5MzI3MyIsInR5cCI6IkJlYXJlciIsImF6cCI6IjM5NTY2MDc3MDAwMTY5LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9CVVNDQV9QQVJDRUxBU19XTCIsIlJPTEVfQ09OU1VMVEFfTElRVUlEQUNPRVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9UUkFOU0FDT0VTX0dFUkFJU19BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfSU5ESUNBRE9SRVNfQ0FEQVNUUkFJU19BUElfV0wiLCItIiwiUk9MRV9CVVNDQV9QUk9UT0NPTE9TX0FQSV9XTCIsIlJPTEVfQllfQ05QSl9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX1NQTElUX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05GSUdVUkFfRVFVSVBBTUVOVE9fQVBJX1dMIiwiUk9MRV9DUkVERU5DSUFNRU5UT19XTCIsIlJPTEVfQ09OU1VMVEFfQVRJVklEQURFX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfU1BMSVRfVFJBTlNBQ1RJT05fQVBJX1dMIiwiUk9MRV9TQVZFX0NBTkFMX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9WRU5EQVNfQ09OU09MSURBREFTX0FQSV9XTCIsIlJPTEVfQllfQ09OU1VMVEFfQ0VTVEFfQVBJX1dMIl19LCJzY29wZSI6ImVtYWlsIHdsLmFwaV9hY3F1aXJlci5hcGkgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiY2xpZW50SG9zdCI6IjEwLjIuMTAuMTI0IiwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LTM5NTY2MDc3MDAwMTY5LWFwaS1hY3F1aXJlci53bCIsImNsaWVudEFkZHJlc3MiOiIxMC4yLjEwLjEyNCIsImNsaWVudF9pZCI6IjM5NTY2MDc3MDAwMTY5LWFwaS1hY3F1aXJlci53bCJ9.Gnd4W2LRunypIAMDmXvkjWzj-j6-U12wZtpfJ3pF5jzThbKZgSbdvpnHj8kGIdKKFSl3rbZoJ756xfsdnvams_sal8w3CI6WFAOkwZY1NZJChYlPYs1od4EQOzGXPXzbAHn5RxjpCZOqinCpjDtzdR3lIMkXFnvm4cBmKqC402TmRplbt0iGMimFfAvuH9K_ClgjBs5j3b-VO2VbOcSdlKzZD8Xc-HMZSydM6Ls5GO-Egwskf-cMEYXCjf9JEH7yIyUr1OcCRVQNNDvLD5xn8coXnssOqgh8jna3DYHds35yHuEzgPlegI3zJMy91sbobnVwNb2vRF95p5vinbY7rA",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/parceiro/configuraEquipamento",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "parceiro",
+            "configuraEquipamento"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"terminais\": [\n        {\n            \"numeroSerie\": \"6N489843\",\n            \"modelo\": \"POS PAX S920\",\n            \"numeroSerieAntigo\": \"\"\n        }\n    ],\n    \"numeroContrato\": \"029-268-27\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Transacoes gerais",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTg4OTMyODIsImlhdCI6MTc1ODg5Mjk4MiwianRpIjoiYzZjN2ZmODgtNTgwOS00YmUwLWI0ZjYtODQwZmJhNTg5MmNlIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjcwY2Q4MjU1LTMyZGUtNDAxYi1hZGI5LWUzNGY4ZWM1OWE1OSIsInR5cCI6IkJlYXJlciIsImF6cCI6IjU0MzgyMzcyMDAwMTU5LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19WMl9BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQ0FEQVNUUk9fRUNPTU1FUkNFX1BBUkFfUEFSQ0VJUk9TX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0FDRVNTT1NfQUNJX1BBUkFfUEFSQ0VJUk9TIiwiUk9MRV9XRUJIT09LX0FDRUlURV9BUElfV0wiLCJST0xFX1BST0NFU1NBX0NSRURFTkNJQU1FTlRPX1NBTEVTX0ZPUkNFIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19BUElfV0wiLCJST0xFX0JZX0NOUEpfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9BUElfV0wiLCJST0xFX0NPTkZJR1VSQV9FUVVJUEFNRU5UT19BUElfV0wiLCJST0xFX0NSRURFTkNJQU1FTlRPX1dMIiwiUk9MRV9DQU5DRUxBX1JFR0lTVFJPX1NQTElUX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9SRUxBVE9SSU9fRVNUT1JOT19BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNTQzODIzNzIwMDAxNTktYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiNTQzODIzNzIwMDAxNTktYXBpLWFjcXVpcmVyLndsIn0.a6NE3TsLjbtiK9b3xTUuUAH5iFPy3aJqARB5MJrKLG_Wwni5WAUUbC3Uv9AHaU6-6zA7UZfUN_y1bh19quyOB6gX2D1izKNCGmET0GVkmTY3cRjuEhkumzIBkS_xYDrL4gwkN-JNjB_uLweErRhOrqGA7pSOwcEASndqVjQYf9LD-tW2Hr50WugWxq8eBw0megwVyGclfl6ZnoaexHEZklucJ0vqvFqLrefYa3N0e3deY93sZzQdGQY2au9JYLe04YVR-hOfBImWyLsBk4JI_-9_HKtsTKNpJ8sGw-wQ_PV6Mq4yVPgJwAhYonu4FdrZVtHQMxATQUtl64h6QUFAwA",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/transacoes/v2/buscaTransacoesGerais",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "transacoes",
+            "v2",
+            "buscaTransacoesGerais"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cnpjCliente\": \"52230932000124\",\n  \"docParceiro\": null,\n  \"identificadorTransacao\": null,\n  \"statusTransacao\": null,\n  \"dataInicial\": \"2024-01-15 00:00\",\n  \"dataFinal\": \"2025-12-31 23:59\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bycnpjcanal",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTY4MTkxMTksImlhdCI6MTc1NjgxODgxOSwianRpIjoiYmRkN2U5MTMtZDFkMS00YzA4LWFiMTgtNjE4NDY3MTE3M2YwIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjBjNDE5MGY2LTIwODYtNDZmZS1hNjU5LTU5ODQ0MTFlM2NjZiIsInR5cCI6IkJlYXJlciIsImF6cCI6IjQ5NDA0Mzc0MDAwMTYxLWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19WMl9BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQ0FEQVNUUk9fRUNPTU1FUkNFX1BBUkFfUEFSQ0VJUk9TX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0FDRVNTT1NfQUNJX1BBUkFfUEFSQ0VJUk9TIiwiUk9MRV9XRUJIT09LX0FDRUlURV9BUElfV0wiLCJST0xFX1BST0NFU1NBX0NSRURFTkNJQU1FTlRPX1NBTEVTX0ZPUkNFIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19BUElfV0wiLCJST0xFX0JZX0NOUEpfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9BUElfV0wiLCJST0xFX0NPTkZJR1VSQV9FUVVJUEFNRU5UT19BUElfV0wiLCJST0xFX0NSRURFTkNJQU1FTlRPX1dMIiwiUk9MRV9DQU5DRUxBX1JFR0lTVFJPX1NQTElUX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9SRUxBVE9SSU9fRVNUT1JOT19BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiY2xpZW50SG9zdCI6IjEwLjIuMTAuMTI0IiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNDk0MDQzNzQwMDAxNjEtYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiNDk0MDQzNzQwMDAxNjEtYXBpLWFjcXVpcmVyLndsIn0.SMlFsJe_V4dam2Q2hjm03O9A2dIHZ9OP1YKWarrufq43rm4iXKip4rXAbdNCP575Lr66wo664TAVUHTq8CpckG74XFdOMq-oJptWfMJ-PzD0ZCf8pC6GzJhsDYQxikYKKDUGjx1-ek53IaOWQjVrUYl2DO6t4shFQwh_Zn29daobmDEXhYR6Y2u0CJcPPIEFfWuITr3h0ybvn3BK_uOak3q_jp8gDM5DGNeN3-MbDcBSIquzVioBaDiV1MZ_-SxlVe-ciYktLiKwC-2bI3Y8Ca1p4DzfgKpz0cA1_zJYDEKeX7tFygWbEnaz5wCb0Vlc5Tes5aTZMoHhq5DYsy-b-A",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/canal/cnpjcanal?cnpj=52230932000124",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "canal",
+            "cnpjcanal"
+          ],
+          "query": [
+            {
+              "key": "cnpj",
+              "value": "52230932000124"
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "bynomecanal",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTE5MjA1MDQsImlhdCI6MTc1MTkyMDIwNCwianRpIjoiYmJmYTVjMGYtNWMyYi00OTA0LTk4NmEtNjkwYzQxMjM4ZTY1IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6ImJhZWE1OGIwLTU1NWYtNDJkOC04ZDViLTMwMzVjYzY2ZWUxMCIsInR5cCI6IkJlYXJlciIsImF6cCI6IjA3Njk3MjQ1MDAwMTY5LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfVVBEQVRFX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19BUElfV0wiLCJST0xFX0JZX05PTUVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9BRElUSVZPX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX1dFQkhPT0tfQUNFSVRFX0FQSV9XTCIsIlJPTEVfUFJPQ0VTU0FfQ1JFREVOQ0lBTUVOVE9fU0FMRVNfRk9SQ0UiLCJST0xFX0lORElDQURPUkVTX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9QUk9UT0NPTE9TX0FQSV9XTCIsIlJPTEVfQllfQ05QSl9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX1NQTElUX0FQSV9XTCIsIlJPTEVfQ09ORklHVVJBX0VRVUlQQU1FTlRPX0FQSV9XTCIsIlJPTEVfQ1JFREVOQ0lBTUVOVE9fV0wiLCJST0xFX0NBTkNFTEFfUkVHSVNUUk9fU1BMSVRfQVBJX1dMIiwiUk9MRV9TQVZFX0NBTkFMX0FQSV9XTCIsIlJPTEVfQllfQ09OVkVOSUFEQUlEX0xPR0FEQV9BUElfV0wiLCJST0xFX1JFTEFUT1JJT19FU1RPUk5PX0FQSV9XTCIsIlJPTEVfVkVOREFTX0NPTlNPTElEQURBU19BUElfV0wiLCJST0xFX0JZX0NPTlNVTFRBX0NFU1RBX0FQSV9XTCJdfSwic2NvcGUiOiJlbWFpbCB3bC5hcGlfYWNxdWlyZXIuYXBpIHByb2ZpbGUiLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InNlcnZpY2UtYWNjb3VudC0wNzY5NzI0NTAwMDE2OS1hcGktYWNxdWlyZXIud2wiLCJjbGllbnRBZGRyZXNzIjoiMTAuMi4xMC4xMjQiLCJjbGllbnRfaWQiOiIwNzY5NzI0NTAwMDE2OS1hcGktYWNxdWlyZXIud2wifQ.S-RH18Gm8_JvKI8rrH2O1Y3nRzbQX3xsclnhPDiHnnHrdWANoasWH-UD8BFHCzHsBfngTty-RDms2ipN6Ej6wHDrJBuswWNAcAYN1Q8IHCu9Dfjjf4Y-aJB2ylBcvnaHIHMaSlbzEXUza6jSgSP5zuoRx2jlDmcBbgvfqQbrUR8nY8NhrSc77kXilpizz_JaHSCaydN_i1C4sudqIcvjLv4EzMEdOxIQc4MumqoohLMkMfb6wI2WERx2lkCLDvnmfQHSVIM1ChBceJJGEn4SIeSB9-0JpvyNRagenll5I1wPdWDdP3JsGtu7qr6VGHg4Ej14-gZ9DOb5DTm4l9MEhw",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/canal/bynomecanal?nome=CAR",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "canal",
+            "bynomecanal"
+          ],
+          "query": [
+            {
+              "key": "nome",
+              "value": "CAR"
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "cadastrais",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3MzczOTk3MjAsImlhdCI6MTczNzM5OTQyMCwianRpIjoiYzQ4YjgwZTgtMDg3My00ODAxLWE1MTEtNzBhMmYyNzZkM2Y3IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6Ijc0NWRmN2ViLTI5MDktNDFlMy04ZTM3LWVkYzIyYjE5MzI3MyIsInR5cCI6IkJlYXJlciIsImF6cCI6IjM5NTY2MDc3MDAwMTY5LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9CVVNDQV9QQVJDRUxBU19XTCIsIlJPTEVfQ09OU1VMVEFfTElRVUlEQUNPRVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9UUkFOU0FDT0VTX0dFUkFJU19BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfSU5ESUNBRE9SRVNfQ0FEQVNUUkFJU19BUElfV0wiLCItIiwiUk9MRV9CVVNDQV9QUk9UT0NPTE9TX0FQSV9XTCIsIlJPTEVfQllfQ05QSl9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX1NQTElUX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05GSUdVUkFfRVFVSVBBTUVOVE9fQVBJX1dMIiwiUk9MRV9DUkVERU5DSUFNRU5UT19XTCIsIlJPTEVfQ09OU1VMVEFfQVRJVklEQURFX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfU1BMSVRfVFJBTlNBQ1RJT05fQVBJX1dMIiwiUk9MRV9TQVZFX0NBTkFMX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9WRU5EQVNfQ09OU09MSURBREFTX0FQSV9XTCIsIlJPTEVfQllfQ09OU1VMVEFfQ0VTVEFfQVBJX1dMIl19LCJzY29wZSI6ImVtYWlsIHdsLmFwaV9hY3F1aXJlci5hcGkgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiY2xpZW50SG9zdCI6IjEwLjIuMTAuMTI0IiwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LTM5NTY2MDc3MDAwMTY5LWFwaS1hY3F1aXJlci53bCIsImNsaWVudEFkZHJlc3MiOiIxMC4yLjEwLjEyNCIsImNsaWVudF9pZCI6IjM5NTY2MDc3MDAwMTY5LWFwaS1hY3F1aXJlci53bCJ9.Gnd4W2LRunypIAMDmXvkjWzj-j6-U12wZtpfJ3pF5jzThbKZgSbdvpnHj8kGIdKKFSl3rbZoJ756xfsdnvams_sal8w3CI6WFAOkwZY1NZJChYlPYs1od4EQOzGXPXzbAHn5RxjpCZOqinCpjDtzdR3lIMkXFnvm4cBmKqC402TmRplbt0iGMimFfAvuH9K_ClgjBs5j3b-VO2VbOcSdlKzZD8Xc-HMZSydM6Ls5GO-Egwskf-cMEYXCjf9JEH7yIyUr1OcCRVQNNDvLD5xn8coXnssOqgh8jna3DYHds35yHuEzgPlegI3zJMy91sbobnVwNb2vRF95p5vinbY7rA",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/indicadores/v2/cadastrais?cpfCnpj=54430621000134&contrato=2926827",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "indicadores",
+            "v2",
+            "cadastrais"
+          ],
+          "query": [
+            {
+              "key": "cpfCnpj",
+              "value": "54430621000134"
+            },
+            {
+              "key": "contrato",
+              "value": "2926827"
+            },
+            {
+              "key": "dataCadastro",
+              "value": "2025-07-07"
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "consulta Liquidacoes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTE5MjA1MDQsImlhdCI6MTc1MTkyMDIwNCwianRpIjoiYmJmYTVjMGYtNWMyYi00OTA0LTk4NmEtNjkwYzQxMjM4ZTY1IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6ImJhZWE1OGIwLTU1NWYtNDJkOC04ZDViLTMwMzVjYzY2ZWUxMCIsInR5cCI6IkJlYXJlciIsImF6cCI6IjA3Njk3MjQ1MDAwMTY5LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfVVBEQVRFX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19BUElfV0wiLCJST0xFX0JZX05PTUVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9BRElUSVZPX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX1dFQkhPT0tfQUNFSVRFX0FQSV9XTCIsIlJPTEVfUFJPQ0VTU0FfQ1JFREVOQ0lBTUVOVE9fU0FMRVNfRk9SQ0UiLCJST0xFX0lORElDQURPUkVTX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9QUk9UT0NPTE9TX0FQSV9XTCIsIlJPTEVfQllfQ05QSl9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX1NQTElUX0FQSV9XTCIsIlJPTEVfQ09ORklHVVJBX0VRVUlQQU1FTlRPX0FQSV9XTCIsIlJPTEVfQ1JFREVOQ0lBTUVOVE9fV0wiLCJST0xFX0NBTkNFTEFfUkVHSVNUUk9fU1BMSVRfQVBJX1dMIiwiUk9MRV9TQVZFX0NBTkFMX0FQSV9XTCIsIlJPTEVfQllfQ09OVkVOSUFEQUlEX0xPR0FEQV9BUElfV0wiLCJST0xFX1JFTEFUT1JJT19FU1RPUk5PX0FQSV9XTCIsIlJPTEVfVkVOREFTX0NPTlNPTElEQURBU19BUElfV0wiLCJST0xFX0JZX0NPTlNVTFRBX0NFU1RBX0FQSV9XTCJdfSwic2NvcGUiOiJlbWFpbCB3bC5hcGlfYWNxdWlyZXIuYXBpIHByb2ZpbGUiLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InNlcnZpY2UtYWNjb3VudC0wNzY5NzI0NTAwMDE2OS1hcGktYWNxdWlyZXIud2wiLCJjbGllbnRBZGRyZXNzIjoiMTAuMi4xMC4xMjQiLCJjbGllbnRfaWQiOiIwNzY5NzI0NTAwMDE2OS1hcGktYWNxdWlyZXIud2wifQ.S-RH18Gm8_JvKI8rrH2O1Y3nRzbQX3xsclnhPDiHnnHrdWANoasWH-UD8BFHCzHsBfngTty-RDms2ipN6Ej6wHDrJBuswWNAcAYN1Q8IHCu9Dfjjf4Y-aJB2ylBcvnaHIHMaSlbzEXUza6jSgSP5zuoRx2jlDmcBbgvfqQbrUR8nY8NhrSc77kXilpizz_JaHSCaydN_i1C4sudqIcvjLv4EzMEdOxIQc4MumqoohLMkMfb6wI2WERx2lkCLDvnmfQHSVIM1ChBceJJGEn4SIeSB9-0JpvyNRagenll5I1wPdWDdP3JsGtu7qr6VGHg4Ej14-gZ9DOb5DTm4l9MEhw",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/parceiro/v2/consultaLiquidacoes?dataPagamentoReal=2025-12-04&cnpjCliente=54430621000134",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "parceiro",
+            "v2",
+            "consultaLiquidacoes"
+          ],
+          "query": [
+            {
+              "key": "dataPagamentoReal",
+              "value": "2025-12-04"
+            },
+            {
+              "key": "cnpjCliente",
+              "value": "54430621000134"
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "consultar Atividades",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "",
+            "value": "",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTY4MTkxMTksImlhdCI6MTc1NjgxODgxOSwianRpIjoiYmRkN2U5MTMtZDFkMS00YzA4LWFiMTgtNjE4NDY3MTE3M2YwIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjBjNDE5MGY2LTIwODYtNDZmZS1hNjU5LTU5ODQ0MTFlM2NjZiIsInR5cCI6IkJlYXJlciIsImF6cCI6IjQ5NDA0Mzc0MDAwMTYxLWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19WMl9BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQ0FEQVNUUk9fRUNPTU1FUkNFX1BBUkFfUEFSQ0VJUk9TX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0FDRVNTT1NfQUNJX1BBUkFfUEFSQ0VJUk9TIiwiUk9MRV9XRUJIT09LX0FDRUlURV9BUElfV0wiLCJST0xFX1BST0NFU1NBX0NSRURFTkNJQU1FTlRPX1NBTEVTX0ZPUkNFIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19BUElfV0wiLCJST0xFX0JZX0NOUEpfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9BUElfV0wiLCJST0xFX0NPTkZJR1VSQV9FUVVJUEFNRU5UT19BUElfV0wiLCJST0xFX0NSRURFTkNJQU1FTlRPX1dMIiwiUk9MRV9DQU5DRUxBX1JFR0lTVFJPX1NQTElUX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9SRUxBVE9SSU9fRVNUT1JOT19BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiY2xpZW50SG9zdCI6IjEwLjIuMTAuMTI0IiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNDk0MDQzNzQwMDAxNjEtYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiNDk0MDQzNzQwMDAxNjEtYXBpLWFjcXVpcmVyLndsIn0.SMlFsJe_V4dam2Q2hjm03O9A2dIHZ9OP1YKWarrufq43rm4iXKip4rXAbdNCP575Lr66wo664TAVUHTq8CpckG74XFdOMq-oJptWfMJ-PzD0ZCf8pC6GzJhsDYQxikYKKDUGjx1-ek53IaOWQjVrUYl2DO6t4shFQwh_Zn29daobmDEXhYR6Y2u0CJcPPIEFfWuITr3h0ybvn3BK_uOak3q_jp8gDM5DGNeN3-MbDcBSIquzVioBaDiV1MZ_-SxlVe-ciYktLiKwC-2bI3Y8Ca1p4DzfgKpz0cA1_zJYDEKeX7tFygWbEnaz5wCb0Vlc5Tes5aTZMoHhq5DYsy-b-A",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarAtividades?codigoCnae=4679-6/01&descCnae=",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "parceiro",
+            "v2",
+            "consultarAtividades"
+          ],
+          "query": [
+            {
+              "key": "codigoCnae",
+              "value": "4679-6/01"
+            },
+            {
+              "key": "descCnae",
+              "value": ""
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "consultar Cesta",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Session-Data",
+            "value": "",
+            "disabled": true,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTY4MTkxMTksImlhdCI6MTc1NjgxODgxOSwianRpIjoiYmRkN2U5MTMtZDFkMS00YzA4LWFiMTgtNjE4NDY3MTE3M2YwIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjBjNDE5MGY2LTIwODYtNDZmZS1hNjU5LTU5ODQ0MTFlM2NjZiIsInR5cCI6IkJlYXJlciIsImF6cCI6IjQ5NDA0Mzc0MDAwMTYxLWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19WMl9BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQ0FEQVNUUk9fRUNPTU1FUkNFX1BBUkFfUEFSQ0VJUk9TX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0FDRVNTT1NfQUNJX1BBUkFfUEFSQ0VJUk9TIiwiUk9MRV9XRUJIT09LX0FDRUlURV9BUElfV0wiLCJST0xFX1BST0NFU1NBX0NSRURFTkNJQU1FTlRPX1NBTEVTX0ZPUkNFIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19BUElfV0wiLCJST0xFX0JZX0NOUEpfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9BUElfV0wiLCJST0xFX0NPTkZJR1VSQV9FUVVJUEFNRU5UT19BUElfV0wiLCJST0xFX0NSRURFTkNJQU1FTlRPX1dMIiwiUk9MRV9DQU5DRUxBX1JFR0lTVFJPX1NQTElUX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9SRUxBVE9SSU9fRVNUT1JOT19BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiY2xpZW50SG9zdCI6IjEwLjIuMTAuMTI0IiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNDk0MDQzNzQwMDAxNjEtYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiNDk0MDQzNzQwMDAxNjEtYXBpLWFjcXVpcmVyLndsIn0.SMlFsJe_V4dam2Q2hjm03O9A2dIHZ9OP1YKWarrufq43rm4iXKip4rXAbdNCP575Lr66wo664TAVUHTq8CpckG74XFdOMq-oJptWfMJ-PzD0ZCf8pC6GzJhsDYQxikYKKDUGjx1-ek53IaOWQjVrUYl2DO6t4shFQwh_Zn29daobmDEXhYR6Y2u0CJcPPIEFfWuITr3h0ybvn3BK_uOak3q_jp8gDM5DGNeN3-MbDcBSIquzVioBaDiV1MZ_-SxlVe-ciYktLiKwC-2bI3Y8Ca1p4DzfgKpz0cA1_zJYDEKeX7tFygWbEnaz5wCb0Vlc5Tes5aTZMoHhq5DYsy-b-A",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/parceiro/v2/consultarCesta?nomeCesta=",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "parceiro",
+            "v2",
+            "consultarCesta"
+          ],
+          "query": [
+            {
+              "key": "nomeCesta",
+              "value": ""
+            },
+            {
+              "key": "",
+              "value": ""
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "consultarProtocolos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3Mjc3MTc4NTQsImlhdCI6MTcyNzcxNzU1NCwianRpIjoiMjg2N2QzYTYtYzU0MC00MDA4LWE3OTQtOWZhZDQ5OTU2YmIzIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjBiOWE3Y2Y0LTc3ODItNDY1Ni04ZGE1LTliNGQ2NmRhNGRjMiIsInR5cCI6IkJlYXJlciIsImF6cCI6IjMyMjQ0MjU4MDAwMTIwLWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9CVVNDQV9QQVJDRUxBU19XTCIsIlJPTEVfQ09OU1VMVEFfTElRVUlEQUNPRVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9UUkFOU0FDT0VTX0dFUkFJU19BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX05PTUVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIi0iLCJST0xFX0JVU0NBX1BST1RPQ09MT1NfQVBJX1dMIiwiUk9MRV9CWV9DTlBKX0NBTkFMX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05GSUdVUkFfRVFVSVBBTUVOVE9fQVBJX1dMIiwiUk9MRV9DUkVERU5DSUFNRU5UT19XTCIsIlJPTEVfQ09OU1VMVEFfQVRJVklEQURFX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0hJU1RPUklDT19OVU1FUk9fU0VSSUVfQVBJX1dMIiwiUk9MRV9CWV9DT05WRU5JQURBSURfTE9HQURBX0FQSV9XTCIsIlJPTEVfVkVOREFTX0NPTlNPTElEQURBU19BUElfV0wiLCJST0xFX0JZX0NPTlNVTFRBX0NFU1RBX0FQSV9XTCJdfSwic2NvcGUiOiJlbWFpbCB3bC5hcGlfYWNxdWlyZXIuYXBpIHByb2ZpbGUiLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InNlcnZpY2UtYWNjb3VudC0zMjI0NDI1ODAwMDEyMC1hcGktYWNxdWlyZXIud2wiLCJjbGllbnRBZGRyZXNzIjoiMTAuMi4xMC4xMjQiLCJjbGllbnRfaWQiOiIzMjI0NDI1ODAwMDEyMC1hcGktYWNxdWlyZXIud2wifQ.dNEWRyg4jlVbc4QdsnY-nqMCExQq7sdFBhrQdzf7hR8odnfwRU-MyHHu-gnqUuw8XJjk-HLitPdwtVejBdJWIv439yJnIeMGdf8xmEQLxA-f_StQAkmMa0AxDwOh4ovpzlqDgVN9QAfmPgSquvNLNRlJ4pEMWbnu72DWCV32pkH9MdTHZVJaKm3BarM8DojYXD7DQz5mNWJrPDvZQ-FXOaZ9rwM_NO_lc3T3NZyr2bNIsr-A4SQkGn2ZluY73vuwLwVMuKQYnY6KVcysv-xBQfDN6oFEldHV-LUFshUPaM0q6EOHQ8Ws7Whbla092NCpPx48hnRbPaycMbjJg-Bn9Q",
+            "disabled": false,
+            "type": "default"
+          },
+          {
+            "key": "Cookie",
+            "value": "route=7f6561ea5c3feb2d",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NDI4Mzk1NTAsImlhdCI6MTc0MjgzOTI1MCwianRpIjoiNjdlMjExYTAtN2I0OC00MmUzLWJlNzYtM2YyNmE2M2UzYWU2IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6ImVjZjJjNzdmLTE4MWMtNDVkNi1iYzFhLWEyNjFlZDEwNDdkNyIsInR5cCI6IkJlYXJlciIsImF6cCI6IjMyNTA1MjEzMDAwMTYxLWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9CVVNDQV9QQVJDRUxBU19XTCIsIlJPTEVfQ09OU1VMVEFfTElRVUlEQUNPRVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9UUkFOU0FDT0VTX0dFUkFJU19BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfSU5ESUNBRE9SRVNfQ0FEQVNUUkFJU19BUElfV0wiLCItIiwiUk9MRV9CVVNDQV9QUk9UT0NPTE9TX0FQSV9XTCIsIlJPTEVfQllfQ05QSl9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX1NQTElUX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05GSUdVUkFfRVFVSVBBTUVOVE9fQVBJX1dMIiwiUk9MRV9DUkVERU5DSUFNRU5UT19XTCIsIlJPTEVfQ09OU1VMVEFfQVRJVklEQURFX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfU1BMSVRfVFJBTlNBQ1RJT05fQVBJX1dMIiwiUk9MRV9ERVNBVElWQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX1NBVkVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9ISVNUT1JJQ09fTlVNRVJPX1NFUklFX0FQSV9XTCIsIlJPTEVfQllfQ09OVkVOSUFEQUlEX0xPR0FEQV9BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtMzI1MDUyMTMwMDAxNjEtYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiMzI1MDUyMTMwMDAxNjEtYXBpLWFjcXVpcmVyLndsIn0.aQYlk25ZxP3UGQsgPCacPX__YpoJ_OcmskbRkOJZBPddL7RwroJQGFWnhFEIQ_gW_KEX-C8Zsr2v_250fKycYNJBmPS_iDu06UCpYrEUPTvZT3TITPDmkphK5oI3aPH6RQ_ezXhD22GFxSk9kVev_bX8aTvIehoA5RUNsCYeDv0tHPvW4PTjN75ZJ-Yl-3CMOYD34fK9_kTHwo5GvKknPb4V7mipkkIzRA8NFanHNHRk7AmaMhV_ETg1vI__hjKSF2jEYrqKka1YYqqyQ_rR8U49PmDcryV3cOgn8Ll2UP3hli4SQEkoFM6q5oX-6pd8aWq9JcN9HyDtO-wwQk1vuA",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/parceiro/consultarProtocolos?cnpjEstabelecimento=54430621000134&dataInicial=2010-11-23&dataFinal=2025-12-23",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "parceiro",
+            "consultarProtocolos"
+          ],
+          "query": [
+            {
+              "key": "cnpjEstabelecimento",
+              "value": "54430621000134"
+            },
+            {
+              "key": "dataInicial",
+              "value": "2010-11-23"
+            },
+            {
+              "key": "dataFinal",
+              "value": "2025-12-23"
+            },
+            {
+              "key": "",
+              "value": "null"
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "credenciamento logista",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "",
+            "value": "",
+            "disabled": true,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NjE3NDY0NTIsImlhdCI6MTc2MTc0NjE1MiwianRpIjoiODJjNzJkMzEtNGY2My00ODA2LWIyMWEtYzVjZmNkZmVlNDY0IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjdmNGNhNGVkLTkzMjAtNGU5Ny04YjA0LTc0YTUwN2QwN2JiMyIsInR5cCI6IkJlYXJlciIsImF6cCI6IjUyMjMwOTMyMDAwMTI0LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19WMl9BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQ0FEQVNUUk9fRUNPTU1FUkNFX1BBUkFfUEFSQ0VJUk9TX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0FDRVNTT1NfQUNJX1BBUkFfUEFSQ0VJUk9TIiwiUk9MRV9XRUJIT09LX0FDRUlURV9BUElfV0wiLCJST0xFX1BST0NFU1NBX0NSRURFTkNJQU1FTlRPX1NBTEVTX0ZPUkNFIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19BUElfV0wiLCJST0xFX0JZX0NOUEpfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9BUElfV0wiLCJST0xFX0NPTkZJR1VSQV9FUVVJUEFNRU5UT19BUElfV0wiLCJST0xFX0NSRURFTkNJQU1FTlRPX1dMIiwiUk9MRV9DQU5DRUxBX1JFR0lTVFJPX1NQTElUX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9SRUxBVE9SSU9fRVNUT1JOT19BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNTIyMzA5MzIwMDAxMjQtYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiNTIyMzA5MzIwMDAxMjQtYXBpLWFjcXVpcmVyLndsIn0.AuOyOyGhSt6ggw7WJ-zbnMi4gYE-nrOughd9As2CxBKhebJg9X6_-17cX4LQmwAtf2Ic0ldm2C-D10dqmTbajRF0fJdwqYushIiHFK9OsxhDnhOR7xDHBF_53g5nDG4SrukM1wqsijYgfB23icSq9hirJQqYIsx2czJ51vcbKoY7lz254riLDa1u3zaR6kBvPfXb9BAVTtwLVFg0tX9vCVGnH-aF0kTerqSS_rF3VOl0Eqml3PMDPdf5aQBRJJRAANIfE_vHe2Bu6VefIoAo5IDrdqCooluNYVoxpCM5-O2K_BPlzjWEfN_fTFJL7YPJ5Z7PG9ga568kk1dULSHvpQ",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/parceiro/v2/cadastrarConveniada",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "parceiro",
+            "v2",
+            "cadastrarConveniada"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"cnpj\": \"54430621000134\",\n    \"cnpjCanalWL\": \"54430621000134\",\n    \"cnpjOrigem\": \"\",\n    \"identificadorCliente\": \"54430621000134/01/pagueassim/email@email.com/51802678468\",\n    \"urlCallback\":\"https://www.google.com\",\n    \"razaoSocial\": \"Belosmar Vilar De Carvalho\",\n    \"nomeFantasia\": \"Belosmar Vilar De Carvalho\",\n    \"cnae\": \"5611-2\\/03\",\n    \"ramoAtividade\": \"LANCHONETES, CASAS DE CHA, DE SUCOS E SIMILARES\",\n    \"faturamentoPrevisto\": 10000,\n    \"email\": \"neidevilarc@gmail.com\",\n    \"dddComercial\": \"83\",\n    \"telefoneComercial\": \"99967981\",\n    \"cep\": \"58690000\",\n    \"logradouro\": \"Rua Rita Pereira De Almeida\",\n    \"numeroEndereco\": 173,\n    \"complemento\": \"Em Cima Do Mercadinho Popular\",\n    \"bairro\": \"Centro\",\n    \"municipio\": \"Livramento\",\n    \"uf\": \"PB\",\n    \"dddCel\": \"83\",\n    \"telefoneCelular\": \"83\",\n    \"responsavelAssinatura\": \"Confrapag\",\n    \"quantidadePos\": 1,\n    \"faturamentoContratado\": 10000,\n    \"antecipacaoAutomatica\": \"S\",\n    \"taxaAntecipacao\": 0,\n    \"tipoAntecipacao\": \"S\",\n    \"mcc\": \"5814\",\n    \"tipoContrato\": \"W\",\n    \"codConfiguracao\": \"\",\n    \"cnpjParceiro\": \"54430621000134\",\n    \"idCesta\": 834,\n    \"tarifacao\": [\n        {\n            \"id\": 118687,\n            \"valor\": 0\n        },\n        {\n            \"id\": 118730,\n            \"valor\": 3.82\n        },\n        {\n            \"id\": 118688,\n            \"valor\": 3.22\n        },\n        {\n            \"id\": 118709,\n            \"valor\": 3.22\n        },\n        {\n            \"id\": 118731,\n            \"valor\": 4.59\n        },\n        {\n            \"id\": 118689,\n            \"valor\": 4.32\n        },\n        {\n            \"id\": 118710,\n            \"valor\": 4.35\n        },\n        {\n            \"id\": 118732,\n            \"valor\": 5.2\n        },\n        {\n            \"id\": 118690,\n            \"valor\": 4.89\n        },\n        {\n            \"id\": 118711,\n            \"valor\": 4.92\n        },\n        {\n            \"id\": 118733,\n            \"valor\": 5.81\n        },\n        {\n            \"id\": 118691,\n            \"valor\": 5.45\n        },\n        {\n            \"id\": 118712,\n            \"valor\": 5.49\n        },\n        {\n            \"id\": 118734,\n            \"valor\": 6.42\n        },\n        {\n            \"id\": 118692,\n            \"valor\": 6.02\n        },\n        {\n            \"id\": 118713,\n            \"valor\": 6.06\n        },\n        {\n            \"id\": 118735,\n            \"valor\": 7.03\n        },\n        {\n            \"id\": 118693,\n            \"valor\": 6.59\n        },\n        {\n            \"id\": 118714,\n            \"valor\": 6.63\n        },\n        {\n            \"id\": 118736,\n            \"valor\": 8.34\n        },\n        {\n            \"id\": 118694,\n            \"valor\": 7.34\n        },\n        {\n            \"id\": 118715,\n            \"valor\": 7.71\n        },\n        {\n            \"id\": 118737,\n            \"valor\": 8.95\n        },\n        {\n            \"id\": 118695,\n            \"valor\": 7.95\n        },\n        {\n            \"id\": 118716,\n            \"valor\": 8.28\n        },\n        {\n            \"id\": 118738,\n            \"valor\": 9.56\n        },\n        {\n            \"id\": 118696,\n            \"valor\": 8.56\n        },\n        {\n            \"id\": 118717,\n            \"valor\": 8.85\n        },\n        {\n            \"id\": 118739,\n            \"valor\": 10.17\n        },\n        {\n            \"id\": 118697,\n            \"valor\": 9.17\n        },\n        {\n            \"id\": 118718,\n            \"valor\": 9.41\n        },\n        {\n            \"id\": 118740,\n            \"valor\": 10.78\n        },\n        {\n            \"id\": 118698,\n            \"valor\": 9.78\n        },\n        {\n            \"id\": 118719,\n            \"valor\": 9.98\n        },\n        {\n            \"id\": 118741,\n            \"valor\": 11.39\n        },\n        {\n            \"id\": 118699,\n            \"valor\": 10.39\n        },\n        {\n            \"id\": 118720,\n            \"valor\": 10.55\n        },\n        {\n            \"id\": 118742,\n            \"valor\": 12.64\n        },\n        {\n            \"id\": 118700,\n            \"valor\": 11.83\n        },\n        {\n            \"id\": 118721,\n            \"valor\": 12.22\n        },\n        {\n            \"id\": 118743,\n            \"valor\": 13.2\n        },\n        {\n            \"id\": 118701,\n            \"valor\": 12.4\n        },\n        {\n            \"id\": 118722,\n            \"valor\": 12.79\n        },\n        {\n            \"id\": 118744,\n            \"valor\": 13.77\n        },\n        {\n            \"id\": 118702,\n            \"valor\": 12.97\n        },\n        {\n            \"id\": 118723,\n            \"valor\": 13.36\n        },\n        {\n            \"id\": 118745,\n            \"valor\": 14.34\n        },\n        {\n            \"id\": 118703,\n            \"valor\": 13.54\n        },\n        {\n            \"id\": 118724,\n            \"valor\": 13.93\n        },\n        {\n            \"id\": 118746,\n            \"valor\": 14.91\n        },\n        {\n            \"id\": 118704,\n            \"valor\": 14.1\n        },\n        {\n            \"id\": 118725,\n            \"valor\": 14.5\n        },\n        {\n            \"id\": 118747,\n            \"valor\": 15.48\n        },\n        {\n            \"id\": 118705,\n            \"valor\": 14.67\n        },\n        {\n            \"id\": 118726,\n            \"valor\": 15.07\n        },\n        {\n            \"id\": 118748,\n            \"valor\": 16.55\n        },\n        {\n            \"id\": 118706,\n            \"valor\": 15.74\n        },\n        {\n            \"id\": 118727,\n            \"valor\": 16.13\n        },\n        {\n            \"id\": 118749,\n            \"valor\": 17.12\n        },\n        {\n            \"id\": 118707,\n            \"valor\": 16.31\n        },\n        {\n            \"id\": 118728,\n            \"valor\": 16.7\n        },\n        {\n            \"id\": 118750,\n            \"valor\": 17.69\n        },\n        {\n            \"id\": 118708,\n            \"valor\": 16.88\n        },\n        {\n            \"id\": 118729,\n            \"valor\": 17.27\n        },\n        {\n            \"id\": 118686,\n            \"valor\": 1.99\n        },\n        {\n            \"id\": 118685,\n            \"valor\": 0.89\n        },\n        {\n            \"id\": 118684,\n            \"valor\": 0.89\n        },\n        {\n            \"id\": 118751,\n            \"valor\": 0.89\n        }\n    ],\n    \"codBanco\": \"237\",\n    \"agencia\": \"1563\",\n    \"digAgencia\": \"09\",\n    \"numConta\": \"570001\",\n    \"digConta\": \"9\",\n    \"protocoloCore\": \"51802678468\",\n    \"hashAceite\": \"VGVybW8gZGUgYWNlaXRlIENsaW5pQ29ycDogQ09OVFJBVE9DTElOSVBBWSBWZXJzw6NvIGRvIGFycXVpdm86IDY3MTE5MjEwNDU0MDU2OTYgTm9tZTogbHVjYXMgRGF0YSBlIGhvcmE6IDIwMjQtMDQtMDJUMTE6MTE6NDIuNDY4WiBJcCBkZSBhY2VpdGU6IDo6ZmZmZjoxNjkuMjU0LjEuMQ\",\n    \"terminais\": [],\n    \"documentosSocios\": [\n        {\n            \"identificacao\": \"51802678468\",\n            \"anexos\": [\n                {\n                    \"nomeArquivo\": \"semAnexo.jpg\",\n                    \"conteudo\": \"EM BRANCO\",\n                    \"tipo\": \"BRANCO\"\n                }\n            ]\n        }\n    ],\n    \"anexos\": [\n        {\n            \"nomeArquivo\": \"semAnexo.jpg\",\n            \"conteudo\": \"EM BRANCO\",\n            \"tipo\": \"BRANCO\"\n        }\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "numero-serie",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NDc0MTk5MDIsImlhdCI6MTc0NzQxOTYwMiwianRpIjoiNmM5MGQ2ZTEtM2ZkMy00ODI0LTk1MmItY2I5MmQ4ZGI2ZTcyIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6ImNhYzc4YTU5LWViNWUtNDY5ZS05ZTMxLTE1MmJkNWYyMGNlYyIsInR5cCI6IkJlYXJlciIsImF6cCI6IjQyODQyMDc5MDAwMTQ4LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfVVBEQVRFX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19BUElfV0wiLCJST0xFX0JZX05PTUVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9BRElUSVZPX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX1dFQkhPT0tfQUNFSVRFX0FQSV9XTCIsIlJPTEVfSU5ESUNBRE9SRVNfQ0FEQVNUUkFJU19BUElfV0wiLCJST0xFX0JVU0NBX1BST1RPQ09MT1NfQVBJX1dMIiwiUk9MRV9CWV9DTlBKX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfU1BMSVRfQVBJX1dMIiwiUk9MRV9DT05GSUdVUkFfRVFVSVBBTUVOVE9fQVBJX1dMIiwiUk9MRV9DUkVERU5DSUFNRU5UT19XTCIsIlJPTEVfQ0FOQ0VMQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX1NBVkVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9CWV9DT05WRU5JQURBSURfTE9HQURBX0FQSV9XTCIsIlJPTEVfUkVMQVRPUklPX0VTVE9STk9fQVBJX1dMIiwiUk9MRV9WRU5EQVNfQ09OU09MSURBREFTX0FQSV9XTCIsIlJPTEVfQllfQ09OU1VMVEFfQ0VTVEFfQVBJX1dMIl19LCJzY29wZSI6ImVtYWlsIHdsLmFwaV9hY3F1aXJlci5hcGkgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiY2xpZW50SG9zdCI6IjEwLjIuMTAuMTI0IiwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LTQyODQyMDc5MDAwMTQ4LWFwaS1hY3F1aXJlci53bCIsImNsaWVudEFkZHJlc3MiOiIxMC4yLjEwLjEyNCIsImNsaWVudF9pZCI6IjQyODQyMDc5MDAwMTQ4LWFwaS1hY3F1aXJlci53bCJ9.JHQ2asSxLub5kg0Jsnl_6g4YgCbKNySq3MK6eCKobu4inrgZ4-LE8BAEMHDJPR_pvSVBrRo2dG1kZxFUn2aFFdSNDP-aMzT0VqAWYTcXuVw4C60WsB5phN0Dkwogqel0Rc7LrFRiDabjQl9WgnWHvrTXW8PbSd1A-Ix_JjxJfc6DptI-jlZ6_9bZkI6hT8aebJWrsDgpSHHTrSLcnnJph1w2l5QU3OotuQu3JUsN7v4-riMeiYZzU87um-KY0fxs71MrHQOdZ4M_nnGB0ssip_yr-bvDjhjumOxCDvpnbS-OVSqaRWIOBG198K9Wnc-OvFe7KVHQ493pbj-IeXjfkQ",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/historico/v2/numero-serie?dataAtivacaoInicial=2014-01-06&dataAtivacaoFinal=2090-04-12&contrato=02926827",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "historico",
+            "v2",
+            "numero-serie"
+          ],
+          "query": [
+            {
+              "key": "dataAtivacaoInicial",
+              "value": "2014-01-06"
+            },
+            {
+              "key": "dataAtivacaoFinal",
+              "value": "2090-04-12"
+            },
+            {
+              "key": "contrato",
+              "value": "02926827"
+            },
+            {
+              "key": "cpfCnpj",
+              "value": ""
+            },
+            {
+              "key": "numeroSerie",
+              "value": ""
+            },
+            {
+              "key": "dataInativacaoInicial",
+              "value": ""
+            },
+            {
+              "key": "dataInativacaoFinal",
+              "value": ""
+            }
+          ],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "obtem Relatorio Vendas Consolidado",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTA0NDIzMzIsImlhdCI6MTc1MDQ0MjAzMiwianRpIjoiM2QzNjc3ZDAtODRhMi00NmVkLTkzZDgtY2UxODM0OGQwNTc5IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjIyZmQ0ZDI4LTEyYjgtNGU2Yi1iYzRiLTNkZTg3Mzk3NTdiMSIsInR5cCI6IkJlYXJlciIsImF6cCI6IjQzOTM3MTQ2MDAwMTcwLWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfVVBEQVRFX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19BUElfV0wiLCJST0xFX0JZX05PTUVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9BRElUSVZPX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX1dFQkhPT0tfQUNFSVRFX0FQSV9XTCIsIlJPTEVfUFJPQ0VTU0FfQ1JFREVOQ0lBTUVOVE9fU0FMRVNfRk9SQ0UiLCJST0xFX0lORElDQURPUkVTX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9QUk9UT0NPTE9TX0FQSV9XTCIsIlJPTEVfQllfQ05QSl9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX1NQTElUX0FQSV9XTCIsIlJPTEVfQ09ORklHVVJBX0VRVUlQQU1FTlRPX0FQSV9XTCIsIlJPTEVfQ1JFREVOQ0lBTUVOVE9fV0wiLCJST0xFX0NBTkNFTEFfUkVHSVNUUk9fU1BMSVRfQVBJX1dMIiwiUk9MRV9TQVZFX0NBTkFMX0FQSV9XTCIsIlJPTEVfQllfQ09OVkVOSUFEQUlEX0xPR0FEQV9BUElfV0wiLCJST0xFX1JFTEFUT1JJT19FU1RPUk5PX0FQSV9XTCIsIlJPTEVfVkVOREFTX0NPTlNPTElEQURBU19BUElfV0wiLCJST0xFX0JZX0NPTlNVTFRBX0NFU1RBX0FQSV9XTCJdfSwic2NvcGUiOiJlbWFpbCB3bC5hcGlfYWNxdWlyZXIuYXBpIHByb2ZpbGUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImNsaWVudEhvc3QiOiIxMC4yLjEwLjEyNCIsInByZWZlcnJlZF91c2VybmFtZSI6InNlcnZpY2UtYWNjb3VudC00MzkzNzE0NjAwMDE3MC1hcGktYWNxdWlyZXIud2wiLCJjbGllbnRBZGRyZXNzIjoiMTAuMi4xMC4xMjQiLCJjbGllbnRfaWQiOiI0MzkzNzE0NjAwMDE3MC1hcGktYWNxdWlyZXIud2wifQ.m1XYiHZeGTenIt_IwJDAZEVlut8fnlVcfj9-Pkr0xy0oGOfxI4ZrRQic0Bvo1mW21J5qnLDbCo51v97ak_A5LvDOj8QxyPf3esraCT8ow1SMKtdNNea0BSqfKyMVsTIW4DT_s9-l_sWEloe_Qmm-jTn2D4MOola_Y0O6T6Eo269T-MhKn_pmuxxSR5RhzNJGSb3d6ktvZhmKI3L4X8voqYrIQfAahs2juiPwiA17JOzSU4Y7wdEOudUD4TAkd8Bkv1cLGXGEaWs7iiGATl2-CGK50oxzLKRn8t4Yetp8NH8IPOKffam_SJSivzEqFScHzCi_3vrnzz3OwEeaFkW_bw",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/relatorio/v2/obtemRelatorioVendasConsolidado?memberId=6313886&dataInicial=2016-03-03&dataFinal=2025-12-25",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "relatorio",
+            "v2",
+            "obtemRelatorioVendasConsolidado"
+          ],
+          "query": [
+            {
+              "key": "memberId",
+              "value": "6313886"
+            },
+            {
+              "key": "dataInicial",
+              "value": "2016-03-03"
+            },
+            {
+              "key": "dataFinal",
+              "value": "2025-12-25"
+            }
+          ],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"cgcCpf\" : \"39566077000169\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "save canal",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NjE3NDY0NTIsImlhdCI6MTc2MTc0NjE1MiwianRpIjoiODJjNzJkMzEtNGY2My00ODA2LWIyMWEtYzVjZmNkZmVlNDY0IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6IjdmNGNhNGVkLTkzMjAtNGU5Ny04YjA0LTc0YTUwN2QwN2JiMyIsInR5cCI6IkJlYXJlciIsImF6cCI6IjUyMjMwOTMyMDAwMTI0LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19WMl9BUElfV0wiLCJST0xFX1VQREFURV9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX0FESVRJVk9fQVBJX1dMIiwiUk9MRV9CWV9OT01FX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQ0FEQVNUUk9fRUNPTU1FUkNFX1BBUkFfUEFSQ0VJUk9TX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX0FDRVNTT1NfQUNJX1BBUkFfUEFSQ0VJUk9TIiwiUk9MRV9XRUJIT09LX0FDRUlURV9BUElfV0wiLCJST0xFX1BST0NFU1NBX0NSRURFTkNJQU1FTlRPX1NBTEVTX0ZPUkNFIiwiUk9MRV9JTkRJQ0FET1JFU19DQURBU1RSQUlTX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUFJPVE9DT0xPU19BUElfV0wiLCJST0xFX0JZX0NOUEpfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9BUElfV0wiLCJST0xFX0NPTkZJR1VSQV9FUVVJUEFNRU5UT19BUElfV0wiLCJST0xFX0NSRURFTkNJQU1FTlRPX1dMIiwiUk9MRV9DQU5DRUxBX1JFR0lTVFJPX1NQTElUX0FQSV9XTCIsIlJPTEVfU0FWRV9DQU5BTF9BUElfV0wiLCJST0xFX0JZX0NPTlZFTklBREFJRF9MT0dBREFfQVBJX1dMIiwiUk9MRV9SRUxBVE9SSU9fRVNUT1JOT19BUElfV0wiLCJST0xFX1ZFTkRBU19DT05TT0xJREFEQVNfQVBJX1dMIiwiUk9MRV9CWV9DT05TVUxUQV9DRVNUQV9BUElfV0wiXX0sInNjb3BlIjoiZW1haWwgd2wuYXBpX2FjcXVpcmVyLmFwaSBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtNTIyMzA5MzIwMDAxMjQtYXBpLWFjcXVpcmVyLndsIiwiY2xpZW50QWRkcmVzcyI6IjEwLjIuMTAuMTI0IiwiY2xpZW50X2lkIjoiNTIyMzA5MzIwMDAxMjQtYXBpLWFjcXVpcmVyLndsIn0.AuOyOyGhSt6ggw7WJ-zbnMi4gYE-nrOughd9As2CxBKhebJg9X6_-17cX4LQmwAtf2Ic0ldm2C-D10dqmTbajRF0fJdwqYushIiHFK9OsxhDnhOR7xDHBF_53g5nDG4SrukM1wqsijYgfB23icSq9hirJQqYIsx2czJ51vcbKoY7lz254riLDa1u3zaR6kBvPfXb9BAVTtwLVFg0tX9vCVGnH-aF0kTerqSS_rF3VOl0Eqml3PMDPdf5aQBRJJRAANIfE_vHe2Bu6VefIoAo5IDrdqCooluNYVoxpCM5-O2K_BPlzjWEfN_fTFJL7YPJ5Z7PG9ga568kk1dULSHvpQ",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/canal/cadastrar",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "canal",
+            "cadastrar"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cnpj\": \"54430621000134\",\n  \"nome\": \"WALL BENEFICIOS E INSTITUICAO DE PAGAMENTOS LTDA\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "update canal",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": {
+            "key": "token",
+            "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsdXlMSkZfbjN5UEdJVS1hUV9sdjRLdWx2NnU5ODktQVBhQlRkNmUzalY4In0.eyJleHAiOjE3NTE5MjA1MDQsImlhdCI6MTc1MTkyMDIwNCwianRpIjoiYmJmYTVjMGYtNWMyYi00OTA0LTk4NmEtNjkwYzQxMjM4ZTY1IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay1xYS52YWxlY2FyZC5jb20uYnIvcmVhbG1zL293biIsInN1YiI6ImJhZWE1OGIwLTU1NWYtNDJkOC04ZDViLTMwMzVjYzY2ZWUxMCIsInR5cCI6IkJlYXJlciIsImF6cCI6IjA3Njk3MjQ1MDAwMTY5LWFwaS1hY3F1aXJlci53bCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiUk9MRV9DT05TVUxUQV9MSVFVSURBQ09FU19BUElfV0wiLCJST0xFX0JVU0NBX1RSQU5TQUNPRVNfR0VSQUlTX0FQSV9XTCIsIlJPTEVfVVBEQVRFX0NBTkFMX0FQSV9XTCIsIlJPTEVfUkVHSVNUUkFfQURJVElWT19BUElfV0wiLCJST0xFX0JZX05PTUVfQ0FOQUxfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9BRElUSVZPX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9SRUdJU1RST19TUExJVF9BUElfV0wiLCJST0xFX0lOVEVHUkFDQU9fUFJPVE9DT0xPX0FQSV9XTCIsIlJPTEVfQlVTQ0FfUEFSQ0VMQVNfQVBJX1dMIiwiUk9MRV9DT05TVUxUQV9BVElWSURBREVfQVBJX1dMIiwiUk9MRV9SRUdJU1RSQV9TUExJVF9UUkFOU0FDVElPTl9BUElfV0wiLCJST0xFX0RFU0FUSVZBX1NQTElUX1RSQU5TQUNUSU9OX0FQSV9XTCIsIlJPTEVfSElTVE9SSUNPX05VTUVST19TRVJJRV9BUElfV0wiLCJST0xFX1dFQkhPT0tfQUNFSVRFX0FQSV9XTCIsIlJPTEVfUFJPQ0VTU0FfQ1JFREVOQ0lBTUVOVE9fU0FMRVNfRk9SQ0UiLCJST0xFX0lORElDQURPUkVTX0NBREFTVFJBSVNfQVBJX1dMIiwiUk9MRV9CVVNDQV9QUk9UT0NPTE9TX0FQSV9XTCIsIlJPTEVfQllfQ05QSl9DQU5BTF9BUElfV0wiLCJST0xFX1JFR0lTVFJBX1NQTElUX0FQSV9XTCIsIlJPTEVfQ09ORklHVVJBX0VRVUlQQU1FTlRPX0FQSV9XTCIsIlJPTEVfQ1JFREVOQ0lBTUVOVE9fV0wiLCJST0xFX0NBTkNFTEFfUkVHSVNUUk9fU1BMSVRfQVBJX1dMIiwiUk9MRV9TQVZFX0NBTkFMX0FQSV9XTCIsIlJPTEVfQllfQ09OVkVOSUFEQUlEX0xPR0FEQV9BUElfV0wiLCJST0xFX1JFTEFUT1JJT19FU1RPUk5PX0FQSV9XTCIsIlJPTEVfVkVOREFTX0NPTlNPTElEQURBU19BUElfV0wiLCJST0xFX0JZX0NPTlNVTFRBX0NFU1RBX0FQSV9XTCJdfSwic2NvcGUiOiJlbWFpbCB3bC5hcGlfYWNxdWlyZXIuYXBpIHByb2ZpbGUiLCJjbGllbnRIb3N0IjoiMTAuMi4xMC4xMjQiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InNlcnZpY2UtYWNjb3VudC0wNzY5NzI0NTAwMDE2OS1hcGktYWNxdWlyZXIud2wiLCJjbGllbnRBZGRyZXNzIjoiMTAuMi4xMC4xMjQiLCJjbGllbnRfaWQiOiIwNzY5NzI0NTAwMDE2OS1hcGktYWNxdWlyZXIud2wifQ.S-RH18Gm8_JvKI8rrH2O1Y3nRzbQX3xsclnhPDiHnnHrdWANoasWH-UD8BFHCzHsBfngTty-RDms2ipN6Ej6wHDrJBuswWNAcAYN1Q8IHCu9Dfjjf4Y-aJB2ylBcvnaHIHMaSlbzEXUza6jSgSP5zuoRx2jlDmcBbgvfqQbrUR8nY8NhrSc77kXilpizz_JaHSCaydN_i1C4sudqIcvjLv4EzMEdOxIQc4MumqoohLMkMfb6wI2WERx2lkCLDvnmfQHSVIM1ChBceJJGEn4SIeSB9-0JpvyNRagenll5I1wPdWDdP3JsGtu7qr6VGHg4Ej14-gZ9DOb5DTm4l9MEhw",
+            "type": "string"
+          }
+        },
+        "description": "",
+        "url": {
+          "raw": "https://acquirer-qa.own.financial/agilli/canal/update/47",
+          "protocol": "https",
+          "host": [
+            "acquirer-qa",
+            "own",
+            "financial"
+          ],
+          "path": [
+            "agilli",
+            "canal",
+            "update",
+            "47"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"WALL BENEFICIOS E INSTITUICAO DE PAGAMENTOS LTDA\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "variable": []
+}

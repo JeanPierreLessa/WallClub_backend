@@ -29,8 +29,17 @@ from sistema_bancario.services_lancamento_manual import LancamentoManualService
 @require_secao_permitida('pagamentos')
 def pagamentos_list(request):
     """
-    Lista pagamentos com filtros por NSU e data de criação.
-    Por padrão, não mostra nenhum registro (função básica é inserção).
+    Tela de carga de pagamentos via CSV (tabela editável).
+    """
+    context = {}
+    return render(request, 'portais/admin/pagamentos_list.html', context)
+
+
+@require_secao_permitida('pagamentos')
+def pagamentos_busca(request):
+    """
+    Busca pagamentos com filtros por NSU e data de criação.
+    Retorna lista somente leitura.
     """
     
     # Filtros
@@ -63,7 +72,7 @@ def pagamentos_list(request):
         'has_filters': bool(search_nsu or search_data_inicio or search_data_fim),
     }
     
-    return render(request, 'portais/admin/pagamentos_list.html', context)
+    return render(request, 'portais/admin/pagamentos_busca.html', context)
 
 
 @require_acesso_padronizado('pagamentos_create')
