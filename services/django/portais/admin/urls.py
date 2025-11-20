@@ -94,13 +94,11 @@ urlpatterns = [
     path('terminais/<int:pk>/deletar/', views_terminais.terminal_delete, name='terminal_delete'),
     
     # Lançamentos Manuais
-    path('lancamentos-manuais/', views_pagamentos.lancamentos_manuais_list, name='lancamentos_manuais_list'),
-    path('lancamentos-manuais/novo/', views_pagamentos.lancamento_manual_form, name='lancamento_manual_form'),
-    path('lancamentos-manuais/criar/', views_pagamentos.lancamento_manual_create, name='lancamento_manual_create'),
-    path('lancamentos-manuais/<int:lancamento_id>/atualizar/', views_pagamentos.lancamento_manual_update, name='lancamento_manual_update'),
-    path('lancamentos-manuais/<int:lancamento_id>/cancelar/', views_pagamentos.lancamento_manual_cancel, name='lancamento_manual_cancel'),
-    path('lancamentos-manuais/<int:lancamento_id>/processar/', views_pagamentos.lancamento_manual_process, name='lancamento_manual_process'),
-    path('lancamentos-manuais/<int:lancamento_id>/', views_pagamentos.lancamento_manual_detail, name='lancamento_manual_detail'),
+    path('lancamentos_manuais/', views_pagamentos.lancamentos_manuais_list, name='lancamentos_manuais_list'),
+    path('lancamentos_manuais/novo/', views_pagamentos.lancamento_manual_form, name='lancamento_manual_form'),
+    path('lancamentos_manuais/criar/', views_pagamentos.lancamento_manual_create, name='lancamento_manual_create'),
+    path('lancamentos_manuais/<int:lancamento_id>/atualizar/', views_pagamentos.lancamento_manual_update, name='lancamento_manual_update'),
+    path('lancamentos_manuais/<int:lancamento_id>/', views_pagamentos.lancamento_manual_detail, name='lancamento_manual_detail'),
     
     # AJAX endpoints para referências dinâmicas
     path('ajax_lojas/', views.ajax_lojas, name='ajax_lojas'),

@@ -449,6 +449,7 @@ def pagamentos_bulk_create(request):
         created_count = 0
         errors = []
         
+        # FASE 1: Criar pagamentos dentro de transação atômica
         with transaction.atomic():
             for i, pagamento_data in enumerate(pagamentos_data):
                 try:
@@ -515,6 +516,9 @@ def pagamentos_bulk_create(request):
                     import traceback
                     registrar_log('portais.admin', f'BULK CREATE - Traceback: {traceback.format_exc()}', nivel='ERROR')
                     errors.append(f'Linha {i+1}: Erro - {str(e)}')
+        
+        # COMMIT JÁ FOI FEITO (saiu do with transaction.atomic)
+        registrar_log('portais.admin', f'BULK CREATE - Commit realizado: {created_count} pagamento(s) salvos')
         
         if errors:
             return JsonResponse({
@@ -716,7 +720,8 @@ def lancamento_manual_create(request):
             'descricao': data['descricao'],
             'motivo': data.get('motivo', ''),
             'observacoes': data.get('observacoes', ''),
-            'referencia_externa': data.get('referencia_externa', '')
+            'referencia_externa': data.get('referencia_externa', ''),
+            'status': data.get('status', 'pendente')  # Aceitar status do formulário
         }
         
         # Obter ID do usuário logado na sessão do portal

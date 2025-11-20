@@ -69,6 +69,24 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    <label for="status" class="form-label required-field">Status</label>
+                                    <select class="form-select" id="status" name="status" required>
+                                        <option value="pendente" selected>Pendente</option>
+                                        <option value="processado">Processado</option>
+                                        <option value="cancelado">Cancelado</option>
+                                    </select>
+                                    <div class="form-text">
+                                        <strong>Pendente:</strong> Aguardando processamento<br>
+                                        <strong>Processado:</strong> Aparece no portal lojista<br>
+                                        <strong>Cancelado:</strong> Não será processado
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
                                     <label for="valor" class="form-label required-field">Valor</label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>

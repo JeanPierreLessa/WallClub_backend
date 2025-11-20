@@ -48,6 +48,7 @@ class LancamentoManualService:
                     data_lancamento=dados.get('data_lancamento', datetime.now()),
                     valor=dados['valor'],
                     motivo=dados.get('motivo', ''),
+                    status=dados.get('status', 'pendente'),  # Aceitar status do formulário
                     observacoes=dados.get('observacoes', ''),
                     referencia_externa=dados.get('referencia_externa', '')
                 )
