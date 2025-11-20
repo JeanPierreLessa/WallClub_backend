@@ -180,9 +180,6 @@ class POSP2Service:
                 elif valor_com_desconto > valor_original:
                     mensagem_para_cliente = com_encargos
 
-                # Adicionado em 18/08/2025 (igual ao PHP)
-                if mensagem_para_cliente == sem_desconto:
-                    mensagem_para_cliente = ""
 
                 # Calcular cashback usando CalculadoraDesconto com wall='C'
                 valor_cashback = Decimal('0')
@@ -239,9 +236,6 @@ class POSP2Service:
                 elif valor_com_desconto > valor_original:
                     mensagem_para_cliente = com_encargos
 
-                # Adicionado em 18/08/2025 (igual ao PHP)
-                if mensagem_para_cliente == sem_desconto:
-                    mensagem_para_cliente = ""
 
                 # Calcular cashback usando CalculadoraDesconto com wall='C'
                 valor_cashback = Decimal('0')
