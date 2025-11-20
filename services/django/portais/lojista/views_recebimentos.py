@@ -185,7 +185,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 <td>R$ {item['outros_lancamentos']:,.2f}</td>
                 <td><strong>R$ {total_item:,.2f}</strong></td>
                 <td>
-                    <a href="/portal_lojista/recebimentos/detalhes/?data={item['data_recebimento_raw']}" 
+                    <a href="/recebimentos/detalhes/?data={item['data_recebimento_raw']}" 
                        class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-eye me-1"></i>Ver Detalhes
                     </a>
