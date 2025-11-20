@@ -751,7 +751,7 @@ class LojistaRecebimentosExportView(View):
         
         try:
             from django.db.models import Sum, Q
-            from sistema_bancario.models import LancamentoManual
+            from gestao_financeira.models import LancamentoManual
             
             # Usar RecebimentoService para buscar recebimentos agrupados
             from .services_recebimentos import RecebimentoService
@@ -974,7 +974,7 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
         
         try:
             from django.db.models import Q
-            from sistema_bancario.models import LancamentoManual
+            from gestao_financeira.models import LancamentoManual
             
             # Converter data para formato datetime - aceitar tanto YYYY-MM-DD quanto DD/MM/YYYY
             try:

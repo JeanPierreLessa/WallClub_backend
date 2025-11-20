@@ -174,7 +174,7 @@ class PagamentoService:
             
             # Log de auditoria bancária
             registrar_log(
-                'sistema_bancario.pagamentos',
+                'gestao_financeira.pagamentos',
                 f'Pagamento criado - NSU: {nsu_int} - Usuário: {usuario.nome} - '
                 f'Valores: var44={dados_validados.get("var44")}, var58={dados_validados.get("var58")}, '
                 f'var111={dados_validados.get("var111")}, var112={dados_validados.get("var112")} - '
@@ -244,7 +244,7 @@ class PagamentoService:
             }
             
             registrar_log(
-                'sistema_bancario.pagamentos',
+                'gestao_financeira.pagamentos',
                 f'Pagamento atualizado - NSU: {pagamento.nsu} - Usuário: {usuario.nome} - '
                 f'Valores anteriores: {valores_anteriores} - Valores novos: {valores_novos}'
             )
@@ -284,7 +284,7 @@ class PagamentoService:
             
             # Log de auditoria bancária
             registrar_log(
-                'sistema_bancario.pagamentos',
+                'gestao_financeira.pagamentos',
                 f'Pagamento excluído - NSU: {info_pagamento["nsu"]} - Usuário: {usuario.nome} - '
                 f'Valores: var44={info_pagamento["var44"]}, var58={info_pagamento["var58"]}, '
                 f'var111={info_pagamento["var111"]}, var112={info_pagamento["var112"]} - '
@@ -363,7 +363,7 @@ class PagamentoService:
         queryset = queryset.filter(filtros_q)
         
         registrar_log(
-            'sistema_bancario.recebimentos',
+            'gestao_financeira.recebimentos',
             f'Listando recebimentos - Filtros: {filtros} - Total: {queryset.count()}'
         )
         
@@ -449,7 +449,7 @@ class PagamentoService:
         }
         
         registrar_log(
-            'sistema_bancario.relatorios',
+            'gestao_financeira.relatorios',
             f'Relatório financeiro gerado - Lojas: {len(lojas_ids)} - '
             f'Transações: {total_transacoes} - Total: R$ {valor_total}'
         )
@@ -497,7 +497,7 @@ class PagamentoService:
                     erros.append(f'Linha {i}: Erro inesperado - {str(e)}')
         
         registrar_log(
-            'sistema_bancario.pagamentos',
+            'gestao_financeira.pagamentos',
             f'Lote processado - Criados: {len(criados)} - Erros: {len(erros)} - Usuário: {usuario.nome}',
             nivel='INFO' if not erros else 'WARNING'
         )
@@ -543,7 +543,7 @@ class PagamentoService:
                 nao_encontrados.append(nsu)
         
         registrar_log(
-            'sistema_bancario.conciliacao',
+            'gestao_financeira.conciliacao',
             f'Conciliação realizada - Encontrados: {len(encontrados)} - '
             f'Não encontrados: {len(nao_encontrados)}'
         )

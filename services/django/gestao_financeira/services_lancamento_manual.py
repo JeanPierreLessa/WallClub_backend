@@ -54,7 +54,7 @@ class LancamentoManualService:
                 )
                 
                 registrar_log(
-                    'sistema_bancario.lancamento_manual',
+                    'gestao_financeira.lancamento_manual',
                     f"Lançamento manual criado - ID: {lancamento.id}, Loja: {lancamento.loja_id}, "
                     f"Tipo: {lancamento.tipo_lancamento}, Valor: R$ {lancamento.valor}, "
                     f"Usuário: {id_usuario}"
@@ -64,7 +64,7 @@ class LancamentoManualService:
                 
         except Exception as e:
             registrar_log(
-                'sistema_bancario.lancamento_manual',
+                'gestao_financeira.lancamento_manual',
                 f"Erro ao criar lançamento manual - Usuário: {id_usuario}, Erro: {str(e)}"
             )
             raise
@@ -159,7 +159,7 @@ class LancamentoManualService:
                 lancamento.save()
                 
                 registrar_log(
-                    'sistema_bancario.lancamento_manual',
+                    'gestao_financeira.lancamento_manual',
                     f"Lançamento manual atualizado - ID: {lancamento.id}, "
                     f"Valores antigos: {valores_antigos}, "
                     f"Usuário: {id_usuario}"
@@ -171,7 +171,7 @@ class LancamentoManualService:
             raise ValidationError("Lançamento não encontrado")
         except Exception as e:
             registrar_log(
-                'sistema_bancario.lancamento_manual',
+                'gestao_financeira.lancamento_manual',
                 f"Erro ao atualizar lançamento manual - ID: {lancamento_id}, "
                 f"Usuário: {id_usuario}, Erro: {str(e)}"
             )
@@ -207,7 +207,7 @@ class LancamentoManualService:
                 lancamento.save()
                 
                 registrar_log(
-                    'sistema_bancario.lancamento_manual',
+                    'gestao_financeira.lancamento_manual',
                     f"Lançamento manual cancelado - ID: {lancamento.id}, "
                     f"Status anterior: {status_anterior}, "
                     f"Motivo: {motivo_cancelamento}, "
@@ -220,7 +220,7 @@ class LancamentoManualService:
             raise ValidationError("Lançamento não encontrado")
         except Exception as e:
             registrar_log(
-                'sistema_bancario.lancamento_manual',
+                'gestao_financeira.lancamento_manual',
                 f"Erro ao cancelar lançamento manual - ID: {lancamento_id}, "
                 f"Usuário: {id_usuario}, Erro: {str(e)}"
             )
@@ -253,7 +253,7 @@ class LancamentoManualService:
                 lancamento.save()
                 
                 registrar_log(
-                    'sistema_bancario.lancamento_manual',
+                    'gestao_financeira.lancamento_manual',
                     f"Lançamento manual processado - ID: {lancamento.id}, "
                     f"Status anterior: {status_anterior}, "
                     f"Usuário: {id_usuario}"
@@ -265,7 +265,7 @@ class LancamentoManualService:
             raise ValidationError("Lançamento não encontrado")
         except Exception as e:
             registrar_log(
-                'sistema_bancario.lancamento_manual',
+                'gestao_financeira.lancamento_manual',
                 f"Erro ao processar lançamento manual - ID: {lancamento_id}, "
                 f"Usuário: {id_usuario}, Erro: {str(e)}"
             )
