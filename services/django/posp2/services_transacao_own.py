@@ -179,12 +179,16 @@ class TRDataOwnService:
             # 11. Gerar JSON de resposta para impressão do slip
             json_resposta = self._gerar_slip_impressao(dados_para_inserir, info_loja, cpf, nome)
             
-            # 11. Retornar dados completos para comprovante
-            return {
+            # 12. Retornar dados completos para comprovante
+            resposta_final = {
                 'sucesso': True,
                 'mensagem': 'Dados processados com sucesso',
                 **json_resposta
             }
+            
+            registrar_log('posp2', f'JSON de Resposta: {json.dumps(resposta_final, ensure_ascii=False)}')
+            
+            return resposta_final
             
         except Exception as e:
             import traceback
