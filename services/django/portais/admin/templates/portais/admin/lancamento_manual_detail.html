@@ -12,23 +12,9 @@
 
 {% block content %}
 <div class="page-header-compact">
-    <div class="d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-hand-holding-usd me-2" style="color: var(--primary-color);"></i>
-            <h1 class="mb-0">Lançamento Manual #{{ lancamento.id }}</h1>
-        </div>
-        <div>
-            {% if lancamento.status == 'pendente' %}
-            <button type="button" class="btn btn-success btn-colorido me-2" 
-                    onclick="processarLancamento({{ lancamento.id }})">
-                <i class="fas fa-check me-1"></i> Processar
-            </button>
-            <button type="button" class="btn btn-danger btn-colorido" 
-                    onclick="cancelarLancamento({{ lancamento.id }})">
-                <i class="fas fa-times me-1"></i> Cancelar
-            </button>
-            {% endif %}
-        </div>
+    <div class="d-flex align-items-center">
+        <i class="fas fa-hand-holding-usd me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Lançamento Manual #{{ lancamento.id }}</h1>
     </div>
 </div>
 
@@ -201,68 +187,4 @@
     {% endif %}
 </div>
 
-<script>
-function processarLancamento(lancamentoId) {
-    if (confirm('Tem certeza que deseja processar este lançamento?')) {
-        fetch(`{% url 'portais_admin:lancamento_manual_process' 0 %}`.replace('0', lancamentoId), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || '{{ csrf_token }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro interno. Verifique o console para mais detalhes.');
-        });
-    }
-}
-
-function cancelarLancamento(lancamentoId) {
-    const motivo = prompt('Informe o motivo do cancelamento:');
-    if (motivo) {
-        fetch(`{% url 'portais_admin:lancamento_manual_cancel' 0 %}`.replace('0', lancamentoId), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ motivo: motivo })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro interno. Verifique o console para mais detalhes.');
-        });
-    }
-}
-
-// Adicionar token CSRF se não existir
-document.addEventListener('DOMContentLoaded', function() {
-    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = '{{ csrf_token }}';
-        document.body.appendChild(csrfInput);
-    }
-});
-</script>
 {% endblock %}
