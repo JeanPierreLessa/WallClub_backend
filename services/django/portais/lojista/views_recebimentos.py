@@ -790,7 +790,7 @@ class LojistaRecebimentosExportView(View):
             results.sort(key=lambda x: datetime.strptime(x['Data Recebimento'], '%d/%m/%Y'), reverse=True)
             
             # Coletar nomes únicos das lojas para o rodapé
-            lojas_incluidas = [loja['nome'] for loja in lojas_acesso if loja['id'] in lojas_para_consulta]
+            lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
             
             # Definir colunas monetárias para formatação
             colunas_monetarias = ['Valor Repasse (R$)', 'Valor Rebate (R$)', 'Outros Lançamentos (R$)', 'Total Líquido (R$)']
@@ -891,7 +891,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 })
             
             # Coletar nomes únicos das lojas para o rodapé
-            lojas_incluidas = [loja['nome'] for loja in lojas_acesso if loja['id'] in lojas_para_consulta]
+            lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
             
             # Definir colunas monetárias para formatação
             colunas_monetarias = ['Valor Bruto (R$)', 'Valor Líquido (R$)', 'Valor Rebate (R$)']
@@ -1012,7 +1012,7 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
                 })
             
             # Coletar nomes únicos das lojas para o rodapé
-            lojas_incluidas = [loja['nome'] for loja in lojas_acesso if loja['id'] in lojas_para_consulta]
+            lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
             
             # Definir colunas monetárias para formatação
             colunas_monetarias = ['Valor (R$)']

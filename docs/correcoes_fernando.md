@@ -6,10 +6,6 @@ Status Pgto	Data Pgto	Plano -> colunas devem estar mapeadas erradas
 - tirar coluna taxa de ADM
 - Status transacao ta inutil (so mostra aprovados)
 
-tela de recebimentos
-- detalhe dando pau
-- deixar cabecalho com total liquido tb
-
 tela de cancelamento
 - deixar as mesmas colunas de venda
 
@@ -33,4 +29,5 @@ tirar o texto com encargos nas simulacoes  (mantem so com desconto)
     - Texto trocado de "Total Recebido" para "Total Líquido"
     - Ajustada coluna PLANO
     - Removida coluna Status transacao
+    - Tela de detalhes ajustada
 - Tela de vendas lojist

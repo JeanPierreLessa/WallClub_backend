@@ -222,9 +222,9 @@ class RecebimentoService:
                 'valor_recebimento': transacao.var44,  # var44 é o valor correto
                 'data_transacao': transacao.data_transacao,
                 'data_recebimento': transacao.var45,
-                'bandeira': transacao.var4,
+                'bandeira': transacao.var12,
                 'parcelas': transacao.var13,
-                'plano': transacao.var12,
+                'plano': transacao.var8,
             })
         
         registrar_log(
