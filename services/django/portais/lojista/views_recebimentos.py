@@ -389,15 +389,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                     
                     # Buscar nome da loja
                     nome_loja = f"Loja {transacao['loja_id']}"
-                    try:
-                        from portais.controle_acesso.filtros import FiltrosAcessoService
-                        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
-                        for loja_info in lojas_acessiveis:
-                            if loja_info.get('id') == transacao['loja_id']:
-                                nome_loja = loja_info.get('nome', nome_loja)[:10]
-                                break
-                    except:
-                        pass
+                    for loja_info in lojas_acessiveis:
+                        if loja_info.get('id') == transacao['loja_id']:
+                            nome_loja = loja_info.get('nome', nome_loja)
+                            break
                     
                     row_dict = {
                         'Loja': nome_loja,
@@ -427,15 +422,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 for lancamento in lancamentos_list:
                     # Buscar nome da loja
                     nome_loja = f"Loja {lancamento['loja_id']}"
-                    try:
-                        from portais.controle_acesso.filtros import FiltrosAcessoService
-                        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
-                        for loja_info in lojas_acessiveis:
-                            if loja_info.get('id') == lancamento['loja_id']:
-                                nome_loja = loja_info.get('nome', nome_loja)[:10]
-                                break
-                    except:
-                        pass
+                    for loja_info in lojas_acessiveis:
+                        if loja_info.get('id') == lancamento['loja_id']:
+                            nome_loja = loja_info.get('nome', nome_loja)
+                            break
                     
                     lancamentos_manuais.append({
                         'Loja': nome_loja,
@@ -900,7 +890,9 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
             if not results:
                 return JsonResponse({'error': 'Nenhuma transação encontrada para a data especificada'}, status=404)
             
-            nome_arquivo = f"transacoes_vendas_{data_formatada.replace('/', '')}_{datetime.now().strftime('%H%M%S')}"
+            # Formatar data para nome do arquivo
+            data_formatada = data_recebimento.replace('-', '').replace('/', '')
+            nome_arquivo = f"transacoes_vendas_{data_formatada}_{datetime.now().strftime('%H%M%S')}"
             
             if formato == 'excel':
                 return exportar_excel(
