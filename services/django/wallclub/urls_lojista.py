@@ -15,7 +15,6 @@ urlpatterns = [
     
     # Portal Lojista na raiz
     path('', include('portais.lojista.urls', namespace='lojista')),
-    path('<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),
 ]
 
 # APIs Internas (comunicação entre containers)

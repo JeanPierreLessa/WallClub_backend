@@ -27,7 +27,7 @@ POS
 tirar o texto com encargos nas simulacoes  (mantem so com desconto)
 
 
-Ajustes
+--> Portal lojista <---
 - Tela de recebimento
     - Lancamento manual aparecendo ok
     - Texto trocado de "Total Recebido" para "Total Líquido"
