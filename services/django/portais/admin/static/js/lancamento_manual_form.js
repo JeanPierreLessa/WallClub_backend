@@ -86,7 +86,8 @@ function enviar_dados_lancamento(dados) {
     .then(data => {
         if (data.success) {
             mostrar_modal_sucesso(data.message, function() {
-                window.location.href = '/lancamentos_manuais/';
+                // Redirecionar para página de detalhes do lançamento criado
+                window.location.href = `/lancamentos_manuais/${data.lancamento_id}/`;
             });
         } else {
             mostrar_modal_erro('Erro: ' + data.message);

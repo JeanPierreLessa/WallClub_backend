@@ -125,13 +125,13 @@
                     <td class="monetary">R$ {{ lancamento.valor|floatformat:2 }}</td>
                     <td>{{ lancamento.descricao|truncatechars:50 }}</td>
                     <td>
-                        <select class="form-select form-select-sm status-select" 
-                                data-lancamento-id="{{ lancamento.id }}" 
-                                data-status-original="{{ lancamento.status }}">
-                            <option value="pendente" {% if lancamento.status == 'pendente' %}selected{% endif %}>Pendente</option>
-                            <option value="processado" {% if lancamento.status == 'processado' %}selected{% endif %}>Processado</option>
-                            <option value="cancelado" {% if lancamento.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
-                        </select>
+                        {% if lancamento.status == 'pendente' %}
+                            <span class="badge bg-warning text-dark">Pendente</span>
+                        {% elif lancamento.status == 'processado' %}
+                            <span class="badge bg-success">Processado</span>
+                        {% else %}
+                            <span class="badge bg-danger">Cancelado</span>
+                        {% endif %}
                     </td>
                     <td>{{ lancamento.data_lancamento|date:"d/m/Y H:i" }}</td>
                     <td>
@@ -251,72 +251,4 @@
 
 {% block extra_js %}
 <script src="{% static 'js/lancamentos_manuais_list.js' %}"></script>
-<script>
-// Salvar status automaticamente quando alterado
-document.querySelectorAll('.status-select').forEach(select => {
-    select.addEventListener('change', function() {
-        const lancamentoId = this.dataset.lancamentoId;
-        const novoStatus = this.value;
-        const statusOriginal = this.dataset.statusOriginal;
-        const selectElement = this;
-        
-        // Desabilitar select durante salvamento
-        selectElement.disabled = true;
-        
-        // Fazer requisição AJAX para atualizar
-        fetch(`{% url 'portais_admin:lancamentos_manuais_list' %}`.replace('lancamentos_manuais/', `lancamentos_manuais/${lancamentoId}/atualizar/`), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                status: novoStatus
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Atualizar status original
-                selectElement.dataset.statusOriginal = novoStatus;
-                
-                // Feedback visual
-                selectElement.style.backgroundColor = '#d4edda';
-                setTimeout(() => {
-                    selectElement.style.backgroundColor = '';
-                }, 1000);
-                
-                // Toast de sucesso
-                showToast('Status atualizado com sucesso!', 'success');
-            } else {
-                // Reverter para status original
-                selectElement.value = statusOriginal;
-                showToast('Erro ao atualizar status: ' + data.message, 'error');
-            }
-        })
-        .catch(error => {
-            // Reverter para status original
-            selectElement.value = statusOriginal;
-            showToast('Erro ao atualizar status', 'error');
-            console.error('Erro:', error);
-        })
-        .finally(() => {
-            selectElement.disabled = false;
-        });
-    });
-});
-
-// Função para mostrar toast
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
-    toast.style.zIndex = '9999';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
-</script>
 {% endblock %}
