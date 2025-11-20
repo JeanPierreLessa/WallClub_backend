@@ -88,7 +88,8 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if request.session.portal_usuario_nivel == 'admin_total' %}
+                        {% load controle_acesso_tags %}
+                        {% if request.portal_usuario|nivel_portal:'admin' == 'admin_total' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'lancamentos_manuais' in request.resolver_match.url_name or 'lancamento_manual' in request.resolver_match.url_name %}active{% endif %}" 
                                href="{% url 'portais_admin:lancamentos_manuais_list' %}">

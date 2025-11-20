@@ -13,184 +13,53 @@
 {% block content %}
 <div class="page-header-compact">
     <div class="d-flex align-items-center">
-        <i class="fas fa-money-bill-wave me-2" style="color: var(--primary-color);"></i>
-        <h1 class="mb-0">Pagamentos</h1>
+        <i class="fas fa-upload me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Carga de Pagamentos (CSV)</h1>
     </div>
 </div>
 
 <div class="container-fluid">
-
-    <!-- Filtros no topo -->
-    <div class="filters-top">
-        <form method="get" class="filters-form d-flex align-items-end gap-3">
-            <div class="form-group">
-                <label for="nsu">NSU</label>
-                <input type="text" id="nsu" name="nsu" value="{{ search_nsu }}" placeholder="Digite o NSU..."
-                    maxlength="10" pattern="[0-9]{1,10}" class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="data_inicio">Data Início</label>
-                <input type="date" id="data_inicio" name="data_inicio" value="{{ search_data_inicio }}"
-                    class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="data_fim">Data Fim</label>
-                <input type="date" id="data_fim" name="data_fim" value="{{ search_data_fim }}" class="form-control">
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-success btn-colorido">
-                    <i class="fas fa-search me-1"></i> Buscar
-                </button>
-                {% tem_acesso 'pagamentos_create' as pode_criar %}
-                {% if pode_criar %}
-                <a href="{% url 'portais_admin:pagamentos_carga' %}" class="btn btn-primary btn-colorido ms-2">
-                    <i class="fas fa-upload me-1"></i> Carregar Pagamentos (CSV)
-                </a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
-
-    <!-- Resultados da Busca -->
-    {% if pagamentos %}
+    <!-- Tabela Editável de Pagamentos -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-                <i class="fas fa-list me-2"></i>
-                Resultados da Busca
+                <i class="fas fa-table me-2"></i>
+                Cadastro de Pagamentos
             </h5>
+            <div>
+                <button type="button" class="btn btn-success btn-sm me-2" onclick="salvarPagamentos()">
+                    <i class="fas fa-save me-1"></i> Salvar Todos
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="limparTabela()">
+                    <i class="fas fa-trash me-1"></i> Limpar
+                </button>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>NSU</th>
-                            <th>(44) Valor Repasse</th>
-                            <th>(45) Dt Pagto Repasse</th>
-                            <th>(58) Vl Rebate</th>
-                            <th>(59) Dt Pagto Rebate</th>
-                            <th>(66) Motivo Difer.</th>
-                            <th>(71) Motivo Cancel.</th>
-                            <th>(100) Motivo Dif.</th>
-                            <th>(111A) Despesa CB</th>
-                            <th>(112) Outras Desp.</th>
+                            <th title="NSU">NSU *</th>
+                            <th title="(44) Valor pago Repasse Loja">(44) Valor pago Repa...</th>
+                            <th title="(45) Dt Realiz Pagto Repasse Loja">(45) Dt Realiz Pagto...</th>
+                            <th title="(58) Vl Rebate Total Wall Pago">(58) Vl Rebate Total...</th>
+                            <th title="(59) Dt Realiz Pagto Rebate Total">(59) Dt Realiz Pagto...</th>
+                            <th title="(66) Motivo Difer.Pagto Rebate Wall">(66) Motivo Difer.Pa...</th>
+                            <th title="(71) Motivo Cancelamento">(71) Motivo Cancelam...</th>
+                            <th title="(100) Motivo Dif. Valor a Rec x Valor Recebido">(100) Motivo Dif. V...</th>
+                            <th title="(111A) Despesa Charge Back / Fraude Realizada (R$)">(111A) Despesa Charg...</th>
+                            <th title="(112) Outras Despesas / Ajustes FinanceirosWall (R$)">(112) Outras Despesa...</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for pagamento in pagamentos %}
-                        <tr>
-                            <td><strong>{{ pagamento.nsu }}</strong></td>
-                            <td>{% if pagamento.var44 %}R$ {{ pagamento.var44|floatformat:2 }}{% else %}-{% endif %}
-                            </td>
-                            <td>{{ pagamento.var45|default:"-" }}</td>
-                            <td>{% if pagamento.var58 %}R$ {{ pagamento.var58|floatformat:2 }}{% else %}-{% endif %}
-                            </td>
-                            <td>{{ pagamento.var59|default:"-" }}</td>
-                            <td>{{ pagamento.var66|default:"-" }}</td>
-                            <td>{{ pagamento.var71|default:"-" }}</td>
-                            <td>{{ pagamento.var100|default:"-" }}</td>
-                            <td>{% if pagamento.var111 %}R$ {{ pagamento.var111|floatformat:2 }}{% else %}-{% endif %}
-                            </td>
-                            <td>{% if pagamento.var112 %}R$ {{ pagamento.var112|floatformat:2 }}{% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% tem_acesso 'pagamentos_edit' as pode_editar %}
-                                {% if pode_editar %}
-                                <a href="{% url 'portais_admin:pagamentos_edit' pagamento.id %}"
-                                    class="btn btn-sm btn-primary" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                {% endif %}
-                                {% tem_acesso 'pagamentos_delete' as pode_excluir %}
-                                {% if pode_excluir %}
-                                <button type="button" class="btn btn-sm btn-danger btn-excluir"
-                                    data-pagamento-id="{{ pagamento.id }}" data-pagamento-nsu="{{ pagamento.nsu }}"
-                                    title="Excluir">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="corpoTabela">
+                        <!-- Linhas editáveis serão adicionadas aqui via JavaScript -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-
-    <!-- Informações de resultado e Paginação -->
-    {% if pagamentos %}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="text-muted">
-                    <small>{{ total_registros }} registro{{ total_registros|pluralize }} encontrado{{
-                        total_registros|pluralize }}</small>
-                </div>
-                {% if pagamentos.has_other_pages %}
-                <div>
-                    <small class="text-muted">
-                        Página {{ pagamentos.number }} de {{ pagamentos.paginator.num_pages }}
-                    </small>
-                </div>
-                {% endif %}
-            </div>
-            {% if pagamentos.has_other_pages %}
-            <nav aria-label="Navegação de páginas">
-                <ul class="pagination justify-content-center">
-                    {% if pagamentos.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link"
-                            href="?page=1{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
-                            <i class="fas fa-angle-double-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link"
-                            href="?page={{ pagamentos.previous_page_number }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
-                            <i class="fas fa-angle-left"></i>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% for num in pagamentos.paginator.page_range %}
-                    {% if pagamentos.number == num %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
-                    {% elif num > pagamentos.number|add:'-3' and num < pagamentos.number|add:'3' %} <li
-                        class="page-item">
-                        <a class="page-link"
-                            href="?page={{ num }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">{{
-                            num }}</a>
-                        </li>
-                        {% endif %}
-                        {% endfor %}
-
-                        {% if pagamentos.has_next %}
-                        <li class="page-item">
-                            <a class="page-link"
-                                href="?page={{ pagamentos.next_page_number }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
-                                <i class="fas fa-angle-right"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link"
-                                href="?page={{ pagamentos.paginator.num_pages }}{% if search_nsu %}&nsu={{ search_nsu }}{% endif %}{% if search_data_inicio %}&data_inicio={{ search_data_inicio }}{% endif %}{% if search_data_fim %}&data_fim={{ search_data_fim }}{% endif %}">
-                                <i class="fas fa-angle-double-right"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    {% endif %}
 </div>
 
 <!-- Modal de confirmação de exclusão -->
