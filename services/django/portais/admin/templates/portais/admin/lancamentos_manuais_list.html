@@ -129,11 +129,11 @@
                         <td>
                             <select class="form-select form-select-sm status-select"
                                 data-lancamento-id="{{ lancamento.id }}" data-status-original="{{ lancamento.status }}">
-                                <option value="pendente" {% if lancamento.status=='pendente' %}selected{% endif %}>
+                                <option value="pendente" {% if lancamento.status == 'pendente' %}selected{% endif %}>
                                     Pendente</option>
-                                <option value="processado" {% if lancamento.status=='processado' %}selected{% endif %}>
+                                <option value="processado" {% if lancamento.status == 'processado' %}selected{% endif %}>
                                     Processado</option>
-                                <option value="cancelado" {% if lancamento.status=='cancelado' %}selected{% endif %}>
+                                <option value="cancelado" {% if lancamento.status == 'cancelado' %}selected{% endif %}>
                                     Cancelado</option>
                             </select>
                         </td>
