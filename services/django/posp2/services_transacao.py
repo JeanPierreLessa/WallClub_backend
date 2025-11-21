@@ -307,7 +307,7 @@ class TRDataService:
                 
                 from pinbank.services import PinbankService
                 pinbank_service = PinbankService()
-                loja_info = pinbank_service.pega_info_loja(int(nsu_pinbank))
+                loja_info = pinbank_service.pega_info_loja(int(nsu_pinbank), tabela='transactiondata')
                 registrar_log('posp2', f'Chamando pega_info_loja({nsu_pinbank})')
                 registrar_log('posp2', f'Loja encontrada: {loja_info}')
             
