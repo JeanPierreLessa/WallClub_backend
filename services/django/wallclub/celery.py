@@ -22,62 +22,18 @@ app.autodiscover_tasks()
 # Configuração do Celery Beat Schedule
 app.conf.beat_schedule = {
     # ============================================
-    # RECORRÊNCIAS (Fase 5)
+    # RECORRÊNCIAS (Fase 5) - DESABILITADAS
     # ============================================
-    
-    # Processar recorrências do dia - 08:00 todos os dias
-    'processar-recorrencias-diarias': {
-        'task': 'portais.vendas.tasks_recorrencia.processar_recorrencias_do_dia',
-        'schedule': crontab(hour=8, minute=0),
-        'options': {
-            'expires': 3600,  # Expira em 1 hora se não executar
-        }
-    },
-    
-    # Retentar cobranças falhadas - 10:00 todos os dias
-    'retentar-cobrancas-falhadas': {
-        'task': 'portais.vendas.tasks_recorrencia.retentar_cobrancas_falhadas',
-        'schedule': crontab(hour=10, minute=0),
-        'options': {
-            'expires': 3600,
-        }
-    },
-    
-    # Notificar recorrências em hold - 18:00 todos os dias
-    'notificar-recorrencias-hold': {
-        'task': 'portais.vendas.tasks_recorrencia.notificar_recorrencias_hold',
-        'schedule': crontab(hour=18, minute=0),
-        'options': {
-            'expires': 3600,
-        }
-    },
-    
-    # Limpar recorrências antigas - Domingo 02:00
-    'limpar-recorrencias-antigas': {
-        'task': 'portais.vendas.tasks_recorrencia.limpar_recorrencias_antigas',
-        'schedule': crontab(hour=2, minute=0, day_of_week=0),  # 0 = Domingo
-        'options': {
-            'expires': 7200,  # Expira em 2 horas
-        }
-    },
-    
-    # ============================================
-    # REVALIDAÇÃO DE DISPOSITIVOS (Fase 4)
-    # ============================================
-    
-    # Limpar dispositivos expirados - Diariamente às 03:00
-    'limpar-dispositivos-expirados': {
-        'task': 'apps.cliente.tasks_revalidacao.limpar_dispositivos_expirados',
-        'schedule': crontab(hour=3, minute=0),
-        'options': {
-            'expires': 3600,
-        }
-    },
-    
+    # Tasks de recorrência definidas mas não agendadas:
+    # - portais.vendas.tasks_recorrencia.processar_recorrencias_do_dia
+    # - portais.vendas.tasks_recorrencia.retentar_cobrancas_falhadas
+    # - portais.vendas.tasks_recorrencia.notificar_recorrencias_hold
+    # - portais.vendas.tasks_recorrencia.limpar_recorrencias_antigas
+
     # ============================================
     # CARGAS PINBANK (Automáticas)
     # ============================================
-    
+
     # Carga extrato POS - 5x ao dia às 05:13, 09:13, 13:13, 18:13, 22:13
     'carga-extrato-pos': {
         'task': 'pinbank.carga_extrato_pos',
@@ -87,7 +43,7 @@ app.conf.beat_schedule = {
             'expires': 3600,  # Expira em 1 hora
         }
     },
-    
+
     # Cargas completas - De hora em hora, minuto 5, das 5h às 23h
     'cargas-completas-pinbank': {
         'task': 'pinbank.cargas_completas',
@@ -96,7 +52,7 @@ app.conf.beat_schedule = {
             'expires': 3600,  # Expira em 1 hora
         }
     },
-    
+
     # Migração financeiro → pagamentos_efetuados - De hora em hora, minuto 15
     'migrar-financeiro-pagamentos': {
         'task': 'pinbank.migrar_financeiro_pagamentos',
@@ -106,11 +62,11 @@ app.conf.beat_schedule = {
             'expires': 3600,  # Expira em 1 hora
         }
     },
-    
+
     # ============================================
     # CONTA DIGITAL - AUTORIZAÇÕES
     # ============================================
-    
+
     # Expirar autorizações de saldo - 1x ao dia às 01:00
     'expirar-autorizacoes-saldo': {
         'task': 'apps.conta_digital.expirar_autorizacoes_saldo',

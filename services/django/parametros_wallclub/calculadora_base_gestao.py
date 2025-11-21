@@ -35,14 +35,26 @@ class CalculadoraBaseGestao:
             return value.quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
         return Decimal(str(value)).quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
     
-    def calcular_valores_primarios(self, dados_linha):
+    def calcular_valores_primarios(self, dados_linha, tabela: str):
         """
         Calcula os valores primários baseados nos dados da linha.
         Replica a lógica do PHP pinbank_cria_base_gestao.php
+        
+        Args:
+            dados_linha: Dict com dados da transação
+            tabela: 'transactiondata' ou 'transactiondata_own' (OBRIGATÓRIO)
         """
         from datetime import datetime as dt, timedelta
         try:
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Iniciando cálculo para NSU: {dados_linha.get('NsuOperacao', 'N/A')}")
+            # Determinar identificador baseado na tabela
+            if tabela == 'transactiondata_own':
+                identificador = dados_linha.get('cnpj')  # CNPJ da loja (Own)
+                log_id = dados_linha.get('txTransactionId', 'N/A')
+            else:
+                identificador = dados_linha['NsuOperacao']  # NSU (Pinbank)
+                log_id = dados_linha.get('NsuOperacao', 'N/A')
+            
+            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Iniciando cálculo para {tabela} ID: {log_id}")
             valores = {}
             
             # Validar se a operação é Club (Wall S) ou Normal (Wall N)
@@ -55,9 +67,8 @@ class CalculadoraBaseGestao:
                 valores[130] = "Normal"
             
             # Capturar informações da Loja, canal e plano
-            nsu_operacao = dados_linha['NsuOperacao']
-            info_loja = self.pinbank_service.pega_info_loja(nsu_operacao)
-            info_canal = self.pinbank_service.pega_info_canal(nsu_operacao)
+            info_loja = self.pinbank_service.pega_info_loja(identificador, tabela)
+            info_canal = self.pinbank_service.pega_info_canal(identificador, tabela)
             id_plano = self.parametros_service.busca_plano(
                 dados_linha['TipoCompra'],
                 dados_linha['NumeroTotalParcelas'],

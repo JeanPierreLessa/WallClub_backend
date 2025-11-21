@@ -118,7 +118,7 @@ class CargaBaseGestaoPOSService:
 
                             try:
                                 # Calcular valores primários
-                                valores = self.calculadora.calcular_valores_primarios(linha)
+                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
 
                                 # Inserir na base de gestão
                                 sucesso = self._inserir_valores_base_gestao(valores, linha.get('codigo_cliente'))
@@ -164,7 +164,7 @@ class CargaBaseGestaoPOSService:
                             }
 
                             # Calcular valores usando a calculadora
-                            valores_calculados = self.calculadora.calcular_valores_primarios(linha)
+                            valores_calculados = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
 
                             # Atualizar transação com valores calculados
                             linha.update(valores_calculados)

@@ -45,23 +45,6 @@ def carga_base_gestao_task(self, limite=10000):
         raise
 
 
-@shared_task(bind=True, name='pinbank.carga_tef')
-def carga_tef_task(self, limite=10000):
-    """
-    Task para executar carga TEF (transações sem transactiondata)
-    
-    Args:
-        limite: Número máximo de registros a processar
-    """
-    try:
-        logger.info(f"[{datetime.now()}] Iniciando carga TEF - limite: {limite}")
-        call_command('carga_tef', f'--limite={limite}')
-        logger.info(f"[{datetime.now()}] Carga TEF concluída com sucesso")
-        return {'status': 'success', 'limite': limite}
-    except Exception as e:
-        logger.error(f"[{datetime.now()}] Erro na carga TEF: {str(e)}")
-        raise
-
 
 @shared_task(bind=True, name='pinbank.ajustes_manuais_base')
 def ajustes_manuais_base_task(self):
@@ -81,44 +64,33 @@ def ajustes_manuais_base_task(self):
 @shared_task(bind=True, name='pinbank.cargas_completas')
 def cargas_completas_task(self):
     """
-    Task que executa todas as cargas sequencialmente
+    Task que executa o script executar_cargas_completas.py
     """
+    import subprocess
+    import sys
+    
     try:
-        logger.info(f"[{datetime.now()}] 🚀 Iniciando cargas completas sequenciais")
+        logger.info(f"[{datetime.now()}] 🚀 Executando script de cargas completas")
         
-        # Executar cargas em sequência
-        logger.info("📋 Etapa 1/4 - Carga extrato POS")
-        carga_extrato_pos_task(periodo='80min')
+        # Executar script Python
+        result = subprocess.run(
+            [sys.executable, '/app/pinbank/cargas_pinbank/executar_cargas_completas.py'],
+            capture_output=True,
+            text=True,
+            cwd='/app'
+        )
         
-        logger.info("📋 Etapa 2/4 - Carga base gestão")
-        carga_base_gestao_task(limite=10000)
-        
-        logger.info("📋 Etapa 3/4 - Carga TEF")
-        carga_tef_task(limite=10000)
-        
-        logger.info("📋 Etapa 4/4 - Ajustes manuais")
-        ajustes_manuais_base_task()
-        
-        logger.info(f"[{datetime.now()}] 🎉 Todas as cargas executadas com sucesso!")
-        return {'status': 'success', 'etapas': 4}
+        if result.returncode == 0:
+            logger.info(f"[{datetime.now()}] 🎉 Script executado com sucesso")
+            logger.info(result.stdout)
+            return {'status': 'success', 'output': result.stdout}
+        else:
+            logger.error(f"[{datetime.now()}] ❌ Erro ao executar script")
+            logger.error(result.stderr)
+            raise Exception(f"Script falhou: {result.stderr}")
         
     except Exception as e:
         logger.error(f"[{datetime.now()}] ⚠️ Erro nas cargas completas: {str(e)}")
-        raise
-
-
-@shared_task(bind=True, name='pinbank.carga_checkout')
-def carga_checkout_task(self):
-    """
-    Task para executar carga de checkout
-    """
-    try:
-        logger.info(f"[{datetime.now()}] Iniciando carga checkout")
-        call_command('carga_checkout')
-        logger.info(f"[{datetime.now()}] Carga checkout concluída com sucesso")
-        return {'status': 'success'}
-    except Exception as e:
-        logger.error(f"[{datetime.now()}] Erro na carga checkout: {str(e)}")
         raise
 
 

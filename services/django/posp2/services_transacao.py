@@ -287,7 +287,7 @@ class TRDataService:
             calculadora = CalculadoraBaseGestao()
             registrar_log('posp2', f'Chamando calcular_valores_primarios com dados_linha: {dados_linha}')
             try:
-                valores_calculados = calculadora.calcular_valores_primarios(dados_linha)
+                valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata')
                 registrar_log('posp2', 'Calculadora executada com sucesso')
                 
                 # Log completo dos valores calculados

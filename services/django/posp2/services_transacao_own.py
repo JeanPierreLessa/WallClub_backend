@@ -230,7 +230,7 @@ class TRDataOwnService:
                     # Calcular valores
                     calculadora = CalculadoraBaseGestao()
                     try:
-                        valores_calculados = calculadora.calcular_valores_primarios(dados_linha)
+                        valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata_own')
                         registrar_log('posp2', f'Calculadora executada - {len(valores_calculados)} valores')
                     except Exception as e:
                         registrar_log('posp2', f'ERRO na calculadora: {e}', nivel='ERROR')

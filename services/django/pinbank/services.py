@@ -33,8 +33,29 @@ class PinbankService:
         if not self.username or not self.password:
             registrar_log('pinbank', "Pinbank: Credenciais não configuradas", nivel='ERROR')
     
-    def pega_info_loja(self, nsu_operacao: int) -> Dict[str, Any]:
-        """Busca informações da loja baseado no NSU"""
+    def pega_info_loja(self, identificador, tabela: str) -> Dict[str, Any]:
+        """
+        Busca informações da loja baseado no identificador e tabela de origem.
+        
+        Args:
+            identificador: NSU (int) para Pinbank OU CNPJ (str) para Own
+            tabela: 'transactiondata' ou 'transactiondata_own' (OBRIGATÓRIO)
+        
+        Returns:
+            Dict com informações da loja (id, loja_id, loja, cnpj, canal_id)
+        
+        Raises:
+            Exception: Se loja não for encontrada
+        """
+        if tabela == 'transactiondata_own':
+            return self._buscar_loja_por_cnpj(identificador)
+        elif tabela == 'transactiondata':
+            return self._buscar_loja_por_nsu(identificador)
+        else:
+            raise ValueError(f"Tabela inválida: {tabela}. Use 'transactiondata' ou 'transactiondata_own'")
+    
+    def _buscar_loja_por_nsu(self, nsu_operacao: int) -> Dict[str, Any]:
+        """Busca loja pelo NSU (Pinbank) - método interno"""
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT  l.id, l.razao_social, l.cnpj, l.canal_id
@@ -52,13 +73,35 @@ class PinbankService:
             if row:
                 return {
                     'id': row[0], 
-                    'loja_id': row[0],  # Mesmo valor de id
+                    'loja_id': row[0],
                     'loja': row[1], 
                     'cnpj': row[2],
                     'canal_id': row[3]
                 }
             else:
                 raise Exception(f"Loja não encontrada para NSU {nsu_operacao}")
+    
+    def _buscar_loja_por_cnpj(self, cnpj: str) -> Dict[str, Any]:
+        """Busca loja pelo CNPJ (Own) - método interno"""
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, razao_social, cnpj, canal_id
+                FROM wallclub.loja
+                WHERE cnpj = %s
+                LIMIT 1
+            """, [cnpj])
+            
+            row = cursor.fetchone()
+            if row:
+                return {
+                    'id': row[0],
+                    'loja_id': row[0],
+                    'loja': row[1],
+                    'cnpj': row[2],
+                    'canal_id': row[3]
+                }
+            else:
+                raise Exception(f"Loja não encontrada para CNPJ {cnpj}")
     
     def pega_info_canal_por_id(self, canal_id: int) -> Dict[str, Any]:
         """Busca informações do canal pelo ID"""
@@ -85,8 +128,29 @@ class PinbankService:
                 'nome': ''
             }
 
-    def pega_info_canal(self, nsu_operacao: int) -> Dict[str, Any]:
-        """Busca informações do canal baseado no NSU"""
+    def pega_info_canal(self, identificador, tabela: str) -> Dict[str, Any]:
+        """
+        Busca informações do canal baseado no identificador e tabela de origem.
+        
+        Args:
+            identificador: NSU (int) para Pinbank OU CNPJ (str) para Own
+            tabela: 'transactiondata' ou 'transactiondata_own' (OBRIGATÓRIO)
+        
+        Returns:
+            Dict com informações do canal (id, canal)
+        
+        Raises:
+            Exception: Se canal não for encontrado
+        """
+        if tabela == 'transactiondata_own':
+            return self._buscar_canal_por_cnpj(identificador)
+        elif tabela == 'transactiondata':
+            return self._buscar_canal_por_nsu(identificador)
+        else:
+            raise ValueError(f"Tabela inválida: {tabela}. Use 'transactiondata' ou 'transactiondata_own'")
+    
+    def _buscar_canal_por_nsu(self, nsu_operacao: int) -> Dict[str, Any]:
+        """Busca canal pelo NSU (Pinbank) - método interno"""
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT   canal.id, canal.nome 
@@ -107,6 +171,23 @@ class PinbankService:
                 return {'id': row[0], 'canal': row[1]}
             else:
                 raise Exception(f"Canal não encontrado para NSU {nsu_operacao}")
+    
+    def _buscar_canal_por_cnpj(self, cnpj: str) -> Dict[str, Any]:
+        """Busca canal pelo CNPJ da loja (Own) - método interno"""
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT c.id, c.nome
+                FROM wallclub.canal c
+                INNER JOIN wallclub.loja l ON l.canal_id = c.id
+                WHERE l.cnpj = %s
+                LIMIT 1
+            """, [cnpj])
+            
+            row = cursor.fetchone()
+            if row:
+                return {'id': row[0], 'canal': row[1]}
+            else:
+                raise Exception(f"Canal não encontrado para CNPJ {cnpj}")
     
     def obter_token(self) -> Dict[str, Any]:
         """
