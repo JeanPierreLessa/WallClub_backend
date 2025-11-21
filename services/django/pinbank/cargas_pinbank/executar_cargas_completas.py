@@ -21,7 +21,7 @@ from io import StringIO
 sys.path.insert(0, '/app')
 
 # Configurar Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wallclub.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wallclub.settings.pos')
 django.setup()
 
 from django.core.management import call_command
