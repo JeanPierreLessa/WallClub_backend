@@ -29,7 +29,10 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
 - ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
-- ✅ **Own Financial** - Gateway de pagamento (Adquirência) - QA/Sandbox
+- ⚠️ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce)
+  - ✅ APIs Adquirência (OAuth 2.0) - QA/Sandbox funcionando
+  - ✅ Webhooks tempo real (transações, liquidações, cadastro)
+  - ⏳ API OPPWA E-commerce - Aguardando credenciais (`entity_id` + `access_token`)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 
@@ -43,6 +46,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **Fase 6B:** Dependências Resolvidas (26 APIs REST internas)
 - ✅ **Fase 6C:** Monorepo + wallclub_core (113 arquivos migrados)
 - ✅ **Fase 6D:** 4 Containers Independentes (Deploy em produção)
+- ⚠️ **Fase 7:** Integração Own Financial (92% - Aguardando credenciais OPPWA e-commerce)
 
 ## 📋 Navegação Rápida
 

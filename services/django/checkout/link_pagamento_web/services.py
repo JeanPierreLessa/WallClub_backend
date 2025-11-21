@@ -46,9 +46,15 @@ class LinkPagamentoService:
         """
         from checkout.link_pagamento_web.models import CheckoutToken, CheckoutSession
         from checkout.models import CheckoutTransaction, CheckoutTransactionAttempt, CheckoutCliente, CheckoutCartaoTokenizado
-        from pinbank.services_transacoes_pagamento import TransacoesPinbankService, TIPO_COMPRA_MAP
+        from checkout.services_gateway_router import GatewayRouter
         import hashlib
         from datetime import datetime
+        
+        # Mapeamento de tipos de compra
+        TIPO_COMPRA_MAP = {
+            'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST': '2',
+            'CREDIT_ONE_INSTALLMENT': '1',
+        }
         
         try:
             # Validar token
@@ -183,9 +189,12 @@ class LinkPagamentoService:
             registrar_log('checkout.link_pagamento_web', '')
             
             # =============================================================================
-            # PROCESSAR PAGAMENTO VIA PINBANK
+            # PROCESSAR PAGAMENTO VIA GATEWAY (PINBANK OU OWN)
             # =============================================================================
-            transacoes_service = TransacoesPinbankService(loja_id=token_obj.loja_id)
+            # Obter service correto baseado no gateway da loja
+            transacoes_service = GatewayRouter.obter_service_transacao(token_obj.loja_id)
+            gateway_ativo = GatewayRouter.obter_gateway_loja(token_obj.loja_id)
+            
             forma_pagamento_codigo = TIPO_COMPRA_MAP.get(session.tipo_pagamento, '1')
             
             dados_transacao = {
@@ -199,13 +208,14 @@ class LinkPagamentoService:
                 'descricao_pedido': f"{token_obj.item_nome} - Checkout WallClub",
                 'ip_address_comprador': ip_address,
                 'cpf_comprador': int(session.cpf),
-                'nome_comprador': session.nome
+                'nome_comprador': session.nome,
+                'bandeira': dados_cartao.get('bandeira', 'VISA')
             }
             
             registrar_log('checkout.link_pagamento_web', 
-                         f"Processando transação - Token: {token[:8]}..., Parcelas: {session.parcelas}, Valor Original: R$ {valor_original}, Valor Final: R$ {valor_final}")
+                         f"Processando transação via {gateway_ativo} - Token: {token[:8]}..., Parcelas: {session.parcelas}, Valor Original: R$ {valor_original}, Valor Final: R$ {valor_final}")
             
-            # Processar transação
+            # Processar transação (interface unificada)
             resultado_transacao = transacoes_service.efetuar_transacao_cartao(dados_transacao)
             
             if not resultado_transacao.get('sucesso', False):
@@ -285,17 +295,18 @@ class LinkPagamentoService:
                         }
                     )
                     
-                    # Tokenizar cartão via Pinbank
+                    # Tokenizar cartão (interface unificada - funciona com Pinbank e Own)
                     resultado_token = transacoes_service.incluir_cartao_tokenizado({
                         'numero_cartao': numero_cartao,
                         'data_validade': session.data_validade,
                         'codigo_seguranca': dados_cartao['cvv'],
                         'nome_impresso': session.nome.upper(),
-                        'cpf_comprador': int(session.cpf)
+                        'cpf_comprador': int(session.cpf),
+                        'bandeira': dados_cartao.get('bandeira', 'VISA')
                     })
                     
                     if resultado_token.get('sucesso'):
-                        # Pinbank retorna 'cartao_id', não 'id_token'
+                        # Ambos gateways retornam 'cartao_id'
                         cartao_id = resultado_token.get('cartao_id')
                         
                         # Gerar máscara do cartão (primeiros 6 + últimos 4 dígitos)
@@ -311,7 +322,7 @@ class LinkPagamentoService:
                             valido=True
                         )
                         registrar_log('checkout.link_pagamento_web', 
-                                    f"Cartão tokenizado com sucesso - Cliente: {cliente.id}, CartaoId: {cartao_id}")
+                                    f"Cartão tokenizado com sucesso via {gateway_ativo} - Cliente: {cliente.id}, CartaoId: {cartao_id}")
                     else:
                         registrar_log('checkout.link_pagamento_web', f"Falha ao tokenizar cartão: {resultado_token.get('mensagem')}", nivel='WARNING')
                         

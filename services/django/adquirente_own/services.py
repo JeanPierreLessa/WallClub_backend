@@ -215,3 +215,17 @@ class OwnService:
         except Exception as e:
             registrar_log('own.credenciais', f'❌ Erro ao buscar credenciais: {str(e)}', nivel='ERROR')
             return None
+    
+    def obter_credenciais_loja(self, loja_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Obtém credenciais Own para uma loja específica
+        
+        Args:
+            loja_id: ID da loja
+            
+        Returns:
+            Dict com credenciais ou None
+        """
+        # Por enquanto, todas as lojas usam as mesmas credenciais White Label
+        # No futuro, pode-se implementar credenciais por loja
+        return self.obter_credenciais_white_label(self.environment)

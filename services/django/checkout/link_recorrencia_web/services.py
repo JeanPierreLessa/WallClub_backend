@@ -142,7 +142,7 @@ class RecorrenciaTokenService:
             from checkout.link_recorrencia_web.models import RecorrenciaToken
             from checkout.models import CheckoutCartaoTokenizado
             from checkout.services import CartaoTokenizadoService
-            from pinbank.services_transacoes_pagamento import TransacoesPinbankService
+            from checkout.services_gateway_router import GatewayRouter
             
             # Validar token
             try:
@@ -157,9 +157,13 @@ class RecorrenciaTokenService:
             cliente = recorrencia.cliente
             loja_id = token_obj.loja_id
             
+            # Obter service correto baseado no gateway da loja
+            transacoes_service = GatewayRouter.obter_service_transacao(loja_id)
+            gateway_ativo = GatewayRouter.obter_gateway_loja(loja_id)
+            
             registrar_log(
                 'checkout.recorrencia',
-                f"💳 [VALIDAÇÃO] Iniciando validação de cartão para recorrência {recorrencia.id}"
+                f"💳 [VALIDAÇÃO] Iniciando validação de cartão via {gateway_ativo} para recorrência {recorrencia.id}"
             )
             
             # Detectar bandeira
@@ -178,10 +182,8 @@ class RecorrenciaTokenService:
             # ========== ETAPA 1: PRÉ-AUTORIZAÇÃO DE R$ 1,00 ==========
             registrar_log(
                 'checkout.recorrencia',
-                f"🔐 [VALIDAÇÃO] Etapa 1: Pré-autorizando R$ 1,00 para validar cartão"
+                f"🔐 [VALIDAÇÃO] Etapa 1: Pré-autorizando R$ 1,00 via {gateway_ativo} para validar cartão"
             )
-            
-            pinbank_service = TransacoesPinbankService(loja_id=loja_id)
             
             # Preparar dados para pré-autorização
             cpf_limpo = cliente.cpf.replace('.', '').replace('-', '')
@@ -202,7 +204,8 @@ class RecorrenciaTokenService:
                 'transacao_pre_autorizada': True  # PRÉ-AUTORIZAÇÃO
             }
             
-            resultado_preauth = pinbank_service.efetuar_transacao_cartao(dados_preautorizacao)
+            # Interface unificada - funciona com Pinbank e Own
+            resultado_preauth = transacoes_service.efetuar_transacao_cartao(dados_preautorizacao)
             
             if not resultado_preauth.get('sucesso'):
                 registrar_log(
@@ -237,10 +240,11 @@ class RecorrenciaTokenService:
             # ========== ETAPA 2: CANCELAR PRÉ-AUTORIZAÇÃO (ESTORNO) ==========
             registrar_log(
                 'checkout.recorrencia',
-                f"↩️ [VALIDAÇÃO] Etapa 2: Cancelando pré-autorização (estorno de R$ 1,00)"
+                f"↩️ [VALIDAÇÃO] Etapa 2: Cancelando pré-autorização via {gateway_ativo} (estorno de R$ 1,00)"
             )
             
-            resultado_cancelamento = pinbank_service.cancelar_transacao(
+            # Interface unificada - funciona com Pinbank e Own
+            resultado_cancelamento = transacoes_service.cancelar_transacao(
                 nsu_operacao=nsu_preauth,
                 valor=Decimal('1.00')
             )

@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.0  
-**Data:** 05/11/2025  
-**Fontes:** Fases 1-6 completas + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** 4 containers independentes, 9 regras antifraude, Sistema Multi-Portal, 26 APIs internas
+**Versão:** 4.1  
+**Data:** 21/11/2025  
+**Fontes:** Fases 1-7 (92%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
+**Mudanças:** Integração Own Financial, Roteador Multi-Gateway, Webhooks tempo real
 
 ---
 
@@ -48,6 +48,8 @@
 - ❌ Assumir o que o usuário quer
 - ❌ **EXPOR CREDENCIAIS EM CÓDIGO OU DOCUMENTOS** (usar AWS Secrets Manager)
 - ❌ **CRIAR DOCUMENTOS (README, guias, tutoriais) SEM SOLICITAÇÃO EXPLÍCITA**
+- ❌ Propor soluções que exijam ações do usuário sem perguntar primeiro
+- ❌ Mudar abordagem quando falhar sem consultar o usuário
 
 ### Controle de Escopo Absoluto
 

@@ -55,7 +55,7 @@
             <select name="tipo_lancamento" id="tipo_lancamento" class="form-control">
                 <option value="">Todos</option>
                 {% for value, label in tipos_choices %}
-                <option value="{{ value }}" {% if search_tipo==value %}selected{% endif %}>{{ label }}</option>
+                <option value="{{ value }}" {% if search_tipo == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -64,7 +64,7 @@
             <select name="status" id="status" class="form-control">
                 <option value="">Todos</option>
                 {% for value, label in status_choices %}
-                <option value="{{ value }}" {% if search_status==value %}selected{% endif %}>{{ label }}</option>
+                <option value="{{ value }}" {% if search_status == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>

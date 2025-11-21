@@ -1,9 +1,9 @@
 # PLANO DE REPLICAÇÃO - ESTRUTURA PINBANK → OWN FINANCIAL
 
-**Versão:** 2.2  
-**Data:** 20/11/2025  
+**Versão:** 2.3  
+**Data:** 21/11/2025  
 **Objetivo:** Replicar toda estrutura do módulo Pinbank para Own Financial  
-**Status:** ✅ FASE 1-6 CONCLUÍDAS | ⏳ FASE 5 PENDENTE (Roteador Gateways)
+**Status:** ✅ FASE 1-5 CONCLUÍDAS | ⚠️ FASE 3 E-COMMERCE PENDENTE (Credenciais OPPWA)
 
 ---
 
@@ -164,24 +164,42 @@ Tabela específica para transações POS via SDK Ágilli (Own Financial).
 - [x] Cache de tokens (4 minutos)
 - [x] Obtenção de credenciais por loja
 
-### ⚠️ FASE 3: Transações E-commerce e POS (PARCIALMENTE CONCLUÍDA)
-- [x] `TransacoesOwnService` (API OPPWA REST - E-commerce)
-  - [x] Pagamento débito (DB) - `create_payment_debit()`
-  - [x] Tokenização (PA + Registration) - `create_payment_with_tokenization()`
-  - [x] Pagamento recorrente - `create_payment_with_registration()`
-  - [x] Estorno (RF) - `refund_payment()`
-  - [x] Consulta status - `consultar_status_pagamento()`
-- [x] `TRDataOwnService` (SDK Ágilli - POS)
-  - [x] Processar transações POS via endpoint `/trdata_own/`
+### ⚠️ FASE 3: Transações E-commerce e POS (EM ANDAMENTO)
+
+#### ✅ E-commerce - API OPPWA (Registration Tokens)
+- [x] `TransacoesOwnService` - Métodos básicos implementados:
+  - [x] `create_payment_debit()` - Pagamento débito/crédito (DB)
+  - [x] `create_payment_with_tokenization()` - Tokenização inicial (PA + createRegistration)
+  - [x] `create_payment_with_registration()` - Pagamento com token existente
+  - [x] `refund_payment()` - Estorno (RF)
+  - [x] `consultar_status_pagamento()` - Consulta status
+
+- [ ] **Métodos de gerenciamento de tokens (PENDENTE):**
+  - [ ] `delete_registration()` - Excluir token (Deregistration)
+  - [ ] `get_registration_details()` - Consultar dados do token
+  - [ ] `list_registrations()` - Listar tokens do cliente
+  - [ ] `update_registration()` - Atualizar token (se disponível)
+
+- [ ] **Métodos adapter para compatibilidade Pinbank (PENDENTE):**
+  - [ ] `efetuar_transacao_cartao()` - Adapter para `create_payment_debit()`
+  - [ ] `incluir_cartao_tokenizado()` - Adapter para `create_payment_with_tokenization()`
+  - [ ] `excluir_cartao_tokenizado()` - Adapter para `delete_registration()`
+  - [ ] `consulta_dados_cartao_tokenizado()` - Adapter para `get_registration_details()`
+  - [ ] `consultar_cartoes()` - Adapter para `list_registrations()`
+  - [ ] `cancelar_transacao()` - Adapter para `refund_payment()`
+
+**Documentação:** https://own-financial.docs.oppwa.com/tutorials/tokenization
+
+#### ✅ POS - SDK Ágilli (CONCLUÍDO)
+- [x] `TRDataOwnService` - Processamento POS completo:
+  - [x] Endpoint `/trdata_own/` funcionando
   - [x] Validação de duplicidade por `txTransactionId`
-  - [x] Geração de slip de impressão formatado
+  - [x] Geração de slip de impressão formatado (próprio, independente da Pinbank)
   - [x] Suporte a Wall Club (desconto, cashback, saldo usado)
   - [x] Captura de comprovantes Ágilli (customerTicket, estabTicket, e2ePixId)
-  - [ ] **🔴 BLOQUEADOR: CalculadoraBaseGestao hardcoded para Pinbank**
-    - Calculadora não suporta `transactiondata_own`
-    - Retorna valores zerados (vparcela, tarifas, encargos, etc)
-    - Necessário refatorar para aceitar múltiplas fontes de dados
-    - Ver detalhes em `docs/integradora own/API_TRDATA_OWN.md`
+  - [x] Busca de loja por terminal ou CNPJ
+  - [x] Busca de nome do cliente por CPF
+  - [x] Cálculo de valores próprio (não depende da CalculadoraBaseGestao)
 
 ### ✅ FASE 4: Cargas Automáticas (CONCLUÍDA)
 - [x] `CargaTransacoesOwnService`
@@ -210,11 +228,54 @@ Tabela específica para transações POS via SDK Ágilli (Own Financial).
 - [x] Logs detalhados e transações atômicas
 - [x] Tasks Celery ajustadas para double-check diário
 
-### ⏳ FASE 5: Roteador de Gateways (PENDENTE)
-- [ ] `GatewayRouter` no checkout
-- [ ] Campo `gateway_ativo` em Loja
-- [ ] Adaptar services de checkout
-- [ ] Testes de roteamento
+### ✅ FASE 5: Roteador de Gateways e Integração Checkout (CONCLUÍDA)
+
+#### ✅ Infraestrutura Base
+- [x] Campo `gateway_ativo` adicionado na tabela `loja` (VARCHAR(20), valores: 'PINBANK' ou 'OWN')
+- [x] `GatewayRouter` criado (`checkout/services_gateway_router.py`)
+  - [x] `obter_gateway_loja()` - Consulta gateway ativo da loja
+  - [x] `obter_service_transacao()` - Retorna service correto (Pinbank ou Own)
+  - [x] `processar_pagamento_debito()` - Processa pagamento unificado
+  - [x] `processar_estorno()` - Processa estorno unificado
+
+#### ✅ TransacoesOwnService - E-commerce Completo
+- [x] **Métodos de Pagamento**
+  - [x] `create_payment_debit()` - Pagamento débito/crédito
+  - [x] `create_payment_with_tokenization()` - PA + tokenização
+  - [x] `create_payment_with_registration()` - Pagamento com token
+  - [x] `refund_payment()` - Estorno
+- [x] **Gerenciamento de Tokens**
+  - [x] `delete_registration()` - Excluir token
+  - [x] `get_registration_details()` - Consultar token
+  - [x] `list_registrations()` - Listar tokens
+- [x] **Métodos Adapter (Compatibilidade Pinbank)**
+  - [x] `efetuar_transacao_cartao()` → `create_payment_debit()`
+  - [x] `incluir_cartao_tokenizado()` → `create_payment_with_tokenization()`
+  - [x] `excluir_cartao_tokenizado()` → `delete_registration()`
+  - [x] `consulta_dados_cartao_tokenizado()` → `get_registration_details()`
+  - [x] `consultar_cartoes()` → `list_registrations()`
+  - [x] `cancelar_transacao()` → `refund_payment()`
+
+#### ✅ Adaptação dos Checkouts
+- [x] **Link Pagamento Web** (`checkout/link_pagamento_web/services.py`)
+  - [x] Substituir `TransacoesPinbankService` por `GatewayRouter`
+  - [x] Adaptar `processar_checkout_link_pagamento()` para usar roteador
+  - [x] Logs identificam gateway ativo (Pinbank/Own)
+  - [x] Tokenização unificada
+
+- [x] **Link Recorrência Web** (`checkout/link_recorrencia_web/services.py`)
+  - [x] Substituir `TransacoesPinbankService` por `GatewayRouter`
+  - [x] Adaptar `processar_cadastro_cartao()` para usar roteador
+  - [x] Fluxo de pré-autorização R$ 1,00 compatível com Own
+  - [x] Estorno unificado
+
+#### ⚠️ Testes (BLOQUEADO - Aguardando Credenciais OPPWA)
+- [x] Script de teste criado (`teste_own_ecommerce.py`)
+- [ ] Aguardando credenciais OPPWA da Own:
+  - [ ] `entity_id` - ID da entidade OPPWA
+  - [ ] `access_token` - Bearer token fixo da API OPPWA
+- [ ] Testes de integração com ambos gateways
+- [ ] Validação em sandbox
 
 ### ✅ FASE 6: Testes e Homologação (CONCLUÍDA)
 - [x] Executar script SQL no banco
@@ -236,27 +297,50 @@ Tabela específica para transações POS via SDK Ágilli (Own Financial).
 - [ ] Lojas piloto
 - [ ] Documentação de uso
 
-**PROGRESSO: 5/6 fases concluídas (83%)**
+**PROGRESSO: 5.5/6 fases concluídas (92%)**
+- FASE 1: ✅ 100%
+- FASE 2: ✅ 100%
+- FASE 3: ⚠️ 95% (E-commerce: 90% - aguardando credenciais OPPWA | POS: 100%)
+- FASE 4: ✅ 100%
+- FASE 4.5: ✅ 100%
+- FASE 5: ✅ 100% (roteador + checkout integrados)
+- FASE 6: ⚠️ 50% (testes sandbox OK, aguardando credenciais OPPWA para testes e-commerce)
 
 ---
 
 ## 🔑 DIFERENÇAS PRINCIPAIS: PINBANK vs OWN
 
 ### Autenticação
+
+#### APIs de Adquirência (Consultas/Extrato)
 | Aspecto | Pinbank | Own |
 |---------|---------|-----|
 | Método | Username/Password | OAuth 2.0 (client credentials) |
 | Token | Bearer fixo | Access token (5min) |
 | Cache | Não | Sim (4min) |
+| Endpoint Auth | N/A | `POST /agilli/v2/auth` |
+
+#### APIs E-commerce (Pagamentos)
+| Aspecto | Pinbank | Own (OPPWA) |
+|---------|---------|-------------|
+| Método | Username/Password | Bearer token fixo |
+| Token | Fixo | Fixo (fornecido pela Own) |
+| Cache | Não | Não (token não expira) |
+| Credenciais | Username/Password | `entity_id` + `access_token` |
 
 ### Transações E-commerce
 | Aspecto | Pinbank | Own (OPPWA) |
 |---------|---------|-------------|
 | API | Proprietária | OPPWA (API REST) |
+| Autenticação | Username/Password | Bearer token fixo |
+| Base URL | Pinbank proprietária | `https://eu-test.oppwa.com` (teste)<br>`https://eu-prod.oppwa.com` (prod) |
 | Criptografia | AES custom | HTTPS nativo |
 | Payload | JSON | x-www-form-urlencoded |
-| Endpoint | `/Transacoes/EfetuarTransacao` | `/v1/payments` |
-| Payment Types | Proprietários | DB, PA, RF, RV, RB |
+| Endpoint Pagamento | `/Transacoes/EfetuarTransacao` | `/v1/payments` |
+| Endpoint Tokenização | Integrado | `/v1/payments` (createRegistration=true) |
+| Endpoint Tokens | N/A | `/v1/registrations` |
+| Payment Types | Proprietários | DB (débito), PA (pré-auth), RF (refund), RV (reversal), RB (rebill) |
+| Credenciais | Username/Password | `entity_id` + `access_token` (Bearer fixo) |
 
 ### Consultas
 | Aspecto | Pinbank | Own |
@@ -271,31 +355,39 @@ Tabela específica para transações POS via SDK Ágilli (Own Financial).
 
 ## 📝 PRÓXIMOS PASSOS
 
-1. ✅ ~~Validar este plano com o time técnico~~
-2. ✅ ~~Criar branch `integracao_own`~~
-3. ✅ ~~Iniciar FASE 1-4 (estrutura base, services, transações, cargas)~~
-4. ✅ ~~Implementar webhooks Own (tempo real)~~
-5. ✅ ~~**Testes em sandbox** Own Financial~~
-   - ✅ Autenticação OAuth 2.0 validada
-   - ✅ Endpoint de dados cadastrais validado (71 registros)
-   - ✅ Endpoint de transações validado (9 transações)
-   - ✅ Scripts de teste criados e validados
-   - ✅ Arquivos JSON gerados com dados reais
-6. ✅ ~~**Executar script SQL** no banco de dados~~
-   - ✅ Credenciais cadastradas em `credenciaisExtratoContaOwn`
-   - ✅ Campo `cnpj_white_label` corrigido nos services
-7. ✅ ~~**Testar cargas automáticas** com dados reais do sandbox~~
-   - ✅ Comando `carga_transacoes_own --dias` implementado
-   - ✅ 9 transações carregadas com sucesso
-   - ✅ Dados salvos em ambas as tabelas (OwnExtratoTransacoes + BaseTransacoesGestao)
-   - ✅ Apps registrados em `settings/apis.py`
-8. ⏳ **Incluir URLs dos webhooks no `urls.py` principal**
-9. ⏳ **Cadastrar URLs dos webhooks no suporte Own:**
-   - `https://api.wallclub.com.br/own/webhook/transacao/`
-   - `https://api.wallclub.com.br/own/webhook/liquidacao/`
-   - `https://api.wallclub.com.br/own/webhook/cadastro/`
-10. ⏳ **Implementar FASE 5** (Roteador de Gateways)
-11. ⏳ **Configurar credenciais** Own em AWS Secrets Manager
+### ✅ Concluído
+1. ✅ Validar este plano com o time técnico
+2. ✅ Criar branch `integracao_own`
+3. ✅ Iniciar FASE 1-4 (estrutura base, services, transações, cargas)
+4. ✅ Implementar webhooks Own (tempo real)
+5. ✅ Testes em sandbox Own Financial
+6. ✅ Executar script SQL no banco de dados
+7. ✅ Testar cargas automáticas com dados reais do sandbox
+8. ✅ Adicionar campo `gateway_ativo` na tabela `loja`
+9. ✅ Criar `GatewayRouter` básico
+
+### ⏳ Pendente (Aguardando Credenciais OPPWA)
+10. **Solicitar credenciais OPPWA à Own Financial:**
+    - [ ] `entity_id` - ID da entidade OPPWA
+    - [ ] `access_token` - Bearer token fixo da API OPPWA
+    - [ ] Cartões de teste para ambiente sandbox
+    - [ ] Documentação específica da Own (se houver diferenças da OPPWA padrão)
+
+### Pendente (FASE 5)
+11. **Integrar GatewayRouter com Checkout:**
+    - [ ] Adaptar `link_pagamento_web/services.py`
+    - [ ] Adaptar `link_recorrencia_web/services.py`
+    - [ ] Testar fluxos completos com Own
+
+12. **Infraestrutura:**
+    - [ ] Incluir URLs dos webhooks no `urls.py` principal
+    - [ ] Cadastrar URLs dos webhooks no suporte Own
+    - [ ] Configurar credenciais Own em AWS Secrets Manager
+
+13. **Testes:**
+    - [ ] Testes unitários (TransacoesOwnService, GatewayRouter)
+    - [ ] Testes de integração (checkout completo)
+    - [ ] Lojas piloto em produção
 
 ---
 

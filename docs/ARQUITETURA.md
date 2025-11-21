@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.0  
-**Data:** 14/11/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-6 concluídas
+**Versão:** 5.1  
+**Data:** 21/11/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (92% - Own Financial)
 
 ---
 
@@ -41,9 +41,11 @@
 **Responsabilidades:**
 - APIs REST móveis (JWT customizado - 18 cenários testados)
 - Terminais POS (OAuth 2.0)
-- Checkout Web (links + recorrências)
+- Checkout Web (links + recorrências) - **Roteador multi-gateway (Pinbank/Own)**
 - 4 Portais Web (Admin, Lojista, Vendas, Corporativo)
-- Cargas Pinbank (Extrato POS, Base Gestão, Credenciadora)
+- Cargas automáticas (Pinbank + Own Financial)
+  - Pinbank: Extrato POS, Base Gestão, Credenciadora
+  - Own: Transações, Liquidações (Webhooks + Double-check diário)
 - Parâmetros financeiros (3.840 configurações - 100% validado vs PHP)
 - Conta digital (saldo, cashback, autorizações)
 - Portal Corporativo público (institucional, sem autenticação)
@@ -2836,6 +2838,136 @@ docker exec -it wallclub-portais python scripts/test_email.py
 - ✅ Email simples
 - ✅ Email com template HTML
 - ✅ Email de reset de senha
+
+---
+
+## 🏦 INTEGRAÇÃO OWN FINANCIAL
+
+**Status:** ⚠️ 92% Concluído (Aguardando credenciais OPPWA e-commerce)  
+**Data:** 21/11/2025  
+**Documentação Completa:** [PLANO_REPLICACAO_ESTRUTURA.md](integradora%20own/PLANO_REPLICACAO_ESTRUTURA.md)
+
+### Visão Geral
+
+Integração completa com Own Financial replicando estrutura Pinbank, suportando:
+- **APIs Adquirência** (OAuth 2.0) - Consultas transações/liquidações ✅
+- **Webhooks Tempo Real** - Transações, liquidações, cadastro ✅
+- **API OPPWA E-commerce** - Pagamentos e tokenização ⏳
+- **Roteador Multi-Gateway** - Convivência Pinbank + Own ✅
+
+### Componentes Implementados
+
+#### 1. Módulo `adquirente_own/`
+```
+adquirente_own/
+├── services.py                         # OwnService (OAuth 2.0)
+├── services_transacoes_pagamento.py   # TransacoesOwnService (OPPWA)
+├── views_webhook.py                    # 3 webhooks tempo real
+├── urls_webhook.py                     # Rotas webhooks
+└── cargas_own/
+    ├── models.py                       # OwnExtratoTransacoes, Liquidacoes
+    ├── services_carga_transacoes.py    # Carga API transações
+    ├── services_carga_liquidacoes.py   # Carga API liquidações
+    ├── tasks.py                        # 4 Celery tasks (double-check)
+    └── management/commands/            # 3 comandos Django
+```
+
+#### 2. Roteador Multi-Gateway
+- **Arquivo:** `checkout/services_gateway_router.py`
+- **Função:** Roteia pagamentos entre Pinbank e Own baseado em `loja.gateway_ativo`
+- **Métodos:**
+  - `obter_gateway_loja()` - Consulta gateway ativo
+  - `obter_service_transacao()` - Retorna service correto
+  - `processar_pagamento_debito()` - Pagamento unificado
+  - `processar_estorno()` - Estorno unificado
+
+#### 3. TransacoesOwnService - E-commerce
+**Métodos de Pagamento:**
+- `create_payment_debit()` - Débito/crédito
+- `create_payment_with_tokenization()` - PA + token
+- `create_payment_with_registration()` - Pagamento com token
+- `refund_payment()` - Estorno
+
+**Gerenciamento de Tokens:**
+- `delete_registration()` - Excluir token
+- `get_registration_details()` - Consultar token
+- `list_registrations()` - Listar tokens
+
+**Métodos Adapter (Compatibilidade Pinbank):**
+- Interface 100% compatível com `TransacoesPinbankService`
+- Checkouts funcionam com ambos gateways sem modificação
+
+#### 4. Webhooks Tempo Real
+**Endpoints:**
+- `POST /webhook/transacao/` - Vendas em tempo real
+- `POST /webhook/liquidacao/` - Liquidações em tempo real
+- `POST /webhook/cadastro/` - Status credenciamento
+
+**Características:**
+- Validação de payloads
+- Detecção de duplicatas
+- Transações atômicas
+- Logs detalhados
+
+#### 5. Cargas Automáticas
+**Celery Tasks (Double-check diário):**
+- `carga_transacoes_own_diaria` - 02:00
+- `carga_liquidacoes_own_diaria` - 02:30
+- `carga_transacoes_own_periodo` - Sob demanda
+- `sincronizar_status_pagamentos_own` - Sincronização
+
+### Diferenças Pinbank vs Own
+
+#### Autenticação
+| Sistema | Pinbank | Own Adquirência | Own E-commerce |
+|---------|---------|-----------------|----------------|
+| Método | Username/Password | OAuth 2.0 | Bearer fixo |
+| Token | Fixo | 5min (cache 4min) | Fixo |
+| Endpoint | N/A | `/agilli/v2/auth` | N/A |
+
+#### APIs
+| Funcionalidade | Pinbank | Own |
+|----------------|---------|-----|
+| Consulta Transações | Extrato POS | `/transacoes/v2/buscaTransacoesGerais` |
+| Consulta Liquidações | N/A | `/parceiro/v2/consultaLiquidacoes` |
+| Pagamentos E-commerce | API proprietária | OPPWA REST (`/v1/payments`) |
+| Webhooks | ❌ | ✅ Tempo real |
+| Frequência Cargas | 30min | Webhook + Double-check diário |
+
+### Status Atual
+
+**✅ Concluído (92%):**
+- Estrutura base e models
+- APIs Adquirência (OAuth 2.0)
+- Webhooks tempo real
+- Cargas automáticas
+- Roteador multi-gateway
+- Checkouts adaptados
+- POS TRData Own
+
+**⏳ Pendente (8%):**
+- Credenciais OPPWA da Own:
+  - `entity_id` - ID entidade OPPWA
+  - `access_token` - Bearer token fixo
+- Testes e-commerce em sandbox
+- Validação completa
+
+### Próximos Passos
+
+1. **Solicitar à Own Financial:**
+   - Credenciais OPPWA (`entity_id` + `access_token`)
+   - Cartões de teste ambiente sandbox
+   - Documentação específica (se houver)
+
+2. **Após receber credenciais:**
+   - Executar `teste_own_ecommerce.py`
+   - Validar 8 cenários de teste
+   - Testes integração checkout
+
+3. **Produção:**
+   - Lojas piloto
+   - Monitoramento
+   - Documentação uso
 
 ---
 
