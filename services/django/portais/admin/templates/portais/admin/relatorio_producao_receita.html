@@ -56,9 +56,6 @@
             <button type="submit" class="btn btn-success btn-colorido" id="btn-filtrar-header">
                 <i class="fas fa-search me-1"></i> Filtrar
             </button>
-            <button type="button" class="btn btn-info btn-colorido ms-2" id="btn-ver-lancamentos">
-                <i class="fas fa-hand-holding-usd me-1"></i> Ver lançamentos manuais
-            </button>
         </div>
         
         <div class="form-group" style="width: 100%; flex-basis: 100%;">
@@ -494,38 +491,6 @@ document.getElementById('btn-export-csv').addEventListener('click', function() {
     window.location.href = '{% url "portais_admin:exportar_rpr_csv" %}?' + new URLSearchParams(filtrosAtuais).toString();
 });
 
-// Event listener para botão de lançamentos manuais
-document.getElementById('btn-ver-lancamentos').addEventListener('click', function(e) {
-    e.preventDefault();
-    
-    // Construir URL com filtros aplicados
-    const params = new URLSearchParams();
-    
-    // Adicionar filtros de data
-    const dataInicial = document.getElementById('data_inicial').value;
-    const dataFinal = document.getElementById('data_final').value;
-    
-    if (dataInicial) {
-        params.append('data_inicio', dataInicial);
-    }
-    if (dataFinal) {
-        params.append('data_fim', dataFinal);
-    }
-    
-    // Adicionar filtro de loja
-    const loja = document.getElementById('loja').value;
-    if (loja) {
-        params.append('loja_id', loja);
-    }
-    
-    // Filtrar apenas débitos processados
-    params.append('tipo_lancamento', 'D');
-    params.append('status', 'processado');
-    
-    // Redirecionar para listagem de lançamentos manuais
-    const url = '{% url "portais_admin:lancamentos_manuais_list" %}?' + params.toString();
-    window.location.href = url;
-});
 </script>
 
 {% endblock %}
