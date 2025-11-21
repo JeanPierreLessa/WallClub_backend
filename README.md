@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 10/11/2025 22:56
+**Última Atualização:** 21/11/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -21,7 +21,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **wallclub-riskengine** (Antifraude + MaxMind)
 - ✅ **wallclub-redis** (Cache + Broker)
 - ✅ **wallclub-celery-worker** (Unificado - acesso a todos os apps)
-- ✅ **wallclub-celery-beat** (Scheduler - 8 tasks agendadas)
+- ✅ **wallclub-celery-beat** (Scheduler - 4 tasks agendadas)
 - ✅ **wallclub-flower** (Monitoramento Celery) - flower.wallclub.com.br
 
 ### Integrações Externas

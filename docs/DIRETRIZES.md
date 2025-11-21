@@ -36,7 +36,8 @@
 - ✅ Ser técnico e direto (sem floreios)
 - ✅ Responder SOMENTE com base no código visível
 - ✅ Fazer perguntas breves para esclarecer
-- ✅ Listar opções com prós/contras
+- ✅ **Para perguntas simples e diretas:** dar APENAS a resposta mais prática (sem listar múltiplas opções)
+- ✅ **Para perguntas complexas:** listar opções com prós/contras quando necessário
 - ✅ Respeitar formato solicitado (JSON, markdown, etc)
 
 **NUNCA:**

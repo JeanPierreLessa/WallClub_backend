@@ -43,7 +43,7 @@
 - Terminais POS (OAuth 2.0)
 - Checkout Web (links + recorrências)
 - 4 Portais Web (Admin, Lojista, Vendas, Corporativo)
-- Cargas Pinbank (TEF, Credenciadora, Checkout)
+- Cargas Pinbank (Extrato POS, Base Gestão, Credenciadora)
 - Parâmetros financeiros (3.840 configurações - 100% validado vs PHP)
 - Conta digital (saldo, cashback, autorizações)
 - Portal Corporativo público (institucional, sem autenticação)
@@ -1461,7 +1461,7 @@ POST /api/internal/cliente/verificar_cadastro/
 
 **Arquivo:** `pinbank/cargas_pinbank/services.py` (CargaExtratoPOSService)
 
-#### 2. Base Gestão (TEF)
+#### 2. Base Gestão
 
 **Variáveis:** 130+ (var0-var130)  
 **Streaming:** 100 registros/lote (otimização memória)  
@@ -1472,15 +1472,14 @@ POST /api/internal/cliente/verificar_cadastro/
 **Calculadora:** Compartilhada com Credenciadora (1178 linhas)  
 **Arquivo:** `parametros_wallclub/calculadora_base_gestao.py`
 
+**Refatoração (21/11/2025):**
+- ✅ Parâmetro `tabela` obrigatório (suporta Pinbank e Own)
+- ✅ Busca de loja: NSU (Pinbank) ou CNPJ (Own)
+- ✅ Busca de canal: NSU (Pinbank) ou CNPJ (Own)
+
 **Status:**
 - 85 variáveis implementadas
 - 46 variáveis faltantes documentadas (var93-130)
-
-**Correções Fase 3 (25/10/2025):**
-- ✅ Bug último lote (<100 registros) corrigido
-- ✅ Queries duplicadas eliminadas (info_loja/info_canal)
-- ✅ Sobrescrita de variáveis corrigida (var45 preservado)
-- ✅ Data pagamento imutável implementada
 
 **Arquivo:** `parametros_wallclub/calculadora_base_gestao.py` (compartilhado)
 
@@ -1499,15 +1498,23 @@ POST /api/internal/cliente/verificar_cadastro/
 
 **Arquivo:** `pinbank/cargas_pinbank/services_carga_credenciadora.py`
 
-#### 4. Carga Checkout
+#### 4. Celery Beat - Agendamento Automático
 
-**Fonte:** Arquivo checkout web
+**Tasks Agendadas:**
+- `carga-extrato-pos` - 5x/dia (05:13, 09:13, 13:13, 18:13, 22:13)
+- `cargas-completas-pinbank` - De hora em hora (xx:05, 5h-23h)
+- `migrar-financeiro-pagamentos` - De hora em hora (xx:15, 24h)
+- `expirar-autorizacoes-saldo` - Diariamente às 01:00
 
-**Command:** `python manage.py carga_checkout`
+**Script de Cargas Completas:**
+Executa sequencialmente via `executar_cargas_completas.py`:
+1. Carga extrato POS (80min)
+2. Carga base gestão (--limite=10000)
+3. Carga credenciadora
+4. Ajustes manuais base
 
-**Mesmas regras:** Credenciadora
-
-**Arquivo:** `pinbank/cargas_pinbank/services_carga_checkout.py`
+**Arquivo:** `wallclub/celery.py`  
+**Documentação:** `docs/CELERY_SCHEDULE.md`
 
 ### Ajustes Manuais
 
