@@ -5,7 +5,6 @@ Este arquivo mantém compatibilidade com código existente que importa daqui
 ARQUITETURA:
 - services_carga_extrato_pos.py: CargaExtratoPOSService (busca extrato da API Pinbank)
 - services_carga_base_gestao_pos.py: CargaBaseGestaoPOSService (Wallet - transactiondata)
-- services_carga_tef.py: CargaTEFService (DESCONTINUADO - será removido)
 - services_carga_credenciadora.py: CargaCredenciadoraService (terminais não cadastrados)
 - services_carga_checkout.py: CargaCheckoutService (checkout_transactions)
 """
@@ -13,7 +12,6 @@ ARQUITETURA:
 # Re-exportar todos os serviços para manter compatibilidade
 from .services_carga_extrato_pos import CargaExtratoPOSService
 from .services_carga_base_gestao_pos import CargaBaseGestaoPOSService
-from .services_carga_tef import CargaTEFService
 from .services_carga_credenciadora import CargaCredenciadoraService
 from .services_carga_checkout import CargaCheckoutService
 
@@ -24,7 +22,6 @@ __all__ = [
     'CargaExtratoPOSService',
     'CargaBaseGestaoPOSService',
     'CargaBaseGestaoService',  # Alias legado
-    'CargaTEFService',
     'CargaCredenciadoraService',
     'CargaCheckoutService',
 ]
