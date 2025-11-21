@@ -17,6 +17,9 @@ urlpatterns = [
     
     # APIs POS
     path('api/v1/posp2/', include('posp2.urls')),
+    
+    # Webhooks Own Financial
+    path('', include('adquirente_own.urls_webhook')),
 ]
 
 # APIs Internas (comunicação entre containers)
