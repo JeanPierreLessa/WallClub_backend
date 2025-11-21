@@ -239,10 +239,7 @@ class TRDataOwnService:
             # 10. Buscar informações da loja
             info_loja = self._buscar_info_loja(terminal)
             
-            # 11. Buscar nome do cliente
-            nome_cliente = self._buscar_nome_cliente(cpf) if cpf else ''
-            
-            # 12. Usar o método do Pinbank para gerar slip (EXATAMENTE IGUAL)
+            # 11. Usar o método do Pinbank para gerar slip (EXATAMENTE IGUAL)
             from .services_transacao import TRDataService
             trdata_service = TRDataService()
             
@@ -259,7 +256,7 @@ class TRDataOwnService:
                 'cashback_concedido': cashback_concedido_pos
             }
             
-            json_resposta = trdata_service._gerar_slip_impressao(dados_pinbank_format, info_loja, cpf, nome_cliente)
+            json_resposta = trdata_service._gerar_slip_impressao(dados_pinbank_format, valores_calculados, info_loja)
             
             # 12. Retornar dados completos para comprovante
             resposta_final = {
