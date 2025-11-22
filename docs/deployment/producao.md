@@ -75,11 +75,16 @@ docker-compose build
 docker-compose down
 docker-compose up -d
 
+
+# em dev
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+
 cd /var/www/WallClub_backend
 git pull origin integracao_own
-docker-compose build wallclub-portais wallclub-apis wallclub-pos nginx
-docker-compose up -d wallclub-portais wallclub-apis wallclub-pos nginx
-
+docker-compose build wallclub-pos wallclub-portais
+docker-compose up -d wallclub-pos wallclub-portais
 
 
 # Rebuild e restart (apenas containers Django)

@@ -122,16 +122,16 @@ class CheckoutVendasService:
         try:
             # Lazy import
             CheckoutTransaction = apps.get_model('checkout', 'CheckoutTransaction')
-            
+
             # Obter lojas que o vendedor tem acesso
             acessos = PortalUsuarioAcesso.objects.filter(
                 usuario_id=vendedor_id, entidade_tipo='loja', ativo=True
             )
             lojas_ids = [acesso.entidade_id for acesso in acessos]
-            
+
             if not lojas_ids:
                 return CheckoutVendasService._estatisticas_vazias()
-            
+
             hoje = datetime.now().date()
             inicio_mes = hoje.replace(day=1)
 
@@ -247,7 +247,7 @@ class CheckoutVendasService:
 
             # Lazy import
             from checkout.services import ClienteService
-            
+
             cliente = ClienteService.criar_cliente(
                 loja_id=loja_id,
                 dados=dados,
@@ -267,7 +267,7 @@ class CheckoutVendasService:
         """Busca cliente no app; se não existir, cadastra via Bureau."""
         try:
             Cliente = apps.get_model('cliente', 'Cliente')
-            
+
             try:
                 app_cliente = Cliente.objects.get(cpf=cpf, canal_id=canal_id, is_active=True)
                 registrar_log('portais.vendas', f"Cliente app existe: cpf={cpf[:3]}*** id={app_cliente.id}")
@@ -277,7 +277,7 @@ class CheckoutVendasService:
 
             # Lazy import do service
             from apps.cliente.services import ClienteAuthService
-            
+
             registrar_log('portais.vendas', f"Cadastrando via Bureau: cpf={cpf[:3]}***")
             resultado = ClienteAuthService.cadastrar(
                 cpf=cpf, celular=None, canal_id=canal_id, email=dados.get('email')
@@ -303,7 +303,7 @@ class CheckoutVendasService:
         try:
             CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
             from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
-            
+
             lojas_ids = list(PortalUsuarioAcesso.objects.filter(
                 usuario_id=vendedor_id, entidade_tipo='loja', ativo=True
             ).values_list('entidade_id', flat=True))
@@ -360,7 +360,7 @@ class CheckoutVendasService:
         """Busca transações com filtros."""
         try:
             CheckoutTransaction = apps.get_model('checkout', 'CheckoutTransaction')
-            
+
             acessos = PortalUsuarioAcesso.objects.filter(
                 usuario_id=vendedor_id, entidade_tipo='loja', ativo=True
             )
@@ -408,7 +408,7 @@ class CheckoutVendasService:
 
             # Lazy import
             from checkout.services import ClienteService
-            
+
             if len(documento_limpo) == 11:
                 cliente = ClienteService.buscar_cliente(loja_id, cpf=documento_limpo)
             elif len(documento_limpo) == 14:
@@ -420,7 +420,7 @@ class CheckoutVendasService:
                 # Lazy import para evitar erro de undefined
                 from checkout.services import CartaoTokenizadoService as CartaoService
                 cartoes = CartaoService.listar_cartoes_cliente(cliente.id)
-                
+
                 # Buscar telefone ativo do cliente para exibir obfuscado
                 telefone_obfuscado = ''
                 try:
@@ -430,7 +430,7 @@ class CheckoutVendasService:
                         cpf=cpf_limpo,
                         ativo__in=[1, -1]  # Ativo ou pendente
                     ).first()
-                    
+
                     if telefone_obj:
                         tel = telefone_obj.telefone
                         tel_limpo = tel.replace('(', '').replace(')', '').replace('-', '').replace(' ', '')
@@ -440,7 +440,7 @@ class CheckoutVendasService:
                             telefone_obfuscado = "****" + tel_limpo[-4:] if len(tel_limpo) >= 4 else tel_limpo
                 except Exception:
                     pass
-                
+
                 return {
                     'sucesso': True,
                     'cliente': {
@@ -508,7 +508,7 @@ class CheckoutVendasService:
     ) -> Dict[str, Any]:
         """
         Gera e envia link de pagamento para o cliente via WhatsApp/SMS.
-        
+
         Args:
             cliente_id: ID do cliente checkout
             loja_id: ID da loja
@@ -517,7 +517,7 @@ class CheckoutVendasService:
             pedido_origem: Número do pedido na loja
             cod_item_origem: Código do item na loja
             vendedor_id: ID do vendedor que gerou o link
-            
+
         Returns:
             Dict com sucesso, mensagem e dados do link gerado
         """
@@ -525,12 +525,12 @@ class CheckoutVendasService:
             # Buscar dados do cliente
             CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
             cliente = CheckoutCliente.objects.get(id=cliente_id)
-            
+
             # Buscar telefone ativo do cliente (tabela separada)
             from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
             telefone_obj = None
             telefone = None
-            
+
             if cliente.cpf:
                 cpf_limpo = ''.join(filter(str.isdigit, cliente.cpf))
                 try:
@@ -542,11 +542,11 @@ class CheckoutVendasService:
                         telefone = telefone_obj.telefone
                 except Exception:
                     pass
-            
+
             # Gerar token de checkout
             from checkout.link_pagamento_web.models import CheckoutToken
             from django.conf import settings
-            
+
             token_obj = CheckoutToken.generate_token(
                 loja_id=loja_id,
                 item_nome=descricao,
@@ -558,18 +558,30 @@ class CheckoutVendasService:
                 created_by=f'Portal Vendas - Vendedor ID {vendedor_id}',
                 pedido_origem_loja=pedido_origem
             )
-            
+
+            # Criar transação inicial (PENDENTE)
+            from checkout.services import LinkPagamentoTransactionService
+            LinkPagamentoTransactionService.criar_transacao_inicial(
+                token=token_obj.token,
+                loja_id=loja_id,
+                valor=valor,
+                cliente_id=cliente.id,
+                vendedor_id=vendedor_id,
+                pedido_origem_loja=pedido_origem
+            )
+
             # Gerar URL do link
             base_url = getattr(settings, 'CHECKOUT_BASE_URL', 'https://checkout.wallclub.com.br')
-            link_url = f"{base_url}/checkout/{token_obj.token}/"
-            
+            # Produção usa /api/v1/checkout/, local usa /api/v1/checkout/ também
+            link_url = f"{base_url}/api/v1/checkout/?token={token_obj.token}"
+
             # Enviar email com link de pagamento
             if cliente.email:
                 try:
                     from checkout.services import LinkPagamentoService
                     loja = HierarquiaOrganizacionalService.get_loja(loja_id)
                     loja_nome = loja.razao_social if loja else 'Loja'
-                    
+
                     resultado_email = LinkPagamentoService.enviar_link_pagamento_email(
                         token=token_obj,
                         cliente_email=cliente.email,
@@ -578,22 +590,22 @@ class CheckoutVendasService:
                         valor=valor,
                         item_nome=descricao
                     )
-                    
+
                     if resultado_email and resultado_email.get('sucesso'):
                         registrar_log('portais.vendas', f"✅ Email enviado com sucesso para {cliente.email} - Link: {link_url}")
                     else:
                         msg_erro = resultado_email.get('mensagem', 'Erro desconhecido') if resultado_email else 'Sem resposta'
-                        registrar_log('portais.vendas', f"❌ Falha ao enviar email: {msg_erro}", nivel='WARNING')
+                        registrar_log('portais.vendas', f"❌ Falha ao enviar email: {msg_erro} - Link: {link_url}", nivel='WARNING')
                 except Exception as e:
-                    registrar_log('portais.vendas', f"Erro ao enviar email: {str(e)}", nivel='ERROR')
-            
+                    registrar_log('portais.vendas', f"Erro ao enviar email: {str(e)} - Link: {link_url}", nivel='ERROR')
+
             # Enviar link via WhatsApp/SMS se houver telefone
             if telefone:
                 try:
                     # Buscar canal_id da loja
                     loja = HierarquiaOrganizacionalService.get_loja(loja_id)
                     canal_id = loja.canal_id if loja else 1
-                    
+
                     # Enviar via WhatsApp usando template genérico
                     sucesso = WhatsAppService.envia_whatsapp(
                         numero_telefone=telefone,
@@ -603,12 +615,12 @@ class CheckoutVendasService:
                         parametros_corpo=[f"Olá {cliente.nome}! Seu link de pagamento: {link_url}"],
                         parametros_botao=None
                     )
-                    
+
                     if sucesso:
                         registrar_log('portais.vendas', f"Link enviado via WhatsApp para {telefone}")
                     else:
                         raise Exception("Falha ao enviar WhatsApp")
-                        
+
                 except Exception as e:
                     # Fallback para SMS
                     registrar_log('portais.vendas', f"Erro WhatsApp, usando SMS: {str(e)}", nivel='WARNING')
@@ -616,14 +628,14 @@ class CheckoutVendasService:
                     enviar_sms(telefone, mensagem, 'Link Pagamento')
             else:
                 registrar_log('portais.vendas', f"Cliente {cliente_id} sem telefone cadastrado", nivel='WARNING')
-            
+
             return {
                 'sucesso': True,
                 'mensagem': 'Link de pagamento gerado com sucesso!' + (' Enviado via WhatsApp/SMS.' if telefone else ' Cliente sem telefone cadastrado.'),
                 'link_url': link_url,
                 'token': token_obj.token
             }
-            
+
         except CheckoutCliente.DoesNotExist:
             registrar_log('portais.vendas', f"Cliente {cliente_id} não encontrado", nivel='ERROR')
             return {'sucesso': False, 'mensagem': 'Cliente não encontrado'}
@@ -659,7 +671,7 @@ class CheckoutVendasService:
 
             # Lazy import
             from checkout.services import ClienteService
-            
+
             # 1. PRIMEIRO: Verificar se já existe em checkout_cliente
             checkout_cliente = ClienteService.buscar_cliente(loja_id, cpf=cpf_limpo)
             if checkout_cliente:
@@ -669,7 +681,7 @@ class CheckoutVendasService:
                     'cliente_id': checkout_cliente.id,
                     'mensagem': f'Cliente {checkout_cliente.nome} já cadastrado. Redirecionando para edição...'
                 }
-            
+
             # 2. Buscar canal da loja
             loja = HierarquiaOrganizacionalService.get_loja(loja_id)
             canal_id = loja.canal_id if loja else None
@@ -679,7 +691,7 @@ class CheckoutVendasService:
 
             # 3. Buscar no app cliente
             Cliente = apps.get_model('cliente', 'Cliente')
-            
+
             try:
                 app_cliente = Cliente.objects.get(cpf=cpf_limpo, canal_id=canal_id, is_active=True)
                 return {
@@ -754,7 +766,7 @@ class CheckoutVendasService:
         try:
             CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
             CheckoutCartaoTokenizado = apps.get_model('checkout', 'CheckoutCartaoTokenizado')
-            
+
             # Validar cliente
             try:
                 cliente = CheckoutCliente.objects.get(id=cliente_id, ativo=True)
@@ -1056,7 +1068,7 @@ class CheckoutVendasService:
                     'sucesso': False,
                     'mensagem': f'Recorrência não está ativa. Status: {recorrencia.get_status_display()}'
                 }
-            
+
             # Validar se cartão está válido antes de processar
             if not recorrencia.cartao_tokenizado.valido:
                 registrar_log(
@@ -1108,7 +1120,7 @@ class CheckoutVendasService:
                     'ultima_cobranca_sucesso_em',
                     'updated_at'
                 ])
-                
+
                 # RESETAR contador de falhas do cartão (transação aprovada)
                 CartaoControleService.registrar_transacao_aprovada(recorrencia.cartao_tokenizado_id)
 
@@ -1130,7 +1142,7 @@ class CheckoutVendasService:
                 recorrencia.tentativas_falhas_consecutivas += 1
                 recorrencia.ultima_tentativa_em = datetime.now()
                 recorrencia.save(update_fields=['tentativas_falhas_consecutivas', 'ultima_tentativa_em', 'updated_at'])
-                
+
                 # INCREMENTAR falhas no cartão (pode invalidar automaticamente)
                 controle_resultado = CartaoControleService.registrar_transacao_negada(
                     cartao_id=recorrencia.cartao_tokenizado_id,

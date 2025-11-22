@@ -165,8 +165,13 @@ class CheckoutPageView(View):
             pode_alterar_telefone = True
             
             try:
+                # Buscar cliente primeiro
+                from checkout.models import CheckoutCliente
+                cliente = CheckoutCliente.objects.filter(cpf=cpf_limpo, loja_id=token_obj.loja_id).first()
+                if not cliente:
+                    raise CheckoutClienteTelefone.DoesNotExist
                 telefone_obj = CheckoutClienteTelefone.objects.get(
-                    cpf=cpf_limpo,
+                    cliente=cliente,
                     ativo=1  # Apenas ativos confirmados
                 )
                 telefone_ativo = telefone_obj.telefone
@@ -254,8 +259,13 @@ class CheckoutPageView(View):
             pode_alterar_telefone = True
             
             try:
+                # Buscar cliente primeiro
+                from checkout.models import CheckoutCliente
+                cliente = CheckoutCliente.objects.filter(cpf=cpf_limpo, loja_id=token_obj.loja_id).first()
+                if not cliente:
+                    raise CheckoutClienteTelefone.DoesNotExist
                 telefone_obj = CheckoutClienteTelefone.objects.get(
-                    cpf=cpf_limpo,
+                    cliente=cliente,
                     ativo=1  # Apenas ativos confirmados
                 )
                 telefone_ativo = telefone_obj.telefone

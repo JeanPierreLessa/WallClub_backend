@@ -24,6 +24,11 @@ else:
         'wcadmin.wallclub.com.br',
         'wclojista.wallclub.com.br',
         'wcvendas.wallclub.com.br',
+        # Hosts locais
+        'admin.wallclub.local',
+        'vendas.wallclub.local',
+        'lojista.wallclub.local',
+        'institucional.wallclub.local',
     ]
 
 # URL base para APIs internas (mesmo container)
@@ -37,16 +42,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party apps
     'rest_framework',
     'corsheaders',
-    
+
     # Core
     'wallclub_core',
     'wallclub_core.oauth',
     'wallclub_core.estr_organizacional.apps.EstrOrganizacionalConfig',
-    
+
     # Apps do container portais
     'portais.admin',
     'portais.lojista',
@@ -54,7 +59,7 @@ INSTALLED_APPS = [
     'portais.controle_acesso',
     'portais.vendas',
     'gestao_financeira',
-    
+
     # Dependências (portais usa checkout, ofertas, parametros)
     'checkout',
     'checkout.link_pagamento_web',

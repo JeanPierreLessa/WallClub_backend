@@ -1,0 +1,3535 @@
+{
+  "info": {
+    "name": "ECommerce - Basico",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "bruno",
+      "event": []
+    },
+    {
+      "name": "Captura Request",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}:{{HOST_PORT}}/v1/payments/{{paymentId}}",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}:{{HOST_PORT}}"
+          ],
+          "path": [
+            "v1",
+            "payments",
+            "{{paymentId}}"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "{{ENTITY_ID}}",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "10.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "CP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "testMode",
+              "value": "EXTERNAL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.name",
+              "value": "OWN Financial Services",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.street",
+              "value": "Av Paulista 1000",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.city",
+              "value": "Sao Paulo",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.state",
+              "value": "SP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.mcc",
+              "value": "0001",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.countryCode",
+              "value": "976",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.url",
+              "value": "own.ecommerce.com.br",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.postcode",
+              "value": "04618035",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.phone",
+              "value": "11988888888",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.customerContactPhone",
+              "value": "11999999999",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.additionalContact",
+              "value": "Additional Information",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.taxId",
+              "value": "11112",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.partnerIdCode",
+              "value": "12345",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationCity",
+              "value": "Jundiai",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationState",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationCountryCode",
+              "value": "976",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationPostCode",
+              "value": "12345111",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.data[EC_CODE]",
+              "value": "000000151000011",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_COUNTRYCODE]",
+              "value": "076",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_URL]",
+              "value": "own.ecommerce.com.br",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_POSTCODE]",
+              "value": "04618035",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_PHONE]",
+              "value": "11988888888",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+              "value": "11999999999",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+              "value": "Additional Information",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_TAXID]",
+              "value": "11112",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+              "value": "12345",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+              "value": "Jundiai",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+              "value": "SP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+              "value": "076",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+              "value": "12345111",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ECCODE]",
+              "value": "000000151000011",
+              "disabled": false,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Captura Request-Lite",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}:{{HOST_PORT}}/v1/payments/{{paymentId}}",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}:{{HOST_PORT}}"
+          ],
+          "path": [
+            "v1",
+            "payments",
+            "{{paymentId}}"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "{{ENTITY_ID}}",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "10.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "CP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "testMode",
+              "value": "EXTERNAL",
+              "disabled": false,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Desfazimento",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}/v1/payments/{{paymentId}}",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}"
+          ],
+          "path": [
+            "v1",
+            "payments",
+            "{{paymentId}}"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "{{ENTITY_ID}}",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "1.01",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "RV",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "testMode",
+              "value": "EXTERNAL",
+              "disabled": false,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Estorno-Matheus",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer OGFjN2E0Yzg5YTUyZWIxMDAxOWE1NDdmZGI2ZDAyZDZ8dEQ0UU1Na0glcD8zZ216ZzJhRVA=",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}/v1/payments/8ac7a49f9a72d97f019a7459a0cc7bea",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}"
+          ],
+          "path": [
+            "v1",
+            "payments",
+            "8ac7a49f9a72d97f019a7459a0cc7bea"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "8ac7a4c79a52e59d019a547fe38c024f",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "35.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "RF",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "authentication.password",
+              "value": "MyPassword_AiHG4uf2vN",
+              "disabled": true,
+              "type": "default"
+            },
+            {
+              "key": "authentication.userId",
+              "value": "MyUsername_AiHG4uf2vN",
+              "disabled": true,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Estorno",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}:{{HOST_PORT}}/v1/payments/{{paymentId}}",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}:{{HOST_PORT}}"
+          ],
+          "path": [
+            "v1",
+            "payments",
+            "{{paymentId}}"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "{{ENTITY_ID}}",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "12.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "RF",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "testMode",
+              "value": "EXTERNAL",
+              "disabled": true,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pay By Link request",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "test(\"Capture Transaction ID\", function () {\r",
+              "    var jsonData = res.getBody();\r",
+              "    bru.setVar(\"paymentId\", jsonData.id);\r",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}:{{HOST_PORT}}/paybylink/v1",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}:{{HOST_PORT}}"
+          ],
+          "path": [
+            "paybylink",
+            "v1"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "{{ENTITY_ID}}",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "10.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "DB",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentBrand",
+              "value": "ELO",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "transactionCategory",
+              "value": "EC",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "testMode",
+              "value": "EXTERNAL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.name",
+              "value": "OWN Financial Services",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.street",
+              "value": "Av Paulista 1000",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.city",
+              "value": "Sao Paulo",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.state",
+              "value": "SP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.mcc",
+              "value": "0001",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.countryCode",
+              "value": "976",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.url",
+              "value": "own.ecommerce.com.br",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.postcode",
+              "value": "04618035",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.phone",
+              "value": "11988888888",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.customerContactPhone",
+              "value": "11999999999",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.additionalContact",
+              "value": "Additional Information",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.taxId",
+              "value": "11112",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.partnerIdCode",
+              "value": "12345",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationCity",
+              "value": "Jundiai",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationState",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationCountryCode",
+              "value": "976",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationPostCode",
+              "value": "12345111",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.data[EC_CODE]",
+              "value": "000000151000011",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_COUNTRYCODE]",
+              "value": "076",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_URL]",
+              "value": "own.ecommerce.com.br",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_POSTCODE]",
+              "value": "04618035",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_PHONE]",
+              "value": "11988888888",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+              "value": "11999999999",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+              "value": "Additional Information",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_TAXID]",
+              "value": "11112",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+              "value": "12345",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+              "value": "Jundiai",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+              "value": "SP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+              "value": "076",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+              "value": "12345111",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ECCODE]",
+              "value": "000000151000011",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[PAYMENT_METHOD]",
+              "value": "CREDIT",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchantTransactionId",
+              "value": "ELO_ID_0001",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customer.giverNam",
+              "value": "Graziele",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customer.surname",
+              "value": "Franca",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customer.mobile",
+              "value": "graziele.franca@elo.com.br",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.merchantNameColor",
+              "value": "#ffffff",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.amountColor",
+              "value": "#ffffff",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.payButtonColor",
+              "value": "#0dcaf0",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.payButtonTextColor",
+              "value": "#ffffff",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "validUntil",
+              "value": "10",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "validUntilUnit",
+              "value": "DAY",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "collectBilling",
+              "value": "street1,houseNumber1,postcode,city,country",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "mandatoryBilling",
+              "value": "street1,houseNumber1,postcode,city,country",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "createQRCode",
+              "value": "true",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "cart.items[0].currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "cart.items[0].description",
+              "value": "TESTE ELO",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "cart.items[0].merchantItemId",
+              "value": "1",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "cart.items[0].name",
+              "value": "Valor para Teste ELO",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "cart.items[0].price",
+              "value": "10.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "cart.items[0].quantity=1",
+              "value": "1",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "cart.items[0].totalAmount",
+              "value": "10.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "locale",
+              "value": "pt",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "testMode",
+              "value": "EXTERNAL",
+              "disabled": false,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PayByLink from Curl",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer OGFjN2E0Yzc4MjIzZGE3YjAxODIyNWU5OWI3ODAzNmR8WXN6UzlFemtOag==",
+            "disabled": false,
+            "type": "default"
+          },
+          {
+            "key": "content-type",
+            "value": "application/x-www-form-urlencoded",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}/paybylink/v1",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}"
+          ],
+          "path": [
+            "paybylink",
+            "v1"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "8ac7a4ca83d5f6040183e5c458d966b0",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "5.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "DB",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.name",
+              "value": "Merchant Teste",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.logoWidth",
+              "value": "317px",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.logoHeight",
+              "value": "117px",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.merchantNameColor",
+              "value": "#ffffff",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.amountColor",
+              "value": "#ffffff",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.payButtonColor",
+              "value": "#ffffff",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.payButtonTextColor",
+              "value": "#292091",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "validUntil",
+              "value": "1",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "validUntilUnit",
+              "value": "DAY",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "locale",
+              "value": "pt",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "collectBilling",
+              "value": "postcode,state,city,street1,houseNumber1",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "mandatoryBilling",
+              "value": "postcode,state,city,street1,houseNumber1",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "billing.street1",
+              "value": "",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "billing.houseNumber1",
+              "value": "",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "billing.postcode",
+              "value": "",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "billing.city",
+              "value": "",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "billing.country",
+              "value": "BR",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "shopperResultUrl",
+              "value": "https://docs.payments-own.financial/integrations/paybylink",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "standingInstruction.type",
+              "value": "UNSCHEDULED",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.logo",
+              "value": "https://i.ibb.co/ZpYY15n0/Eyecare.jpg",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "layout.template",
+              "value": "{ \"billing\":{ \"title\": { \"text\": \"Endereço\" }, \"address\":{ \"houseNumber1\":{ \"label\":{ \"text\":\"Número\" } }, \"postcode\":{ \"label\":{ \"text\":\"CEP\" } } } }, \"totalAmount\": { \"prefixLabel\": { \"text\": \"Total R$\" } } }",
+              "disabled": false,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pre-Auth Request",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "test(\"Capture Transaction ID\", function () {\r",
+              "    var jsonData = res.getBody();\r",
+              "    bru.setVar(\"paymentId\", jsonData.id);\r",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": null,
+        "description": "",
+        "url": {
+          "raw": "https://{{HOST_DEV}}:{{HOST_PORT}}/v1/payments",
+          "protocol": "https",
+          "host": [
+            "{{HOST_DEV}}:{{HOST_PORT}}"
+          ],
+          "path": [
+            "v1",
+            "payments"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "entityId",
+              "value": "{{ENTITY_ID}}",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "amount",
+              "value": "10.00",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "currency",
+              "value": "BRL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentType",
+              "value": "PA",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "paymentBrand",
+              "value": "ELO",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "card.number",
+              "value": "5067753102578815",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "card.holder",
+              "value": "Leandro Martins",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "card.expiryMonth",
+              "value": "11",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "card.expiryYear",
+              "value": "2026",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "card.cvv",
+              "value": "595",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "transactionCategory",
+              "value": "EC",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "standingInstruction.type",
+              "value": "INSTALLMENT",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "standingInstruction.numberOfInstallments",
+              "value": "3",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "testMode",
+              "value": "EXTERNAL",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.name",
+              "value": "OWN Financial Services",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.street",
+              "value": "Av Paulista 1000",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.city",
+              "value": "Sao Paulo",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.state",
+              "value": "SP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.mcc",
+              "value": "0001",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.countryCode",
+              "value": "976",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.url",
+              "value": "own.ecommerce.com.br",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.postcode",
+              "value": "04618035",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.phone",
+              "value": "11988888888",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.customerContactPhone",
+              "value": "11999999999",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.additionalContact",
+              "value": "Additional Information",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.taxId",
+              "value": "11112",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.partnerIdCode",
+              "value": "12345",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationCity",
+              "value": "Jundiai",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationState",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationCountryCode",
+              "value": "976",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.serviceLocationPostCode",
+              "value": "12345111",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "merchant.data[EC_CODE]",
+              "value": "000000151000011",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_COUNTRYCODE]",
+              "value": "076",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_URL]",
+              "value": "own.ecommerce.com.br",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_POSTCODE]",
+              "value": "04618035",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_PHONE]",
+              "value": "11988888888",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+              "value": "11999999999",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+              "value": "Additional Information",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_TAXID]",
+              "value": "11112",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+              "value": "12345",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+              "value": "Jundiai",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+              "value": "SP",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+              "value": "076",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+              "value": "12345111",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+              "value": "12",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[MERCHANT_ECCODE]",
+              "value": "000000151000011",
+              "disabled": false,
+              "type": "default"
+            },
+            {
+              "key": "customParameters[PAYMENT_METHOD]",
+              "value": "CREDIT",
+              "disabled": false,
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Mastercard",
+      "item": [
+        {
+          "name": "MCC",
+          "item": [
+            {
+              "name": "3DS",
+              "item": [
+                {
+                  "name": "040086000111 3DS - MCC",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "test(\"Capture Transaction ID\", function () {\r",
+                          "    var jsonData = res.getBody();\r",
+                          "    bru.setVar(\"paymentId\", jsonData.id);\r",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{TOKEN}}",
+                        "disabled": false,
+                        "type": "default"
+                      }
+                    ],
+                    "auth": null,
+                    "description": "",
+                    "url": {
+                      "raw": "https://{{HOST_DEV}}:{{HOST_PORT}}/v1/payments",
+                      "protocol": "https",
+                      "host": [
+                        "{{HOST_DEV}}:{{HOST_PORT}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "payments"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "urlencoded",
+                      "urlencoded": [
+                        {
+                          "key": "entityId",
+                          "value": "{{ENTITY_ID}}",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "amount",
+                          "value": "111.00",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "currency",
+                          "value": "BRL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentType",
+                          "value": "DB",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentBrand",
+                          "value": "MASTER",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.number",
+                          "value": "5204740000001002",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.holder",
+                          "value": "NOME DO CLIENTE",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryMonth",
+                          "value": "11",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryYear",
+                          "value": "2026",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.cvv",
+                          "value": "595",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "transactionCategory",
+                          "value": "EC",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.type",
+                          "value": "UNSCHEDULED",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "testMode",
+                          "value": "EXTERNAL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.mcc",
+                          "value": "0001",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.name",
+                          "value": "OWN Financial Services",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.street",
+                          "value": "Av Paulista 1000",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.city",
+                          "value": "Sao Paulo",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.state",
+                          "value": "SP",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.countryCode",
+                          "value": "976",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.url",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.postcode",
+                          "value": "04618035",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.phone",
+                          "value": "11988888888",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.customerContactPhone",
+                          "value": "11999999999",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.additionalContact",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.taxId",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.partnerIdCode",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCity",
+                          "value": "Jundiai",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationState",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCountryCode",
+                          "value": "976",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationPostCode",
+                          "value": "12345111",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_CODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_COUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_URL]",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_POSTCODE]",
+                          "value": "04618035",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PHONE]",
+                          "value": "11988888888",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+                          "value": "11999999999",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_TAXID]",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+                          "value": "Jundiai",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+                          "value": "SP",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+                          "value": "12345111",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECCODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.eci",
+                          "value": "02",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.verificationId",
+                          "value": "kMLT59Ig5JGqwQMU02qCdZeBu4AM",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.version",
+                          "value": "2.1.0",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.dsTransactionId",
+                          "value": "c8946697-6d88-4548-814c-36db3d6cbfc4",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.challengeMandatedIndicator",
+                          "value": "N",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.transactionStatusReason",
+                          "value": "17",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.acsTransactionId",
+                          "value": "39245b72-7f2c-4c29-b25c-db00ed06ccf4",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.authType",
+                          "value": "01",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.flow",
+                          "value": "challenge",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.authenticationStatus",
+                          "value": "Y",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.acsReferenceNumber",
+                          "value": "b04ea28d11294692a29f63d2f5c84bfc",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.dsReferenceNumber",
+                          "value": "13db2d60d08c4f6b83de194ca5245e57",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "threeDSecure.purchaseDate",
+                          "value": "20241107130517",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[PAYMENT_METHOD]",
+                          "value": "CREDIT",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.type",
+                          "value": "INSTALLMENT",
+                          "disabled": true,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.mode",
+                          "value": "INITIAL",
+                          "disabled": true,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.numberOfInstallments",
+                          "value": "3",
+                          "disabled": true,
+                          "type": "default"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Credito",
+              "item": [
+                {
+                  "name": "Venda Credito Master  - Custom Parameters",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "test(\"Capture Transaction ID\", function () {\r",
+                          "    var jsonData = res.getBody();\r",
+                          "    bru.setVar(\"paymentId\", jsonData.id);\r",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{TOKEN}}",
+                        "disabled": false,
+                        "type": "default"
+                      }
+                    ],
+                    "auth": null,
+                    "description": "",
+                    "url": {
+                      "raw": "https://{{HOST_DEV}}:{{HOST_PORT}}/v1/payments",
+                      "protocol": "https",
+                      "host": [
+                        "{{HOST_DEV}}:{{HOST_PORT}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "payments"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "urlencoded",
+                      "urlencoded": [
+                        {
+                          "key": "entityId",
+                          "value": "{{ENTITY_ID}}",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "amount",
+                          "value": "10.01",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "currency",
+                          "value": "BRL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentType",
+                          "value": "DB",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentBrand",
+                          "value": "MASTER",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.number",
+                          "value": "5204740000001002",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.holder",
+                          "value": "NOME DO CLIENTE",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryMonth",
+                          "value": "11",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryYear",
+                          "value": "2026",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.cvv",
+                          "value": "595",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "transactionCategory",
+                          "value": "EC",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.type",
+                          "value": "UNSCHEDULED",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "testMode",
+                          "value": "EXTERNAL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.name",
+                          "value": "OWN Financial Services",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.street",
+                          "value": "Av Paulista 1000",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.city",
+                          "value": "Sao Paulo",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.state",
+                          "value": "SP",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.countryCode",
+                          "value": "976",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.url",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.postcode",
+                          "value": "04618035",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.phone",
+                          "value": "11988888888",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.customerContactPhone",
+                          "value": "11999999999",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.additionalContact",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.taxId",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.partnerIdCode",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCity",
+                          "value": "Jundiai",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationState",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCountryCode",
+                          "value": "976",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationPostCode",
+                          "value": "12345111",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_CODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_COUNTRYCODE]",
+                          "value": "976",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_URL]",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_POSTCODE]",
+                          "value": "04618035",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PHONE]",
+                          "value": "11988888888",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+                          "value": "11999999999",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_TAXID]",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+                          "value": "Jundiai",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+                          "value": "SP",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+                          "value": "976",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+                          "value": "12345111",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECCODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[PAYMENT_METHOD]",
+                          "value": "CREDIT",
+                          "disabled": true,
+                          "type": "default"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "Venda Credito Master",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "test(\"Capture Transaction ID\", function () {\r",
+                          "    var jsonData = res.getBody();\r",
+                          "    bru.setVar(\"paymentId\", jsonData.id);\r",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{TOKEN}}",
+                        "disabled": false,
+                        "type": "default"
+                      }
+                    ],
+                    "auth": null,
+                    "description": "",
+                    "url": {
+                      "raw": "https://{{HOST_DEV}}/v1/payments",
+                      "protocol": "https",
+                      "host": [
+                        "{{HOST_DEV}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "payments"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "urlencoded",
+                      "urlencoded": [
+                        {
+                          "key": "entityId",
+                          "value": "{{ENTITY_ID}}",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "amount",
+                          "value": "12.00",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "currency",
+                          "value": "BRL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentType",
+                          "value": "DB",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentBrand",
+                          "value": "VISA",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.number",
+                          "value": "4200000000000042",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.holder",
+                          "value": "NOME DO CLIENTE",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryMonth",
+                          "value": "11",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryYear",
+                          "value": "2026",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.cvv",
+                          "value": "068",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "transactionCategory",
+                          "value": "EC",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.type",
+                          "value": "UNSCHEDULED",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.mcc",
+                          "value": "5462",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.name",
+                          "value": "Comercio Teste 1",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.street",
+                          "value": "Av. Ipe,128",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.city",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.state",
+                          "value": "MG",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.countryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.url",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.postcode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.phone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.customerContactPhone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.additionalContact",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.taxId",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.partnerIdCode",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCity",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationState",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCountryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationPostCode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[PAYMENT_METHOD]",
+                          "value": "CREDIT",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchantTransactionId",
+                          "value": "1234567890abcdef",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "testMode",
+                          "value": "EXTERNAL",
+                          "disabled": false,
+                          "type": "default"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "Venda Credito Parcelado",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "test(\"Capture Transaction ID\", function () {\r",
+                          "    var jsonData = res.getBody();\r",
+                          "    bru.setVar(\"paymentId\", jsonData.id);\r",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{TOKEN}}",
+                        "disabled": false,
+                        "type": "default"
+                      }
+                    ],
+                    "auth": null,
+                    "description": "",
+                    "url": {
+                      "raw": "https://{{HOST_DEV}}/v1/payments",
+                      "protocol": "https",
+                      "host": [
+                        "{{HOST_DEV}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "payments"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "urlencoded",
+                      "urlencoded": [
+                        {
+                          "key": "entityId",
+                          "value": "{{ENTITY_ID}}",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "amount",
+                          "value": "20.00",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "currency",
+                          "value": "BRL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentType",
+                          "value": "DB",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentBrand",
+                          "value": "MASTER",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.number",
+                          "value": "5491670848998683",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.holder",
+                          "value": "LEANDRO A MARTINS",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryMonth",
+                          "value": "06",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryYear",
+                          "value": "2029",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.cvv",
+                          "value": "635",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "transactionCategory",
+                          "value": "EC",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.type",
+                          "value": "INSTALLMENT",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.mcc",
+                          "value": "5462",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.name",
+                          "value": "CEL BOLOS",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.street",
+                          "value": "Av. Ipe,128",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.city",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.state",
+                          "value": "MG",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.countryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.url",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.postcode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.phone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.customerContactPhone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.additionalContact",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.taxId",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.partnerIdCode",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCity",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationState",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCountryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationPostCode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_CODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_COUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_URL]",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_POSTCODE]",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PHONE]",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_TAXID]",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+                          "value": "MG",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECCODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.numberOfInstallments",
+                          "value": "2",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "testMode",
+                          "value": "EXTERNAL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[PAYMENT_METHOD]",
+                          "value": "CREDIT",
+                          "disabled": false,
+                          "type": "default"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "MSI",
+          "item": [
+            {
+              "name": "3000003",
+              "item": [
+                {
+                  "name": "300000300001",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "test(\"Capture Transaction ID\", function () {\r",
+                          "    var jsonData = res.getBody();\r",
+                          "    bru.setVar(\"paymentId\", jsonData.id);\r",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{TOKEN}}",
+                        "disabled": false,
+                        "type": "default"
+                      }
+                    ],
+                    "auth": null,
+                    "description": "",
+                    "url": {
+                      "raw": "https://{{HOST_DEV}}/v1/payments",
+                      "protocol": "https",
+                      "host": [
+                        "{{HOST_DEV}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "payments"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "urlencoded",
+                      "urlencoded": [
+                        {
+                          "key": "entityId",
+                          "value": "{{ENTITY_ID}}",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "amount",
+                          "value": "1.05",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "currency",
+                          "value": "BRL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentType",
+                          "value": "DB",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentBrand",
+                          "value": "MASTER",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.number",
+                          "value": "5033961989901056",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.holder",
+                          "value": "NOME DO CLIENTE",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryMonth",
+                          "value": "11",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryYear",
+                          "value": "2026",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.cvv",
+                          "value": "595",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "transactionCategory",
+                          "value": "EC",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.type",
+                          "value": "UNSCHEDULED",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.mcc",
+                          "value": "5462",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.name",
+                          "value": "CEL BOLOS",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.street",
+                          "value": "Av. Ipe,128",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.city",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.state",
+                          "value": "MG",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.countryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.url",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.postcode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.phone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.customerContactPhone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.additionalContact",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.taxId",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.partnerIdCode",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCity",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationState",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCountryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationPostCode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_CODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_COUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_URL]",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_POSTCODE]",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PHONE]",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_TAXID]",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+                          "value": "MG",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECCODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[PAYMENT_METHOD]",
+                          "value": "DEBIT",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "testMode",
+                          "value": "EXTERNAL",
+                          "disabled": false,
+                          "type": "default"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "300000300002",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "test(\"Capture Transaction ID\", function () {\r",
+                          "    var jsonData = res.getBody();\r",
+                          "    bru.setVar(\"paymentId\", jsonData.id);\r",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{TOKEN}}",
+                        "disabled": false,
+                        "type": "default"
+                      }
+                    ],
+                    "auth": null,
+                    "description": "",
+                    "url": {
+                      "raw": "https://{{HOST_DEV}}/v1/payments",
+                      "protocol": "https",
+                      "host": [
+                        "{{HOST_DEV}}"
+                      ],
+                      "path": [
+                        "v1",
+                        "payments"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "urlencoded",
+                      "urlencoded": [
+                        {
+                          "key": "entityId",
+                          "value": "{{ENTITY_ID}}",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "amount",
+                          "value": "1.05",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "currency",
+                          "value": "BRL",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentType",
+                          "value": "DB",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "paymentBrand",
+                          "value": "MAESTRO",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.number",
+                          "value": "5033961989901056",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.holder",
+                          "value": "NOME DO CLIENTE",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryMonth",
+                          "value": "11",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.expiryYear",
+                          "value": "2026",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "card.cvv",
+                          "value": "595",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "transactionCategory",
+                          "value": "EC",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "standingInstruction.type",
+                          "value": "UNSCHEDULED",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.mcc",
+                          "value": "5462",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.name",
+                          "value": "CEL BOLOS",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.street",
+                          "value": "Av. Ipe,128",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.city",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.state",
+                          "value": "MG",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.countryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.url",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.postcode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.phone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.customerContactPhone",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.additionalContact",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.taxId",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.partnerIdCode",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCity",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationState",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationCountryCode",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.serviceLocationPostCode",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_SUBDIVISION_COUNTRY_CODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "merchant.data[EC_CODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_COUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_URL]",
+                          "value": "own.ecommerce.com.br",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_POSTCODE]",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PHONE]",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_CUSTOMERCONTACTPHONE]",
+                          "value": "3496913722",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ADDITIONALCONTACT]",
+                          "value": "Additional Information",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_TAXID]",
+                          "value": "11112",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_PARTNERIDCODE]",
+                          "value": "12345",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCITY]",
+                          "value": "Uberlandia",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONSTATE]",
+                          "value": "MG",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONCOUNTRYCODE]",
+                          "value": "076",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_SERVICELOCATIONPOSTCODE]",
+                          "value": "38413015",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECSUBDIVISIONCOUNTRYCODE]",
+                          "value": "12",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[MERCHANT_ECCODE]",
+                          "value": "000000151000011",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "customParameters[PAYMENT_METHOD]",
+                          "value": "DEBIT",
+                          "disabled": false,
+                          "type": "default"
+                        },
+                        {
+                          "key": "testMode",
+                          "value": "EXTERNAL",
+                          "disabled": false,
+                          "type": "default"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "HOST_DEV",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "HOST_PORT",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "TOKEN",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "ENTITY_ID",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

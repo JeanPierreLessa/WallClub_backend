@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'pinbank',
     'pinbank.cargas_pinbank',
     'parametros_wallclub',
+    'gestao_financeira',  # Necessário para BaseTransacoesGestao (cargas)
     'adquirente_own',
     'adquirente_own.cargas_own',
 ]

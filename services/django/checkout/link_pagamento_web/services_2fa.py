@@ -33,13 +33,14 @@ class CheckoutSecurityService:
     MAX_CARTOES_POR_TELEFONE_DIA = 2  # Max 2 cartões diferentes no mesmo telefone/dia
     
     @staticmethod
-    def validar_telefone_cliente(cpf: str, telefone: str) -> Dict[str, Any]:
+    def validar_telefone_cliente(cpf: str, telefone: str, loja_id: int = None) -> Dict[str, Any]:
         """
         Valida e registra telefone do cliente
         
         Args:
             cpf: CPF do cliente (11 dígitos)
             telefone: Telefone com DDD
+            loja_id: ID da loja (opcional)
             
         Returns:
             dict: {
@@ -49,6 +50,8 @@ class CheckoutSecurityService:
                 'pode_alterar': bool
             }
         """
+        from checkout.models import CheckoutCliente
+        
         try:
             # Limpar CPF e telefone
             cpf_limpo = ''.join(filter(str.isdigit, cpf))
@@ -72,7 +75,8 @@ class CheckoutSecurityService:
             # Obter ou criar telefone
             telefone_obj, created = CheckoutClienteTelefone.obter_ou_criar_telefone(
                 cpf=cpf_limpo,
-                telefone=telefone_limpo
+                telefone=telefone_limpo,
+                loja_id=loja_id
             )
             
             # Verificar se telefone foi desabilitado (ativo=0)
@@ -543,8 +547,17 @@ class CheckoutSecurityService:
         """
         detalhes = {}
         
+        # Obter loja_id do token
+        loja_id = None
+        try:
+            from .models import CheckoutToken
+            token_obj = CheckoutToken.objects.get(token=token)
+            loja_id = token_obj.loja_id
+        except:
+            pass
+        
         # 1. Validar telefone
-        resultado_telefone = CheckoutSecurityService.validar_telefone_cliente(cpf, telefone)
+        resultado_telefone = CheckoutSecurityService.validar_telefone_cliente(cpf, telefone, loja_id)
         if not resultado_telefone['sucesso']:
             return {
                 'aprovado': False,
@@ -685,7 +698,8 @@ class CheckoutSecurityService:
         nsu: str = None,
         status: str = 'APROVADA',
         ip_address: str = '',
-        device_fingerprint: str = None
+        device_fingerprint: str = None,
+        loja_id: int = None
     ) -> Dict[str, Any]:
         """
         Valida OTP e registra transação no histórico
@@ -713,10 +727,10 @@ class CheckoutSecurityService:
         telefone_limpo = ''.join(filter(str.isdigit, telefone))
         
         try:
-            # Buscar telefone pendente (ativo=-1) ou ativo (ativo=1)
-            # NÃO buscar desabilitados (ativo=0)
-            telefone_obj = CheckoutClienteTelefone.objects.get(
-                cpf=cpf_limpo,
+            # Buscar telefone diretamente (join com cliente via FK)
+            # Isso garante que pegamos o telefone correto mesmo se houver múltiplos clientes com mesmo CPF
+            telefone_obj = CheckoutClienteTelefone.objects.select_related('cliente').get(
+                cliente__cpf=cpf_limpo,
                 telefone=telefone_limpo,
                 ativo__in=[-1, 1]  # Aceita pendente (-1) ou ativo (1)
             )

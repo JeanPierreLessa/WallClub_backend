@@ -107,13 +107,14 @@ class TransacoesOwnService:
         
         try:
             registrar_log('own.transacao', f'📡 {method} {endpoint}')
+            registrar_log('own.transacao', f'📦 Payload: {data}')
             
             if method.upper() == 'POST':
-                response = requests.post(url, data=data, headers=headers, timeout=30)
+                response = requests.post(url, data=data, headers=headers, timeout=60)
             elif method.upper() == 'GET':
-                response = requests.get(url, headers=headers, params=data, timeout=30)
+                response = requests.get(url, headers=headers, params=data, timeout=60)
             elif method.upper() == 'DELETE':
-                response = requests.delete(url, headers=headers, params=data, timeout=30)
+                response = requests.delete(url, headers=headers, params=data, timeout=60)
             else:
                 raise ValueError(f'Método não suportado: {method}')
             
@@ -134,6 +135,13 @@ class TransacoesOwnService:
             }
         except requests.exceptions.RequestException as e:
             registrar_log('own.transacao', f'❌ Erro HTTP: {str(e)}', nivel='ERROR')
+            # Tentar capturar resposta de erro
+            try:
+                if hasattr(e, 'response') and e.response is not None:
+                    error_body = e.response.text
+                    registrar_log('own.transacao', f'📄 Resposta erro: {error_body}', nivel='ERROR')
+            except:
+                pass
             return {
                 'result': {
                     'code': 'ERROR',
@@ -163,22 +171,45 @@ class TransacoesOwnService:
         """
         credenciais = self._obter_credenciais_loja(loja_id)
         
+        # Normalizar ano para 4 dígitos (OPPWA exige formato YYYY)
+        expiry_year = card_data['expiry_year']
+        if len(str(expiry_year)) == 2:
+            expiry_year = f'20{expiry_year}'
+        
+        # Normalizar bandeira (MASTERCARD -> MASTER)
+        brand = card_data['brand'].upper()
+        if brand == 'MASTERCARD':
+            brand = 'MASTER'
+        
         data = {
             'entityId': credenciais['entity_id'],
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
-            'paymentBrand': card_data['brand'].upper(),
-            'paymentType': 'DB',  # Debit (captura imediata)
+            'paymentBrand': brand,
+            'paymentType': 'DB',
             'card.number': card_data['number'],
             'card.holder': card_data['holder'],
             'card.expiryMonth': card_data['expiry_month'],
-            'card.expiryYear': card_data['expiry_year'],
+            'card.expiryYear': expiry_year,
             'card.cvv': card_data['cvv'],
+            'transactionCategory': 'EC',
+            'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
+            'merchant.mcc': '5462',
+            'merchant.name': 'WallClub Channel Teste',
+            'merchant.street': 'Av Paulista 1000',
+            'merchant.city': 'Sao Paulo',
+            'merchant.state': 'SP',
+            'merchant.countryCode': '076',
+            'merchant.url': 'wallclub.com.br',
+            'merchant.postcode': '01310100',
+            'merchant.phone': '1133334444',
+            'merchant.customerContactPhone': '1133334444',
+            'customParameters[PAYMENT_METHOD]': 'CREDIT',
         }
         
         # Parcelamento (se aplicável)
         if parcelas > 1:
-            data['installments'] = str(parcelas)
+            data['standingInstruction.numberOfInstallments'] = str(parcelas)
         
         registrar_log('own.transacao', f'💳 Pagamento DB: R$ {amount:.2f} ({parcelas}x)')
         
@@ -234,21 +265,43 @@ class TransacoesOwnService:
         """
         credenciais = self._obter_credenciais_loja(loja_id)
         
+        # Normalizar ano para 4 dígitos (OPPWA exige formato YYYY)
+        expiry_year = card_data['expiry_year']
+        if len(str(expiry_year)) == 2:
+            expiry_year = f'20{expiry_year}'
+        
+        # Normalizar bandeira (MASTERCARD -> MASTER)
+        brand = card_data['brand'].upper()
+        if brand == 'MASTERCARD':
+            brand = 'MASTER'
+        
         data = {
             'entityId': credenciais['entity_id'],
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
-            'paymentBrand': card_data['brand'].upper(),
-            'paymentType': 'PA',  # Pre-authorization
+            'paymentBrand': brand,
+            'paymentType': 'PA',
             'card.number': card_data['number'],
             'card.holder': card_data['holder'],
             'card.expiryMonth': card_data['expiry_month'],
-            'card.expiryYear': card_data['expiry_year'],
+            'card.expiryYear': expiry_year,
             'card.cvv': card_data['cvv'],
             'createRegistration': 'true',
+            'transactionCategory': 'EC',
             'standingInstruction.mode': 'INITIAL',
             'standingInstruction.type': 'UNSCHEDULED',
-            'standingInstruction.source': 'CIT'
+            'standingInstruction.source': 'CIT',
+            'merchant.mcc': '5462',
+            'merchant.name': 'WallClub Channel Teste',
+            'merchant.street': 'Av Paulista 1000',
+            'merchant.city': 'Sao Paulo',
+            'merchant.state': 'SP',
+            'merchant.countryCode': '076',
+            'merchant.url': 'wallclub.com.br',
+            'merchant.postcode': '01310100',
+            'merchant.phone': '1133334444',
+            'merchant.customerContactPhone': '1133334444',
+            'customParameters[PAYMENT_METHOD]': 'CREDIT'
         }
         
         registrar_log('own.transacao', f'🔐 PA com tokenização: R$ {amount:.2f}')
@@ -285,15 +338,17 @@ class TransacoesOwnService:
         self,
         registration_id: str,
         amount: Decimal,
+        parcelas: int = 1,
         loja_id: int = None
     ) -> Dict[str, Any]:
         """
-        Pagamento usando token de recorrência
+        Pagamento com token existente (recorrência)
         Payment Type: DB com registrationId
         
         Args:
             registration_id: ID do token de recorrência
             amount: Valor da transação
+            parcelas: Número de parcelas (padrão: 1)
             loja_id: ID da loja (opcional)
             
         Returns:
@@ -306,17 +361,33 @@ class TransacoesOwnService:
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
             'paymentType': 'DB',
-            'registrationId': registration_id,
+            'transactionCategory': 'EC',
             'standingInstruction.mode': 'REPEATED',
-            'standingInstruction.type': 'UNSCHEDULED',
-            'standingInstruction.source': 'MIT'
+            'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
+            'standingInstruction.source': 'MIT',
+            'merchant.mcc': '5462',
+            'merchant.name': 'WallClub Channel Teste',
+            'merchant.street': 'Av Paulista 1000',
+            'merchant.city': 'Sao Paulo',
+            'merchant.state': 'SP',
+            'merchant.countryCode': '076',
+            'merchant.url': 'wallclub.com.br',
+            'merchant.postcode': '01310100',
+            'merchant.phone': '1133334444',
+            'merchant.customerContactPhone': '1133334444',
+            'customParameters[PAYMENT_METHOD]': 'CREDIT',
         }
         
-        registrar_log('own.transacao', f'🔁 Pagamento recorrente: R$ {amount:.2f}')
+        # Parcelamento (se aplicável)
+        if parcelas > 1:
+            data['standingInstruction.numberOfInstallments'] = str(parcelas)
         
+        registrar_log('own.transacao', f'🔁 Pagamento recorrente: R$ {amount:.2f} ({parcelas}x)')
+        
+        # Pagamento com token usa endpoint diferente
         response = self._fazer_requisicao_oppwa(
             method='POST',
-            endpoint='/v1/payments',
+            endpoint=f'/v1/registrations/{registration_id}/payments',
             entity_id=credenciais['entity_id'],
             access_token=credenciais['access_token'],
             environment=credenciais['environment'],

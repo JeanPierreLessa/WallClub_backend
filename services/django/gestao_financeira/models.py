@@ -228,7 +228,7 @@ class PagamentoEfetuado(models.Model):
     var111 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     var112 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey('controle_acesso.PortalUsuario', on_delete=models.PROTECT, verbose_name="Usuário")
+    user_id = models.IntegerField(null=True, blank=True, verbose_name="ID do Usuário", help_text="FK manual para controle_acesso.PortalUsuario")
     
     class Meta:
         app_label = 'gestao_financeira'

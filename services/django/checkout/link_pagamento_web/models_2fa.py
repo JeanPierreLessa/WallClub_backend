@@ -18,7 +18,14 @@ class CheckoutClienteTelefone(models.Model):
         (1, 'Ativo'),          # Confirmado após 2FA
     ]
     
-    cpf = models.CharField(max_length=11, db_index=True, help_text="CPF do cliente")
+    # FK para CheckoutCliente (ao invés de CPF direto)
+    cliente = models.ForeignKey(
+        'checkout.CheckoutCliente',
+        on_delete=models.CASCADE,
+        related_name='telefones',
+        db_column='cliente_id',
+        help_text="Cliente dono do telefone"
+    )
     telefone = models.CharField(max_length=15, db_index=True, help_text="Telefone com DDD")
     ativo = models.IntegerField(
         default=-1, 
@@ -55,9 +62,9 @@ class CheckoutClienteTelefone(models.Model):
         db_table = 'checkout_cliente_telefone'
         verbose_name = 'Telefone Cliente Checkout'
         verbose_name_plural = 'Telefones Cliente Checkout'
-        unique_together = [['cpf', 'telefone']]
+        unique_together = [['cliente', 'telefone']]
         indexes = [
-            models.Index(fields=['cpf', 'ativo']),
+            models.Index(fields=['cliente', 'ativo']),
             models.Index(fields=['telefone', 'ativo']),
         ]
     
@@ -69,7 +76,8 @@ class CheckoutClienteTelefone(models.Model):
         }
         status = status_map.get(self.ativo, "❓ DESCONHECIDO")
         imutavel = " 🔒 IMUTÁVEL" if self.primeira_transacao_aprovada_em else ""
-        return f"{status}{imutavel} - CPF {self.cpf[:3]}***{self.cpf[-2:]} - Tel {self.telefone[-4:]}"
+        cpf = self.cliente.cpf if self.cliente else '***'
+        return f"{status}{imutavel} - CPF {cpf[:3]}***{cpf[-2:]} - Tel {self.telefone[-4:]}"
     
     def pode_alterar_telefone(self) -> bool:
         """Verifica se telefone pode ser alterado"""
@@ -94,9 +102,9 @@ class CheckoutClienteTelefone(models.Model):
             self.ativo = 1  # Garante que está ativo
             self.save(update_fields=['primeira_transacao_aprovada_em', 'ativo', 'atualizado_em'])
             
-            # CRÍTICO: Inativar todos os outros telefones deste CPF
+            # CRÍTICO: Inativar todos os outros telefones deste cliente
             CheckoutClienteTelefone.objects.filter(
-                cpf=self.cpf
+                cliente_id=self.cliente_id
             ).exclude(
                 id=self.id  # Exceto este telefone
             ).update(
@@ -105,22 +113,49 @@ class CheckoutClienteTelefone(models.Model):
             )
     
     @classmethod
-    def obter_ou_criar_telefone(cls, cpf: str, telefone: str):
+    def obter_ou_criar_telefone(cls, cpf: str, telefone: str, loja_id: int = None):
         """
         Obtém telefone existente ou cria novo
         
         Args:
             cpf: CPF do cliente (11 dígitos)
             telefone: Telefone com DDD
+            loja_id: ID da loja (opcional - usa primeira loja do cliente se não fornecido)
             
         Returns:
             tuple: (CheckoutClienteTelefone, created: bool)
         """
+        from checkout.models import CheckoutCliente
+        
         cpf_limpo = ''.join(filter(str.isdigit, cpf))
         telefone_limpo = ''.join(filter(str.isdigit, telefone))
         
+        # Buscar cliente (usar filter().first() para evitar erro de múltiplos)
+        if loja_id:
+            cliente = CheckoutCliente.objects.filter(cpf=cpf_limpo, loja_id=loja_id).first()
+        else:
+            cliente = CheckoutCliente.objects.filter(cpf=cpf_limpo).first()
+        
+        if not cliente:
+            # Se cliente não existe, criar um básico
+            # NOTA: Isso só deve acontecer em casos excepcionais
+            # Normalmente o cliente já deve existir antes do 2FA
+            from wallclub_core.utilitarios.log_control import registrar_log
+            registrar_log(
+                'checkout.2fa',
+                f'AVISO: Cliente não encontrado para CPF {cpf_limpo[:3]}***{cpf_limpo[-2:]} - criando registro básico',
+                nivel='WARNING'
+            )
+            cliente = CheckoutCliente.objects.create(
+                cpf=cpf_limpo,
+                nome='Cliente Checkout',
+                email=f'{cpf_limpo}@temp.com',
+                loja_id=loja_id or 1,  # Loja padrão
+                ativo=True
+            )
+        
         return cls.objects.get_or_create(
-            cpf=cpf_limpo,
+            cliente=cliente,
             telefone=telefone_limpo,
             defaults={
                 'ativo': -1  # Pendente até primeira confirmação 2FA
@@ -156,12 +191,16 @@ class CheckoutTransactionHelper:
         from checkout.models import CheckoutCliente
         
         try:
-            cliente = CheckoutCliente.objects.get(cpf=cpf_limpo)
+            # Usar filter().first() para evitar erro quando há múltiplos clientes com mesmo CPF em lojas diferentes
+            cliente = CheckoutCliente.objects.filter(cpf=cpf_limpo).first()
+            if not cliente:
+                return 0
+            
             return CheckoutTransaction.objects.filter(
                 cliente_id=cliente.id,
                 status__in=['APROVADA', 'APPROVED']
             ).count()
-        except CheckoutCliente.DoesNotExist:
+        except Exception:
             return 0
     
     @staticmethod
@@ -210,17 +249,17 @@ class CheckoutTransactionHelper:
         telefone_limpo = ''.join(filter(str.isdigit, telefone))
         data_limite = datetime.now() - timedelta(days=dias)
         
-        # Buscar CPFs que usam este telefone
-        cpfs_com_telefone = list(CheckoutClienteTelefone.objects.filter(
+        # Buscar clientes que usam este telefone
+        clientes_ids = list(CheckoutClienteTelefone.objects.filter(
             telefone=telefone_limpo,
             ativo=True
-        ).values_list('cpf', flat=True))
+        ).values_list('cliente_id', flat=True))
         
-        if not cpfs_com_telefone:
+        if not clientes_ids:
             return 0
         
-        # Buscar clientes com esses CPFs (converter para list evita erro de collation)
-        clientes = CheckoutCliente.objects.filter(cpf__in=cpfs_com_telefone)
+        # Buscar clientes
+        clientes = CheckoutCliente.objects.filter(id__in=clientes_ids)
         
         if not clientes.exists():
             return 0

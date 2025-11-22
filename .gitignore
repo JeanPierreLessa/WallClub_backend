@@ -59,6 +59,8 @@ htmlcov/
 # Docker
 *.env
 !.env.example
+docker-compose.override.yml
+docker-compose.dev.yml
 
 # Node (se houver frontend)
 node_modules/

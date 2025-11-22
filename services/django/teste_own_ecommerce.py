@@ -38,7 +38,7 @@ def teste_1_pagamento_debito():
     
     service = TransacoesOwnService(loja_id=33)  # Loja teste Own (CNPJ: 54430621000134)
     
-    # Dados de teste (cartão de teste Own)
+    # Dados de teste (cartão de teste VISA)
     card_data = {
         'number': '4200000000000000',  # Cartão de teste Visa
         'holder': 'TESTE WALLCLUB',

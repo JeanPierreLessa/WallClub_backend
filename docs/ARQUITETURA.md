@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.1  
-**Data:** 21/11/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (92% - Own Financial)
+**Versão:** 5.2  
+**Data:** 22/11/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial)
 
 ---
 
@@ -174,6 +174,9 @@ Internet (80/443)
   - `/trdata_own/` - Endpoint transações Own/Ágilli ✅ NOVO
 - `pinbank/` - Integração Pinbank + Cargas
 - `adquirente_own/` - Integração Own Financial ✅ NOVO
+  - ✅ OAuth 2.0 (token cache 4min)
+  - ✅ API OPPWA E-commerce (timeout 60s)
+  - ⚠️ API QA com problemas de performance (timeout >60s)
 - `parametros_wallclub/` - Parâmetros financeiros (3.840 configs)
 
 **Comunicação:**
@@ -196,7 +199,10 @@ Internet (80/443)
 - `apps/ofertas/` - Sistema de Ofertas Push
 - `apps/transacoes/` - Transações mobile
 - `apps/oauth/` - OAuth 2.0 Token Endpoint (centralizado)
-- `checkout/` - Checkout Web + 2FA WhatsApp
+- `checkout/` - Checkout Web + 2FA WhatsApp + Link de Pagamento
+  - ✅ `CheckoutTransaction` criada pelo portal de vendas (status PENDENTE)
+  - ✅ `LinkPagamentoTransactionService` - Gerencia transações de link
+  - ✅ Validação OTP integrada com processamento de pagamento
 
 **API Interna (comunicação entre containers):**
 - `/api/internal/cliente/` - 6 endpoints para consulta de clientes

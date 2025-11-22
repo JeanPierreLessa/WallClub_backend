@@ -4,20 +4,18 @@ Uso: python manage.py carga_base_gestao_own --limite=1000
 """
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from adquirente_own.cargas_own.models import OwnExtratoTransacoes
-from adquirente_own.cargas_own.services_carga_transacoes import CargaTransacoesOwnService
+from adquirente_own.cargas_own.services_carga_base_gestao_own import CargaBaseGestaoOwnService
 
 
 class Command(BaseCommand):
-    help = 'Processa transações Own não processadas para BaseTransacoesGestao'
+    help = 'Processa transações Own (ownExtratoTransacoes + transactiondata_own) para BaseTransacoesGestao'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--limite',
             type=int,
-            default=1000,
-            help='Número máximo de registros a processar (padrão: 1000)'
+            default=None,
+            help='Número máximo de registros a processar'
         )
         parser.add_argument(
             '--identificador',
@@ -26,66 +24,32 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        service = CargaTransacoesOwnService()
+        service = CargaBaseGestaoOwnService()
         
-        if options['identificador']:
-            # Processar transação específica
-            identificador = options['identificador']
-            
-            self.stdout.write(self.style.SUCCESS(f'🔄 Processando transação: {identificador}'))
-            
-            try:
-                transacao = OwnExtratoTransacoes.objects.get(
-                    identificadorTransacao=identificador
-                )
-                
-                with transaction.atomic():
-                    base_transacao = service.processar_para_base_gestao(transacao)
-                    
-                self.stdout.write(self.style.SUCCESS(f'✅ Transação processada: {base_transacao.id}'))
-                
-            except OwnExtratoTransacoes.DoesNotExist:
-                self.stdout.write(self.style.ERROR(f'❌ Transação não encontrada: {identificador}'))
-                return
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f'❌ Erro ao processar: {str(e)}'))
-                return
+        limite = options['limite']
+        identificador = options['identificador']
         
+        if identificador:
+            self.stdout.write(self.style.SUCCESS(f'🔄 Processando transação específica: {identificador}'))
         else:
-            # Processar transações não processadas
-            limite = options['limite']
-            
-            self.stdout.write(self.style.SUCCESS(f'🔄 Processando até {limite} transações não processadas...'))
-            
-            transacoes = OwnExtratoTransacoes.objects.filter(
-                processado=False
-            ).order_by('data')[:limite]
-            
-            total = transacoes.count()
-            processadas = 0
-            erros = 0
-            
-            self.stdout.write(f'📊 Total a processar: {total}')
-            
-            for transacao in transacoes:
-                try:
-                    with transaction.atomic():
-                        service.processar_para_base_gestao(transacao)
-                        processadas += 1
-                        
-                        # Log a cada 100 registros
-                        if processadas % 100 == 0:
-                            self.stdout.write(f'   Processadas: {processadas}/{total}')
-                            
-                except Exception as e:
-                    erros += 1
-                    self.stdout.write(self.style.WARNING(f'⚠️ Erro em {transacao.identificadorTransacao}: {str(e)}'))
-                    continue
+            msg = f'🔄 Processando transações Own não lidas'
+            if limite:
+                msg += f' (limite: {limite})'
+            self.stdout.write(self.style.SUCCESS(msg))
+        
+        try:
+            registros_processados = service.carregar_valores_primarios(
+                limite=limite,
+                identificador=identificador
+            )
             
             # Resultado final
             self.stdout.write(self.style.SUCCESS(f'\n✅ Processamento concluído!'))
-            self.stdout.write(f'   Total processadas: {processadas}')
-            self.stdout.write(f'   Total erros: {erros}')
+            self.stdout.write(f'   Total processadas: {registros_processados}')
             
-            if erros > 0:
-                self.stdout.write(self.style.WARNING(f'⚠️ {erros} transações com erro'))
+        except Exception as e:
+            import traceback
+            erro_completo = traceback.format_exc()
+            self.stdout.write(self.style.ERROR(f'❌ Erro ao processar: {str(e)}'))
+            self.stdout.write(self.style.ERROR(f'Traceback: {erro_completo}'))
+            return

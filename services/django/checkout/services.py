@@ -935,3 +935,48 @@ class LinkPagamentoService:
                 'sucesso': False,
                 'mensagem': f'Erro ao enviar email: {str(e)}'
             }
+
+
+class LinkPagamentoTransactionService:
+    """Serviço para gerenciar transações de link de pagamento"""
+
+    @staticmethod
+    def criar_transacao_inicial(
+        token: str,
+        loja_id: int,
+        valor: Decimal,
+        cliente_id: int = None,
+        vendedor_id: int = None,
+        pedido_origem_loja: str = None
+    ) -> CheckoutTransaction:
+        """
+        Cria transação inicial quando vendedor gera link de pagamento.
+        Status inicial: PENDENTE (aguardando cliente pagar)
+        
+        Args:
+            token: Token do link de pagamento
+            loja_id: ID da loja
+            valor: Valor da transação
+            cliente_id: ID do cliente (opcional)
+            vendedor_id: ID do vendedor que criou
+            pedido_origem_loja: Pedido de origem da loja
+            
+        Returns:
+            CheckoutTransaction criada
+        """
+        transacao = CheckoutTransaction.objects.create(
+            token=token,
+            loja_id=loja_id,
+            cliente_id=cliente_id,
+            valor_transacao_original=valor,
+            valor_transacao_final=None,  # Cliente ainda não escolheu
+            status='PENDENTE',
+            origem='CHECKOUT',
+            vendedor_id=vendedor_id,
+            pedido_origem_loja=pedido_origem_loja,
+            created_at=timezone.now()
+        )
+        
+        registrar_log('checkout', f"Transação inicial criada - Token: {token[:8]}... - Valor: {valor}")
+        
+        return transacao

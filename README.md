@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 21/11/2025
+**Última Atualização:** 22/11/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -32,7 +32,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ⚠️ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce)
   - ✅ APIs Adquirência (OAuth 2.0) - QA/Sandbox funcionando
   - ✅ Webhooks tempo real (transações, liquidações, cadastro)
-  - ⏳ API OPPWA E-commerce - Aguardando credenciais (`entity_id` + `access_token`)
+  - ⚠️ API OPPWA E-commerce - Credenciais OK, API QA com timeout (>60s)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 
@@ -46,7 +46,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **Fase 6B:** Dependências Resolvidas (26 APIs REST internas)
 - ✅ **Fase 6C:** Monorepo + wallclub_core (113 arquivos migrados)
 - ✅ **Fase 6D:** 4 Containers Independentes (Deploy em produção)
-- ⚠️ **Fase 7:** Integração Own Financial (92% - Aguardando credenciais OPPWA e-commerce)
+- ⚠️ **Fase 7:** Integração Own Financial (95% - API QA com problemas de performance)
 
 ## 📋 Navegação Rápida
 
