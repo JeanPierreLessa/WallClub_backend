@@ -47,15 +47,12 @@ class EmailService:
         Usa o EmailService centralizado do wallclub_core.
         """
         try:
-            # Determinar URL baseada no portal de destino
+            # Determinar URL baseada no portal de destino - obrigatório via settings
             if portal_destino == 'lojista':
-                # Portal lojista usa subdomínio wclojista.wallclub.com.br
-                link_primeiro_acesso = f"https://wclojista.wallclub.com.br/primeiro_acesso/{token}/"
+                link_primeiro_acesso = f"{settings.PORTAL_LOJISTA_URL}/primeiro_acesso/{token}/"
             elif portal_destino == 'vendas':
-                # Portal vendas usa subdomínio wcvendas.wallclub.com.br
-                link_primeiro_acesso = f"https://wcvendas.wallclub.com.br/primeiro_acesso/{token}/"
+                link_primeiro_acesso = f"{settings.PORTAL_VENDAS_URL}/primeiro_acesso/{token}/"
             else:
-                # Portal admin responde na raiz (sem /portal_admin/)
                 link_primeiro_acesso = f"{settings.BASE_URL}/primeiro_acesso/{token}/"
             
             # Contexto para o template (forçar canal_id se fornecido)
@@ -106,12 +103,10 @@ class EmailService:
         Usa o EmailService centralizado do wallclub_core.
         """
         try:
-            # URL para reset de senha baseada no portal
+            # URL para reset de senha baseada no portal - obrigatório via settings
             if portal_destino == 'lojista':
-                # Portal lojista usa subdomínio wclojista.wallclub.com.br
-                link_reset = f"https://wclojista.wallclub.com.br/reset-senha/{token}/"
+                link_reset = f"{settings.PORTAL_LOJISTA_URL}/reset-senha/{token}/"
             else:
-                # Portal admin responde na raiz (sem /portal_admin/)
                 link_reset = f"{settings.BASE_URL}/reset-senha/{token}/"
             
             # Obter contexto do canal para o assunto

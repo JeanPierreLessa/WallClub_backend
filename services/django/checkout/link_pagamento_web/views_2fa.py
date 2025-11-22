@@ -28,46 +28,6 @@ def extract_device_fingerprint(request):
     return request.META.get('HTTP_X_DEVICE_FINGERPRINT', '')
 
 
-def validate_origin(request):
-    """Valida origem da requisição (CORS manual)"""
-    origin = request.META.get('HTTP_ORIGIN', '')
-    referer = request.META.get('HTTP_REFERER', '')
-
-    # Domínios permitidos
-    allowed_domains = [
-        'wallclub.com.br',
-        'apidj.wallclub.com.br',
-        'localhost',  # Desenvolvimento
-        '127.0.0.1',  # Desenvolvimento
-        'checkout.wallclub.local',  # Desenvolvimento local
-    ]
-
-    # Verificar origin ou referer
-    request_source = origin or referer
-
-    # Log para debug
-    registrar_log('checkout.2fa',
-                 f"CORS Debug - Origin: {origin} | Referer: {referer} | Source: {request_source}",
-                 nivel='INFO')
-
-    if not request_source:
-        registrar_log('checkout.2fa', "CORS: Sem origin/referer - PERMITIDO", nivel='INFO')
-        return True  # Permitir se não houver origin/referer (apps mobile)
-
-    # Verificar se contém algum domínio permitido
-    for domain in allowed_domains:
-        if domain in request_source:
-            registrar_log('checkout.2fa',
-                         f"CORS: Domínio {domain} encontrado em {request_source} - PERMITIDO",
-                         nivel='INFO')
-            return True
-
-    registrar_log('checkout.2fa',
-                 f"CORS: Origem {request_source} NÃO PERMITIDA",
-                 nivel='WARNING')
-    return False
-
-
 def check_otp_rate_limit(token: str) -> tuple:
     """Verifica rate limit de tentativas de OTP por token"""
     cache_key = f"otp_attempts:{token}"
@@ -230,18 +190,8 @@ class ValidarOTPCheckoutView(APIView):
         """
         registrar_log('checkout.2fa', '>>> CHEGOU NO MÉTODO POST ValidarOTPCheckoutView', nivel='INFO')
         try:
-            # 1. Validar origem (CORS)
-            registrar_log('checkout.2fa', '>>> Passo 1: Validando CORS', nivel='INFO')
-            if not validate_origin(request):
-                registrar_log('checkout.2fa',
-                             f">>> BLOQUEADO POR CORS - Retornando 403",
-                             nivel='ERROR')
-                return Response({
-                    'sucesso': False,
-                    'mensagem': 'Origem não permitida'
-                }, status=status.HTTP_403_FORBIDDEN)
-
-            registrar_log('checkout.2fa', '>>> Passo 2: CORS OK, extraindo token', nivel='INFO')
+            # CORS é validado pelo middleware CorsMiddleware
+            registrar_log('checkout.2fa', '>>> Passo 1: Extraindo token', nivel='INFO')
             # Extrair token primeiro para rate limit
             token = request.data.get('token')
             if not token:
@@ -251,8 +201,8 @@ class ValidarOTPCheckoutView(APIView):
                     'mensagem': 'Token obrigatório'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            registrar_log('checkout.2fa', f'>>> Passo 3: Token {token[:8]}... - Verificando rate limit', nivel='INFO')
-            # 2. Rate limit por token (3 tentativas de OTP)
+            registrar_log('checkout.2fa', f'>>> Passo 2: Token {token[:8]}... - Verificando rate limit', nivel='INFO')
+            # Rate limit por token (3 tentativas de OTP)
             allowed, error_msg = check_otp_rate_limit(token)
             if not allowed:
                 registrar_log('checkout.2fa',
@@ -263,8 +213,8 @@ class ValidarOTPCheckoutView(APIView):
                     'mensagem': error_msg
                 }, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-            registrar_log('checkout.2fa', '>>> Passo 4: Rate limit OK, validando campos', nivel='INFO')
-            # 3. Validar campos obrigatórios
+            registrar_log('checkout.2fa', '>>> Passo 3: Rate limit OK, validando campos', nivel='INFO')
+            # Validar campos obrigatórios
             cpf = request.data.get('cpf')
             telefone = request.data.get('telefone')
             codigo_otp = request.data.get('codigo_otp')
@@ -276,7 +226,7 @@ class ValidarOTPCheckoutView(APIView):
                     'mensagem': 'Campos obrigatórios: token, cpf, telefone, codigo_otp'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            registrar_log('checkout.2fa', '>>> Passo 5: Campos OK, validando token no banco', nivel='INFO')
+            registrar_log('checkout.2fa', '>>> Passo 4: Campos OK, validando token no banco', nivel='INFO')
             # Validar token
             try:
                 token_obj = CheckoutToken.objects.get(token=token)
@@ -306,7 +256,7 @@ class ValidarOTPCheckoutView(APIView):
                     'mensagem': 'Valor inválido'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            registrar_log('checkout.2fa', '>>> Passo 6: Token válido, chamando validar_otp_e_processar', nivel='INFO')
+            registrar_log('checkout.2fa', '>>> Passo 5: Token válido, chamando validar_otp_e_processar', nivel='INFO')
             # Validar OTP (sem processar ainda)
             resultado_otp = CheckoutSecurityService.validar_otp_e_processar(
                 cpf=cpf,

@@ -15,20 +15,10 @@ elif DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
     ALLOWED_HOSTS = [
-        'admin.wallclub.com.br',
-        'vendas.wallclub.com.br',
-        'lojista.wallclub.com.br',
         'wcadmin.wallclub.com.br',
-        'institucional.wallclub.com.br',
-        'wcinstitucional.wallclub.com.br',
-        'wcadmin.wallclub.com.br',
-        'wclojista.wallclub.com.br',
         'wcvendas.wallclub.com.br',
-        # Hosts locais
-        'admin.wallclub.local',
-        'vendas.wallclub.local',
-        'lojista.wallclub.local',
-        'institucional.wallclub.local',
+        'wclojista.wallclub.com.br',
+        'wcinstitucional.wallclub.com.br',
     ]
 
 # URL base para APIs internas (mesmo container)
@@ -74,20 +64,20 @@ INSTALLED_APPS = [
 ROOT_URLCONF = 'wallclub.urls_portais'
 
 # CSRF Trusted Origins (para subdomínios dos portais)
+# Produção: apenas HTTPS
 CSRF_TRUSTED_ORIGINS = [
-    'http://admin.wallclub.com.br',
-    'http://wcadmin.wallclub.com.br',
-    'http://vendas.wallclub.com.br',
-    'http://wcvendas.wallclub.com.br',
-    'http://lojista.wallclub.com.br',
-    'http://wclojista.wallclub.com.br',
-    'https://admin.wallclub.com.br',
     'https://wcadmin.wallclub.com.br',
-    'https://vendas.wallclub.com.br',
     'https://wcvendas.wallclub.com.br',
-    'https://lojista.wallclub.com.br',
     'https://wclojista.wallclub.com.br',
 ]
+
+# Desenvolvimento: adicionar domínios .local
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS.extend([
+        'http://wcadmin.wallclub.local',
+        'http://wcvendas.wallclub.local',
+        'http://wclojista.wallclub.local',
+    ])
 
 # Session Cookie Secure (apenas HTTPS em produção)
 SESSION_COOKIE_SECURE = not DEBUG

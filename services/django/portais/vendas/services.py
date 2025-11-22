@@ -570,10 +570,8 @@ class CheckoutVendasService:
                 pedido_origem_loja=pedido_origem
             )
 
-            # Gerar URL do link
-            base_url = getattr(settings, 'CHECKOUT_BASE_URL', 'https://checkout.wallclub.com.br')
-            # Produção usa /api/v1/checkout/, local usa /api/v1/checkout/ também
-            link_url = f"{base_url}/api/v1/checkout/?token={token_obj.token}"
+            # Gerar URL do link - obrigatório via settings
+            link_url = f"{settings.CHECKOUT_BASE_URL}/api/v1/checkout/?token={token_obj.token}"
 
             # Enviar email com link de pagamento
             if cliente.email:

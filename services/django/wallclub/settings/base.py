@@ -303,7 +303,14 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = _email_config.get('user')
 EMAIL_HOST_PASSWORD = _email_config.get('password')
 DEFAULT_FROM_EMAIL = 'noreply@wallclub.com.br'
-BASE_URL = 'https://wcadmin.wallclub.com.br'
+
+# URLs base - obrigatórias via variáveis de ambiente
+BASE_URL = os.environ.get('BASE_URL', 'https://wcadmin.wallclub.com.br')
+CHECKOUT_BASE_URL = os.environ.get('CHECKOUT_BASE_URL', 'https://checkout.wallclub.com.br')
+PORTAL_LOJISTA_URL = os.environ.get('PORTAL_LOJISTA_URL', 'https://wclojista.wallclub.com.br')
+PORTAL_VENDAS_URL = os.environ.get('PORTAL_VENDAS_URL', 'https://wcvendas.wallclub.com.br')
+MEDIA_BASE_URL = os.environ.get('MEDIA_BASE_URL', 'https://wcapi.wallclub.com.br')
+MERCHANT_URL = os.environ.get('MERCHANT_URL', 'wallclub.com.br')
 
 # Configuração de Logging
 import os

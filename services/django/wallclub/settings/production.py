@@ -35,9 +35,7 @@ X_FRAME_OPTIONS = 'DENY'
 
 # CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = [
-    'https://api.wallclub.com.br',
-    'https://apidj.wallclub.com.br',
-    'http://ip-10-0-1-46:8000',
+    'https://wcapi.wallclub.com.br',
 ]
 
 # Static files

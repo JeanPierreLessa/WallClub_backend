@@ -96,7 +96,7 @@ class OfertasCreateView(LojistaAuthMixin, View):
                 
                 # Salvar arquivo
                 caminho = default_storage.save(nome_arquivo, imagem)
-                imagem_url = f'https://apidj.wallclub.com.br/media/{caminho}'
+                imagem_url = f'{settings.MEDIA_BASE_URL}/media/{caminho}'
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')
             tipo_segmentacao = request.POST.get('tipo_segmentacao', 'todos_canal')
@@ -232,7 +232,7 @@ class OfertasEditView(LojistaAuthMixin, View):
                 
                 # Salvar arquivo
                 caminho = default_storage.save(nome_arquivo, imagem)
-                imagem_url = f'https://apidj.wallclub.com.br/media/{caminho}'
+                imagem_url = f'{settings.MEDIA_BASE_URL}/media/{caminho}'
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')
             tipo_segmentacao = request.POST.get('tipo_segmentacao', 'todos_canal')
