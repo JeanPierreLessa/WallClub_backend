@@ -2977,5 +2977,69 @@ adquirente_own/
 
 ---
 
-**Última atualização:** 06/11/2025  
+---
+
+## 🔒 SEGURANÇA E DOMÍNIOS
+
+### Domínios de Produção
+
+**Portais (HTTPS apenas):**
+- `wcadmin.wallclub.com.br` - Portal Admin
+- `wcvendas.wallclub.com.br` - Portal Vendas
+- `wclojista.wallclub.com.br` - Portal Lojista
+- `wcinstitucional.wallclub.com.br` - Portal Institucional
+
+**APIs e Checkout:**
+- `wcapi.wallclub.com.br` - API Unificada (Mobile + POS)
+- `checkout.wallclub.com.br` - Checkout Web + 2FA
+
+**Monitoramento:**
+- `flower.wallclub.com.br` - Flower (Celery)
+
+### Configurações de Segurança
+
+**CORS e CSRF:**
+- Middleware `django-cors-headers` configurado
+- `CORS_ALLOWED_ORIGINS` via variável de ambiente
+- `CSRF_TRUSTED_ORIGINS` separado por ambiente (HTTP dev / HTTPS prod)
+- Validação CORS manual removida (usa middleware)
+
+**Variáveis de Ambiente (.env.production):**
+```bash
+# URLs base
+BASE_URL=https://wcadmin.wallclub.com.br
+CHECKOUT_BASE_URL=https://checkout.wallclub.com.br
+PORTAL_LOJISTA_URL=https://wclojista.wallclub.com.br
+PORTAL_VENDAS_URL=https://wcvendas.wallclub.com.br
+MEDIA_BASE_URL=https://wcapi.wallclub.com.br
+MERCHANT_URL=wallclub.com.br
+
+# Segurança
+ALLOWED_HOSTS=wcapi.wallclub.com.br,wcadmin.wallclub.com.br,...
+CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
+```
+
+**Desenvolvimento vs Produção:**
+- Domínios `.local` apenas em `DEBUG=True`
+- HTTP apenas em desenvolvimento
+- HTTPS obrigatório em produção
+- Nginx não usado em desenvolvimento (acesso direto às portas)
+
+### Arquivos Ajustados (22/11/2025)
+
+1. ✅ `views_2fa.py` - CORS manual removido (usa middleware)
+2. ✅ `portais.py` - CSRF_TRUSTED_ORIGINS separado por DEBUG
+3. ✅ `production.py` - IP interno AWS removido
+4. ✅ `nginx.conf` - Domínios `.local` removidos
+5. ✅ `portais.py` - ALLOWED_HOSTS limpo
+6. ✅ `checkout/services.py` - URL via settings
+7. ✅ `portais/vendas/services.py` - URL via settings
+8. ✅ `portais/controle_acesso/email_service.py` - URLs via settings
+9. ✅ `portais/lojista/views_ofertas.py` - URL via settings
+10. ✅ `adquirente_own/services_transacoes_pagamento.py` - URL via settings
+11. ✅ `base.py` - 6 variáveis de URL adicionadas
+
+---
+
+**Última atualização:** 22/11/2025  
 **Manutenção:** Jean Lessa + Claude AI

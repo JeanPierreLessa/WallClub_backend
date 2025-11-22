@@ -52,6 +52,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 - [Estrutura](#estrutura)
 - [Serviços](#serviços)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
 - [Desenvolvimento Local](#desenvolvimento-local)
 - [Deployment](#deployment)
 - [Arquitetura](#arquitetura)
@@ -115,6 +116,33 @@ WallClub_backend/
 - Suporte a HTML + anexos
 
 **Settings:** `wallclub.settings.portais`
+
+## Variáveis de Ambiente
+
+### Produção (.env.production)
+
+**URLs Base:**
+```bash
+BASE_URL=https://wcadmin.wallclub.com.br
+CHECKOUT_BASE_URL=https://checkout.wallclub.com.br
+PORTAL_LOJISTA_URL=https://wclojista.wallclub.com.br
+PORTAL_VENDAS_URL=https://wcvendas.wallclub.com.br
+MEDIA_BASE_URL=https://wcapi.wallclub.com.br
+MERCHANT_URL=wallclub.com.br
+```
+
+**Segurança:**
+```bash
+DEBUG=False
+ALLOWED_HOSTS=wcapi.wallclub.com.br,wcadmin.wallclub.com.br,wclojista.wallclub.com.br,wcvendas.wallclub.com.br,wcinstitucional.wallclub.com.br,checkout.wallclub.com.br
+CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,https://wclojista.wallclub.com.br,https://wcvendas.wallclub.com.br,https://wcinstitucional.wallclub.com.br,https://checkout.wallclub.com.br
+```
+
+**Observações:**
+- Domínios `.local` apenas em desenvolvimento (`DEBUG=True`)
+- HTTP apenas em desenvolvimento
+- HTTPS obrigatório em produção
+- CORS validado via middleware (não manual)
 
 ### 2. Container POS (wallclub-pos)
 
@@ -564,10 +592,20 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025  
-**Última atualização:** 07/11/2025 12:56  
+**Última atualização:** 22/11/2025  
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (20/11/2025)
+### Atualizações Recentes (22/11/2025)
+- ✅ **Segurança e Domínios** - Ajustes para produção
+  - 11 arquivos ajustados (views, settings, services)
+  - CORS manual removido (usa middleware)
+  - URLs hardcoded substituídas por variáveis de ambiente
+  - 6 variáveis de URL adicionadas ao base.py
+  - Domínios `.local` apenas em DEBUG=True
+  - HTTPS obrigatório em produção
+  - Documentação em `docs/SEGURANCA_DOMINIOS_PRODUCAO.md`
+
+### Atualizações Anteriores (20/11/2025)
 - ✅ **Integração Own Financial** - Gateway de adquirência em QA/Sandbox
   - OAuth 2.0 com token cache (5min validade, 4min cache)
   - APIs de consulta: transações, liquidações, dados cadastrais

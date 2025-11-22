@@ -48,6 +48,7 @@ class OwnExtratoTransacoes(models.Model):
     processado = models.BooleanField(default=False, db_index=True)
     
     class Meta:
+        app_label = 'adquirente_own'
         db_table = 'ownExtratoTransacoes'
         verbose_name = 'Extrato Transação Own'
         verbose_name_plural = 'Extratos Transações Own'
@@ -88,6 +89,7 @@ class OwnLiquidacoes(models.Model):
     processado = models.BooleanField(default=False, db_index=True)
     
     class Meta:
+        app_label = 'adquirente_own'
         db_table = 'ownLiquidacoes'
         verbose_name = 'Liquidação Own'
         verbose_name_plural = 'Liquidações Own'
@@ -145,6 +147,7 @@ class CredenciaisExtratoContaOwn(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
     class Meta:
+        app_label = 'adquirente_own'
         db_table = 'credenciaisExtratoContaOwn'
         verbose_name = 'Credencial Own'
         verbose_name_plural = 'Credenciais Own'

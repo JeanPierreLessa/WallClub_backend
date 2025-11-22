@@ -167,11 +167,23 @@ class OwnService:
                 'mensagem': 'Timeout na comunicação com Own Financial'
             }
         except requests.exceptions.HTTPError as e:
-            registrar_log('own.api', f'❌ Erro HTTP {e.response.status_code}: {endpoint}', nivel='ERROR')
+            status_code = e.response.status_code
+            
+            # Tratamento específico para rate limiting
+            if status_code == 429:
+                registrar_log('own.api', f'⚠️ Rate limit atingido (429): {endpoint}', nivel='WARNING')
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Rate limit atingido. Aguarde alguns minutos.',
+                    'status_code': 429,
+                    'codigo_erro': 'RATE_LIMIT'
+                }
+            
+            registrar_log('own.api', f'❌ Erro HTTP {status_code}: {endpoint}', nivel='ERROR')
             return {
                 'sucesso': False,
-                'mensagem': f'Erro HTTP {e.response.status_code}',
-                'status_code': e.response.status_code
+                'mensagem': f'Erro HTTP {status_code}',
+                'status_code': status_code
             }
         except requests.exceptions.RequestException as e:
             registrar_log('own.api', f'❌ Erro na requisição: {str(e)}', nivel='ERROR')
