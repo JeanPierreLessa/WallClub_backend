@@ -158,10 +158,10 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                     where_conditions.append("var9 LIKE %s")
                     params.append(f"%{nsu}%")
                 
-                # Filtro TEF (excluir por padrão)
+                # Filtro TEF (excluir Credenciadora por padrão)
                 if not incluir_tef:
-                    where_conditions.append("var130 != %s")
-                    params.append('TEF')
+                    where_conditions.append("tipo_operacao != %s")
+                    params.append('Credenciadora')
                 
                 where_clause = " AND ".join(where_conditions)
                 
@@ -640,10 +640,10 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                 where_conditions.append("var9 LIKE %s")
                 params.append(f"%{nsu}%")
             
-            # Filtro TEF (excluir por padrão)
+            # Filtro TEF (excluir Credenciadora por padrão)
             if not incluir_tef:
-                where_conditions.append("var130 != %s")
-                params.append('TEF')
+                where_conditions.append("tipo_operacao != %s")
+                params.append('Credenciadora')
             
             where_clause = " AND ".join(where_conditions)
             

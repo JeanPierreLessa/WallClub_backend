@@ -137,9 +137,9 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     where_conditions.append("pep.NsuOperacao LIKE %s")
                     params.append(f"%{nsu}%")
                 
-                # Filtro TEF - se não incluir TEF, filtrar apenas transações não-TEF
+                # Filtro TEF - se não incluir TEF, filtrar apenas transações não-Credenciadora
                 if not incluir_tef:
-                    where_conditions.append("(btg.var130 != 'TEF' OR btg.var130 IS NULL)")
+                    where_conditions.append("btg.tipo_operacao != 'Credenciadora'")
                 
                 # Montar WHERE clause
                 where_clause = " AND ".join(where_conditions)
@@ -369,7 +369,7 @@ class LojistaConciliacaoExportView(View):
             
             # Filtro TEF - usar mesma lógica da view principal
             if not incluir_tef:
-                where_conditions.append("(btg.var130 != 'TEF' OR btg.var130 IS NULL)")
+                where_conditions.append("btg.tipo_operacao != 'Credenciadora'")
             
             # Verificar total de registros primeiro
             sql_count = """
