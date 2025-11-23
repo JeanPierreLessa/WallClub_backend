@@ -1,0 +1,159 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}{% if cupom %}Editar{% else %}Novo{% endif %} Cupom - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-ticket-alt me-2"></i>
+                        {% if cupom %}Editar Cupom: {{ cupom.codigo }}{% else %}Novo Cupom{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Loja (se múltiplas lojas disponíveis) -->
+                            {% if lojas_acessiveis|length > 1 %}
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Loja *</label>
+                                <select name="loja_id" class="form-select" required>
+                                    {% for loja in lojas_acessiveis %}
+                                    <option value="{{ loja.id }}" {% if loja.id == loja_id_atual %}selected{% endif %}>
+                                        {{ loja.nome_fantasia }} - {{ loja.razao_social }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% else %}
+                            <input type="hidden" name="loja_id" value="{{ loja_id_atual }}">
+                            {% endif %}
+                            
+                            <!-- Código -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Código do Cupom *</label>
+                                <input type="text" name="codigo" class="form-control text-uppercase" 
+                                       value="{{ cupom.codigo|default:'' }}" 
+                                       {% if cupom %}readonly{% endif %}
+                                       placeholder="Ex: PROMO10" required>
+                                <small class="text-muted">Código único que o cliente digitará</small>
+                            </div>
+
+                            <!-- Tipo de Cupom -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo de Cupom *</label>
+                                <select name="tipo_cupom" class="form-select" required>
+                                    {% for value, label in tipos_cupom %}
+                                    <option value="{{ value }}" {% if cupom.tipo_cupom == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Genérico: qualquer cliente | Individual: 1 uso por CPF</small>
+                            </div>
+
+                            <!-- Tipo de Desconto -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo de Desconto *</label>
+                                <select name="tipo_desconto" class="form-select" required>
+                                    {% for value, label in tipos_desconto %}
+                                    <option value="{{ value }}" {% if cupom.tipo_desconto == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Valor do Desconto -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Valor do Desconto *</label>
+                                <input type="number" name="valor_desconto" class="form-control" 
+                                       value="{{ cupom.valor_desconto|default:'' }}" 
+                                       step="0.01" min="0" placeholder="Ex: 10.00 ou 15.00" required>
+                                <small class="text-muted">Valor fixo (R$) ou percentual (%)</small>
+                            </div>
+
+                            <!-- Valor Mínimo -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Valor Mínimo de Compra</label>
+                                <input type="number" name="valor_minimo_compra" class="form-control" 
+                                       value="{{ cupom.valor_minimo_compra|default:'0' }}" 
+                                       step="0.01" min="0" placeholder="0.00">
+                                <small class="text-muted">0 = sem mínimo</small>
+                            </div>
+
+                            <!-- Limite Uso Total -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Limite de Uso Total</label>
+                                <input type="number" name="limite_uso_total" class="form-control" 
+                                       value="{{ cupom.limite_uso_total|default:'' }}" 
+                                       min="1" placeholder="Deixe vazio para ilimitado">
+                                <small class="text-muted">Quantidade máxima de usos</small>
+                            </div>
+
+                            <!-- Limite por CPF -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Limite de Uso por CPF *</label>
+                                <input type="number" name="limite_uso_por_cpf" class="form-control" 
+                                       value="{{ cupom.limite_uso_por_cpf|default:'1' }}" 
+                                       min="1" required>
+                                <small class="text-muted">Quantas vezes o mesmo CPF pode usar</small>
+                            </div>
+
+                            <!-- Cliente ID (Individual) -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ID do Cliente (Opcional)</label>
+                                <input type="number" name="cliente_id" class="form-control" 
+                                       value="{{ cupom.cliente_id|default:'' }}" 
+                                       placeholder="Deixe vazio para qualquer cliente">
+                                <small class="text-muted">Para cupom individual vinculado a um cliente específico</small>
+                            </div>
+
+                            <!-- Data Início -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Data/Hora Início *</label>
+                                <input type="datetime-local" name="data_inicio" class="form-control" 
+                                       value="{% if cupom %}{{ cupom.data_inicio|date:'Y-m-d\TH:i' }}{% endif %}" 
+                                       required>
+                            </div>
+
+                            <!-- Data Fim -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Data/Hora Fim *</label>
+                                <input type="datetime-local" name="data_fim" class="form-control" 
+                                       value="{% if cupom %}{{ cupom.data_fim|date:'Y-m-d\TH:i' }}{% endif %}" 
+                                       required>
+                            </div>
+
+                            <!-- Ativo -->
+                            <div class="col-12 mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="ativo" class="form-check-input" 
+                                           {% if not cupom or cupom.ativo %}checked{% endif %}>
+                                    <label class="form-check-label">Cupom Ativo</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'lojista:cupom_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar Cupom
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -74,6 +74,11 @@
             </li>
             {% endcomment %}
             <li class="nav-item">
+                <a class="nav-link {% if current_page == 'cupons' %}active{% endif %}" href="{% url 'lojista:cupom_list' %}">
+                    <i class="fas fa-ticket-alt me-2"></i>Cupons
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if current_page == 'perfil' %}active{% endif %}" href="{% url 'lojista:perfil' %}">
                     <i class="fas fa-user me-2"></i>Perfil
                 </a>
@@ -156,6 +161,11 @@
                     </a>
                 </li>
                 {% endcomment %}
+                <li class="nav-item">
+                    <a class="nav-link {% if current_page == 'cupons' %}active{% endif %}" href="{% url 'lojista:cupom_list' %}">
+                        <i class="fas fa-ticket-alt me-2"></i>Cupons
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link {% if current_page == 'perfil' %}active{% endif %}" href="{% url 'lojista:perfil' %}">
                         <i class="fas fa-user me-2"></i>Perfil

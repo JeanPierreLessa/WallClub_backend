@@ -1,0 +1,118 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Relatório de Cupons - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Relatório de Cupons
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros de Período -->
+                    <form method="get" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Data Início</label>
+                            <input type="date" name="data_inicio" class="form-control" value="{{ data_inicio }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Data Fim</label>
+                            <input type="date" name="data_fim" class="form-control" value="{{ data_fim }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Gerar Relatório
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Estatísticas Gerais -->
+                    <h5 class="mb-3">Resumo do Período</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.total_usos }}</h3>
+                                    <small>Total de Usos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">R$ {{ stats.total_desconto }}</h3>
+                                    <small>Total Descontado</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">R$ {{ stats.ticket_medio }}</h3>
+                                    <small>Ticket Médio</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.cupons_ativos }}</h3>
+                                    <small>Cupons Ativos</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ranking de Cupons -->
+                    {% if ranking %}
+                    <h5 class="mb-3">Top 10 Cupons Mais Usados</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center">#</th>
+                                    <th>Código</th>
+                                    <th class="text-center">Total de Usos</th>
+                                    <th class="text-end">Total Descontado</th>
+                                    <th class="text-end">Média por Uso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in ranking %}
+                                <tr>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td><strong>{{ item.codigo }}</strong></td>
+                                    <td class="text-center">{{ item.total_usos }}</td>
+                                    <td class="text-end">R$ {{ item.total_desconto }}</td>
+                                    <td class="text-end">R$ {{ item.total_desconto|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Nenhum uso de cupom encontrado no período selecionado.
+                    </div>
+                    {% endif %}
+
+                    <!-- Botões -->
+                    <div class="mt-4">
+                        <a href="{% url 'lojista:cupom_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar para Lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

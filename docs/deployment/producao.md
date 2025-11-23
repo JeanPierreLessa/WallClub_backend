@@ -78,6 +78,7 @@ docker-compose up -d
 
 # em dev
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+docker-compose down
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 

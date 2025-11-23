@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'apps.transacoes',
     'apps.conta_digital',
     'apps.ofertas',
+    'apps.cupom',
     'checkout',
     'checkout.link_pagamento_web',
     'checkout.link_recorrencia_web',

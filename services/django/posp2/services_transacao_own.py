@@ -68,6 +68,9 @@ class TRDataOwnService:
             cashback_concedido_pos = dados.get('cashback_concedido', 0)
             autorizacao_id = dados.get('autorizacao_id', '')
             modalidade_wall = dados.get('modalidade_wall', '')
+            
+            # Extrair cupom (opcional)
+            cupom_codigo = dados.get('cupom_codigo', '')
 
             registrar_log('posp2', f'📥 Recebido request /trdata_own/ - Terminal: {terminal}, CPF: {cpf}, Valor: {valororiginal}')
 
@@ -113,6 +116,71 @@ class TRDataOwnService:
             # 6. Converter valor original (usar amount em centavos, não valororiginal)
             amount_centavos = int(dados_trdata.get('amount', 0))
             valor_original = amount_centavos / 100.0  # Converter centavos para reais
+            
+            # 6.1. Aplicar cupom (opcional)
+            cupom_obj = None
+            cupom_id = None
+            cupom_valor_desconto = Decimal('0.00')
+            
+            if cupom_codigo:
+                try:
+                    from apps.cupom.services import CupomService
+                    from apps.cliente.models import Cliente
+                    
+                    registrar_log('posp2', f'🎟️ Validando cupom: {cupom_codigo}')
+                    
+                    # Buscar loja_id e cliente_id
+                    with connection.cursor() as cursor:
+                        cursor.execute("""
+                            SELECT l.id, l.canal_id
+                            FROM terminais t
+                            INNER JOIN loja l ON t.loja_id = l.id
+                            WHERE t.terminal = %s
+                        """, [terminal])
+                        loja_row = cursor.fetchone()
+                        
+                        if not loja_row:
+                            raise ValueError(f"Terminal {terminal} não encontrado")
+                        
+                        loja_id = loja_row[0]
+                        canal_id = loja_row[1]
+                    
+                    # Buscar cliente_id pelo CPF
+                    cliente_id = None
+                    if cpf:
+                        try:
+                            cliente = Cliente.objects.get(cpf=cpf, canal_id=canal_id)
+                            cliente_id = cliente.id
+                        except Cliente.DoesNotExist:
+                            registrar_log('posp2', f'⚠️ Cliente não encontrado: CPF={cpf}', nivel='WARNING')
+                    
+                    if not cliente_id:
+                        raise ValueError("CPF do cliente é obrigatório para usar cupom")
+                    
+                    # Validar cupom
+                    cupom_service = CupomService()
+                    cupom_obj = cupom_service.validar_cupom(
+                        codigo=cupom_codigo,
+                        loja_id=loja_id,
+                        cliente_id=cliente_id,
+                        valor_transacao=Decimal(str(valor_original))
+                    )
+                    
+                    # Calcular desconto
+                    cupom_valor_desconto = cupom_service.calcular_desconto(
+                        cupom_obj, 
+                        Decimal(str(valor_original))
+                    )
+                    cupom_id = cupom_obj.id
+                    
+                    registrar_log('posp2', f'✅ Cupom validado: {cupom_codigo}, desconto: R$ {cupom_valor_desconto}')
+                    
+                except Exception as e:
+                    registrar_log('posp2', f'❌ Erro ao validar cupom: {e}', nivel='ERROR')
+                    return {
+                        'sucesso': False,
+                        'mensagem': f'Erro ao validar cupom: {str(e)}'
+                    }
 
             # 7. Preparar dados para inserção
             dados_para_inserir = {
@@ -170,6 +238,10 @@ class TRDataOwnService:
                 'autorizacao_id': autorizacao_id or None,
                 'saldo_usado': 0,
                 'modalidade_wall': modalidade_wall or None,
+                
+                # Cupom
+                'cupom_id': cupom_id,
+                'cupom_valor_desconto': float(cupom_valor_desconto) if cupom_valor_desconto else None,
             }
 
             # 8. Inserir na base
@@ -182,6 +254,30 @@ class TRDataOwnService:
                 }
 
             registrar_log('posp2', f'✅ Transação Own inserida: ID={transaction_id}, TxID={tx_transaction_id}')
+            
+            # 8.1. Registrar uso do cupom (se aplicado)
+            if cupom_obj and cupom_id:
+                try:
+                    from apps.cupom.services import CupomService
+                    
+                    cupom_service = CupomService()
+                    cupom_service.registrar_uso(
+                        cupom=cupom_obj,
+                        cliente_id=cliente_id,
+                        loja_id=loja_id,
+                        transacao_tipo='POS',
+                        transacao_id=transaction_id,
+                        valor_original=Decimal(str(valor_original)),
+                        valor_desconto=cupom_valor_desconto,
+                        valor_final=Decimal(str(valor_original)) - cupom_valor_desconto,
+                        nsu=dados_trdata.get('nsuHost', ''),
+                        ip_address=None
+                    )
+                    
+                    registrar_log('posp2', f'✅ Uso do cupom registrado: {cupom_codigo}')
+                    
+                except Exception as e:
+                    registrar_log('posp2', f'⚠️ Erro ao registrar uso do cupom: {e}', nivel='WARNING')
 
             # 9. BUSCAR DADOS DA TRANSAÇÃO INSERIDA PARA CALCULADORA
             with connection.cursor() as cursor:
@@ -305,7 +401,8 @@ class TRDataOwnService:
                         status, capturedTransaction,
                         cnpj, sdk,
                         valor_desconto, valor_cashback, cashback_concedido, autorizacao_id,
-                        saldo_usado, modalidade_wall
+                        saldo_usado, modalidade_wall,
+                        cupom_id, cupom_valor_desconto
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s,
@@ -317,6 +414,7 @@ class TRDataOwnService:
                         %s, %s,
                         %s, %s,
                         %s, %s, %s, %s,
+                        %s, %s,
                         %s, %s
                     )
                 """, [
@@ -332,7 +430,8 @@ class TRDataOwnService:
                     dados['status'], dados['capturedTransaction'],
                     dados['cnpj'], dados['sdk'],
                     dados['valor_desconto'], dados['valor_cashback'], dados['cashback_concedido'],
-                    dados['autorizacao_id'], dados['saldo_usado'], dados['modalidade_wall']
+                    dados['autorizacao_id'], dados['saldo_usado'], dados['modalidade_wall'],
+                    dados['cupom_id'], dados['cupom_valor_desconto']
                 ])
 
                 return cursor.lastrowid

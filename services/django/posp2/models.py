@@ -255,6 +255,16 @@ class TransactionDataOwn(models.Model):
         choices=[('S', 'Wall'), ('N', 'Sem Wall'), ('C', 'Cashback')]
     )
     
+    # Cupom
+    cupom_id = models.BigIntegerField(
+        null=True, blank=True,
+        verbose_name="ID do Cupom"
+    )
+    cupom_valor_desconto = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name="Valor Desconto Cupom"
+    )
+    
     # Auditoria
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

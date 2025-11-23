@@ -18,6 +18,14 @@ from .views_ofertas import (
     OfertasDispararView,
     OfertasHistoricoView
 )
+from .views_cupons import (
+    CupomListView,
+    CupomCreateView,
+    CupomDetailView,
+    CupomEditView,
+    CupomToggleView,
+    CupomRelatorioView
+)
 # from .views_relatorios import ()
 
 app_name = 'lojista'
@@ -66,4 +74,12 @@ urlpatterns = [
     path('ofertas/<int:oferta_id>/editar/', OfertasEditView.as_view(), name='ofertas_edit'),
     path('ofertas/<int:oferta_id>/disparar/', OfertasDispararView.as_view(), name='ofertas_disparar'),
     path('ofertas/<int:oferta_id>/historico/', OfertasHistoricoView.as_view(), name='ofertas_historico'),
+    
+    # Cupons
+    path('cupons/', CupomListView.as_view(), name='cupom_list'),
+    path('cupons/criar/', CupomCreateView.as_view(), name='cupom_create'),
+    path('cupons/<int:cupom_id>/', CupomDetailView.as_view(), name='cupom_detail'),
+    path('cupons/<int:cupom_id>/editar/', CupomEditView.as_view(), name='cupom_edit'),
+    path('cupons/<int:cupom_id>/toggle/', CupomToggleView.as_view(), name='cupom_toggle'),
+    path('cupons/relatorio/', CupomRelatorioView.as_view(), name='cupom_relatorio'),
 ]

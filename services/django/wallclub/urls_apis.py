@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/v1/transacoes/', include('apps.transacoes.urls')),
     path('api/v1/conta_digital/', include('apps.conta_digital.urls')),
     path('api/v1/ofertas/', include('apps.ofertas.urls')),
+    path('api/v1/cupons/', include('apps.cupom.urls')),  # APIs de cupons
     
     # API Interna (comunicação entre containers)
     path('api/internal/cliente/', include('apps.cliente.urls_api_interna')),

@@ -1,0 +1,201 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Cupom {{ cupom.codigo }} - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-ticket-alt me-2"></i>
+                            Cupom: {{ cupom.codigo }}
+                            {% if status == 'vigente' %}
+                                <span class="badge bg-success">Vigente</span>
+                            {% elif status == 'expirado' %}
+                                <span class="badge bg-danger">Expirado</span>
+                            {% elif status == 'esgotado' %}
+                                <span class="badge bg-warning">Esgotado</span>
+                            {% elif status == 'aguardando' %}
+                                <span class="badge bg-info">Aguardando</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </h4>
+                        <div>
+                            <a href="{% url 'lojista:cupom_edit' cupom.id %}" class="btn btn-light btn-sm">
+                                <i class="fas fa-edit me-2"></i>Editar
+                            </a>
+                            <form method="post" action="{% url 'lojista:cupom_toggle' cupom.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-{% if cupom.ativo %}warning{% else %}success{% endif %} btn-sm">
+                                    <i class="fas fa-power-off me-2"></i>{% if cupom.ativo %}Desativar{% else %}Ativar{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Informações do Cupom -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Informações Básicas</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="40%">Código:</th>
+                                    <td><strong>{{ cupom.codigo }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo:</th>
+                                    <td>{{ cupom.get_tipo_cupom_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Desconto:</th>
+                                    <td>
+                                        {% if cupom.tipo_desconto == 'FIXO' %}
+                                            R$ {{ cupom.valor_desconto }}
+                                        {% else %}
+                                            {{ cupom.valor_desconto }}%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Valor Mínimo:</th>
+                                    <td>R$ {{ cupom.valor_minimo_compra }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vigência:</th>
+                                    <td>
+                                        {{ cupom.data_inicio|date:"d/m/Y H:i" }}<br>
+                                        até {{ cupom.data_fim|date:"d/m/Y H:i" }}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Limites de Uso</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="40%">Limite Total:</th>
+                                    <td>
+                                        {% if cupom.limite_uso_total %}
+                                            {{ cupom.limite_uso_total }} usos
+                                        {% else %}
+                                            Ilimitado
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Limite por CPF:</th>
+                                    <td>{{ cupom.limite_uso_por_cpf }} uso(s)</td>
+                                </tr>
+                                <tr>
+                                    <th>Quantidade Usada:</th>
+                                    <td><strong>{{ cupom.quantidade_usada }}</strong></td>
+                                </tr>
+                                {% if cupom.cliente_id %}
+                                <tr>
+                                    <th>Cliente Vinculado:</th>
+                                    <td>ID: {{ cupom.cliente_id }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <h5 class="mb-3">Estatísticas de Uso</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.total_usos }}</h3>
+                                    <small>Total de Usos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">R$ {{ stats.total_desconto }}</h3>
+                                    <small>Total Descontado</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.clientes_unicos }}</h3>
+                                    <small>Clientes Únicos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.usos_estornados }}</h3>
+                                    <small>Usos Estornados</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Últimos Usos -->
+                    {% if ultimos_usos %}
+                    <h5 class="mb-3">Últimos Usos</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Tipo</th>
+                                    <th class="text-end">Valor Original</th>
+                                    <th class="text-end">Desconto</th>
+                                    <th class="text-end">Valor Final</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for uso in ultimos_usos %}
+                                <tr>
+                                    <td>{{ uso.usado_em|date:"d/m/Y H:i" }}</td>
+                                    <td>ID: {{ uso.cliente_id }}</td>
+                                    <td>{{ uso.transacao_tipo }}</td>
+                                    <td class="text-end">R$ {{ uso.valor_transacao_original }}</td>
+                                    <td class="text-end text-success">-R$ {{ uso.valor_desconto_aplicado }}</td>
+                                    <td class="text-end"><strong>R$ {{ uso.valor_transacao_final }}</strong></td>
+                                    <td class="text-center">
+                                        {% if uso.estornado %}
+                                            <span class="badge bg-danger">Estornado</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Este cupom ainda não foi utilizado.
+                    </div>
+                    {% endif %}
+
+                    <!-- Botões -->
+                    <div class="mt-4">
+                        <a href="{% url 'lojista:cupom_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar para Lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

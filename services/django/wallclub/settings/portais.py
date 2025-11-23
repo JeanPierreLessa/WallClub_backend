@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'checkout.link_recorrencia_web',
     'apps.cliente',
     'apps.ofertas',
+    'apps.cupom',
     'parametros_wallclub',
     'pinbank',  # Para acesso aos modelos de transações
 ]
