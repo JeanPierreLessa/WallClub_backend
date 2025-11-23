@@ -77,11 +77,6 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
             pagina = int(request.POST.get('pagina', 1))
             por_pagina = 50  # Registros por página
             
-            # Log para debug
-            from wallclub_core.utilitarios.log_control import registrar_log
-            registrar_log('portais.lojista', f"VENDAS DEBUG - POST incluir_tef: '{request.POST.get('incluir_tef')}' | bool: {incluir_tef}")
-            registrar_log('portais.lojista', f"VENDAS DEBUG - POST completo: {dict(request.POST)}")
-            
             # Obter lojas acessíveis
             lojas_acesso = self._obter_lojas_acesso(request)
             if not lojas_acesso:
