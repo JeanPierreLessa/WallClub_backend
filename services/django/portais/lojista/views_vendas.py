@@ -160,7 +160,7 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                 
                 # Filtro TEF (excluir por padrão)
                 if not incluir_tef:
-                    where_conditions.append("(var130 != %s OR var130 IS NULL)")
+                    where_conditions.append("var130 != %s")
                     params.append('TEF')
                 
                 where_clause = " AND ".join(where_conditions)
@@ -642,7 +642,8 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
             
             # Filtro TEF (excluir por padrão)
             if not incluir_tef:
-                where_conditions.append("var130 != 'TEF'")
+                where_conditions.append("var130 != %s")
+                params.append('TEF')
             
             where_clause = " AND ".join(where_conditions)
             
