@@ -24,24 +24,17 @@ def cupons_ativos(request):
     Lista cupons ativos disponíveis para o cliente autenticado
     Autenticação: JWT (App Mobile) - extrai cliente_id do token
     
-    Query params:
-    - loja_id: ID da loja (obrigatório)
+    Retorna cupons de TODAS as lojas que o cliente pode usar:
+    - Cupons genéricos ativos e vigentes
+    - Cupons individuais vinculados ao cliente
     """
-    loja_id = request.query_params.get('loja_id')
-    
-    if not loja_id:
-        return Response({
-            'erro': 'loja_id é obrigatório'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
     # Cliente ID vem do JWT (request.user.cliente_id)
     cliente_id = request.user.cliente_id
     
     try:
-        # Buscar cupons ativos e vigentes
+        # Buscar cupons ativos e vigentes de TODAS as lojas
         agora = timezone.now()
         cupons = Cupom.objects.filter(
-            loja_id=loja_id,
             ativo=True,
             data_inicio__lte=agora,
             data_fim__gte=agora

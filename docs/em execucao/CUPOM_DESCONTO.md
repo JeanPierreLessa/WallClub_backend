@@ -433,8 +433,9 @@ ADD INDEX idx_cupom_id (cupom_id);
 2. `POST /api/v1/cupons/validar/` - Valida cupom e retorna desconto (POS + Checkout Web)
 
 **Autenticação:**
-- Ambas APIs requerem autenticação (JWT para App Mobile, OAuth Token para POS)
-- `permission_classes = [IsAuthenticated]`
+- API de listagem: `ClienteJWTAuthentication` (JWT do cliente mobile) - extrai `cliente_id` automaticamente do token
+- API de validação: Aceita qualquer autenticação configurada (OAuth Token do POS ou JWT)
+- Ambas usam `permission_classes = [IsAuthenticated]`
 
 **IMPORTANTE:** A validação do cupom no POS e Checkout usa **exatamente a mesma API** `/api/v1/cupons/validar/` para garantir consistência.
 
