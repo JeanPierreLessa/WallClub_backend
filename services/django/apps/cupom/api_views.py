@@ -1,6 +1,7 @@
 """
 API Views para cupons
 """
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,65 +12,66 @@ from .models import Cupom
 from .serializers import CupomAtivoSerializer, CupomValidarSerializer, CupomValidarResponseSerializer
 from .services import CupomService
 from wallclub_core.utilitarios.log_control import registrar_log
+from apps.conta_digital.decorators import require_jwt_only
 
 
-class CuponsAtivosAPIView(APIView):
+@api_view(['GET'])
+@require_jwt_only
+def cupons_ativos(request):
     """
     GET /api/cupons/ativos/
-    Lista cupons ativos disponíveis para o cliente
-    Autenticação: JWT (App Mobile)
+    Lista cupons ativos disponíveis para o cliente autenticado
+    Autenticação: JWT (App Mobile) - extrai cliente_id do token
     
     Query params:
     - loja_id: ID da loja (obrigatório)
-    - cliente_id: ID do cliente (opcional, para filtrar cupons individuais)
     """
-    permission_classes = [IsAuthenticated]
+    loja_id = request.query_params.get('loja_id')
     
-    def get(self, request):
-        loja_id = request.query_params.get('loja_id')
-        cliente_id = request.query_params.get('cliente_id')
+    if not loja_id:
+        return Response({
+            'erro': 'loja_id é obrigatório'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Cliente ID vem do JWT (request.user.cliente_id)
+    cliente_id = request.user.cliente_id
+    
+    try:
+        # Buscar cupons ativos e vigentes
+        agora = timezone.now()
+        cupons = Cupom.objects.filter(
+            loja_id=loja_id,
+            ativo=True,
+            data_inicio__lte=agora,
+            data_fim__gte=agora
+        )
         
-        if not loja_id:
-            return Response({
-                'erro': 'loja_id é obrigatório'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            # Buscar cupons ativos e vigentes
-            agora = timezone.now()
-            cupons = Cupom.objects.filter(
-                loja_id=loja_id,
-                ativo=True,
-                data_inicio__lte=agora,
-                data_fim__gte=agora
-            )
+        # Filtrar cupons que ainda têm usos disponíveis
+        cupons_disponiveis = []
+        for cupom in cupons:
+            # Verificar limite global
+            if cupom.limite_uso_total and cupom.quantidade_usada >= cupom.limite_uso_total:
+                continue
             
-            # Filtrar cupons que ainda têm usos disponíveis
-            cupons_disponiveis = []
-            for cupom in cupons:
-                # Verificar limite global
-                if cupom.limite_uso_total and cupom.quantidade_usada >= cupom.limite_uso_total:
+            # Se for cupom individual, verificar se é para este cliente
+            if cupom.tipo_cupom == 'INDIVIDUAL' and cupom.cliente_id:
+                if cliente_id != cupom.cliente_id:
                     continue
-                
-                # Se for cupom individual e tiver cliente_id, verificar se é para este cliente
-                if cupom.tipo_cupom == 'INDIVIDUAL' and cupom.cliente_id:
-                    if not cliente_id or int(cliente_id) != cupom.cliente_id:
-                        continue
-                
-                cupons_disponiveis.append(cupom)
             
-            serializer = CupomAtivoSerializer(cupons_disponiveis, many=True)
-            
-            return Response({
-                'cupons': serializer.data,
-                'total': len(cupons_disponiveis)
-            })
-            
-        except Exception as e:
-            registrar_log('apps.cupom', f'Erro ao listar cupons ativos: {e}', nivel='ERROR')
-            return Response({
-                'erro': 'Erro ao buscar cupons'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            cupons_disponiveis.append(cupom)
+        
+        serializer = CupomAtivoSerializer(cupons_disponiveis, many=True)
+        
+        return Response({
+            'cupons': serializer.data,
+            'total': len(cupons_disponiveis)
+        })
+        
+    except Exception as e:
+        registrar_log('apps.cupom', f'Erro ao listar cupons ativos: {e}', nivel='ERROR')
+        return Response({
+            'erro': 'Erro ao buscar cupons'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CupomValidarAPIView(APIView):
