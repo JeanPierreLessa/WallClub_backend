@@ -71,9 +71,9 @@ docker system df
 
 cd /var/www/WallClub_backend
 git pull origin integracao_own
-docker-compose build wallclub-pos nginx
+docker-compose build
 docker-compose down
-docker-compose up -d wallclub-pos nginx
+docker-compose up -d
 
 
 # em dev
@@ -84,8 +84,8 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 cd /var/www/WallClub_backend
 git pull origin integracao_own
-docker-compose build nginx
-docker-compose up -d nginx
+docker-compose build wallclub-pos
+docker-compose up -d wallclub-pos
 
 
 # Rebuild e restart (apenas containers Django)

@@ -2,18 +2,21 @@
 API Views para cupons
 """
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from decimal import Decimal
+import json
 from .models import Cupom
 from .serializers import CupomAtivoSerializer, CupomValidarSerializer, CupomValidarResponseSerializer
 from .services import CupomService
 from wallclub_core.utilitarios.log_control import registrar_log
 from apps.cliente.jwt_cliente import ClienteJWTAuthentication
-from wallclub_core.oauth.authentication import OAuthTokenAuthentication
+from wallclub_core.oauth.decorators import require_oauth_posp2
 
 
 @api_view(['GET'])
@@ -69,11 +72,14 @@ def cupons_ativos(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class CupomValidarAPIView(APIView):
+@csrf_exempt
+@require_http_methods(["POST"])
+@require_oauth_posp2
+def validar_cupom(request):
     """
-    POST /api/cupom/validar/
+    POST /api/v1/cupons/validar/
     Valida cupom e retorna valor do desconto
-    Autenticação: OAuth Token (POS) ou JWT (Checkout Web)
+    Autenticação: OAuth Token (POS)
     
     Payload:
     {
@@ -92,68 +98,62 @@ class CupomValidarAPIView(APIView):
         "mensagem": "Cupom aplicado com sucesso"
     }
     """
-    authentication_classes = [OAuthTokenAuthentication, ClienteJWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        serializer = CupomValidarSerializer(data=request.data)
+    try:
+        data = json.loads(request.body)
         
-        if not serializer.is_valid():
-            return Response({
-                'valido': False,
-                'mensagem': 'Dados inválidos',
-                'erros': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        codigo = data.get('codigo')
+        loja_id = data.get('loja_id')
+        cliente_id = data.get('cliente_id')
+        valor_transacao = Decimal(str(data.get('valor_transacao', 0)))
         
-        dados = serializer.validated_data
-        codigo = dados['codigo']
-        loja_id = dados['loja_id']
-        cliente_id = dados['cliente_id']
-        valor_transacao = dados['valor_transacao']
+        if not all([codigo, loja_id, cliente_id, valor_transacao]):
+            return JsonResponse({
+                'valido': False,
+                'mensagem': 'Dados inválidos: codigo, loja_id, cliente_id e valor_transacao são obrigatórios'
+            }, status=400)
         
-        try:
-            cupom_service = CupomService()
-            
-            # Validar cupom
-            cupom = cupom_service.validar_cupom(
-                codigo=codigo,
-                loja_id=loja_id,
-                cliente_id=cliente_id,
-                valor_transacao=valor_transacao
-            )
-            
-            # Calcular desconto
-            valor_desconto = cupom_service.calcular_desconto(cupom, valor_transacao)
-            valor_final = valor_transacao - valor_desconto
-            
-            response_data = {
-                'valido': True,
-                'cupom_id': cupom.id,
-                'valor_desconto': float(valor_desconto),
-                'valor_final': float(valor_final),
-                'mensagem': 'Cupom aplicado com sucesso'
-            }
-            
-            registrar_log(
-                'apps.cupom',
-                f'Cupom validado: {codigo} - Cliente {cliente_id} - Desconto R$ {valor_desconto}'
-            )
-            
-            return Response(response_data)
-            
-        except ValueError as e:
-            # Erro de validação do cupom
-            return Response({
-                'valido': False,
-                'cupom_id': None,
-                'valor_desconto': None,
-                'valor_final': None,
-                'mensagem': str(e)
-            }, status=status.HTTP_200_OK)  # 200 pois é uma resposta válida
-            
-        except Exception as e:
-            registrar_log('apps.cupom', f'Erro ao validar cupom: {e}', nivel='ERROR')
-            return Response({
-                'valido': False,
-                'mensagem': 'Erro ao validar cupom'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        cupom_service = CupomService()
+        
+        # Validar cupom
+        cupom = cupom_service.validar_cupom(
+            codigo=codigo,
+            loja_id=loja_id,
+            cliente_id=cliente_id,
+            valor_transacao=valor_transacao
+        )
+        
+        # Calcular desconto
+        valor_desconto = cupom_service.calcular_desconto(cupom, valor_transacao)
+        valor_final = valor_transacao - valor_desconto
+        
+        response_data = {
+            'valido': True,
+            'cupom_id': cupom.id,
+            'valor_desconto': float(valor_desconto),
+            'valor_final': float(valor_final),
+            'mensagem': 'Cupom aplicado com sucesso'
+        }
+        
+        registrar_log(
+            'apps.cupom',
+            f'Cupom validado: {codigo} - Cliente {cliente_id} - Desconto R$ {valor_desconto}'
+        )
+        
+        return JsonResponse(response_data)
+        
+    except ValueError as e:
+        # Erro de validação do cupom
+        return JsonResponse({
+            'valido': False,
+            'cupom_id': None,
+            'valor_desconto': None,
+            'valor_final': None,
+            'mensagem': str(e)
+        })
+        
+    except Exception as e:
+        registrar_log('apps.cupom', f'Erro ao validar cupom: {e}', nivel='ERROR')
+        return JsonResponse({
+            'valido': False,
+            'mensagem': 'Erro ao validar cupom'
+        }, status=500)
