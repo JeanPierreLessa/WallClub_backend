@@ -160,7 +160,7 @@ class TRDataOwnService:
                     
                     registrar_log('posp2', f'🧮 Calculando desconto: valor={valor_original}, forma={forma}, parcelas={parcelas}, loja_id={loja_id}')
                     
-                    resultado = calculadora_desconto.calcular_desconto_com_juros(
+                    resultado = calculadora_desconto.calcular_desconto(
                         valor_original=Decimal(str(valor_original)),
                         data_transacao=data_atual,
                         forma=forma,
@@ -175,7 +175,7 @@ class TRDataOwnService:
                         
                         # Calcular cashback sobre valor COM desconto
                         valor_com_desconto = valor_original - valor_desconto_pos
-                        resultado_cashback = calculadora_desconto.calcular_desconto_com_juros(
+                        resultado_cashback = calculadora_desconto.calcular_desconto(
                             valor_original=Decimal(str(valor_com_desconto)),
                             data_transacao=data_atual,
                             forma=forma,

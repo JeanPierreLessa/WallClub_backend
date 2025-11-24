@@ -71,9 +71,9 @@ docker system df
 
 cd /var/www/WallClub_backend
 git pull origin integracao_own
-docker-compose build wallclub-pos
+docker-compose build wallclub-pos nginx
 docker-compose down
-docker-compose up -d wallclub-pos
+docker-compose up -d wallclub-pos nginx
 
 
 # em dev
