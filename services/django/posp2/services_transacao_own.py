@@ -72,8 +72,9 @@ class TRDataOwnService:
             # Flag para indicar se é Wall Club
             wall_club = 'S' if cpf and cpf.strip() else 'N'
             
-            # Extrair cupom (opcional)
+            # Extrair cupom (opcional) - POS envia código e valor do desconto
             cupom_codigo = dados.get('cupom_codigo', '')
+            cupom_valor_desconto = Decimal(str(dados.get('cupom_valor_desconto', 0)))
 
             registrar_log('posp2', f'📥 Recebido request /trdata_own/ - Terminal: {terminal}, CPF: {cpf}, Valor: {valororiginal}')
 
@@ -193,63 +194,61 @@ class TRDataOwnService:
                 except Exception as e:
                     registrar_log('posp2', f'⚠️ Erro ao calcular desconto: {e}', nivel='WARNING')
             
-            # 6.1. Aplicar cupom (opcional)
+            # 6.1. Validar cupom (opcional) - POS já calculou e aplicou o desconto
             cupom_obj = None
             cupom_id = None
-            cupom_valor_desconto = Decimal('0.00')
             
-            if cupom_codigo:
+            if cupom_codigo and cupom_valor_desconto > 0:
                 try:
-                    from apps.cupom.services import CupomService
-                    from apps.cliente.models import Cliente
+                    from apps.cupom.models import Cupom
                     
-                    registrar_log('posp2', f'🎟️ Validando cupom: {cupom_codigo}')
+                    registrar_log('posp2', f'🎟️ Validando cupom: {cupom_codigo}, desconto informado: R$ {cupom_valor_desconto}')
                     
                     # Buscar loja_id e cliente_id
                     with connection.cursor() as cursor:
+                        # Buscar loja_id do terminal
                         cursor.execute("""
-                            SELECT l.id, l.canal_id
-                            FROM terminais t
-                            INNER JOIN loja l ON t.loja_id = l.id
-                            WHERE t.terminal = %s
+                            SELECT loja_id 
+                            FROM terminal 
+                            WHERE numero_terminal = %s
                         """, [terminal])
-                        loja_row = cursor.fetchone()
                         
-                        if not loja_row:
-                            raise ValueError(f"Terminal {terminal} não encontrado")
+                        result = cursor.fetchone()
+                        if not result:
+                            raise ValueError(f"Terminal não encontrado: {terminal}")
                         
-                        loja_id = loja_row[0]
-                        canal_id = loja_row[1]
-                    
-                    # Buscar cliente_id pelo CPF
-                    cliente_id = None
-                    if cpf:
-                        try:
-                            cliente = Cliente.objects.get(cpf=cpf, canal_id=canal_id)
-                            cliente_id = cliente.id
-                        except Cliente.DoesNotExist:
-                            registrar_log('posp2', f'⚠️ Cliente não encontrado: CPF={cpf}', nivel='WARNING')
+                        loja_id = result[0]
+                        
+                        # Buscar cliente_id pelo CPF
+                        cliente_id = None
+                        if cpf:
+                            cursor.execute("""
+                                SELECT id 
+                                FROM cliente 
+                                WHERE cpf = %s
+                            """, [cpf])
+                            result = cursor.fetchone()
+                            if result:
+                                cliente_id = result[0]
+                            else:
+                                registrar_log('posp2', f'⚠️ Cliente não encontrado: CPF={cpf}', nivel='WARNING')
                     
                     if not cliente_id:
                         raise ValueError("CPF do cliente é obrigatório para usar cupom")
                     
-                    # Validar cupom
-                    cupom_service = CupomService()
-                    cupom_obj = cupom_service.validar_cupom(
-                        codigo=cupom_codigo,
+                    # Apenas validar se o cupom existe e está ativo
+                    cupom_obj = Cupom.objects.filter(
+                        codigo__iexact=cupom_codigo,
                         loja_id=loja_id,
-                        cliente_id=cliente_id,
-                        valor_transacao=Decimal(str(valor_original))
-                    )
+                        ativo=True
+                    ).first()
                     
-                    # Calcular desconto
-                    cupom_valor_desconto = cupom_service.calcular_desconto(
-                        cupom_obj, 
-                        Decimal(str(valor_original))
-                    )
+                    if not cupom_obj:
+                        raise ValueError(f"Cupom não encontrado ou inativo: {cupom_codigo}")
+                    
                     cupom_id = cupom_obj.id
                     
-                    registrar_log('posp2', f'✅ Cupom validado: {cupom_codigo}, desconto: R$ {cupom_valor_desconto}')
+                    registrar_log('posp2', f'✅ Cupom validado: {cupom_codigo}, desconto aplicado pelo POS: R$ {cupom_valor_desconto}')
                     
                 except Exception as e:
                     registrar_log('posp2', f'❌ Erro ao validar cupom: {e}', nivel='ERROR')
