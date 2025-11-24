@@ -116,9 +116,9 @@ class TRDataOwnService:
                     'mensagem': f'Transação já processada: {tx_transaction_id}'
                 }
 
-            # 6. Converter valor original (usar amount em centavos, não valororiginal)
-            amount_centavos = int(dados_trdata.get('amount', 0))
-            valor_original = amount_centavos / 100.0  # Converter centavos para reais
+            # 6. Converter valor original (usar valororiginal do JSON principal, não amount)
+            # valororiginal vem formatado como "R$10,00" do POS
+            valor_original = self._converter_valor_monetario(valororiginal)
             
             # 6.0. Buscar loja_id para cálculo de desconto
             loja_id = None
