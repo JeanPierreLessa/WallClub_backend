@@ -1099,7 +1099,7 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
     thread.daemon = True
     thread.start()
     
-    # Retornar HTML com script para mostrar alerta e fechar janela
+    # Retornar HTML com script para mostrar alerta e redirecionar de volta
     html_response = f"""
     <!DOCTYPE html>
     <html>
@@ -1107,12 +1107,11 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
         <title>Exportação Iniciada</title>
         <script>
             alert('Exportação iniciada! O arquivo com {total_registros:,} registros será enviado por email para {usuario_email}.');
-            window.close();
+            window.location.href = document.referrer || '/rpr/';
         </script>
     </head>
     <body>
-        <p>Exportação iniciada! O arquivo com {total_registros:,} registros será enviado por email.</p>
-        <p>Você pode fechar esta janela.</p>
+        <p>Exportação iniciada! Redirecionando...</p>
     </body>
     </html>
     """
