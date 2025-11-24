@@ -372,6 +372,9 @@ class TRDataOwnService:
                     registrar_log('posp2', 'Erro: transação não encontrada após inserção', nivel='ERROR')
                     valores_calculados = {}
                 else:
+                    registrar_log('posp2', f'🔍 Row retornado: {len(row)} campos')
+                    registrar_log('posp2', f'🔍 CNPJ da loja (row[12]): {row[12] if len(row) > 12 else "ÍNDICE INVÁLIDO"}')
+                    
                     # Preparar dados_linha para calculadora
                     dados_linha = {
                         'id': row[0],
@@ -397,8 +400,10 @@ class TRDataOwnService:
                         'DataFuturaPagamento': None,
                         'loja_id': row[10],
                         'canal_id': row[11],
-                        'cnpj': row[12]
+                        'cnpj': row[12] if len(row) > 12 else None
                     }
+                    
+                    registrar_log('posp2', f'🔍 dados_linha[cnpj]: {dados_linha.get("cnpj")}')
 
                     # Calcular valores
                     calculadora = CalculadoraBaseGestao()
