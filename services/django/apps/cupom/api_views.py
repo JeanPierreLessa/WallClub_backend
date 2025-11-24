@@ -75,6 +75,70 @@ def cupons_ativos(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
+def verificar_cupons_disponiveis(request):
+    """
+    POST /api/v1/cupons/verificar_disponiveis/
+    Verifica se existem cupons ativos para uma loja
+    Autenticação: OAuth Token (POS)
+    
+    Payload:
+    {
+        "loja_id": 26
+    }
+    
+    Response:
+    {
+        "tem_cupons": true,
+        "quantidade": 5
+    }
+    """
+    try:
+        data = json.loads(request.body)
+        loja_id = data.get('loja_id')
+        
+        if not loja_id:
+            return JsonResponse({
+                'tem_cupons': False,
+                'quantidade': 0,
+                'mensagem': 'loja_id é obrigatório'
+            }, status=400)
+        
+        # Buscar cupons ativos e vigentes da loja
+        agora = timezone.now()
+        cupons = Cupom.objects.filter(
+            loja_id=loja_id,
+            ativo=True,
+            data_inicio__lte=agora,
+            data_fim__gte=agora
+        )
+        
+        # Filtrar cupons que ainda têm usos disponíveis
+        cupons_disponiveis = []
+        for cupom in cupons:
+            # Verificar limite global
+            if cupom.limite_uso_total and cupom.quantidade_usada >= cupom.limite_uso_total:
+                continue
+            cupons_disponiveis.append(cupom)
+        
+        quantidade = len(cupons_disponiveis)
+        
+        return JsonResponse({
+            'tem_cupons': quantidade > 0,
+            'quantidade': quantidade
+        })
+        
+    except Exception as e:
+        registrar_log('apps.cupom', f'Erro ao verificar cupons disponíveis: {e}', nivel='ERROR')
+        return JsonResponse({
+            'tem_cupons': False,
+            'quantidade': 0,
+            'mensagem': 'Erro ao verificar cupons'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@require_oauth_posp2
 def validar_cupom(request):
     """
     POST /api/v1/cupons/validar/
