@@ -803,10 +803,9 @@ def calcular_linha_totalizadora_rpr(queryset, estrutura_colunas):
     return linha_totalizadora
 
 
-def _obter_queryset_rpr(request):
-    """Auxiliar para construir queryset RPR com filtros"""
+def _obter_filtros_e_canais_rpr(request):
+    """Auxiliar para obter filtros e canais do usuário"""
     from portais.controle_acesso.services import ControleAcessoService
-    from .services_rpr import RPRService
     
     usuario_logado = getattr(request, 'portal_usuario', None)
     if usuario_logado:
@@ -828,32 +827,48 @@ def _obter_queryset_rpr(request):
         'incluir_tef': request.GET.get('incluir_tef') == '1',
     }
     
-    # Usar service para buscar transações (sem paginação para export)
-    transacoes_list, _ = RPRService.buscar_transacoes_rpr(
+    return filtros, canais_usuario
+
+
+def _contar_registros_rpr(filtros, canais_usuario):
+    """Conta registros sem carregar na memória"""
+    from .services_rpr import RPRService
+    
+    # Usar service apenas para contar
+    _, total = RPRService.buscar_transacoes_rpr(
         filtros=filtros,
         canais_usuario=canais_usuario,
         page=1,
-        per_page=999999  # Buscar todas para exportação
+        per_page=1  # Buscar apenas 1 para obter o total
     )
     
-    return transacoes_list
+    return total
 
 
 @require_funcionalidade('rpr_export')
 def exportar_rpr_excel(request):
     """Exportar dados RPR para Excel - direto ou por email se >5000 registros"""
     try:
-        # Obter transações com filtros aplicados
-        transacoes = _obter_queryset_rpr(request)
-        total_registros = len(transacoes)
+        from .services_rpr import RPRService
+        
+        # Obter filtros e contar registros SEM carregar na memória
+        filtros, canais_usuario = _obter_filtros_e_canais_rpr(request)
+        total_registros = _contar_registros_rpr(filtros, canais_usuario)
         
         registrar_log('portais.admin', f"RPR Excel - Total registros: {total_registros}")
         
-        # Se mais de 5000 registros, enviar por email
+        # Se mais de 5000 registros, enviar por email (processamento em batches)
         if total_registros > 5000:
-            return _exportar_rpr_csv_email(request, transacoes, total_registros)
+            return _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros)
         
         # Export direto para menos de 5000 registros
+        transacoes, _ = RPRService.buscar_transacoes_rpr(
+            filtros=filtros,
+            canais_usuario=canais_usuario,
+            page=1,
+            per_page=total_registros
+        )
+        
         dados = []
         estrutura_colunas = obter_estrutura_colunas_rpr()
         
@@ -880,17 +895,26 @@ def exportar_rpr_excel(request):
 def exportar_rpr_csv(request):
     """Exportar dados RPR para CSV - direto ou por email se >5000 registros"""
     try:
-        # Obter transações com filtros aplicados
-        transacoes = _obter_queryset_rpr(request)
-        total_registros = len(transacoes)
+        from .services_rpr import RPRService
+        
+        # Obter filtros e contar registros SEM carregar na memória
+        filtros, canais_usuario = _obter_filtros_e_canais_rpr(request)
+        total_registros = _contar_registros_rpr(filtros, canais_usuario)
         
         registrar_log('portais.admin', f"RPR CSV - Total registros: {total_registros}")
         
-        # Se mais de 5000 registros, enviar por email
+        # Se mais de 5000 registros, enviar por email (processamento em batches)
         if total_registros > 5000:
-            return _exportar_rpr_csv_email(request, transacoes, total_registros)
+            return _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros)
         
         # Export direto para menos de 5000 registros
+        transacoes, _ = RPRService.buscar_transacoes_rpr(
+            filtros=filtros,
+            canais_usuario=canais_usuario,
+            page=1,
+            per_page=total_registros
+        )
+        
         dados = []
         estrutura_colunas = obter_estrutura_colunas_rpr()
         
@@ -908,7 +932,7 @@ def exportar_rpr_csv(request):
         return JsonResponse({'erro': f'Erro ao exportar CSV: {str(e)}'}, status=500)
 
 
-def _exportar_rpr_csv_email(request, queryset, total_registros):
+def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
     """Exportar RPR CSV por email em background (>5000 registros)"""
     from django.http import JsonResponse
     import threading
@@ -926,6 +950,8 @@ def _exportar_rpr_csv_email(request, queryset, total_registros):
     
     def processar_e_enviar():
         try:
+            from .services_rpr import RPRService
+            
             registrar_log('portais.admin', f"RPR CSV - Thread iniciada")
             
             import csv
@@ -943,6 +969,10 @@ def _exportar_rpr_csv_email(request, queryset, total_registros):
             # Estrutura e mapeamento
             estrutura_colunas = obter_estrutura_colunas_rpr()
             colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
+            
+            # Calcular número de páginas
+            import math
+            total_paginas = math.ceil(total_registros / batch_size)
             
             # Função para remover acentos (mesma do gestão admin)
             def remover_acentos(texto):
@@ -964,14 +994,20 @@ def _exportar_rpr_csv_email(request, queryset, total_registros):
                 return texto_sem_acentos
             
             with open(arquivo_path, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile, delimiter=';')
+                writer = csv.DictWriter(csvfile, fieldnames=colunas_rpr.keys())
                 
-                # Headers (sem acentos)
-                headers_sem_acentos = [remover_acentos(header) for header in colunas_rpr.values()]
-                writer.writerow(headers_sem_acentos)
+                # Escrever cabeçalho
+                writer.writerow(colunas_rpr)
                 
-                for start in range(0, total_registros, batch_size):
-                    batch = queryset[start:start + batch_size]
+                # Processar em batches (paginação no banco)
+                for pagina in range(1, total_paginas + 1):
+                    # Buscar batch do banco
+                    batch, _ = RPRService.buscar_transacoes_rpr(
+                        filtros=filtros,
+                        canais_usuario=canais_usuario,
+                        page=pagina,
+                        per_page=batch_size
+                    )
                     
                     for transacao in batch:
                         # Calcular linha RPR
