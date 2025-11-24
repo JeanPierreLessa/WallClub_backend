@@ -619,6 +619,18 @@ class TRDataOwnService:
         }
         forma = forma_map.get(payment_method, payment_method)
 
+        # === DEBUG valores_calculados ===
+        registrar_log('posp2', f'🔍 valores_calculados recebidos: {len(valores_calculados)} campos')
+        registrar_log('posp2', f'🔍 valores_calculados[11] (valor_original): {valores_calculados.get(11)}')
+        registrar_log('posp2', f'🔍 valores_calculados[13] (parcelas): {valores_calculados.get(13)}')
+        registrar_log('posp2', f'🔍 valores_calculados[15] (desconto PIX): {valores_calculados.get(15)}')
+        registrar_log('posp2', f'🔍 valores_calculados[18] (desconto): {valores_calculados.get(18)}')
+        registrar_log('posp2', f'🔍 valores_calculados[16] (valor_liquido): {valores_calculados.get(16)}')
+        registrar_log('posp2', f'🔍 valores_calculados[20] (vparcela): {valores_calculados.get(20)}')
+        registrar_log('posp2', f'🔍 valores_calculados[26] (valor_final): {valores_calculados.get(26)}')
+        registrar_log('posp2', f'🔍 valores_calculados[88] (encargos1): {valores_calculados.get(88)}')
+        registrar_log('posp2', f'🔍 valores_calculados[94] (encargos2): {valores_calculados.get(94)}')
+        
         # === REPLICAR LÓGICA PINBANK ===
         # Lógica condicional do PHP: PIX usa valores[15], outros usam valores[18]
         if forma == 'PIX':
