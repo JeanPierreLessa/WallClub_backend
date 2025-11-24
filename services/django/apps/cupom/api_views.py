@@ -13,6 +13,7 @@ from .serializers import CupomAtivoSerializer, CupomValidarSerializer, CupomVali
 from .services import CupomService
 from wallclub_core.utilitarios.log_control import registrar_log
 from apps.cliente.jwt_cliente import ClienteJWTAuthentication
+from wallclub_core.oauth.authentication import OAuthTokenAuthentication
 
 
 @api_view(['GET'])
@@ -91,6 +92,7 @@ class CupomValidarAPIView(APIView):
         "mensagem": "Cupom aplicado com sucesso"
     }
     """
+    authentication_classes = [OAuthTokenAuthentication, ClienteJWTAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
