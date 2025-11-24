@@ -520,6 +520,11 @@ def pagamentos_bulk_create(request):
         # COMMIT JÁ FOI FEITO (saiu do with transaction.atomic)
         registrar_log('portais.admin', f'BULK CREATE - Commit realizado: {created_count} pagamento(s) salvos')
         
+        # Forçar commit no banco antes de processar base de gestão
+        from django.db import connection
+        connection.commit()
+        registrar_log('portais.admin', f'BULK CREATE - Commit explícito forçado no banco de dados')
+        
         if errors:
             return JsonResponse({
                 'success': False,
