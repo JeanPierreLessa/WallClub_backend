@@ -1,7 +1,7 @@
 """
 API Views para cupons
 """
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,11 +12,12 @@ from .models import Cupom
 from .serializers import CupomAtivoSerializer, CupomValidarSerializer, CupomValidarResponseSerializer
 from .services import CupomService
 from wallclub_core.utilitarios.log_control import registrar_log
-from apps.conta_digital.decorators import require_jwt_only
+from apps.cliente.jwt_cliente import ClienteJWTAuthentication
 
 
 @api_view(['GET'])
-@require_jwt_only
+@authentication_classes([ClienteJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def cupons_ativos(request):
     """
     GET /api/cupons/ativos/
