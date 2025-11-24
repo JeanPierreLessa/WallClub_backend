@@ -360,7 +360,7 @@ class TRDataOwnService:
                 cursor.execute("""
                     SELECT t.id, t.datahora, t.terminal, t.cpf, t.paymentMethod, t.nsuHost,
                            t.txTransactionId, t.valor_original, t.brand, t.totalInstallments,
-                           l.id as loja_id, l.canal_id
+                           l.id as loja_id, l.canal_id, l.cnpj
                     FROM transactiondata_own t
                     INNER JOIN terminais term ON t.terminal = term.terminal
                     INNER JOIN loja l ON term.loja_id = l.id
@@ -396,7 +396,8 @@ class TRDataOwnService:
                         'DataCancelamento': None,
                         'DataFuturaPagamento': None,
                         'loja_id': row[10],
-                        'canal_id': row[11]
+                        'canal_id': row[11],
+                        'cnpj': row[12]
                     }
 
                     # Calcular valores
