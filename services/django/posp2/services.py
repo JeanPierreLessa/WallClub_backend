@@ -856,10 +856,10 @@ class POSP2Service:
             registrar_log('posp2', '========================================')
             registrar_log('posp2', f'posp2.logo_pos - Obtendo logo para terminal: {terminal_id}')
 
-            # Buscar nome do logo na base de dados
+            # Buscar nome do logo e loja_id na base de dados
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT c.logo_pos
+                    SELECT c.logo_pos, l.id
                     FROM   terminais t, loja l, canal c
                     WHERE  t.terminal = %s
                            AND t.loja_id = l.id
@@ -876,11 +876,13 @@ class POSP2Service:
                     }
 
                 logo_pos = row[0] if row[0] else 'logo_padrao.png'
+                loja_id = row[1]
 
             return {
                 'sucesso': True,
                 'mensagem': 'Logo obtido com sucesso',
-                'logo_pos': logo_pos
+                'logo_pos': logo_pos,
+                'loja_id': loja_id
             }
 
         except Exception as e:
