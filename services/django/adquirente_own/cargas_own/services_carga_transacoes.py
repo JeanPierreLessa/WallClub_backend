@@ -46,7 +46,7 @@ class CargaTransacoesOwnService:
         ).first()
         
         if not credencial:
-            registrar_log('own.carga', f'❌ Credenciais não encontradas: {cnpj_cliente}', nivel='ERROR')
+            registrar_log('adquirente_own.cargas_own', f'❌ Credenciais não encontradas: {cnpj_cliente}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': 'Credenciais não encontradas'
@@ -62,7 +62,7 @@ class CargaTransacoesOwnService:
         if doc_parceiro:
             payload['docParceiro'] = doc_parceiro
         
-        registrar_log('own.carga', f'📥 Buscando transações: {data_inicial} a {data_final}')
+        registrar_log('adquirente_own.cargas_own', f'📥 Buscando transações: {data_inicial} a {data_final}')
         
         # Inicializar service com environment correto
         own_service = OwnService(environment=credencial.environment)
@@ -81,7 +81,7 @@ class CargaTransacoesOwnService:
             return response
         
         transacoes = response.get('dados', [])
-        registrar_log('own.carga', f'✅ {len(transacoes)} transações encontradas')
+        registrar_log('adquirente_own.cargas_own', f'✅ {len(transacoes)} transações encontradas')
         
         return {
             'sucesso': True,
@@ -111,8 +111,8 @@ class CargaTransacoesOwnService:
                 'numeroSerieEquipamento': transacao_data.get('numeroSerieEquipamento'),
                 'valor': transacao_data.get('valor', 0) / 100,  # Converter centavos para reais
                 'quantidadeParcelas': transacao_data.get('quantidadeParcelas', 1),
-                'mdr': transacao_data.get('mdr', 0) / 100,
-                'valorAntecipacaoTotal': transacao_data.get('valorAntecipacaoTotal', 0) / 100 if transacao_data.get('valorAntecipacaoTotal') else None,
+                'mdr': transacao_data.get('mdr') / 100 if transacao_data.get('mdr') is not None else None,
+                'valorAntecipacaoTotal': transacao_data.get('valorAntecipacaoTotal') / 100 if transacao_data.get('valorAntecipacaoTotal') else None,
                 'taxaAntecipacaoTotal': transacao_data.get('taxaAntecipacaoTotal'),
                 'statusTransacao': transacao_data.get('statusTransacao'),
                 'bandeira': transacao_data.get('bandeira'),
@@ -126,10 +126,13 @@ class CargaTransacoesOwnService:
         
         # Processar parcelas se existirem
         if 'parcelas' in transacao_data and transacao_data['parcelas']:
+            registrar_log('adquirente_own.cargas_own', f'📦 Transação {identificador} tem {len(transacao_data["parcelas"])} parcelas')
             self._processar_parcelas(transacao_obj, transacao_data['parcelas'])
+        else:
+            registrar_log('adquirente_own.cargas_own', f'⚠️ Transação {identificador} SEM array parcelas na resposta da API', nivel='WARNING')
         
         action = 'criada' if created else 'atualizada'
-        registrar_log('own.carga', f'💾 Transação {action}: {identificador}')
+        registrar_log('adquirente_own.cargas_own', f'💾 Transação {action}: {identificador}')
         
         return transacao_obj
     
@@ -144,12 +147,17 @@ class CargaTransacoesOwnService:
         # Pegar primeira parcela para atualizar dados
         primeira_parcela = parcelas[0]
         
+        registrar_log('adquirente_own.cargas_own', f'🔍 Primeira parcela: {primeira_parcela}')
+        
         transacao_obj.parcelaId = primeira_parcela.get('parcelaId')
         transacao_obj.statusPagamento = primeira_parcela.get('statusPagamento')
         transacao_obj.dataHoraTransacao = datetime.fromisoformat(primeira_parcela['dataHoraTransacao'].replace('T', ' ')) if primeira_parcela.get('dataHoraTransacao') else None
         transacao_obj.mdrParcela = primeira_parcela.get('mdr', 0) / 100 if primeira_parcela.get('mdr') else None
         transacao_obj.numeroParcela = primeira_parcela.get('numeroParcela')
-        transacao_obj.valorParcela = primeira_parcela.get('valor', 0) / 100 if primeira_parcela.get('valor') else None
+        
+        valor_parcela_raw = primeira_parcela.get('valorParcela')
+        transacao_obj.valorParcela = valor_parcela_raw / 100 if valor_parcela_raw else None
+        registrar_log('adquirente_own.cargas_own', f'💰 valorParcela calculado: {transacao_obj.valorParcela} (raw: {valor_parcela_raw})')
         transacao_obj.dataPagamentoPrevista = datetime.strptime(primeira_parcela['dataPagamentoPrevista'], '%Y-%m-%d').date() if primeira_parcela.get('dataPagamentoPrevista') else None
         transacao_obj.dataPagamentoReal = datetime.strptime(primeira_parcela['dataPagamentoReal'], '%Y-%m-%d').date() if primeira_parcela.get('dataPagamentoReal') else None
         transacao_obj.valorAntecipado = primeira_parcela.get('valorAntecipado', 0) / 100 if primeira_parcela.get('valorAntecipado') else None
@@ -184,7 +192,7 @@ class CargaTransacoesOwnService:
         transacao.processado = True
         transacao.save()
         
-        registrar_log('own.carga', f'✅ Processado para base gestão: {transacao.identificadorTransacao}')
+        registrar_log('adquirente_own.cargas_own', f'✅ Processado para base gestão: {transacao.identificadorTransacao}')
         
         return base_transacao
     
@@ -204,7 +212,7 @@ class CargaTransacoesOwnService:
         data_final = datetime.now()
         data_inicial = data_final - timedelta(days=1)
         
-        registrar_log('own.carga', f'🔄 Iniciando carga diária: {data_inicial.date()}')
+        registrar_log('adquirente_own.cargas_own', f'🔄 Iniciando carga diária: {data_inicial.date()}')
         
         # Buscar credenciais ativas
         if cnpj_cliente:
@@ -216,7 +224,7 @@ class CargaTransacoesOwnService:
         total_processadas = 0
         
         for credencial in credenciais:
-            registrar_log('own.carga', f'📋 Processando: {credencial.nome}')
+            registrar_log('adquirente_own.cargas_own', f'📋 Processando: {credencial.nome}')
             
             # Buscar transações
             result = self.buscar_transacoes_gerais(
@@ -226,7 +234,7 @@ class CargaTransacoesOwnService:
             )
             
             if not result.get('sucesso'):
-                registrar_log('own.carga', f'❌ Erro ao buscar: {credencial.nome}', nivel='ERROR')
+                registrar_log('adquirente_own.cargas_own', f'❌ Erro ao buscar: {credencial.nome}', nivel='ERROR')
                 continue
             
             # Salvar transações

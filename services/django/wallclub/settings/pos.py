@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'posp2',
     'apps.cliente',  # Necessário para models de Cliente (usado por conta_digital)
     'apps.conta_digital',  # Necessário para verificar status de autorizações
+    'apps.cupom',  # Sistema de cupons de desconto
     'pinbank',
     'pinbank.cargas_pinbank',
     'parametros_wallclub',

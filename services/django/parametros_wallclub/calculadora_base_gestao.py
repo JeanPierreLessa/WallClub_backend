@@ -48,7 +48,7 @@ class CalculadoraBaseGestao:
         try:
             # Determinar identificador baseado na tabela
             if tabela == 'transactiondata_own':
-                identificador = dados_linha.get('cnpj')  # CNPJ da loja (Own)
+                identificador = dados_linha.get('cnpjCpfParceiro')  # CNPJ da loja (Own)
                 log_id = dados_linha.get('txTransactionId', 'N/A')
             else:
                 identificador = dados_linha['NsuOperacao']  # NSU (Pinbank)

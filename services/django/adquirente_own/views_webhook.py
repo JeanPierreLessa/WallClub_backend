@@ -55,7 +55,7 @@ def webhook_transacao(request):
         payload = json.loads(request.body.decode('utf-8'))
         identificador = payload.get('identificadorTransacao')
         
-        registrar_log('own.webhook', f'📥 Webhook transação recebido: {identificador}')
+        registrar_log('adquirente_own', f'📥 Webhook transação recebido: {identificador}')
         
         # Validar campos obrigatórios
         campos_obrigatorios = [
@@ -65,7 +65,7 @@ def webhook_transacao(request):
         
         for campo in campos_obrigatorios:
             if campo not in payload:
-                registrar_log('own.webhook', f'❌ Campo obrigatório ausente: {campo}', nivel='ERROR')
+                registrar_log('adquirente_own', f'❌ Campo obrigatório ausente: {campo}', nivel='ERROR')
                 return JsonResponse({
                     'sucesso': False,
                     'mensagem': f'Campo obrigatório ausente: {campo}'
@@ -73,7 +73,7 @@ def webhook_transacao(request):
         
         # Verificar se já existe
         if OwnExtratoTransacoes.objects.filter(identificadorTransacao=identificador).exists():
-            registrar_log('own.webhook', f'⚠️ Transação já existe: {identificador}', nivel='WARNING')
+            registrar_log('adquirente_own', f'⚠️ Transação já existe: {identificador}', nivel='WARNING')
             return JsonResponse({'sucesso': True, 'mensagem': 'Transação já processada'}, status=200)
         
         # Salvar transação
@@ -96,7 +96,7 @@ def webhook_transacao(request):
                 processado=False
             )
             
-            registrar_log('own.webhook', f'✅ Transação salva: {identificador} - R$ {payload.get("valor")}')
+            registrar_log('adquirente_own', f'✅ Transação salva: {identificador} - R$ {payload.get("valor")}')
         
         return JsonResponse({
             'sucesso': True,
@@ -105,11 +105,11 @@ def webhook_transacao(request):
         }, status=200)
         
     except json.JSONDecodeError as e:
-        registrar_log('own.webhook', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
+        registrar_log('adquirente_own', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
         return JsonResponse({'sucesso': False, 'mensagem': 'JSON inválido'}, status=400)
         
     except Exception as e:
-        registrar_log('own.webhook', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
+        registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': f'Erro ao processar: {str(e)}'
@@ -152,7 +152,7 @@ def webhook_liquidacao(request):
         if not isinstance(payload, list):
             payload = [payload]  # Normalizar para array
         
-        registrar_log('own.webhook', f'📥 Webhook liquidação recebido: {len(payload)} registros')
+        registrar_log('adquirente_own', f'📥 Webhook liquidação recebido: {len(payload)} registros')
         
         salvos = 0
         duplicados = 0
@@ -188,10 +188,10 @@ def webhook_liquidacao(request):
                     salvos += 1
                     
             except Exception as e:
-                registrar_log('own.webhook', f'❌ Erro ao salvar liquidação {lancamento_id}: {str(e)}', nivel='ERROR')
+                registrar_log('adquirente_own', f'❌ Erro ao salvar liquidação {lancamento_id}: {str(e)}', nivel='ERROR')
                 continue
         
-        registrar_log('own.webhook', f'✅ Liquidações processadas: {salvos} salvos, {duplicados} duplicados')
+        registrar_log('adquirente_own', f'✅ Liquidações processadas: {salvos} salvos, {duplicados} duplicados')
         
         return JsonResponse({
             'sucesso': True,
@@ -201,11 +201,11 @@ def webhook_liquidacao(request):
         }, status=200)
         
     except json.JSONDecodeError as e:
-        registrar_log('own.webhook', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
+        registrar_log('adquirente_own', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
         return JsonResponse({'sucesso': False, 'mensagem': 'JSON inválido'}, status=400)
         
     except Exception as e:
-        registrar_log('own.webhook', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
+        registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': f'Erro ao processar: {str(e)}'
@@ -236,15 +236,15 @@ def webhook_cadastro(request):
         status = payload.get('status')
         identificador = payload.get('identificadorCliente')
         
-        registrar_log('own.webhook', f'📥 Webhook cadastro: {protocolo} - {status}')
+        registrar_log('adquirente_own', f'📥 Webhook cadastro: {protocolo} - {status}')
         
         # Log do resultado
         if status == 'SUCESSO':
             contrato = payload.get('contrato')
-            registrar_log('own.webhook', f'✅ Cadastro aprovado: {identificador} - Contrato: {contrato}')
+            registrar_log('adquirente_own', f'✅ Cadastro aprovado: {identificador} - Contrato: {contrato}')
         else:
             motivo = payload.get('motivo', 'Não informado')
-            registrar_log('own.webhook', f'❌ Cadastro reprovado: {identificador} - Motivo: {motivo}', nivel='WARNING')
+            registrar_log('adquirente_own', f'❌ Cadastro reprovado: {identificador} - Motivo: {motivo}', nivel='WARNING')
         
         # TODO: Implementar lógica de atualização de status do estabelecimento
         # Exemplo: atualizar tabela de lojas com status de credenciamento
@@ -257,11 +257,11 @@ def webhook_cadastro(request):
         }, status=200)
         
     except json.JSONDecodeError as e:
-        registrar_log('own.webhook', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
+        registrar_log('adquirente_own', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
         return JsonResponse({'sucesso': False, 'mensagem': 'JSON inválido'}, status=400)
         
     except Exception as e:
-        registrar_log('own.webhook', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
+        registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': f'Erro ao processar: {str(e)}'
@@ -284,7 +284,7 @@ def _parse_data_own(data_str):
         try:
             return datetime.strptime(data_str, '%Y-%m-%d %H:%M:%S')
         except ValueError:
-            registrar_log('own.webhook', f'⚠️ Formato de data inválido: {data_str}', nivel='WARNING')
+            registrar_log('adquirente_own', f'⚠️ Formato de data inválido: {data_str}', nivel='WARNING')
             return datetime.now()
 
 
@@ -301,5 +301,5 @@ def _parse_data_br(data_str):
             # Tentar formato com ano de 4 dígitos
             return datetime.strptime(data_str, '%d/%m/%Y').date()
         except ValueError:
-            registrar_log('own.webhook', f'⚠️ Formato de data inválido: {data_str}', nivel='WARNING')
+            registrar_log('adquirente_own', f'⚠️ Formato de data inválido: {data_str}', nivel='WARNING')
             return datetime.now().date()

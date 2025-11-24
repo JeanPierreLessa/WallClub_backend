@@ -5,6 +5,7 @@ Usa CalculadoraBaseGestao
 """
 
 from typing import Dict, Any
+from datetime import datetime
 from django.db import connection, transaction
 from adquirente_own.cargas_own.models import OwnExtratoTransacoes
 from gestao_financeira.models import BaseTransacoesGestao, BaseTransacoesGestaoErroCarga
@@ -27,7 +28,7 @@ class CargaBaseGestaoOwnService:
         Rotina principal de carga de variáveis primárias
         Processa registros com lido = 0
         """
-        registrar_log('own.cargas_own', "Iniciando carga de valores primários Own")
+        registrar_log('adquirente_own.cargas_own', "Iniciando carga de valores primários Own")
 
         # Query principal - busca registros não lidos
         limit_clause = f"LIMIT {limite}" if limite else ""
@@ -67,9 +68,9 @@ class CargaBaseGestaoOwnService:
                          l.id as loja_id,
                          term.id as terminal_id
                 FROM     wallclub.ownExtratoTransacoes oet
-                LEFT JOIN wallclub.transactiondata_own t ON oet.identificadorTransacao = t.txTransactionId
-                LEFT JOIN wallclub.loja l ON oet.cnpjCpfParceiro = l.cnpj
-                LEFT JOIN wallclub.terminais term ON t.terminal = term.terminal
+                 JOIN wallclub.transactiondata_own t ON oet.identificadorTransacao = t.txTransactionId
+                 JOIN wallclub.loja l ON oet.cnpjCpfParceiro = l.cnpj
+                 JOIN wallclub.terminais term ON t.terminal = term.terminal
                 WHERE    oet.lido = 0
                          {identificador_clause}
                 ORDER BY oet.id
@@ -94,7 +95,7 @@ class CargaBaseGestaoOwnService:
 
                 # Quando completar um lote de 100, processar
                 if len(lote_atual) >= BATCH_SIZE:
-                    registrar_log('own.cargas_own', f"Processando lote {numero_lote}: {len(lote_atual)} registros")
+                    registrar_log('adquirente_own.cargas_own', f"Processando lote {numero_lote}: {len(lote_atual)} registros")
 
                     with transaction.atomic():
                         for row_lote in lote_atual:
@@ -112,13 +113,13 @@ class CargaBaseGestaoOwnService:
                                     OwnExtratoTransacoes.objects.filter(id=linha['id']).update(lido=True)
                                     registros_processados += 1
                                 else:
-                                    registrar_log('own.cargas_own', f"Valores primários não foram atualizados para ID={linha['id']}", nivel='ERROR')
+                                    registrar_log('adquirente_own.cargas_own', f"Valores primários não foram atualizados para ID={linha['id']}", nivel='ERROR')
 
                             except Exception as e:
                                 import traceback
                                 erro_detalhado = traceback.format_exc()
-                                registrar_log('own.cargas_own', f"Erro crítico (CargaBaseGestaoOwn): ID={linha['id']}, Erro: {str(e)}", nivel='ERROR')
-                                registrar_log('own.cargas_own', f"Traceback completo: {erro_detalhado}", nivel='ERROR')
+                                registrar_log('adquirente_own.cargas_own', f"Erro crítico (CargaBaseGestaoOwn): ID={linha['id']}, Erro: {str(e)}", nivel='ERROR')
+                                registrar_log('adquirente_own.cargas_own', f"Traceback completo: {erro_detalhado}", nivel='ERROR')
 
                                 # Registrar erro
                                 BaseTransacoesGestaoErroCarga.objects.create(
@@ -126,13 +127,13 @@ class CargaBaseGestaoOwnService:
                                     mensagem=str(e)
                                 )
 
-                    registrar_log('own.cargas_own', f"Lote {numero_lote} commitado com sucesso ({len(lote_atual)} registros processados)")
+                    registrar_log('adquirente_own.cargas_own', f"Lote {numero_lote} commitado com sucesso ({len(lote_atual)} registros processados)")
                     lote_atual = []
                     numero_lote += 1
 
             # Processar último lote se houver registros restantes
             if lote_atual:
-                registrar_log('own.cargas_own', f"Processando último lote {numero_lote}: {len(lote_atual)} registros")
+                registrar_log('adquirente_own.cargas_own', f"Processando último lote {numero_lote}: {len(lote_atual)} registros")
 
                 with transaction.atomic():
                     for row_lote in lote_atual:
@@ -146,6 +147,33 @@ class CargaBaseGestaoOwnService:
                                 'identificadorTransacao': linha.get('identificadorTransacao'),
                                 'id': linha.get('id')
                             }
+
+                            # Mapear campos Own para formato esperado pela calculadora
+                            linha['TipoCompra'] = self._mapear_tipo_compra(linha.get('modalidade'))
+                            linha['NumeroTotalParcelas'] = linha.get('totalInstallments') or linha.get('quantidadeParcelas', 1)
+                            linha['Bandeira'] = linha.get('bandeira')
+                            
+                            # Converter datetime para string no formato esperado (ISO com T)
+                            data_transacao = linha.get('data')
+                            if isinstance(data_transacao, datetime):
+                                linha['DataTransacao'] = data_transacao.strftime('%Y-%m-%dT%H:%M:%S')
+                            else:
+                                linha['DataTransacao'] = data_transacao
+                            
+                            # Campos que Own não tem - usar valores padrão
+                            linha['SerialNumber'] = linha.get('numeroSerieEquipamento', '')
+                            linha['idTerminal'] = linha.get('numeroSerieEquipamento', '')
+                            linha['NsuOperacao'] = linha.get('identificadorTransacao', '')
+                            linha['nsuAcquirer'] = linha.get('nsuTransacao', '')
+                            linha['valor_original'] = linha.get('valor', 0)
+                            linha['ValorBruto'] = linha.get('valor', 0)
+                            linha['ValorBrutoParcela'] = linha.get('valorParcela', 0)
+                            linha['ValorTaxaAdm'] = 0  # Own não fornece
+                            linha['ValorTaxaMes'] = 0  # Own não fornece
+                            linha['DescricaoStatus'] = linha.get('statusTransacao', '')
+                            linha['ValorSplit'] = None  # Own não fornece split
+                            linha['DataFuturaPagamento'] = linha.get('dataPagamentoPrevista', '')  # Data prevista de pagamento
+                            linha['DataCancelamento'] = None  # Own não fornece data de cancelamento
 
                             # Calcular valores usando a calculadora
                             valores_calculados = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_own')
@@ -164,13 +192,13 @@ class CargaBaseGestaoOwnService:
                                 OwnExtratoTransacoes.objects.filter(id=linha['id']).update(lido=True)
                                 registros_processados += 1
                             else:
-                                registrar_log('own.cargas_own', f"Valores primários não foram atualizados para ID={linha['id']}")
+                                registrar_log('adquirente_own.cargas_own', f"Valores primários não foram atualizados para ID={linha['id']}")
 
                         except Exception as e:
                             import traceback
                             erro_detalhado = traceback.format_exc()
-                            registrar_log('own.cargas_own', f"Erro crítico (CargaBaseGestaoOwn): ID={linha['id']}, Erro: {str(e)}", nivel='ERROR')
-                            registrar_log('own.cargas_own', f"Traceback completo: {erro_detalhado}", nivel='ERROR')
+                            registrar_log('adquirente_own.cargas_own', f"Erro crítico (CargaBaseGestaoOwn): ID={linha['id']}, Erro: {str(e)}", nivel='ERROR')
+                            registrar_log('adquirente_own.cargas_own', f"Traceback completo: {erro_detalhado}", nivel='ERROR')
 
                             # Registrar erro
                             BaseTransacoesGestaoErroCarga.objects.create(
@@ -178,9 +206,9 @@ class CargaBaseGestaoOwnService:
                                 mensagem=str(e)
                             )
 
-                registrar_log('own.cargas_own', f"Último lote {numero_lote} commitado com sucesso ({len(lote_atual)} registros processados)")
+                registrar_log('adquirente_own.cargas_own', f"Último lote {numero_lote} commitado com sucesso ({len(lote_atual)} registros processados)")
 
-        registrar_log('own.cargas_own', f"Carga de valores primários Own finalizada. Registros processados: {registros_processados}")
+        registrar_log('adquirente_own.cargas_own', f"Carga de valores primários Own finalizada. Registros processados: {registros_processados}")
         return registros_processados
 
     def _inserir_valores_base_gestao(self, valores: Dict[int, Any], linha: Dict[str, Any]) -> bool:
@@ -197,7 +225,7 @@ class CargaBaseGestaoOwnService:
             # Own SEMPRE usa banco='OWN' e adquirente='OWN'
             campos_mapeados['banco'] = 'OWN'
             campos_mapeados['adquirente'] = 'OWN'
-            
+
             # Determinar tipo_operacao
             # Se tem transactiondata_own (wallet), é Wallet
             # Se não tem (só ownExtratoTransacoes), é Credenciadora
@@ -231,8 +259,8 @@ class CargaBaseGestaoOwnService:
         except Exception as e:
             import traceback
             erro_completo = traceback.format_exc()
-            registrar_log('own.cargas_own', f"Erro ao inserir valores na base de gestão: {str(e)}", nivel='ERROR')
-            registrar_log('own.cargas_own', f"Traceback completo: {erro_completo}", nivel='ERROR')
+            registrar_log('adquirente_own.cargas_own', f"Erro ao inserir valores na base de gestão: {str(e)}", nivel='ERROR')
+            registrar_log('adquirente_own.cargas_own', f"Traceback completo: {erro_completo}", nivel='ERROR')
             return False
 
     def _mapear_valores_para_campos(self, valores: Dict[int, Any]) -> Dict[str, Any]:
@@ -428,7 +456,7 @@ class CargaBaseGestaoOwnService:
 
             if duplicados:
                 ids_para_remover = [dup[0] for dup in duplicados]
-                registrar_log('own.cargas_own', f"Encontrados {len(duplicados)} registros duplicados com idFilaExtrato=null para var9={var9}", nivel='INFO')
+                registrar_log('adquirente_own.cargas_own', f"Encontrados {len(duplicados)} registros duplicados com idFilaExtrato=null para var9={var9}", nivel='INFO')
 
                 # Remover registros duplicados
                 sql_remover = """
@@ -437,7 +465,26 @@ class CargaBaseGestaoOwnService:
                 """.format(','.join(['%s'] * len(ids_para_remover)))
 
                 cursor.execute(sql_remover, ids_para_remover)
-                registrar_log('own.cargas_own', f"Removidos {cursor.rowcount} registros duplicados com idFilaExtrato=null para var9={var9}", nivel='INFO')
+                registrar_log('adquirente_own.cargas_own', f"Removidos {cursor.rowcount} registros duplicados com idFilaExtrato=null para var9={var9}", nivel='INFO')
 
         except Exception as e:
-            registrar_log('own.cargas_own', f"Erro ao remover duplicados com idFilaExtrato=null: {str(e)}", nivel='ERROR')
+            registrar_log('adquirente_own.cargas_own', f"Erro ao remover duplicados com idFilaExtrato=null: {str(e)}", nivel='ERROR')
+
+    def _mapear_tipo_compra(self, modalidade: str) -> str:
+        """
+        Mapeia modalidade Own para TipoCompra Pinbank
+        
+        Own: "DEBITO", "CREDITO", "CREDITO PARC 2 a 6", "CREDITO PARC 7 A 12", etc
+        Pinbank: "DEBITO", "A VISTA", "PARCELADO SEM JUROS", etc
+        """
+        if not modalidade:
+            return 'A VISTA'  # Default: crédito à vista
+        
+        modalidade_upper = modalidade.upper()
+        
+        if 'DEBITO' in modalidade_upper or 'DÉBITO' in modalidade_upper:
+            return 'DEBITO'
+        elif 'PARC' in modalidade_upper or 'PARCELADO' in modalidade_upper:
+            return 'PARCELADO SEM JUROS'  # Own não diferencia com/sem juros
+        else:
+            return 'A VISTA'  # Crédito à vista

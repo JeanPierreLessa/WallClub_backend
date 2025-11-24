@@ -55,7 +55,7 @@ class OwnService:
         token_cached = cache.get(cache_key)
         
         if token_cached:
-            registrar_log('own.auth', f'✅ Token OAuth em cache: {client_id[:10]}...')
+            registrar_log('adquirente_own', f'✅ Token OAuth em cache: {client_id[:10]}...')
             return token_cached
         
         try:
@@ -66,7 +66,7 @@ class OwnService:
                 'grant_type': 'client_credentials'
             }
             
-            registrar_log('own.auth', f'🔑 Solicitando novo token OAuth: {client_id[:10]}...')
+            registrar_log('adquirente_own', f'🔑 Solicitando novo token OAuth: {client_id[:10]}...')
             
             response = requests.post(
                 self.auth_url,
@@ -80,18 +80,18 @@ class OwnService:
             # Cache por 4 minutos (margem de segurança - token válido por 5min)
             cache.set(cache_key, data, timeout=240)
             
-            registrar_log('own.auth', f'✅ Token OAuth obtido: expires_in={data.get("expires_in")}s')
+            registrar_log('adquirente_own', f'✅ Token OAuth obtido: expires_in={data.get("expires_in")}s')
             
             return data
             
         except requests.exceptions.Timeout:
-            registrar_log('own.auth', f'⏱️ Timeout ao obter token OAuth', nivel='ERROR')
+            registrar_log('adquirente_own', f'⏱️ Timeout ao obter token OAuth', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': 'Timeout na autenticação'
             }
         except requests.exceptions.RequestException as e:
-            registrar_log('own.auth', f'❌ Erro ao obter token OAuth: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao obter token OAuth: {str(e)}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro de autenticação: {str(e)}'
@@ -141,7 +141,7 @@ class OwnService:
             # Fazer requisição
             url = f'{self.base_url}{endpoint}'
             
-            registrar_log('own.api', f'📡 {method} {endpoint}')
+            registrar_log('adquirente_own', f'📡 {method} {endpoint}')
             
             if method.upper() == 'GET':
                 response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
@@ -152,7 +152,7 @@ class OwnService:
             
             response.raise_for_status()
             
-            registrar_log('own.api', f'✅ Resposta recebida: status={response.status_code}')
+            registrar_log('adquirente_own', f'✅ Resposta recebida: status={response.status_code}')
             
             return {
                 'sucesso': True,
@@ -161,7 +161,7 @@ class OwnService:
             }
             
         except requests.exceptions.Timeout:
-            registrar_log('own.api', f'⏱️ Timeout na requisição: {endpoint}', nivel='WARNING')
+            registrar_log('adquirente_own', f'⏱️ Timeout na requisição: {endpoint}', nivel='WARNING')
             return {
                 'sucesso': False,
                 'mensagem': 'Timeout na comunicação com Own Financial'
@@ -171,7 +171,7 @@ class OwnService:
             
             # Tratamento específico para rate limiting
             if status_code == 429:
-                registrar_log('own.api', f'⚠️ Rate limit atingido (429): {endpoint}', nivel='WARNING')
+                registrar_log('adquirente_own', f'⚠️ Rate limit atingido (429): {endpoint}', nivel='WARNING')
                 return {
                     'sucesso': False,
                     'mensagem': 'Rate limit atingido. Aguarde alguns minutos.',
@@ -179,14 +179,14 @@ class OwnService:
                     'codigo_erro': 'RATE_LIMIT'
                 }
             
-            registrar_log('own.api', f'❌ Erro HTTP {status_code}: {endpoint}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro HTTP {status_code}: {endpoint}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro HTTP {status_code}',
                 'status_code': status_code
             }
         except requests.exceptions.RequestException as e:
-            registrar_log('own.api', f'❌ Erro na requisição: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro na requisição: {str(e)}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro na comunicação: {str(e)}'
