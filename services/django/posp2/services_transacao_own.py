@@ -62,12 +62,15 @@ class TRDataOwnService:
             valororiginal = dados.get('valororiginal', '')
             operador_pos = dados.get('operador_pos', '')
 
-            # Extrair valores Wall Club
+            # Extrair valores Wall Club (podem vir do POS ou serão calculados)
             valor_desconto_pos = dados.get('valor_desconto', 0)
             valor_cashback_pos = dados.get('valor_cashback', 0)
             cashback_concedido_pos = dados.get('cashback_concedido', 0)
             autorizacao_id = dados.get('autorizacao_id', '')
             modalidade_wall = dados.get('modalidade_wall', '')
+            
+            # Flag para indicar se é Wall Club
+            wall_club = 'S' if cpf and cpf.strip() else 'N'
             
             # Extrair cupom (opcional)
             cupom_codigo = dados.get('cupom_codigo', '')
@@ -116,6 +119,77 @@ class TRDataOwnService:
             # 6. Converter valor original (usar amount em centavos, não valororiginal)
             amount_centavos = int(dados_trdata.get('amount', 0))
             valor_original = amount_centavos / 100.0  # Converter centavos para reais
+            
+            # 6.0. Buscar loja_id para cálculo de desconto
+            loja_id = None
+            canal_id = None
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT l.id, l.canal_id
+                    FROM terminais t
+                    INNER JOIN loja l ON t.loja_id = l.id
+                    WHERE t.terminal = %s
+                """, [terminal])
+                loja_row = cursor.fetchone()
+                if loja_row:
+                    loja_id = loja_row[0]
+                    canal_id = loja_row[1]
+            
+            # 6.0.1. Calcular desconto Wall Club (se CPF informado e valor_desconto não veio do POS)
+            if wall_club == 'S' and loja_id and valor_desconto_pos == 0:
+                try:
+                    from parametros_wallclub.services import CalculadoraDesconto
+                    
+                    calculadora_desconto = CalculadoraDesconto()
+                    
+                    # Mapear paymentMethod para forma
+                    payment_method = dados_trdata.get('paymentMethod', '')
+                    parcelas = int(dados_trdata.get('totalInstallments', 1))
+                    
+                    # Mapear para formato esperado pela calculadora
+                    forma_map = {
+                        'CREDIT_ONE_INSTALLMENT': 'credito',
+                        'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST': 'credito',
+                        'DEBIT': 'debito',
+                        'PIX': 'pix',
+                        'VOUCHER': 'voucher'
+                    }
+                    forma = forma_map.get(payment_method, 'credito')
+                    
+                    data_atual = datetime.now().strftime('%Y-%m-%d')
+                    
+                    registrar_log('posp2', f'🧮 Calculando desconto: valor={valor_original}, forma={forma}, parcelas={parcelas}, loja_id={loja_id}')
+                    
+                    resultado = calculadora_desconto.calcular_desconto_com_juros(
+                        valor_original=Decimal(str(valor_original)),
+                        data_transacao=data_atual,
+                        forma=forma,
+                        parcelas=parcelas,
+                        id_loja=loja_id,
+                        wall='S'
+                    )
+                    
+                    if resultado and 'valor_desconto' in resultado:
+                        valor_desconto_pos = float(resultado['valor_desconto'])
+                        registrar_log('posp2', f'✅ Desconto calculado: R$ {valor_desconto_pos:.2f}')
+                        
+                        # Calcular cashback sobre valor COM desconto
+                        valor_com_desconto = valor_original - valor_desconto_pos
+                        resultado_cashback = calculadora_desconto.calcular_desconto_com_juros(
+                            valor_original=Decimal(str(valor_com_desconto)),
+                            data_transacao=data_atual,
+                            forma=forma,
+                            parcelas=parcelas,
+                            id_loja=loja_id,
+                            wall='C'
+                        )
+                        
+                        if resultado_cashback and 'valor_desconto' in resultado_cashback:
+                            cashback_concedido_pos = float(resultado_cashback['valor_desconto'])
+                            registrar_log('posp2', f'✅ Cashback calculado: R$ {cashback_concedido_pos:.2f}')
+                    
+                except Exception as e:
+                    registrar_log('posp2', f'⚠️ Erro ao calcular desconto: {e}', nivel='WARNING')
             
             # 6.1. Aplicar cupom (opcional)
             cupom_obj = None
@@ -511,7 +585,7 @@ class TRDataOwnService:
                               valor_original: float, valor_desconto: float,
                               valor_cashback: float, cashback_concedido: float,
                               autorizacao_id: str) -> Dict[str, Any]:
-        """Gera JSON de resposta formatado para impressão do slip Own"""
+        """Gera JSON de resposta formatado EXATAMENTE como Pinbank"""
 
         def formatar_valor_monetario(valor):
             """Formatar valor monetário com 2 decimais"""
@@ -532,7 +606,7 @@ class TRDataOwnService:
             return f"*******{cpf_numeros[-3:]}"
 
         # Extrair dados da transação
-        parcelas = int(dados.get('totalInstallments', 1))
+        parcelas = int(valores_calculados.get(13, 1))  # Usar valores_calculados[13]
         payment_method = dados.get('paymentMethod', '')
         
         # Mapear forma de pagamento
@@ -545,15 +619,53 @@ class TRDataOwnService:
         }
         forma = forma_map.get(payment_method, payment_method)
 
-        # Valores calculados ou usar valores recebidos
-        vparcela = valores_calculados.get(20, 0) if valores_calculados else 0
-        tarifas = valores_calculados.get(88, 0) if valores_calculados else 0
-        encargos = valores_calculados.get(94, 0) if valores_calculados else 0
+        # === REPLICAR LÓGICA PINBANK ===
+        # Lógica condicional do PHP: PIX usa valores[15], outros usam valores[18]
+        if forma == 'PIX':
+            desconto = abs(float(valores_calculados.get(15, 0)))
+        else:
+            desconto = abs(float(valores_calculados.get(18, 0)))
         
-        # Valor final após descontos
-        saldo_usado = 0  # Own não tem saldo usado ainda
-        valor_final = valor_original - valor_desconto - saldo_usado
-        valor_parcela_calc = valor_final / parcelas if parcelas > 0 else valor_final
+        # Valores conforme PHP
+        parte0 = float(valores_calculados.get(26, 0))  # valor final
+        parte1 = desconto  # valor absoluto do desconto
+        
+        # === CÁLCULO TARIFAS/ENCARGOS SEGUINDO PHP ===
+        valores_94 = valores_calculados.get(94, {})
+        if isinstance(valores_94, dict):
+            valores_94_0 = valores_94.get('0', 0)
+        else:
+            valores_94_0 = 0
+        encargos = abs((valores_calculados.get(88) or 0) + valores_94_0)
+        
+        # vparcela
+        vparcela = valores_calculados.get(20, 0)
+        if vparcela is None or vparcela == 0:
+            vparcela = valores_calculados.get(11, 0)  # valor original como parcela única
+        
+        # tarifas = abs(parcelas * vparcela - valor_liquido) - encargos
+        valor_liquido = valores_calculados.get(16, 0)
+        tarifas = round(abs(parcelas * vparcela - valor_liquido) - encargos, 2)
+        
+        # Buscar saldo usado de cashback via autorizacao_id
+        saldo_cashback_usado = 0.0
+        if autorizacao_id:
+            try:
+                from apps.conta_digital.services_autorizacao import AutorizacaoService
+                resultado = AutorizacaoService.verificar_autorizacao(autorizacao_id)
+                if resultado.get('sucesso') and resultado.get('status') in ['APROVADO', 'CONCLUIDA']:
+                    valor_bloqueado = resultado.get('valor_bloqueado')
+                    if valor_bloqueado:
+                        saldo_cashback_usado = float(valor_bloqueado)
+            except Exception as e:
+                registrar_log('posp2', f'❌ [SALDO] Erro ao buscar saldo usado: {str(e)}', nivel='ERROR')
+        
+        # AJUSTAR vdesconto e vparcela considerando saldo usado
+        vdesconto_final = parte0 - saldo_cashback_usado
+        vparcela_ajustado = vdesconto_final / parcelas if parcelas > 0 else vdesconto_final
+        
+        # Valor original para display
+        valor_original_display = valores_calculados.get(11, 0)
 
         # Array base
         array = {
@@ -561,7 +673,7 @@ class TRDataOwnService:
             "nome": nome if nome else "",
             "estabelecimento": info_loja.get('nome_fantasia', ''),
             "cnpj": info_loja.get('cnpj', ''),
-            "data": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "data": datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
             "forma": forma,
             "parcelas": parcelas,
             "nopwall": dados.get('txTransactionId', ''),
@@ -570,24 +682,45 @@ class TRDataOwnService:
             "nsu": dados.get('nsuHost', '')
         }
 
-        # Formato com Wall Club
-        if cpf and cpf.strip():
-            array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original)}"
+        # Lógica condicional EXATA do Pinbank
+        if cpf and cpf.strip():  # COM WALL CLUB
+            if forma in ["PIX", "DEBITO"]:
+                array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}"
+                array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(desconto)}"
+                
+                if saldo_cashback_usado > 0:
+                    array["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
+                
+                if cashback_concedido > 0:
+                    array["cashback_concedido"] = f"Cashback concedido: R$ {formatar_valor_monetario(cashback_concedido)}"
+                
+                array["vdesconto"] = f"Valor total pago:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                array["pagoavista"] = f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valores_calculados.get(16, 0))}"
+                array["vparcela"] = f"R$ {formatar_valor_monetario(vparcela_ajustado)}"
+                array["tarifas"] = "Tarifas CLUB: -- "
+                array["encargos"] = ""
             
-            if valor_desconto > 0:
-                array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(valor_desconto)}"
-            
-            array["vdesconto"] = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(valor_final)}"
-            array["pagoavista"] = f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valor_final)}"
-            array["vparcela"] = f"R$ {formatar_valor_monetario(vparcela if vparcela > 0 else valor_parcela_calc)}"
-            array["tarifas"] = f"Tarifas CLUB: R$ {formatar_valor_monetario(tarifas)}"
-            array["encargos"] = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
+            elif forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"] and desconto >= 0:
+                array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}"
+                array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
+                
+                if saldo_cashback_usado > 0:
+                    array["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
+                
+                if cashback_concedido > 0:
+                    array["cashback_concedido"] = f"Cashback concedido: R$ {formatar_valor_monetario(cashback_concedido)}"
+                
+                array["vdesconto"] = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                array["pagoavista"] = f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valores_calculados.get(16, 0))}"
+                array["vparcela"] = f"R$ {formatar_valor_monetario(vparcela_ajustado)}"
+                array["tarifas"] = f"Tarifas CLUB: R$ {formatar_valor_monetario(tarifas)}"
+                array["encargos"] = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
         else:
             # Sem Wall Club
-            array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original)}"
-            array["vdesconto"] = f"Valor total pago:\nR$ {formatar_valor_monetario(valor_original)}"
-            array["pagoavista"] = f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valor_original)}"
-            array["vparcela"] = f"R$ {formatar_valor_monetario(valor_parcela_calc)}"
+            array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}"
+            array["vdesconto"] = f"Valor total pago:\nR$ {formatar_valor_monetario(valor_original_display)}"
+            array["pagoavista"] = f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valor_original_display)}"
+            array["vparcela"] = f"R$ {formatar_valor_monetario(vparcela)}"
             array["tarifas"] = ""
             array["encargos"] = ""
 
