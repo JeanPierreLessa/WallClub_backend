@@ -583,14 +583,8 @@ def tabela_rpr_ajax(request):
     # Calcular totalizadora e linhas
     estrutura_colunas = obter_estrutura_colunas_rpr()
     
-    # Para totalizadora, buscar todas as transações (sem paginação)
-    todas_transacoes, _ = RPRService.buscar_transacoes_rpr(
-        filtros=filtros,
-        canais_usuario=canais_usuario,
-        page=1,
-        per_page=999999  # Buscar todas para totalizar
-    )
-    linha_totalizadora = calcular_linha_totalizadora_rpr(todas_transacoes, estrutura_colunas)
+    # Para totalizadora, usar agregação SQL direta (sem carregar tudo na memória)
+    linha_totalizadora = calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas)
     
     # Preparar dados para a tabela
     dados_tabela = []
@@ -626,9 +620,125 @@ def tabela_rpr_ajax(request):
     return JsonResponse(response_data)
 
 
-def calcular_linha_totalizadora_rpr(queryset, estrutura_colunas):
-    """Calcula linha totalizadora com somas de todas as transações"""
+def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas):
+    """
+    Calcula linha totalizadora usando agregação SQL direta
+    Evita carregar todos os registros na memória (problema OOM)
+    """
+    from .services_rpr import RPRService
     
+    # Usar SQL direto para agregar valores
+    with connection.cursor() as cursor:
+        # Construir WHERE clause baseado nos filtros
+        where_conditions = []
+        params = []
+        
+        # Filtro de data
+        if filtros.get('data_inicial'):
+            where_conditions.append("data_transacao >= %s")
+            params.append(filtros['data_inicial'])
+        if filtros.get('data_final'):
+            where_conditions.append("data_transacao <= %s")
+            params.append(filtros['data_final'])
+        
+        # Filtro de canal
+        if canais_usuario:
+            placeholders = ','.join(['%s'] * len(canais_usuario))
+            where_conditions.append(f"var68 IN ({placeholders})")
+            params.extend(canais_usuario)
+        
+        # Filtro de loja
+        if filtros.get('loja'):
+            where_conditions.append("var5 = %s")
+            params.append(filtros['loja'])
+        
+        # Filtro de NSU
+        if filtros.get('nsu'):
+            where_conditions.append("var9 = %s")
+            params.append(filtros['nsu'])
+        
+        # Filtro incluir_tef
+        if not filtros.get('incluir_tef'):
+            where_conditions.append("tipo_operacao = 'Wallet'")
+        
+        where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+        
+        # Query de agregação - somar apenas campos numéricos relevantes
+        query = f"""
+            SELECT 
+                COUNT(*) as total_registros,
+                SUM(CAST(var11 AS DECIMAL(10,2))) as soma_var11,
+                SUM(CAST(var15 AS DECIMAL(10,2))) as soma_var15,
+                SUM(CAST(var26 AS DECIMAL(10,2))) as soma_var26,
+                SUM(CAST(var37 AS DECIMAL(10,2))) as soma_var37,
+                SUM(CAST(var41 AS DECIMAL(10,2))) as soma_var41,
+                SUM(CAST(var90 AS DECIMAL(10,2))) as soma_var90,
+                SUM(CAST(var94_A AS DECIMAL(10,2))) as soma_var94_A,
+                SUM(CAST(var98 AS DECIMAL(10,2))) as soma_var98,
+                SUM(CAST(var101 AS DECIMAL(10,2))) as soma_var101,
+                SUM(CAST(var58 AS DECIMAL(10,2))) as soma_var58,
+                SUM(CAST(var111_A AS DECIMAL(10,2))) as soma_var111_A,
+                SUM(CAST(var109_A AS DECIMAL(10,2))) as soma_var109_A,
+                SUM(CAST(var113_A AS DECIMAL(10,2))) as soma_var113_A,
+                SUM(CAST(var116_A AS DECIMAL(10,2))) as soma_var116_A,
+                SUM(CAST(var118_A AS DECIMAL(10,2))) as soma_var118_A
+            FROM baseTransacoesGestao
+            WHERE {where_clause}
+        """
+        
+        cursor.execute(query, params)
+        row = cursor.fetchone()
+        
+        # Criar linha totalizadora com valores agregados
+        linha_totalizadora = {}
+        
+        if row:
+            totais_sql = {
+                'var11': row[1] or Decimal('0'),
+                'var15': row[2] or Decimal('0'),
+                'var26': row[3] or Decimal('0'),
+                'var37': row[4] or Decimal('0'),
+                'var41': row[5] or Decimal('0'),
+                'var90': row[6] or Decimal('0'),
+                'var94_A': row[7] or Decimal('0'),
+                'var98': row[8] or Decimal('0'),
+                'var101': row[9] or Decimal('0'),
+                'var58': row[10] or Decimal('0'),
+                'var111_A': row[11] or Decimal('0'),
+                'var109_A': row[12] or Decimal('0'),
+                'var113_A': row[13] or Decimal('0'),
+                'var116_A': row[14] or Decimal('0'),
+                'var118_A': row[15] or Decimal('0'),
+            }
+        else:
+            totais_sql = {}
+        
+        # Preencher linha totalizadora
+        for item in estrutura_colunas:
+            campo = item['campo']
+            
+            if campo == 'var0':
+                linha_totalizadora[campo] = "TOTAL"
+            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var68']:
+                linha_totalizadora[campo] = ""
+            elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
+                # Percentuais - deixar vazio
+                linha_totalizadora[campo] = ""
+            elif campo.startswith('variavel_nova_'):
+                # Fórmulas - deixar vazio (não podemos calcular sem iterar)
+                linha_totalizadora[campo] = ""
+            else:
+                # Usar valor agregado do SQL
+                linha_totalizadora[campo] = totais_sql.get(campo, Decimal('0'))
+        
+        return linha_totalizadora
+
+
+def calcular_linha_totalizadora_rpr(queryset, estrutura_colunas):
+    """
+    DEPRECATED: Usa muita memória quando queryset é grande
+    Usar calcular_linha_totalizadora_rpr_sql() ao invés
+    """
     # Inicializar totais
     totais = {}
     
