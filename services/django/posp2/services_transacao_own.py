@@ -400,10 +400,10 @@ class TRDataOwnService:
                         'DataFuturaPagamento': None,
                         'loja_id': row[10],
                         'canal_id': row[11],
-                        'cnpj': row[12] if len(row) > 12 else None
+                        'cnpjCpfParceiro': row[12] if len(row) > 12 else None  # Nome esperado pela calculadora
                     }
                     
-                    registrar_log('posp2', f'🔍 dados_linha[cnpj]: {dados_linha.get("cnpj")}')
+                    registrar_log('posp2', f'🔍 dados_linha[cnpjCpfParceiro]: {dados_linha.get("cnpjCpfParceiro")}')
 
                     # Calcular valores
                     calculadora = CalculadoraBaseGestao()
