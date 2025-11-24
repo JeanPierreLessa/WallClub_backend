@@ -427,13 +427,16 @@ ADD INDEX idx_cupom_id (cupom_id);
 **Arquivos modificados:**
 - `portais/lojista/urls.py` - 6 URLs adicionadas
 
-### ⏳ Etapa 4: APIs REST - EM ANDAMENTO
-**APIs necessárias:**
-1. `GET /api/cupons/ativos/` - Lista cupons ativos disponíveis para o cliente (App Mobile)
-2. `POST /api/cupom/validar/` - Valida cupom e retorna desconto (POS + Checkout Web)
+### ✅ Etapa 4: APIs REST - CONCLUÍDA
+**APIs implementadas:**
+1. `GET /api/v1/cupons/ativos/` - Lista cupons ativos disponíveis para o cliente (App Mobile)
+2. `POST /api/v1/cupons/validar/` - Valida cupom e retorna desconto (POS + Checkout Web)
 
-**IMPORTANTE:** A validação do cupom no POS e Checkout deve ser **exatamente a mesma**.
-Ambos devem usar a mesma API `/api/cupom/validar/` para garantir consistência.
+**Autenticação:**
+- Ambas APIs requerem autenticação (JWT para App Mobile, OAuth Token para POS)
+- `permission_classes = [IsAuthenticated]`
+
+**IMPORTANTE:** A validação do cupom no POS e Checkout usa **exatamente a mesma API** `/api/v1/cupons/validar/` para garantir consistência.
 
 **Payload da API de validação:**
 ```json
@@ -445,7 +448,7 @@ Ambos devem usar a mesma API `/api/cupom/validar/` para garantir consistência.
 }
 ```
 
-**Response:**
+**Response sucesso:**
 ```json
 {
   "valido": true,
@@ -455,6 +458,26 @@ Ambos devem usar a mesma API `/api/cupom/validar/` para garantir consistência.
   "mensagem": "Cupom aplicado com sucesso"
 }
 ```
+
+**Response erro:**
+```json
+{
+  "valido": false,
+  "cupom_id": null,
+  "valor_desconto": null,
+  "valor_final": null,
+  "mensagem": "Cupom inválido ou expirado"
+}
+```
+
+**Arquivos criados:**
+- `apps/cupom/serializers.py` - Serializers REST
+- `apps/cupom/api_views.py` - Views das APIs (2 endpoints)
+- `apps/cupom/urls.py` - Rotas das APIs
+
+**Arquivos modificados:**
+- `wallclub/urls_apis.py` - Adicionado rota `/api/v1/cupons/`
+- `wallclub/urls_pos.py` - Adicionado rota `/api/v1/cupons/`
 
 ### ⏳ Etapa 5: Integração Checkout Web - PENDENTE
 - Alterar `CheckoutTransaction`

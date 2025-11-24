@@ -4,12 +4,7 @@ from decimal import Decimal
 
 class Cupom(models.Model):
     """
-    Cupom de desconto que pode ser aplicado em transações POS ou Checkout Web.
-    
-    Tipos:
-    - GENERICO: Qualquer cliente pode usar (limite global)
-    - INDIVIDUAL: Vinculado a um CPF específico (1 uso por CPF)
-    
+    Model para cupons de desconto
     Descontos:
     - FIXO: Valor fixo em reais (ex: R$ 10,00)
     - PERCENTUAL: Percentual sobre o valor (ex: 15%)
@@ -105,6 +100,7 @@ class Cupom(models.Model):
     )
     
     class Meta:
+        app_label = 'cupom'
         db_table = 'cupom'
         verbose_name = 'Cupom'
         verbose_name_plural = 'Cupons'
@@ -224,6 +220,7 @@ class CupomUso(models.Model):
     )
     
     class Meta:
+        app_label = 'cupom'
         db_table = 'cupom_uso'
         verbose_name = 'Uso de Cupom'
         verbose_name_plural = 'Usos de Cupons'
