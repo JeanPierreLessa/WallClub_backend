@@ -149,7 +149,7 @@ def validar_cupom(request):
     {
         "codigo": "PROMO10",
         "loja_id": 26,
-        "cliente_id": 123,
+        "cpf": "12345678900",
         "valor_transacao": 100.00
     }
     
@@ -163,18 +163,32 @@ def validar_cupom(request):
     }
     """
     try:
+        from django.db import connection
         data = json.loads(request.body)
         
         codigo = data.get('codigo')
         loja_id = data.get('loja_id')
-        cliente_id = data.get('cliente_id')
+        cpf = data.get('cpf')
         valor_transacao = Decimal(str(data.get('valor_transacao', 0)))
         
-        if not all([codigo, loja_id, cliente_id, valor_transacao]):
+        if not all([codigo, loja_id, cpf, valor_transacao]):
             return JsonResponse({
                 'valido': False,
-                'mensagem': 'Dados inválidos: codigo, loja_id, cliente_id e valor_transacao são obrigatórios'
+                'mensagem': 'Dados inválidos: codigo, loja_id, cpf e valor_transacao são obrigatórios'
             }, status=400)
+        
+        # Buscar cliente_id pelo CPF
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM cliente WHERE cpf = %s", [cpf])
+            result = cursor.fetchone()
+            
+            if not result:
+                return JsonResponse({
+                    'valido': False,
+                    'mensagem': 'Cliente não encontrado'
+                }, status=400)
+            
+            cliente_id = result[0]
         
         cupom_service = CupomService()
         
@@ -200,7 +214,7 @@ def validar_cupom(request):
         
         registrar_log(
             'apps.cupom',
-            f'Cupom validado: {codigo} - Cliente {cliente_id} - Desconto R$ {valor_desconto}'
+            f'Cupom validado: {codigo} - CPF {cpf} - Cliente {cliente_id} - Desconto R$ {valor_desconto}'
         )
         
         return JsonResponse(response_data)
