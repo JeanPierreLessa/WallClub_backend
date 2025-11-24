@@ -900,7 +900,7 @@ def _exportar_rpr_csv_email(request, queryset, total_registros):
             nome_arquivo = f"rpr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             
             if usuario_email:
-                from wallclub_core.utilitarios.email_utils import enviar_arquivo_por_email
+                from wallclub_core.integracoes.email_service import EmailService
                 
                 assunto = f"Exportação RPR - {total_registros} registros"
                 corpo = f"""
@@ -917,12 +917,19 @@ def _exportar_rpr_csv_email(request, queryset, total_registros):
                 Sistema WallClub
                 """
                 
-                enviar_arquivo_por_email(
-                    destinatario=usuario_email,
+                # Ler arquivo para anexo
+                with open(arquivo_path, 'rb') as f:
+                    arquivo_conteudo = f.read()
+                
+                EmailService.enviar_email(
+                    destinatarios=[usuario_email],
                     assunto=assunto,
-                    corpo=corpo,
-                    arquivo_path=arquivo_path,
-                    nome_arquivo=nome_arquivo
+                    mensagem_texto=corpo,
+                    anexos=[{
+                        'nome': nome_arquivo,
+                        'conteudo': arquivo_conteudo,
+                        'tipo': 'text/csv'
+                    }]
                 )
                 
                 registrar_log('portais.admin', f"RPR CSV - Email enviado para {usuario_email}")

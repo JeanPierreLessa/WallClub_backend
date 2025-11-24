@@ -388,7 +388,8 @@ Repasse Loja: R$ 87,00 - Taxas - Cupom = R$ 72,00
 ### ✅ Etapa 2: Integração Own (POSP2) - CONCLUÍDA
 - ✅ Campos adicionados em `TransactionDataOwn` (cupom_id, cupom_valor_desconto)
 - ✅ Modificar `TRDataOwnService.processar_transacao()`
-- ✅ Validação e aplicação de cupom (opcional)
+- ✅ **POS envia código do cupom E valor do desconto** (POS calcula e aplica)
+- ✅ Backend valida se cupom existe e registra uso
 - ✅ Registro de uso do cupom
 - ✅ Retrocompatibilidade garantida (terminal sem cupom funciona normal)
 
@@ -431,11 +432,12 @@ ADD INDEX idx_cupom_id (cupom_id);
 **APIs implementadas:**
 1. `GET /api/v1/cupons/ativos/` - Lista cupons ativos disponíveis para o cliente (App Mobile)
 2. `POST /api/v1/cupons/validar/` - Valida cupom e retorna desconto (POS + Checkout Web)
+3. `POST /api/v1/cupons/verificar_disponiveis/` - Verifica se existem cupons ativos para uma loja (POS)
 
 **Autenticação:**
 - API de listagem: `ClienteJWTAuthentication` (JWT do cliente mobile) - extrai `cliente_id` automaticamente do token
-- API de validação: Aceita qualquer autenticação configurada (OAuth Token do POS ou JWT)
-- Ambas usam `permission_classes = [IsAuthenticated]`
+- API de validação: `@require_oauth_posp2` (OAuth Token do POS)
+- API de verificação: `@require_oauth_posp2` (OAuth Token do POS)
 
 **IMPORTANTE:** A validação do cupom no POS e Checkout usa **exatamente a mesma API** `/api/v1/cupons/validar/` para garantir consistência.
 
@@ -444,8 +446,15 @@ ADD INDEX idx_cupom_id (cupom_id);
 {
   "codigo": "PROMO10",
   "loja_id": 26,
-  "cliente_id": 123,
+  "cpf": "12345678900",
   "valor_transacao": 100.00
+}
+```
+
+**Payload da API de verificação:**
+```json
+{
+  "loja_id": 26
 }
 ```
 
@@ -473,12 +482,13 @@ ADD INDEX idx_cupom_id (cupom_id);
 
 **Arquivos criados:**
 - `apps/cupom/serializers.py` - Serializers REST
-- `apps/cupom/api_views.py` - Views das APIs (2 endpoints)
+- `apps/cupom/api_views.py` - Views das APIs (3 endpoints)
 - `apps/cupom/urls.py` - Rotas das APIs
 
 **Arquivos modificados:**
 - `wallclub/urls_apis.py` - Adicionado rota `/api/v1/cupons/`
 - `wallclub/urls_pos.py` - Adicionado rota `/api/v1/cupons/`
+- `posp2/services.py` - Método `obter_logo_pos()` retorna `loja_id`
 
 ### ⏳ Etapa 5: Integração Checkout Web - PENDENTE
 - Alterar `CheckoutTransaction`
