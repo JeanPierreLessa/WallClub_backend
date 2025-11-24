@@ -160,7 +160,8 @@ class TRDataOwnService:
                     
                     registrar_log('posp2', f'🧮 Calculando desconto: valor={valor_original}, forma={forma}, parcelas={parcelas}, loja_id={loja_id}')
                     
-                    resultado = calculadora_desconto.calcular_desconto(
+                    # calcular_desconto retorna o valor FINAL (com desconto aplicado), não o desconto
+                    valor_final = calculadora_desconto.calcular_desconto(
                         valor_original=Decimal(str(valor_original)),
                         data=data_atual,
                         forma=forma,
@@ -169,14 +170,14 @@ class TRDataOwnService:
                         wall='S'
                     )
                     
-                    if resultado and 'valor_desconto' in resultado:
-                        valor_desconto_pos = float(resultado['valor_desconto'])
-                        registrar_log('posp2', f'✅ Desconto calculado: R$ {valor_desconto_pos:.2f}')
+                    if valor_final and valor_final < Decimal(str(valor_original)):
+                        # Desconto = valor_original - valor_final
+                        valor_desconto_pos = float(Decimal(str(valor_original)) - valor_final)
+                        registrar_log('posp2', f'✅ Desconto calculado: R$ {valor_desconto_pos:.2f} (valor_final={float(valor_final):.2f})')
                         
-                        # Calcular cashback sobre valor COM desconto
-                        valor_com_desconto = valor_original - valor_desconto_pos
-                        resultado_cashback = calculadora_desconto.calcular_desconto(
-                            valor_original=Decimal(str(valor_com_desconto)),
+                        # Calcular cashback sobre valor COM desconto (valor_final)
+                        valor_final_cashback = calculadora_desconto.calcular_desconto(
+                            valor_original=valor_final,
                             data=data_atual,
                             forma=forma,
                             parcelas=parcelas,
@@ -184,8 +185,9 @@ class TRDataOwnService:
                             wall='C'
                         )
                         
-                        if resultado_cashback and 'valor_desconto' in resultado_cashback:
-                            cashback_concedido_pos = float(resultado_cashback['valor_desconto'])
+                        if valor_final_cashback and valor_final_cashback < valor_final:
+                            # Cashback = valor_final - valor_final_cashback
+                            cashback_concedido_pos = float(valor_final - valor_final_cashback)
                             registrar_log('posp2', f'✅ Cashback calculado: R$ {cashback_concedido_pos:.2f}')
                     
                 except Exception as e:
