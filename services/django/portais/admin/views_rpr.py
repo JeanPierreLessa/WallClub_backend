@@ -994,9 +994,11 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                 return texto_sem_acentos
             
             with open(arquivo_path, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=colunas_rpr.keys())
+                # colunas_rpr é um dict {campo: nome_exibicao}
+                campos_ordenados = list(colunas_rpr.keys())
+                writer = csv.DictWriter(csvfile, fieldnames=campos_ordenados)
                 
-                # Escrever cabeçalho
+                # Escrever cabeçalho com nomes de exibição
                 writer.writerow(colunas_rpr)
                 
                 # Processar em batches (paginação no banco)
@@ -1014,8 +1016,8 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                         linha_individual = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
                         
                         # Escrever linha usando mesma ordem dos cabeçalhos
-                        linha = []
-                        for campo in colunas_rpr.keys():
+                        linha = {}
+                        for campo in campos_ordenados:
                             valor = linha_individual.get(campo, '')
                             
                             # Formatação para campos monetários
@@ -1032,10 +1034,11 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                                     valor = str(valor) if valor else ''
                             else:
                                 valor = str(valor) if valor else ''
+                            # Remover acentos do valor
+                            if isinstance(valor, str):
+                                valor = remover_acentos(valor)
                             
-                            # Remover acentos de todos os valores
-                            valor = remover_acentos(valor)
-                            linha.append(valor)
+                            linha[campo] = valor
                         
                         writer.writerow(linha)
                     
@@ -1096,11 +1099,25 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
     thread.daemon = True
     thread.start()
     
-    return JsonResponse({
-        'sucesso': True,
-        'mensagem': f'Exportação iniciada! O arquivo com {total_registros:,} registros será enviado por email.',
-        'total_registros': total_registros
-    })
+    # Retornar HTML com script para mostrar alerta e fechar janela
+    html_response = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Exportação Iniciada</title>
+        <script>
+            alert('Exportação iniciada! O arquivo com {total_registros:,} registros será enviado por email para {usuario_email}.');
+            window.close();
+        </script>
+    </head>
+    <body>
+        <p>Exportação iniciada! O arquivo com {total_registros:,} registros será enviado por email.</p>
+        <p>Você pode fechar esta janela.</p>
+    </body>
+    </html>
+    """
+    
+    return HttpResponse(html_response, content_type='text/html')
 
 
 def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
