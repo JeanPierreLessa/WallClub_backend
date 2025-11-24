@@ -162,7 +162,7 @@ class TRDataOwnService:
                     
                     resultado = calculadora_desconto.calcular_desconto(
                         valor_original=Decimal(str(valor_original)),
-                        data_transacao=data_atual,
+                        data=data_atual,
                         forma=forma,
                         parcelas=parcelas,
                         id_loja=loja_id,
@@ -177,7 +177,7 @@ class TRDataOwnService:
                         valor_com_desconto = valor_original - valor_desconto_pos
                         resultado_cashback = calculadora_desconto.calcular_desconto(
                             valor_original=Decimal(str(valor_com_desconto)),
-                            data_transacao=data_atual,
+                            data=data_atual,
                             forma=forma,
                             parcelas=parcelas,
                             id_loja=loja_id,
