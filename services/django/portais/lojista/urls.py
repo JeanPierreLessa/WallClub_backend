@@ -26,6 +26,14 @@ from .views_cupons import (
     CupomToggleView,
     CupomRelatorioView
 )
+from .views_cashback import (
+    CashbackListView,
+    CashbackCreateView,
+    CashbackDetailView,
+    CashbackEditView,
+    CashbackToggleView,
+    CashbackRelatorioView
+)
 # from .views_relatorios import ()
 
 app_name = 'lojista'
@@ -82,4 +90,12 @@ urlpatterns = [
     path('cupons/<int:cupom_id>/editar/', CupomEditView.as_view(), name='cupom_edit'),
     path('cupons/<int:cupom_id>/toggle/', CupomToggleView.as_view(), name='cupom_toggle'),
     path('cupons/relatorio/', CupomRelatorioView.as_view(), name='cupom_relatorio'),
+    
+    # Cashback
+    path('cashback/', CashbackListView.as_view(), name='cashback_lista'),
+    path('cashback/criar/', CashbackCreateView.as_view(), name='cashback_criar'),
+    path('cashback/<int:regra_id>/', CashbackDetailView.as_view(), name='cashback_detalhe'),
+    path('cashback/<int:regra_id>/editar/', CashbackEditView.as_view(), name='cashback_editar'),
+    path('cashback/<int:regra_id>/toggle/', CashbackToggleView.as_view(), name='cashback_toggle'),
+    path('cashback/relatorio/', CashbackRelatorioView.as_view(), name='cashback_relatorio'),
 ]

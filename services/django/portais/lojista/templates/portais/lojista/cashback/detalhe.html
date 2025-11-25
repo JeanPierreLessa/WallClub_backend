@@ -1,0 +1,227 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}{{ regra.nome }} - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-coins me-2"></i>
+                            {{ regra.nome }}
+                            {% if regra.ativo %}
+                            <span class="badge bg-light text-success">Ativa</span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary">Inativa</span>
+                            {% endif %}
+                        </h4>
+                        <div>
+                            <a href="{% url 'lojista:cashback_editar' regra.id %}" class="btn btn-light btn-sm">
+                                <i class="fas fa-edit me-2"></i>Editar
+                            </a>
+                            <form method="post" action="{% url 'lojista:cashback_toggle' regra.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-{% if regra.ativo %}warning{% else %}success{% endif %} btn-sm">
+                                    <i class="fas fa-{% if regra.ativo %}pause{% else %}play{% endif %} me-2"></i>
+                                    {% if regra.ativo %}Desativar{% else %}Ativar{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Estatísticas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.total_usos }}</h3>
+                                    <small>Total de Usos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">R$ {{ stats.valor_total }}</h3>
+                                    <small>Valor Total</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.retidos }}</h3>
+                                    <small>Retidos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.liberados }}</h3>
+                                    <small>Liberados</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalhes da Regra -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Configuração</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="40%">Tipo de Desconto:</th>
+                                    <td>{{ regra.get_tipo_desconto_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Valor do Desconto:</th>
+                                    <td>
+                                        {% if regra.tipo_desconto == 'FIXO' %}
+                                        R$ {{ regra.valor_desconto }}
+                                        {% else %}
+                                        {{ regra.valor_desconto }}%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Valor Mínimo Compra:</th>
+                                    <td>R$ {{ regra.valor_minimo_compra }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Valor Máximo Cashback:</th>
+                                    <td>{% if regra.valor_maximo_cashback %}R$ {{ regra.valor_maximo_cashback }}{% else %}Ilimitado{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <th>Prioridade:</th>
+                                    <td>{{ regra.prioridade }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Retenção e Vigência</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="40%">Período de Retenção:</th>
+                                    <td>{{ regra.periodo_retencao_dias }} dias</td>
+                                </tr>
+                                <tr>
+                                    <th>Período de Expiração:</th>
+                                    <td>{{ regra.periodo_expiracao_dias }} dias</td>
+                                </tr>
+                                <tr>
+                                    <th>Vigência Início:</th>
+                                    <td>{{ regra.vigencia_inicio|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vigência Fim:</th>
+                                    <td>{{ regra.vigencia_fim|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if regra.formas_pagamento or regra.dias_semana or regra.horario_inicio %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2">Filtros Opcionais</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Formas de Pagamento:</strong>
+                            <p>{% if regra.formas_pagamento %}{{ regra.formas_pagamento|join:", " }}{% else %}Todas{% endif %}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Dias da Semana:</strong>
+                            <p>{% if regra.dias_semana %}{{ regra.dias_semana|join:", " }}{% else %}Todos{% endif %}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Horário:</strong>
+                            <p>{% if regra.horario_inicio %}{{ regra.horario_inicio }} - {{ regra.horario_fim }}{% else %}Qualquer{% endif %}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if regra.limite_uso_cliente_dia or regra.limite_uso_cliente_mes or regra.orcamento_mensal %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2">Limites de Uso</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Limite por Cliente/Dia:</strong>
+                            <p>{% if regra.limite_uso_cliente_dia %}{{ regra.limite_uso_cliente_dia }}{% else %}Ilimitado{% endif %}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Limite por Cliente/Mês:</strong>
+                            <p>{% if regra.limite_uso_cliente_mes %}{{ regra.limite_uso_cliente_mes }}{% else %}Ilimitado{% endif %}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Orçamento Mensal:</strong>
+                            <p>
+                                {% if regra.orcamento_mensal %}
+                                R$ {{ regra.orcamento_mensal }}<br>
+                                <small class="text-muted">Gasto atual: R$ {{ regra.gasto_mes_atual }}</small>
+                                {% else %}
+                                Ilimitado
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Últimos Usos -->
+                    {% if ultimos_usos %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2">Últimos Usos</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Cliente</th>
+                                            <th>Valor Transação</th>
+                                            <th>Valor Cashback</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for uso in ultimos_usos %}
+                                        <tr>
+                                            <td>{{ uso.aplicado_em|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ uso.cliente_id }}</td>
+                                            <td>R$ {{ uso.valor_transacao }}</td>
+                                            <td>R$ {{ uso.valor_cashback }}</td>
+                                            <td>
+                                                {% if uso.status == 'RETIDO' %}
+                                                <span class="badge bg-warning">Retido</span>
+                                                {% elif uso.status == 'LIBERADO' %}
+                                                <span class="badge bg-success">Liberado</span>
+                                                {% elif uso.status == 'EXPIRADO' %}
+                                                <span class="badge bg-secondary">Expirado</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Estornado</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <a href="{% url 'lojista:cashback_relatorio' %}?regra_id={{ regra.id }}" class="btn btn-sm btn-outline-primary">
+                                Ver relatório completo
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

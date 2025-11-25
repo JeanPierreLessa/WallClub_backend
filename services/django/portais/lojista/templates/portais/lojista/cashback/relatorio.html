@@ -1,0 +1,198 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Relatório de Cashback - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Relatório de Uso de Cashback
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Estatísticas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">{{ stats.total_usos }}</h3>
+                                    <small>Total de Usos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">R$ {{ stats.valor_total }}</h3>
+                                    <small>Valor Total</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">R$ {{ stats.por_status.retidos }}</h3>
+                                    <small>Retidos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">R$ {{ stats.por_status.liberados }}</h3>
+                                    <small>Liberados</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <form method="get" class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Regra</label>
+                            <select name="regra_id" class="form-select">
+                                <option value="">Todas as regras</option>
+                                {% for regra in regras %}
+                                <option value="{{ regra.id }}" {% if regra_id == regra.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ regra.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="RETIDO" {% if status == 'RETIDO' %}selected{% endif %}>Retido</option>
+                                <option value="LIBERADO" {% if status == 'LIBERADO' %}selected{% endif %}>Liberado</option>
+                                <option value="EXPIRADO" {% if status == 'EXPIRADO' %}selected{% endif %}>Expirado</option>
+                                <option value="ESTORNADO" {% if status == 'ESTORNADO' %}selected{% endif %}>Estornado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Data Início</label>
+                            <input type="date" name="data_inicio" class="form-control" value="{{ data_inicio }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Data Fim</label>
+                            <input type="date" name="data_fim" class="form-control" value="{{ data_fim }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Tabela -->
+                    {% if usos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Regra</th>
+                                    <th>Cliente</th>
+                                    <th>Transação</th>
+                                    <th>Valor Transação</th>
+                                    <th>Valor Cashback</th>
+                                    <th>Status</th>
+                                    <th>Liberação</th>
+                                    <th>Expiração</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for uso in usos %}
+                                <tr>
+                                    <td>{{ uso.aplicado_em|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if uso.regra_loja_id %}
+                                        <a href="{% url 'lojista:cashback_detalhe' uso.regra_loja_id %}">
+                                            Regra #{{ uso.regra_loja_id }}
+                                        </a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ uso.cliente_id }}</td>
+                                    <td>
+                                        <small>{{ uso.transacao_tipo }} #{{ uso.transacao_id }}</small>
+                                    </td>
+                                    <td>R$ {{ uso.valor_transacao }}</td>
+                                    <td><strong>R$ {{ uso.valor_cashback }}</strong></td>
+                                    <td>
+                                        {% if uso.status == 'RETIDO' %}
+                                        <span class="badge bg-warning">Retido</span>
+                                        {% elif uso.status == 'LIBERADO' %}
+                                        <span class="badge bg-success">Liberado</span>
+                                        {% elif uso.status == 'EXPIRADO' %}
+                                        <span class="badge bg-secondary">Expirado</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Estornado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if uso.liberado_em %}
+                                        <small>{{ uso.liberado_em|date:"d/m/Y" }}</small>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if uso.expira_em %}
+                                        <small>{{ uso.expira_em|date:"d/m/Y" }}</small>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginação -->
+                    {% if usos.has_other_pages %}
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            {% if usos.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ usos.previous_page_number }}&regra_id={{ regra_id }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">Anterior</a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in usos.paginator.page_range %}
+                            {% if usos.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > usos.number|add:'-3' and num < usos.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}&regra_id={{ regra_id }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">{{ num }}</a></li>
+                            {% endif %}
+                            {% endfor %}
+
+                            {% if usos.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ usos.next_page_number }}&regra_id={{ regra_id }}&status={{ status }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">Próximo</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Nenhum uso de cashback encontrado com os filtros selecionados.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

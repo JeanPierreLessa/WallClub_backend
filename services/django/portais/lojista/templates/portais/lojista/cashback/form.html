@@ -1,0 +1,229 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}{% if regra %}Editar{% else %}Criar{% endif %} Regra de Cashback - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-coins me-2"></i>
+                        {% if regra %}Editar Regra de Cashback{% else %}Nova Regra de Cashback{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Informações Básicas -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Informações Básicas</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nome da Regra *</label>
+                                <input type="text" name="nome" class="form-control" value="{{ regra.nome }}" required>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Prioridade</label>
+                                <input type="number" name="prioridade" class="form-control" value="{{ regra.prioridade|default:0 }}" min="0">
+                                <small class="text-muted">Maior número = maior prioridade</small>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Status</label>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="ativo" class="form-check-input" id="ativo" {% if not regra or regra.ativo %}checked{% endif %}>
+                                    <label class="form-check-label" for="ativo">Ativa</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Descrição</label>
+                                <textarea name="descricao" class="form-control" rows="2">{{ regra.descricao }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Configuração do Cashback -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Configuração do Cashback</h5>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Tipo de Desconto *</label>
+                                <select name="tipo_desconto" class="form-select" required>
+                                    {% for value, label in tipos_desconto %}
+                                    <option value="{{ value }}" {% if regra.tipo_desconto == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Valor do Desconto *</label>
+                                <input type="number" name="valor_desconto" class="form-control" value="{{ regra.valor_desconto }}" step="0.01" min="0" required>
+                                <small class="text-muted">R$ ou % conforme tipo</small>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Valor Mínimo Compra</label>
+                                <input type="number" name="valor_minimo_compra" class="form-control" value="{{ regra.valor_minimo_compra|default:'0.00' }}" step="0.01" min="0">
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Valor Máximo Cashback</label>
+                                <input type="number" name="valor_maximo_cashback" class="form-control" value="{{ regra.valor_maximo_cashback }}" step="0.01" min="0">
+                                <small class="text-muted">Deixe vazio para ilimitado</small>
+                            </div>
+                        </div>
+
+                        <!-- Retenção e Expiração -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Retenção e Expiração</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Período de Retenção (dias)</label>
+                                <input type="number" name="periodo_retencao_dias" class="form-control" value="{{ regra.periodo_retencao_dias|default:30 }}" min="0">
+                                <small class="text-muted">Dias antes de liberar (0 = libera imediatamente)</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Período de Expiração (dias)</label>
+                                <input type="number" name="periodo_expiracao_dias" class="form-control" value="{{ regra.periodo_expiracao_dias|default:90 }}" min="0">
+                                <small class="text-muted">Dias até expirar após liberação (0 = não expira)</small>
+                            </div>
+                        </div>
+
+                        <!-- Vigência -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Vigência</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Início da Vigência *</label>
+                                <input type="datetime-local" name="vigencia_inicio" class="form-control" value="{% if regra %}{{ regra.vigencia_inicio|date:'Y-m-d\TH:i' }}{% endif %}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fim da Vigência *</label>
+                                <input type="datetime-local" name="vigencia_fim" class="form-control" value="{% if regra %}{{ regra.vigencia_fim|date:'Y-m-d\TH:i' }}{% endif %}" required>
+                            </div>
+                        </div>
+
+                        <!-- Filtros Opcionais -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Filtros Opcionais</h5>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Formas de Pagamento</label>
+                                <div class="form-check">
+                                    <input type="checkbox" name="formas_pagamento" value="PIX" class="form-check-input" id="pix" {% if 'PIX' in regra.formas_pagamento %}checked{% endif %}>
+                                    <label class="form-check-label" for="pix">PIX</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="formas_pagamento" value="DEBITO" class="form-check-input" id="debito" {% if 'DEBITO' in regra.formas_pagamento %}checked{% endif %}>
+                                    <label class="form-check-label" for="debito">Débito</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="formas_pagamento" value="CREDITO" class="form-check-input" id="credito" {% if 'CREDITO' in regra.formas_pagamento %}checked{% endif %}>
+                                    <label class="form-check-label" for="credito">Crédito</label>
+                                </div>
+                                <small class="text-muted">Deixe vazio para todas</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Dias da Semana</label>
+                                <div class="form-check">
+                                    <input type="checkbox" name="dias_semana" value="0" class="form-check-input" id="dom" {% if 0 in regra.dias_semana %}checked{% endif %}>
+                                    <label class="form-check-label" for="dom">Domingo</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="dias_semana" value="1" class="form-check-input" id="seg" {% if 1 in regra.dias_semana %}checked{% endif %}>
+                                    <label class="form-check-label" for="seg">Segunda</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="dias_semana" value="2" class="form-check-input" id="ter" {% if 2 in regra.dias_semana %}checked{% endif %}>
+                                    <label class="form-check-label" for="ter">Terça</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="dias_semana" value="3" class="form-check-input" id="qua" {% if 3 in regra.dias_semana %}checked{% endif %}>
+                                    <label class="form-check-label" for="qua">Quarta</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="dias_semana" value="4" class="form-check-input" id="qui" {% if 4 in regra.dias_semana %}checked{% endif %}>
+                                    <label class="form-check-label" for="qui">Quinta</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="dias_semana" value="5" class="form-check-input" id="sex" {% if 5 in regra.dias_semana %}checked{% endif %}>
+                                    <label class="form-check-label" for="sex">Sexta</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="dias_semana" value="6" class="form-check-input" id="sab" {% if 6 in regra.dias_semana %}checked{% endif %}>
+                                    <label class="form-check-label" for="sab">Sábado</label>
+                                </div>
+                                <small class="text-muted">Deixe vazio para todos</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Horário Início</label>
+                                <input type="time" name="horario_inicio" class="form-control" value="{{ regra.horario_inicio }}">
+                                
+                                <label class="form-label mt-2">Horário Fim</label>
+                                <input type="time" name="horario_fim" class="form-control" value="{{ regra.horario_fim }}">
+                                <small class="text-muted">Deixe vazio para qualquer horário</small>
+                            </div>
+                        </div>
+
+                        <!-- Limites de Uso -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Limites de Uso</h5>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Limite por Cliente/Dia</label>
+                                <input type="number" name="limite_uso_cliente_dia" class="form-control" value="{{ regra.limite_uso_cliente_dia }}" min="1">
+                                <small class="text-muted">Deixe vazio para ilimitado</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Limite por Cliente/Mês</label>
+                                <input type="number" name="limite_uso_cliente_mes" class="form-control" value="{{ regra.limite_uso_cliente_mes }}" min="1">
+                                <small class="text-muted">Deixe vazio para ilimitado</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Orçamento Mensal (R$)</label>
+                                <input type="number" name="orcamento_mensal" class="form-control" value="{{ regra.orcamento_mensal }}" step="0.01" min="0">
+                                <small class="text-muted">Deixe vazio para ilimitado</small>
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-2"></i>Salvar
+                                </button>
+                                <a href="{% url 'lojista:cashback_lista' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

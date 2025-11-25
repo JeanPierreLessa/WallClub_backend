@@ -609,37 +609,73 @@ class CashbackService:
 
 ## 🏗️ IMPLEMENTAÇÃO POR ETAPAS
 
-### Etapa 1: Estrutura Base (2-3 dias)
-- Criar app `apps/cashback/`
-- Models: `RegraCashback`, `RegraCashbackWall`, `RegraCashbackLoja`, `CashbackUso`
-- Migrations SQL
-- Admin básico
+### ✅ Etapa 1: Estrutura Base - CONCLUÍDA (25/11/2025)
+- ✅ Criar app `apps/cashback/`
+- ✅ Models: `RegraCashbackLoja`, `CashbackUso` (RegraCashback abstrato)
+- ✅ **IMPORTANTE:** Cashback Wall usa DIRETAMENTE `parametros_wallclub` (wall='C') - SEM tabela intermediária
+- ✅ Migrations SQL executadas (2 tabelas criadas)
+- ✅ Admin básico configurado
+- ✅ App adicionado ao `INSTALLED_APPS`
 
-### Etapa 2: CashbackService (2-3 dias)
-- Implementar métodos principais
-- Integrar com `ContaDigitalService`
-- Testes unitários
+**Arquivos criados:**
+- `apps/cashback/__init__.py`
+- `apps/cashback/apps.py`
+- `apps/cashback/models.py` (310 linhas)
+- `apps/cashback/services.py` (420 linhas)
+- `apps/cashback/admin.py` (90 linhas)
+- `apps/cashback/tasks.py` (140 linhas)
+- `apps/cashback/migrations_sql.sql`
 
-### Etapa 3: Migrar Cashback Wall (1-2 dias)
-- Criar `RegraCashbackWall` para parametros existentes
-- Modificar fluxo POS para usar `CashbackService`
+**Tabelas criadas:**
+- `cashback_regra_loja` - Regras de cashback criadas pela loja
+- `cashback_uso` - Histórico unificado (Wall + Loja)
+
+### ✅ Etapa 2: CashbackService - CONCLUÍDA (25/11/2025)
+- ✅ `aplicar_cashback_wall()` - Recebe valor calculado, credita + registra
+- ✅ `aplicar_cashback_loja_automatico()` - Verifica regras e aplica
+- ✅ `liberar_cashback()` - Move de bloqueado para disponível
+- ✅ `expirar_cashback()` - Remove cashback vencido
+- ✅ `estornar_cashback()` - Estorna em caso de cancelamento
+- ✅ Métodos privados de validação (condições e limites)
+
+### ✅ Etapa 3: Jobs Celery - CONCLUÍDA (25/11/2025)
+- ✅ `liberar_cashback_retido()` - Roda diariamente
+- ✅ `expirar_cashback_vencido()` - Roda diariamente
+- ✅ `resetar_gasto_mensal_lojas()` - Roda dia 1 de cada mês
+- ⏳ Configurar schedule no Celery Beat (pendente)
+
+### ⏳ Etapa 4: Migrar Cashback Wall - PENDENTE
+- Modificar fluxo POS para usar `CashbackService.aplicar_cashback_wall()`
+- Modificar fluxo Checkout para usar `CashbackService.aplicar_cashback_wall()`
 - Validar que continua funcionando
+- Testes de regressão
 
-### Etapa 4: Cashback Loja (2-3 dias)
-- CRUD de regras no portal admin/lojista
-- Aplicação automática no fluxo
-- Validações e limites
+### ✅ Etapa 5: Cashback Loja (Portal Lojista) - CONCLUÍDA (25/11/2025)
+- ✅ CRUD de regras no portal lojista (6 views)
+- ✅ Templates HTML (lista, form, detalhe, relatório)
+- ✅ URLs configuradas
+- ⏳ CRUD de regras no portal admin (pendente)
+- ⏳ Aplicação automática no fluxo POS/Checkout (pendente)
 
-### Etapa 5: Jobs Celery (1-2 dias)
-- Task de liberação automática
-- Task de expiração
-- Configurar schedule
+**Arquivos criados:**
+- `portais/lojista/views_cashback.py` (350 linhas)
+- `portais/lojista/templates/portais/lojista/cashback/lista.html`
+- `portais/lojista/templates/portais/lojista/cashback/form.html`
+- `portais/lojista/templates/portais/lojista/cashback/detalhe.html`
+- `portais/lojista/templates/portais/lojista/cashback/relatorio.html`
 
-### Etapa 6: Estorno (1 dia)
-- Integrar estorno de cashback
+**Funcionalidades:**
+- Lista com filtros (busca, status, vigência) e paginação
+- Criar/Editar regra (formulário completo com todos os campos)
+- Detalhes + estatísticas de uso
+- Ativar/Desativar regra
+- Relatório de uso com filtros avançados
+
+### ⏳ Etapa 6: Estorno - PENDENTE
+- Integrar `CashbackService.estornar_cashback()` nos fluxos de estorno
 - Testes de edge cases
 
-### Etapa 7: Testes e Homologação (2-3 dias)
+### ⏳ Etapa 7: Testes e Homologação - PENDENTE
 - Testes integração
 - Homologação
 - Deploy produção
