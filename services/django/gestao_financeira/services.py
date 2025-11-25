@@ -138,7 +138,7 @@ class PagamentoService:
 
             # Validar campos monetários
             campos_monetarios = ['var44', 'var58', 'var111', 'var112']
-            dados_validados = {'nsu': nsu_int, 'user': usuario}
+            dados_validados = {'nsu': nsu_int, 'user_id': usuario.id}
 
             for campo in campos_monetarios:
                 valor = dados_pagamento.get(campo)
