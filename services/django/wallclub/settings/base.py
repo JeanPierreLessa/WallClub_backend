@@ -33,7 +33,7 @@ INSTALLED_APPS = [
     'apps.conta_digital',
     'apps.ofertas',
     'apps.cupom',
-    'apps.cashback',
+    'apps.cashback.apps.CashbackConfig',
     'checkout',
     'checkout.link_pagamento_web',
     'checkout.link_recorrencia_web',
