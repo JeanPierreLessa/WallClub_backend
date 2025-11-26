@@ -102,20 +102,6 @@ class RegraCashback(models.Model):
         return self.nome
 
 
-class RegraCashbackWall(models.Model):
-    """
-    REMOVIDO: Cashback Wall vem direto de parametros_wallclub (wall='C').
-    Não precisa de tabela separada - usa ParametrosWall diretamente.
-    
-    Este model foi mantido apenas para compatibilidade com CashbackUso.regra_wall_id,
-    mas NÃO deve ser usado. Use parametro_wall_id em CashbackUso.
-    """
-    
-    class Meta:
-        managed = False  # Django não gerencia esta tabela
-        db_table = 'cashback_regra_wall_deprecated'
-
-
 class RegraCashbackLoja(RegraCashback):
     """
     Regras de cashback criadas pela loja.
