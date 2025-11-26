@@ -112,7 +112,7 @@ class RegraCashbackLoja(RegraCashback):
     
     class Meta:
         db_table = 'cashback_regra_loja'
-        app_label = 'apps.cashback'
+        app_label = 'cashback'
         verbose_name = 'Regra de Cashback Loja'
         verbose_name_plural = 'Regras de Cashback Loja'
         ordering = ['-prioridade', '-created_at']
@@ -279,7 +279,7 @@ class CashbackUso(models.Model):
     
     class Meta:
         db_table = 'cashback_uso'
-        app_label = 'apps.cashback'
+        app_label = 'cashback'
         verbose_name = 'Uso de Cashback'
         verbose_name_plural = 'Usos de Cashback'
         indexes = [
