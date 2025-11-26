@@ -654,11 +654,12 @@ class CashbackService:
 - ✅ CRUD de regras no portal lojista (6 views)
 - ✅ Templates HTML (lista, form, detalhe, relatório)
 - ✅ URLs configuradas
+- ✅ Deploy em produção e correções de configuração
 - ⏳ CRUD de regras no portal admin (pendente)
 - ⏳ Aplicação automática no fluxo POS/Checkout (pendente)
 
 **Arquivos criados:**
-- `portais/lojista/views_cashback.py` (350 linhas)
+- `portais/lojista/views_cashback.py` (380 linhas)
 - `portais/lojista/templates/portais/lojista/cashback/lista.html`
 - `portais/lojista/templates/portais/lojista/cashback/form.html`
 - `portais/lojista/templates/portais/lojista/cashback/detalhe.html`
@@ -670,6 +671,13 @@ class CashbackService:
 - Detalhes + estatísticas de uso
 - Ativar/Desativar regra
 - Relatório de uso com filtros avançados
+
+**Correções de Deploy:**
+- Uso de `apps.get_model()` para evitar import circular
+- Configuração de `app_label = 'cashback'` nos models
+- Adição de `CashbackConfig` em `portais.py` INSTALLED_APPS
+- Refatoração de settings para evitar duplicação (herança de INSTALLED_APPS)
+- Correção de `INTERNAL_API_BASE_URL` para apontar para container correto
 
 ### ⏳ Etapa 6: Estorno - PENDENTE
 - Integrar `CashbackService.estornar_cashback()` nos fluxos de estorno

@@ -25,6 +25,17 @@
                             </div>
                             
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Loja *</label>
+                                <select name="loja_id" class="form-select" required>
+                                    {% for loja in lojas_acessiveis %}
+                                    <option value="{{ loja.id }}" {% if regra.loja_id == loja.id or loja_id_atual == loja.id %}selected{% endif %}>
+                                        {{ loja.razao_social }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Nome da Regra *</label>
                                 <input type="text" name="nome" class="form-control" value="{{ regra.nome }}" required>
                             </div>

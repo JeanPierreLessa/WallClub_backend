@@ -224,9 +224,11 @@ class TransacoesOwnService:
         
         # Verificar sucesso
         result_code = response.get('result', {}).get('code', '')
+        acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
         
-        if result_code in self.SUCCESS_CODES:
-            registrar_log('own.transacao', f'✅ Pagamento aprovado: {response.get("id")}')
+        # Sucesso se: código na lista OU acquirer aprovou (00)
+        if result_code in self.SUCCESS_CODES or acquirer_response == '00':
+            registrar_log('own.transacao', f'✅ Pagamento aprovado: {response.get("id")} (Acquirer: {acquirer_response})')
             return {
                 'sucesso': True,
                 'own_payment_id': response.get('id'),
@@ -238,7 +240,7 @@ class TransacoesOwnService:
                 'payment_brand': response.get('paymentBrand', '')
             }
         else:
-            registrar_log('own.transacao', f'❌ Pagamento reprovado: {result_code}', nivel='WARNING')
+            registrar_log('own.transacao', f'❌ Pagamento reprovado: {result_code} (Acquirer: {acquirer_response})', nivel='WARNING')
             return {
                 'sucesso': False,
                 'codigo_erro': result_code,
@@ -316,9 +318,11 @@ class TransacoesOwnService:
         )
         
         result_code = response.get('result', {}).get('code', '')
+        acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
         
-        if result_code in self.SUCCESS_CODES:
-            registrar_log('own.transacao', f'✅ Tokenização aprovada: {response.get("registrationId")}')
+        # Sucesso se: código na lista OU acquirer aprovou (00)
+        if result_code in self.SUCCESS_CODES or acquirer_response == '00':
+            registrar_log('own.transacao', f'✅ Tokenização aprovada: {response.get("registrationId")} (Acquirer: {acquirer_response})')
             return {
                 'sucesso': True,
                 'own_payment_id': response.get('id'),
@@ -395,9 +399,11 @@ class TransacoesOwnService:
         )
         
         result_code = response.get('result', {}).get('code', '')
+        acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
         
-        if result_code in self.SUCCESS_CODES:
-            registrar_log('own.transacao', f'✅ Recorrência aprovada: {response.get("id")}')
+        # Sucesso se: código na lista OU acquirer aprovou (00)
+        if result_code in self.SUCCESS_CODES or acquirer_response == '00':
+            registrar_log('own.transacao', f'✅ Recorrência aprovada: {response.get("id")} (Acquirer: {acquirer_response})')
             return {
                 'sucesso': True,
                 'own_payment_id': response.get('id'),
