@@ -111,6 +111,13 @@ class RegraCashbackLoja(RegraCashback):
     
     loja_id = models.BigIntegerField(verbose_name='ID da Loja', db_index=True)
     
+    class Meta:
+        db_table = 'cashback_regra_loja'
+        app_label = 'cashback'
+        verbose_name = 'Regra de Cashback Loja'
+        verbose_name_plural = 'Regras de Cashback Loja'
+        ordering = ['-prioridade', '-created_at']
+    
     # Filtros opcionais
     formas_pagamento = models.JSONField(
         null=True,
@@ -273,6 +280,7 @@ class CashbackUso(models.Model):
     
     class Meta:
         db_table = 'cashback_uso'
+        app_label = 'cashback'
         verbose_name = 'Uso de Cashback'
         verbose_name_plural = 'Usos de Cashback'
         indexes = [
