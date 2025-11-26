@@ -42,12 +42,6 @@ INSTALLED_APPS = [
     'adquirente_own',
     'adquirente_own.cargas_own',
     'posp2',
-    'portais.admin',
-    'portais.lojista',
-    'portais.corporativo',
-    'portais.controle_acesso',
-    'portais.vendas',
-    'gestao_financeira',
 ]
 
 # Configurações de upload para formulários com muitos campos
