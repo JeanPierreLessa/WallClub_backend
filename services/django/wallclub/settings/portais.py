@@ -21,8 +21,8 @@ else:
         'wcinstitucional.wallclub.com.br',
     ]
 
-# URL base para APIs internas (mesmo container)
-INTERNAL_API_BASE_URL = 'http://127.0.0.1:8005'
+# URL base para APIs internas (container wallclub-apis)
+INTERNAL_API_BASE_URL = 'http://wallclub-apis:8007'
 
 # Apps específicos do container de portais (herda do base e adiciona apenas os específicos)
 INSTALLED_APPS = INSTALLED_APPS + [
