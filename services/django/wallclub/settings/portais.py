@@ -24,42 +24,14 @@ else:
 # URL base para APIs internas (mesmo container)
 INTERNAL_API_BASE_URL = 'http://127.0.0.1:8005'
 
-# Apps específicos do container de portais
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    # Third party apps
-    'rest_framework',
-    'corsheaders',
-
-    # Core
-    'wallclub_core',
-    'wallclub_core.oauth',
-    'wallclub_core.estr_organizacional.apps.EstrOrganizacionalConfig',
-
-    # Apps do container portais
+# Apps específicos do container de portais (herda do base e adiciona apenas os específicos)
+INSTALLED_APPS = INSTALLED_APPS + [
     'portais.admin',
     'portais.lojista',
     'portais.corporativo',
     'portais.controle_acesso',
     'portais.vendas',
     'gestao_financeira',
-
-    # Dependências (portais usa checkout, ofertas, parametros)
-    'checkout',
-    'checkout.link_pagamento_web',
-    'checkout.link_recorrencia_web',
-    'apps.cliente',
-    'apps.ofertas',
-    'apps.cupom',
-    'apps.cashback.apps.CashbackConfig',
-    'parametros_wallclub',
-    'pinbank',  # Para acesso aos modelos de transações
 ]
 
 # URLs específicas
