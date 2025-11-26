@@ -124,8 +124,6 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
                 valor_desconto=Decimal(request.POST.get('valor_desconto')),
                 valor_minimo_compra=Decimal(request.POST.get('valor_minimo_compra', '0.00')),
                 valor_maximo_cashback=Decimal(request.POST.get('valor_maximo_cashback')) if request.POST.get('valor_maximo_cashback') else None,
-                periodo_retencao_dias=int(request.POST.get('periodo_retencao_dias', 30)),
-                periodo_expiracao_dias=int(request.POST.get('periodo_expiracao_dias', 90)),
                 vigencia_inicio=datetime.strptime(request.POST.get('vigencia_inicio'), '%Y-%m-%dT%H:%M'),
                 vigencia_fim=datetime.strptime(request.POST.get('vigencia_fim'), '%Y-%m-%dT%H:%M'),
                 formas_pagamento=request.POST.getlist('formas_pagamento') if request.POST.getlist('formas_pagamento') else None,
@@ -200,8 +198,6 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
             regra.valor_desconto = Decimal(request.POST.get('valor_desconto'))
             regra.valor_minimo_compra = Decimal(request.POST.get('valor_minimo_compra', '0.00'))
             regra.valor_maximo_cashback = Decimal(request.POST.get('valor_maximo_cashback')) if request.POST.get('valor_maximo_cashback') else None
-            regra.periodo_retencao_dias = int(request.POST.get('periodo_retencao_dias', 30))
-            regra.periodo_expiracao_dias = int(request.POST.get('periodo_expiracao_dias', 90))
             regra.vigencia_inicio = datetime.strptime(request.POST.get('vigencia_inicio'), '%Y-%m-%dT%H:%M')
             regra.vigencia_fim = datetime.strptime(request.POST.get('vigencia_fim'), '%Y-%m-%dT%H:%M')
             regra.formas_pagamento = request.POST.getlist('formas_pagamento') if request.POST.getlist('formas_pagamento') else None

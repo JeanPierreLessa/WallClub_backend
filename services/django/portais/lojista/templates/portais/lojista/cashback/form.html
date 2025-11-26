@@ -93,25 +93,6 @@
                             </div>
                         </div>
 
-                        <!-- Retenção e Expiração -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="border-bottom pb-2">Retenção e Expiração</h5>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Período de Retenção (dias)</label>
-                                <input type="number" name="periodo_retencao_dias" class="form-control" value="{{ regra.periodo_retencao_dias|default:30 }}" min="0">
-                                <small class="text-muted">Dias antes de liberar (0 = libera imediatamente)</small>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Período de Expiração (dias)</label>
-                                <input type="number" name="periodo_expiracao_dias" class="form-control" value="{{ regra.periodo_expiracao_dias|default:90 }}" min="0">
-                                <small class="text-muted">Dias até expirar após liberação (0 = não expira)</small>
-                            </div>
-                        </div>
-
                         <!-- Vigência -->
                         <div class="row mb-4">
                             <div class="col-12">

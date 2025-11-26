@@ -53,18 +53,6 @@ class RegraCashback(models.Model):
         help_text='Teto de cashback por transação (deixe em branco para ilimitado)'
     )
     
-    # Retenção e Expiração
-    periodo_retencao_dias = models.IntegerField(
-        default=0,
-        verbose_name='Período de Retenção (dias)',
-        help_text='Dias de carência antes de liberar (0 = libera imediatamente)'
-    )
-    periodo_expiracao_dias = models.IntegerField(
-        default=0,
-        verbose_name='Período de Expiração (dias)',
-        help_text='Dias até expirar após liberação (0 = não expira)'
-    )
-    
     # Vigência
     vigencia_inicio = models.DateTimeField(verbose_name='Início da Vigência')
     vigencia_fim = models.DateTimeField(verbose_name='Fim da Vigência')
