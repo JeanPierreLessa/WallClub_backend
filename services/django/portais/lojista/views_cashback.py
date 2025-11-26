@@ -18,7 +18,7 @@ class CashbackListView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def get(self, request):
         from django.apps import apps
-        RegraCashbackLoja = apps.get_model('cashback', 'RegraCashbackLoja')
+        RegraCashbackLoja = apps.get_model('apps.cashback', 'RegraCashbackLoja')
         
         lojas_ids = self.get_lojas_ids()
         
@@ -85,7 +85,7 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def get(self, request):
         from django.apps import apps
-        RegraCashbackLoja = apps.get_model('cashback', 'RegraCashbackLoja')
+        RegraCashbackLoja = apps.get_model('apps.cashback', 'RegraCashbackLoja')
         
         lojas_acessiveis = self.get_lojas_acessiveis()
         loja_id_atual = request.session.get('loja_id')
@@ -99,7 +99,7 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def post(self, request):
         from django.apps import apps
-        RegraCashbackLoja = apps.get_model('cashback', 'RegraCashbackLoja')
+        RegraCashbackLoja = apps.get_model('apps.cashback', 'RegraCashbackLoja')
         
         try:
             loja_id = request.POST.get('loja_id') or request.session.get('loja_id')
@@ -161,7 +161,7 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def get(self, request, regra_id):
         from django.apps import apps
-        RegraCashbackLoja = apps.get_model('cashback', 'RegraCashbackLoja')
+        RegraCashbackLoja = apps.get_model('apps.cashback', 'RegraCashbackLoja')
         
         regra = get_object_or_404(RegraCashbackLoja, id=regra_id)
         
@@ -181,7 +181,7 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def post(self, request, regra_id):
         from django.apps import apps
-        RegraCashbackLoja = apps.get_model('cashback', 'RegraCashbackLoja')
+        RegraCashbackLoja = apps.get_model('apps.cashback', 'RegraCashbackLoja')
         
         try:
             regra = get_object_or_404(RegraCashbackLoja, id=regra_id)
@@ -238,8 +238,8 @@ class CashbackDetailView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def get(self, request, regra_id):
         from django.apps import apps
-        RegraCashbackLoja = apps.get_model('cashback', 'RegraCashbackLoja')
-        CashbackUso = apps.get_model('cashback', 'CashbackUso')
+        RegraCashbackLoja = apps.get_model('apps.cashback', 'RegraCashbackLoja')
+        CashbackUso = apps.get_model('apps.cashback', 'CashbackUso')
         
         regra = get_object_or_404(RegraCashbackLoja, id=regra_id)
         
@@ -277,7 +277,7 @@ class CashbackToggleView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def post(self, request, regra_id):
         from django.apps import apps
-        RegraCashbackLoja = apps.get_model('cashback', 'RegraCashbackLoja')
+        RegraCashbackLoja = apps.get_model('apps.cashback', 'RegraCashbackLoja')
         
         try:
             regra = get_object_or_404(RegraCashbackLoja, id=regra_id)
@@ -316,7 +316,7 @@ class CashbackRelatorioView(LojistaAccessMixin, LojistaDataMixin, View):
     
     def get(self, request):
         from django.apps import apps
-        CashbackUso = apps.get_model('cashback', 'CashbackUso')
+        CashbackUso = apps.get_model('apps.cashback', 'CashbackUso')
         
         lojas_ids = self.get_lojas_ids()
         
