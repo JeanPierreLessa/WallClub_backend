@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'apps.cliente',
     'apps.ofertas',
     'apps.cupom',
+    'apps.cashback.apps.CashbackConfig',
     'parametros_wallclub',
     'pinbank',  # Para acesso aos modelos de transações
 ]
