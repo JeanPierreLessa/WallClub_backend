@@ -75,7 +75,6 @@ class RegraCashback(models.Model):
     
     class Meta:
         abstract = True
-        app_label = 'cashback'
     
     def calcular_cashback(self, valor_base):
         """
