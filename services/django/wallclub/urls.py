@@ -42,6 +42,7 @@ urlpatterns = [
     # path('api/v1/carteira/', include('apps.carteira.urls')),  # Removido - usando conta_digital
     path('api/v1/conta_digital/', include('apps.conta_digital.urls')),  # Endpoints de conta digital
     path('api/v1/ofertas/', include('apps.ofertas.urls')),  # Endpoints de ofertas
+    path('api/v1/cashback/', include('apps.cashback.urls')),  # Endpoints de cashback
     path('api/v1/checkout/', include('checkout.link_pagamento_web.urls')),  # Link de pagamento web
     path('api/v1/checkout/recorrencia/', include('checkout.link_recorrencia_web.urls')),  # Cadastro de cartão para recorrência
     path('api/v1/posp2/', include('posp2.urls')),  # Endpoints POSP2

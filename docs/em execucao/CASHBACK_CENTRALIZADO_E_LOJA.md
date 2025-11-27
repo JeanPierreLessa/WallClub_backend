@@ -650,11 +650,13 @@ class CashbackService:
 - Validar que continua funcionando
 - Testes de regressão
 
-### ✅ Etapa 5: Cashback Loja (Portal Lojista) - CONCLUÍDA (25/11/2025)
+### ✅ Etapa 5: Cashback Loja (Portal Lojista) - CONCLUÍDA (26/11/2025)
 - ✅ CRUD de regras no portal lojista (6 views)
 - ✅ Templates HTML (lista, form, detalhe, relatório)
 - ✅ URLs configuradas
 - ✅ Deploy em produção e correções de configuração
+- ✅ Pulldown de seleção de loja adicionado ao formulário
+- ✅ Remoção de campos `periodo_retencao_dias` e `periodo_expiracao_dias` (agora são globais)
 - ⏳ CRUD de regras no portal admin (pendente)
 - ⏳ Aplicação automática no fluxo POS/Checkout (pendente)
 
@@ -679,7 +681,31 @@ class CashbackService:
 - Refatoração de settings para evitar duplicação (herança de INSTALLED_APPS)
 - Correção de `INTERNAL_API_BASE_URL` para apontar para container correto
 
-### ⏳ Etapa 6: Estorno - PENDENTE
+### ✅ Etapa 6: APIs REST - CONCLUÍDA (26/11/2025)
+- ✅ API `POST /api/v1/cashback/simular/` - Simula cashback Loja
+- ✅ API `POST /api/v1/cashback/aplicar/` - Aplica cashback Wall ou Loja
+- ✅ Métodos `simular_cashback_loja()` e `aplicar_cashback_loja()` no CashbackService
+- ✅ Configurações globais de cashback em `settings/base.py`
+- ✅ URLs configuradas em `wallclub/urls.py`
+
+**Arquivos criados:**
+- `apps/cashback/api_views.py` (200 linhas)
+- `apps/cashback/urls.py`
+
+**Configurações Globais:**
+- `CASHBACK_PERIODO_RETENCAO_DIAS` = 30 (padrão, via env)
+- `CASHBACK_PERIODO_EXPIRACAO_DIAS` = 90 (padrão, via env)
+
+**Endpoints:**
+1. **POST /api/v1/cashback/simular/** - Simula cashback Loja antes da transação
+   - Body: `loja_id`, `cliente_id`, `valor_transacao`, `forma_pagamento`
+   - Retorna: regra aplicável e valor do cashback
+   
+2. **POST /api/v1/cashback/aplicar/** - Aplica cashback após transação aprovada
+   - Body: `tipo` (WALL/LOJA), `cliente_id`, `loja_id`, `transacao_id`, `valor_cashback`
+   - Retorna: `cashback_uso_id`, `status`, `data_liberacao`, `data_expiracao`
+
+### ⏳ Etapa 7: Estorno - PENDENTE
 - Integrar `CashbackService.estornar_cashback()` nos fluxos de estorno
 - Testes de edge cases
 

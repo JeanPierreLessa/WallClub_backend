@@ -11,8 +11,8 @@ class CashbackService:
     @staticmethod
     def aplicar_cashback_wall(parametro_wall_id, cliente_id, loja_id, canal_id,
                               transacao_tipo, transacao_id, valor_transacao, 
-                              valor_cashback, periodo_retencao_dias=30, 
-                              periodo_expiracao_dias=90):
+                              valor_cashback, periodo_retencao_dias=None, 
+                              periodo_expiracao_dias=None):
         """
         Aplica cashback Wall após transação.
         Usa diretamente ParametrosWall (wall='C') - não cria regra intermediária.
@@ -35,6 +35,13 @@ class CashbackService:
         from apps.cashback.models import CashbackUso
         from apps.conta_digital.services import ContaDigitalService
         from parametros_wallclub.models import ParametrosWall
+        from django.conf import settings
+        
+        # Usar configurações globais se não fornecidas
+        if periodo_retencao_dias is None:
+            periodo_retencao_dias = settings.CASHBACK_PERIODO_RETENCAO_DIAS
+        if periodo_expiracao_dias is None:
+            periodo_expiracao_dias = settings.CASHBACK_PERIODO_EXPIRACAO_DIAS
         
         with transaction.atomic():
             # Buscar parâmetro Wall para obter nome/descrição
@@ -82,7 +89,156 @@ class CashbackService:
                 f'Status: {cashback_uso.status}, Parâmetro: {parametro_wall_id}'
             )
             
-            return cashback_uso
+            return {
+                'cashback_uso_id': cashback_uso.id,
+                'movimentacao_id': movimentacao.id,
+                'status': cashback_uso.status,
+                'data_liberacao': data_liberacao.isoformat() if data_liberacao else None,
+                'data_expiracao': data_expiracao.isoformat() if data_expiracao else None,
+            }
+    
+    @staticmethod
+    def simular_cashback_loja(loja_id, cliente_id, canal_id, valor_transacao, forma_pagamento):
+        """
+        Simula cashback de loja sem aplicar.
+        Retorna a melhor regra aplicável.
+        
+        Args:
+            loja_id: ID da loja
+            cliente_id: ID do cliente
+            canal_id: ID do canal
+            valor_transacao: Valor da transação
+            forma_pagamento: 'PIX', 'DEBITO', 'CREDITO'
+            
+        Returns:
+            dict ou None: Dados da simulação ou None se nenhuma regra aplicável
+        """
+        from apps.cashback.models import RegraCashbackLoja
+        
+        agora = datetime.now()
+        dia_semana = agora.weekday()
+        horario = agora.time()
+        
+        # Buscar regras ativas
+        regras = RegraCashbackLoja.objects.filter(
+            loja_id=loja_id,
+            ativo=True,
+            vigencia_inicio__lte=agora,
+            vigencia_fim__gte=agora
+        ).order_by('-prioridade', '-valor_desconto')
+        
+        for regra in regras:
+            # Validar condições
+            if not CashbackService._valida_condicoes_loja(
+                regra, valor_transacao, forma_pagamento, dia_semana, horario
+            ):
+                continue
+            
+            # Validar limites
+            if not CashbackService._valida_limites_loja(regra, cliente_id):
+                continue
+            
+            # Calcular cashback
+            valor_cashback = regra.calcular_cashback(valor_transacao)
+            
+            return {
+                'valor': float(valor_cashback),
+                'regra_id': regra.id,
+                'regra_nome': regra.nome,
+                'tipo_desconto': regra.tipo_desconto,
+                'valor_desconto': float(regra.valor_desconto),
+            }
+        
+        return None
+    
+    @staticmethod
+    def aplicar_cashback_loja(regra_loja_id, cliente_id, loja_id, canal_id,
+                              transacao_tipo, transacao_id, valor_transacao, 
+                              valor_cashback, periodo_retencao_dias=None, 
+                              periodo_expiracao_dias=None):
+        """
+        Aplica cashback de loja após transação.
+        
+        Args:
+            regra_loja_id: ID da RegraCashbackLoja
+            cliente_id: ID do cliente
+            loja_id: ID da loja
+            canal_id: ID do canal
+            transacao_tipo: 'POS' ou 'CHECKOUT'
+            transacao_id: ID da transação
+            valor_transacao: Valor final da transação
+            valor_cashback: Valor do cashback calculado
+            periodo_retencao_dias: Dias de retenção (padrão: 30)
+            periodo_expiracao_dias: Dias até expirar (padrão: 90)
+            
+        Returns:
+            dict: Dados do cashback aplicado
+        """
+        from apps.cashback.models import RegraCashbackLoja, CashbackUso
+        from apps.conta_digital.services import ContaDigitalService
+        from django.conf import settings
+        
+        # Usar configurações globais se não fornecidas
+        if periodo_retencao_dias is None:
+            periodo_retencao_dias = settings.CASHBACK_PERIODO_RETENCAO_DIAS
+        if periodo_expiracao_dias is None:
+            periodo_expiracao_dias = settings.CASHBACK_PERIODO_EXPIRACAO_DIAS
+        
+        with transaction.atomic():
+            regra = RegraCashbackLoja.objects.get(id=regra_loja_id)
+            
+            # Calcular datas
+            agora = datetime.now()
+            data_liberacao = agora + timedelta(days=periodo_retencao_dias)
+            data_expiracao = None
+            if periodo_expiracao_dias > 0:
+                data_expiracao = data_liberacao + timedelta(days=periodo_expiracao_dias)
+            
+            # Creditar na conta digital
+            movimentacao = ContaDigitalService.creditar(
+                cliente_id=cliente_id,
+                canal_id=canal_id,
+                valor=valor_cashback,
+                descricao=f"Cashback Loja - {regra.nome}",
+                tipo_codigo='CASHBACK_LOJA',
+                referencia_externa=f'LOJA:{regra_loja_id}',
+                sistema_origem='CASHBACK'
+            )
+            
+            # Registrar histórico
+            cashback_uso = CashbackUso.objects.create(
+                tipo_origem='LOJA',
+                regra_loja_id=regra_loja_id,
+                cliente_id=cliente_id,
+                loja_id=loja_id,
+                canal_id=canal_id,
+                transacao_tipo=transacao_tipo,
+                transacao_id=transacao_id,
+                valor_transacao=valor_transacao,
+                valor_cashback=valor_cashback,
+                status='RETIDO' if periodo_retencao_dias > 0 else 'LIBERADO',
+                liberado_em=data_liberacao,
+                expira_em=data_expiracao,
+                movimentacao_id=movimentacao.id
+            )
+            
+            # Atualizar gasto mensal da regra
+            regra.gasto_mes_atual += valor_cashback
+            regra.save(update_fields=['gasto_mes_atual'])
+            
+            registrar_log(
+                'apps.cashback',
+                f'Cashback Loja aplicado - Cliente: {cliente_id}, Valor: {valor_cashback}, '
+                f'Status: {cashback_uso.status}, Regra: {regra.nome}'
+            )
+            
+            return {
+                'cashback_uso_id': cashback_uso.id,
+                'movimentacao_id': movimentacao.id,
+                'status': cashback_uso.status,
+                'data_liberacao': data_liberacao.isoformat() if data_liberacao else None,
+                'data_expiracao': data_expiracao.isoformat() if data_expiracao else None,
+            }
     
     @staticmethod
     def aplicar_cashback_loja_automatico(loja_id, cliente_id, canal_id,

@@ -440,3 +440,13 @@ CELERY_WORKER_LOG_FORMAT = '[%(asctime)s: %(levelname)s/%(processName)s] %(messa
 CELERY_WORKER_TASK_LOG_FORMAT = '[%(asctime)s: %(levelname)s/%(processName)s][%(task_name)s(%(task_id)s)] %(message)s'
 
 # Beat Schedule (definido em wallclub/celery.py)
+
+# =====================================================
+# Configurações de Cashback
+# =====================================================
+
+# Período de retenção (dias de carência antes de liberar)
+CASHBACK_PERIODO_RETENCAO_DIAS = int(os.environ.get('CASHBACK_PERIODO_RETENCAO_DIAS', 30))
+
+# Período de expiração (dias até expirar após liberação, 0 = não expira)
+CASHBACK_PERIODO_EXPIRACAO_DIAS = int(os.environ.get('CASHBACK_PERIODO_EXPIRACAO_DIAS', 90))
