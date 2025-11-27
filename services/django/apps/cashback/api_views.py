@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from wallclub_core.decorators.api_decorators import handle_api_errors, validate_required_params
+from wallclub_core.oauth.decorators import require_oauth_posp2
 from wallclub_core.utilitarios.log_control import registrar_log
 from decimal import Decimal
 import json
@@ -15,6 +16,7 @@ from .services import CashbackService
 @csrf_exempt
 @require_http_methods(["POST"])
 @handle_api_errors
+@require_oauth_posp2
 @validate_required_params('loja_id', 'cliente_id', 'valor_transacao', 'forma_pagamento')
 def simular_cashback(request):
     """
@@ -93,6 +95,7 @@ def simular_cashback(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 @handle_api_errors
+@require_oauth_posp2
 @validate_required_params('tipo', 'cliente_id', 'loja_id', 'transacao_id', 'transacao_tipo', 'valor_transacao', 'valor_cashback')
 def aplicar_cashback(request):
     """
