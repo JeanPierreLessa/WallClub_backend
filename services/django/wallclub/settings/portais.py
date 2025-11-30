@@ -7,19 +7,7 @@ import os
 # Debug mode (ativar para desenvolvimento local)
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
-# ALLOWED_HOSTS - priorizar .env, depois fallback baseado em DEBUG
-allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '').strip()
-if allowed_hosts_env:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
-elif DEBUG:
-    ALLOWED_HOSTS = ['*']
-else:
-    ALLOWED_HOSTS = [
-        'wcadmin.wallclub.com.br',
-        'wcvendas.wallclub.com.br',
-        'wclojista.wallclub.com.br',
-        'wcinstitucional.wallclub.com.br',
-    ]
+# ALLOWED_HOSTS - usar variável de ambiente do base.py
 
 # URL base para APIs internas (container wallclub-apis)
 INTERNAL_API_BASE_URL = 'http://wallclub-apis:8007'
@@ -37,20 +25,13 @@ INSTALLED_APPS = INSTALLED_APPS + [
 # URLs específicas
 ROOT_URLCONF = 'wallclub.urls_portais'
 
-# CSRF Trusted Origins (para subdomínios dos portais)
-# Produção: apenas HTTPS
-CSRF_TRUSTED_ORIGINS = [
-    'https://wcadmin.wallclub.com.br',
-    'https://wcvendas.wallclub.com.br',
-    'https://wclojista.wallclub.com.br',
-]
-
+# CSRF Trusted Origins - usar variável de ambiente do base.py
 # Desenvolvimento: adicionar domínios .local
 if DEBUG:
     CSRF_TRUSTED_ORIGINS.extend([
-        'http://wcadmin.wallclub.local',
-        'http://wcvendas.wallclub.local',
-        'http://wclojista.wallclub.local',
+        'http://admin.wallclub.local',
+        'http://vendas.wallclub.local',
+        'http://lojista.wallclub.local',
     ])
 
 # Session Cookie Secure (apenas HTTPS em produção)
