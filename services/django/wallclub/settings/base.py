@@ -179,6 +179,12 @@ SESSION_COOKIE_SECURE = not DEBUG  # HTTPS apenas em produção
 SESSION_COOKIE_HTTPONLY = True  # Prevenir acesso via JavaScript
 SESSION_COOKIE_SAMESITE = 'Lax'  # Proteção CSRF
 
+# CSRF Cookie settings
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False  # Precisa ser False para JavaScript acessar
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_DOMAIN = None  # Usar domínio exato do request
+
 # URLs de autenticação
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/'
