@@ -23,19 +23,15 @@ class SubdomainRouterMiddleware:
         self.subdomain_map = {
             # Portal Admin
             'admin': 'wallclub.urls_admin',
-            'wcadmin': 'wallclub.urls_admin',
 
             # Portal Vendas
             'vendas': 'wallclub.urls_vendas',
-            'wcvendas': 'wallclub.urls_vendas',
 
             # Portal Lojista
             'lojista': 'wallclub.urls_lojista',
-            'wclojista': 'wallclub.urls_lojista',
 
             # Portal Institucional
-            'institucional': 'wallclub.urls_corporativo',
-            'wcinstitucional': 'wallclub.urls_corporativo',
+            'www': 'wallclub.urls_corporativo',
         }
 
     def __call__(self, request):
