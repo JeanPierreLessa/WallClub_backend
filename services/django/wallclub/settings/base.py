@@ -164,6 +164,9 @@ from datetime import timedelta
 # Hosts permitidos
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if os.getenv('CSRF_TRUSTED_ORIGINS') else []
+
 # Modo Debug
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
