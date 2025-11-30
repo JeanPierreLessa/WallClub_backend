@@ -41,23 +41,7 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Static files - Whitenoise
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # Comentado temporariamente
 
-# Middleware específico (manter middlewares de portais)
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'wallclub.middleware.subdomain_router.SubdomainRouterMiddleware',  # Roteamento por subdomínio
-    'portais.controle_acesso.middleware.PortalSessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'portais.controle_acesso.middleware.PortalAuthMiddleware',
-    'wallclub_core.middleware.session_timeout.PortalSessionTimeoutMiddleware',
-    'wallclub_core.middleware.session_timeout.PortalSessionSecurityMiddleware',
-    'portais.lojista.middleware.MarcaCanalMiddleware',
-]
+# Middleware - usar do base.py
 
 # Whitenoise - Servir arquivos estáticos sem Nginx
 WHITENOISE_USE_FINDERS = True
