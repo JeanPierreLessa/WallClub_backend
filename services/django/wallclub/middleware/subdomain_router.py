@@ -37,6 +37,7 @@ class SubdomainRouterMiddleware:
     def __call__(self, request):
         # Obter o host da requisição
         host = request.get_host().lower()
+        logger.warning(f"[SUBDOMAIN ROUTER] Request recebido - Host: {host}, Path: {request.path}")
 
         # Remover porta se existir (ex: admin.wallclub.local:8005)
         host = host.split(':')[0]
