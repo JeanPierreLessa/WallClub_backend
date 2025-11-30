@@ -47,11 +47,11 @@ class SubdomainRouterMiddleware:
         # Verificar se é um subdomínio mapeado
         if subdomain in self.subdomain_map:
             urlconf = self.subdomain_map[subdomain]
-            logger.debug(f"Roteando {host} (subdomínio: {subdomain}) para {urlconf}")
+            logger.warning(f"[SUBDOMAIN ROUTER] Roteando {host} (subdomínio: {subdomain}) para {urlconf}")
             request.urlconf = urlconf
         else:
             # Fallback: usar o URLconf padrão (portais com prefixos)
-            logger.debug(f"Subdomínio '{subdomain}' não mapeado, usando URLconf padrão")
+            logger.warning(f"[SUBDOMAIN ROUTER] Subdomínio '{subdomain}' não mapeado (host: {host}), usando URLconf padrão")
 
         response = self.get_response(request)
         return response
