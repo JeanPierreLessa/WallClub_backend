@@ -34,7 +34,8 @@ def listar_ofertas(request):
     try:
         from .models import Oferta
         
-        data = json.loads(request.body)
+        # Permitir body vazio
+        data = json.loads(request.body) if request.body else {}
         canal_id = data.get('canal_id')
         ativo = data.get('ativo')
         vigente = data.get('vigente')
