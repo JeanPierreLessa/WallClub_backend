@@ -45,6 +45,11 @@ try:
 except Exception as e:
     logger.error(f"Erro ao carregar ofertas.urls_internal: {e}")
 
+try:
+    urlpatterns.append(path('api/internal/parametros/', include('parametros_wallclub.urls_internal')))
+except Exception as e:
+    logger.error(f"Erro ao carregar parametros_wallclub.urls_internal: {e}")
+
 # Servir arquivos estáticos
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
