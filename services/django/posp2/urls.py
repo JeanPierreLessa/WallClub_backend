@@ -12,7 +12,7 @@ urlpatterns = [
     # APIs POSP2
     path('valida_versao_terminal/', views.validar_versao_terminal, name='valida_versao_terminal'),
     path('simula_parcelas/', views.simular_parcelas, name='simula_parcelas'),
-    path('v2/simula_parcelas/', views.simular_parcelas_v2, name='simula_parcelas_v2'),
+    path('simula_parcelas_v2/', views.simular_parcelas_v2, name='simula_parcelas_v2'),
     path('calcula_desconto_parcela/', views.calcular_desconto_parcela, name='calcula_desconto_parcela'),
     path('valida_cpf/', views.valida_cpf, name='valida_cpf'),
     path('logo_pos/', views.obter_logo_pos, name='logo_pos'),
