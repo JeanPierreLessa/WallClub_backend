@@ -19,8 +19,9 @@ class OfertasListView(LojistaAuthMixin, View):
         try:
             from apps.ofertas.services import OfertaService
             
-            # Buscar canal_id da sessão
+            # Buscar canal_id e loja_id da sessão
             canal_id = request.session.get('canal_id')
+            loja_id = request.session.get('loja_id')
             
             if not canal_id:
                 messages.error(request, 'Canal não identificado')
@@ -28,7 +29,8 @@ class OfertasListView(LojistaAuthMixin, View):
             
             # Buscar ofertas do canal via service
             todas_ofertas = OfertaService.listar_todas_ofertas()
-            ofertas = [o for o in todas_ofertas if o.canal_id == canal_id]
+            # Filtrar: ofertas da loja OU ofertas sem loja (NULL = todas as lojas)
+            ofertas = [o for o in todas_ofertas if o.canal_id == canal_id and (o.loja_id == loja_id or o.loja_id is None)]
             
             # Buscar total de disparos por oferta via service
             ofertas_com_disparos = []
@@ -121,13 +123,15 @@ class OfertasCreateView(LojistaAuthMixin, View):
                 messages.error(request, 'Selecione um grupo para segmentação customizada')
                 return redirect('lojista:ofertas_create')
             
-            # Buscar canal_id
+            # Buscar canal_id e loja_id
             canal_id = request.session.get('canal_id')
-            if not canal_id:
-                messages.error(request, 'Canal não identificado')
+            loja_id = request.session.get('loja_id')
+            
+            if not canal_id or not loja_id:
+                messages.error(request, 'Canal ou loja não identificados')
                 return redirect('lojista:ofertas_create')
             
-            # Criar oferta via service
+            # Criar oferta via service (sempre com loja_id no portal lojista)
             usuario_id = request.session.get('usuario_id')
             sucesso, mensagem, oferta_id = OfertaService.criar_oferta(
                 titulo=titulo,
@@ -137,6 +141,7 @@ class OfertasCreateView(LojistaAuthMixin, View):
                 vigencia_inicio=vigencia_inicio,
                 vigencia_fim=vigencia_fim,
                 canal_id=canal_id,
+                loja_id=loja_id,  # SEMPRE atribuir loja no portal lojista
                 tipo_segmentacao=tipo_segmentacao,
                 grupo_id=int(grupo_id) if grupo_id else None,
                 usuario_criador_id=usuario_id,
@@ -173,9 +178,11 @@ class OfertasEditView(LojistaAuthMixin, View):
                 messages.error(request, 'Oferta não encontrada')
                 return redirect('lojista:ofertas_list')
             
-            # Verificar se usuário tem acesso (mesmo canal)
+            # Verificar se usuário tem acesso (mesma loja)
             canal_id = request.session.get('canal_id')
-            if oferta.canal_id != canal_id:
+            loja_id = request.session.get('loja_id')
+            
+            if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
                 messages.error(request, 'Sem permissão para editar esta oferta')
                 return redirect('lojista:ofertas_list')
             
@@ -208,9 +215,11 @@ class OfertasEditView(LojistaAuthMixin, View):
                 messages.error(request, 'Oferta não encontrada')
                 return redirect('lojista:ofertas_list')
             
-            # Verificar acesso
+            # Verificar acesso (mesma loja)
             canal_id = request.session.get('canal_id')
-            if oferta.canal_id != canal_id:
+            loja_id = request.session.get('loja_id')
+            
+            if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
                 messages.error(request, 'Sem permissão para editar esta oferta')
                 return redirect('lojista:ofertas_list')
             
@@ -304,9 +313,11 @@ class OfertasDispararView(View):
                     'mensagem': 'Oferta não encontrada'
                 }, status=404)
             
-            # Verificar permissão (mesmo canal)
+            # Verificar permissão (mesma loja)
             canal_id = request.session.get('canal_id')
-            if oferta.canal_id != canal_id:
+            loja_id = request.session.get('loja_id')
+            
+            if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
                 return JsonResponse({
                     'sucesso': False,
                     'mensagem': 'Sem permissão para disparar esta oferta'

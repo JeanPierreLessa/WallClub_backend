@@ -66,13 +66,11 @@
                     <i class="fas fa-credit-card me-2"></i>Terminais
                 </a>
             </li>
-            {% comment %}
             <li class="nav-item">
                 <a class="nav-link {% if current_page == 'ofertas' %}active{% endif %}" href="{% url 'lojista:ofertas_list' %}">
                     <i class="fas fa-gift me-2"></i>Ofertas
                 </a>
             </li>
-            {% endcomment %}
             <li class="nav-item">
                 <a class="nav-link {% if current_page == 'cupons' %}active{% endif %}" href="{% url 'lojista:cupom_list' %}">
                     <i class="fas fa-ticket-alt me-2"></i>Cupons
@@ -159,13 +157,11 @@
                         <i class="fas fa-credit-card me-2"></i>Terminais
                     </a>
                 </li>
-                {% comment %}
                 <li class="nav-item">
                     <a class="nav-link {% if current_page == 'ofertas' %}active{% endif %}" href="{% url 'lojista:ofertas_list' %}">
                         <i class="fas fa-gift me-2"></i>Ofertas
                     </a>
                 </li>
-                {% endcomment %}
                 <li class="nav-item">
                     <a class="nav-link {% if current_page == 'cupons' %}active{% endif %}" href="{% url 'lojista:cupom_list' %}">
                         <i class="fas fa-ticket-alt me-2"></i>Cupons
