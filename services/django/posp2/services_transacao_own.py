@@ -212,8 +212,8 @@ class TRDataOwnService:
                         # Buscar loja_id do terminal
                         cursor.execute("""
                             SELECT loja_id 
-                            FROM terminal 
-                            WHERE numero_terminal = %s
+                            FROM terminais 
+                            WHERE terminal = %s
                         """, [terminal])
                         
                         result = cursor.fetchone()

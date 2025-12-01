@@ -13,7 +13,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Portais
-    path('portal_admin/', include('portais.admin.urls')),
+    path('', include('portais.admin.urls')),
     path('portal_lojista/', include('portais.lojista.urls', namespace='lojista')),
     path('portal_lojista/<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),
     path('portal_corporativo/', include('portais.corporativo.urls')),
