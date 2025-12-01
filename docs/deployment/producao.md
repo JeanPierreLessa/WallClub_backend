@@ -85,9 +85,9 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 # Rebuild e restart (apenas containers Django)
 cd /var/www/WallClub_backend
 git pull origin integracao_own
-docker-compose build wallclub-portais
-docker-compose stop wallclub-portais
-docker-compose up -d wallclub-portais
+docker-compose build wallclub-apis
+docker-compose stop wallclub-apis
+docker-compose up -d wallclub-apis
 
 # Verificar
 docker ps
