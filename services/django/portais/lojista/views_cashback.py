@@ -91,7 +91,7 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
         loja_id_atual = request.session.get('loja_id')
         
         context = {
-            'tipos_desconto': RegraCashbackLoja._meta.get_field('tipo_desconto').choices,
+            'tipos_concessao': RegraCashbackLoja._meta.get_field('tipo_concessao').choices,
             'lojas_acessiveis': lojas_acessiveis,
             'loja_id_atual': loja_id_atual,
         }
@@ -120,8 +120,8 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
                 descricao=request.POST.get('descricao', ''),
                 ativo=request.POST.get('ativo') == 'on',
                 prioridade=int(request.POST.get('prioridade', 0)),
-                tipo_desconto=request.POST.get('tipo_desconto'),
-                valor_desconto=Decimal(request.POST.get('valor_desconto')),
+                tipo_concessao=request.POST.get('tipo_concessao'),
+                valor_concessao=Decimal(request.POST.get('valor_concessao')),
                 valor_minimo_compra=Decimal(request.POST.get('valor_minimo_compra', '0.00')),
                 valor_maximo_cashback=Decimal(request.POST.get('valor_maximo_cashback')) if request.POST.get('valor_maximo_cashback') else None,
                 vigencia_inicio=datetime.strptime(request.POST.get('vigencia_inicio'), '%Y-%m-%dT%H:%M'),
@@ -172,7 +172,7 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
         
         context = {
             'regra': regra,
-            'tipos_desconto': RegraCashbackLoja._meta.get_field('tipo_desconto').choices,
+            'tipos_concessao': RegraCashbackLoja._meta.get_field('tipo_concessao').choices,
             'lojas_acessiveis': lojas_acessiveis,
         }
         return render(request, 'portais/lojista/cashback/form.html', context)
@@ -194,8 +194,8 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
             regra.descricao = request.POST.get('descricao', '')
             regra.ativo = request.POST.get('ativo') == 'on'
             regra.prioridade = int(request.POST.get('prioridade', 0))
-            regra.tipo_desconto = request.POST.get('tipo_desconto')
-            regra.valor_desconto = Decimal(request.POST.get('valor_desconto'))
+            regra.tipo_concessao = request.POST.get('tipo_concessao')
+            regra.valor_concessao = Decimal(request.POST.get('valor_concessao'))
             regra.valor_minimo_compra = Decimal(request.POST.get('valor_minimo_compra', '0.00'))
             regra.valor_maximo_cashback = Decimal(request.POST.get('valor_maximo_cashback')) if request.POST.get('valor_maximo_cashback') else None
             regra.vigencia_inicio = datetime.strptime(request.POST.get('vigencia_inicio'), '%Y-%m-%dT%H:%M')

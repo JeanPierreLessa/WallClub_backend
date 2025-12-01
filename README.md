@@ -6,13 +6,15 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 22/11/2025
+**Última Atualização:** 01/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
   - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
   - ✅ Portal Vendas: Sistema de primeiro acesso implementado
+  - ✅ Portal Lojista: Sistema de Ofertas ativo (menu visível)
+  - ⚠️ Portal Lojista: Sistema de Cashback em testes
   - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
 - ✅ **wallclub-apis** (Mobile + Checkout Web)
@@ -173,7 +175,11 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,htt
 **Módulos:**
 - **apps/cliente/** - JWT Customizado (18 cenários testados)
 - **apps/conta_digital/** - Saldo, Cashback, Autorizações
-- **apps/ofertas/** - Sistema de Ofertas Push
+- **apps/ofertas/** - Sistema de Ofertas Push (✅ Implementado 01/12/2025)
+  - 5 tabelas (ofertas, grupos, disparos, envios)
+  - Escopo: loja ou grupo econômico
+  - Segmentação: todos do canal ou grupo customizado
+  - Portal Lojista com CRUD completo
 - **apps/transacoes/** - Transações mobile
 - **checkout/** - Checkout Web + 2FA WhatsApp + Recorrências
   - Integração com Risk Engine para análise de risco
@@ -592,10 +598,23 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025  
-**Última atualização:** 22/11/2025  
+**Última atualização:** 01/12/2025  
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (22/11/2025)
+### Atualizações Recentes (01/12/2025)
+- ✅ **Sistema de Ofertas** - Implementação completa
+  - 5 tabelas criadas (ofertas, grupos_segmentacao, grupos_clientes, disparos, envios)
+  - Campo `loja_id` e `grupo_economico_id` para escopo
+  - Portal Lojista: menu ativo, CRUD completo, disparo de push
+  - Segmentação: todos do canal ou grupo customizado
+  - Filtros: lojista vê ofertas próprias + ofertas globais (admin)
+  - Push notifications via Firebase/APN
+  - Histórico de disparos com métricas (total enviados, falhas, taxa sucesso)
+- ⚠️ **Sistema de Cashback** - Em testes
+  - Estrutura implementada, aguardando validação
+  - Contabilização pendente (cashback loja vs wall)
+
+### Atualizações Anteriores (22/11/2025)
 - ✅ **Segurança e Domínios** - Ajustes para produção
   - 11 arquivos ajustados (views, settings, services)
   - CORS manual removido (usa middleware)

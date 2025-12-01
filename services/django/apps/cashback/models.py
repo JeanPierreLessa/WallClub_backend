@@ -8,7 +8,7 @@ class RegraCashback(models.Model):
     Compartilhada entre Wall e Loja.
     """
     
-    TIPO_DESCONTO_CHOICES = [
+    TIPO_CONCESSAO_CHOICES = [
         ('FIXO', 'Fixo (R$)'),
         ('PERCENTUAL', 'Percentual (%)'),
     ]
@@ -23,16 +23,16 @@ class RegraCashback(models.Model):
         help_text='Maior número = maior prioridade'
     )
     
-    # Tipo de desconto
-    tipo_desconto = models.CharField(
+    # Tipo de concessão
+    tipo_concessao = models.CharField(
         max_length=20,
-        choices=TIPO_DESCONTO_CHOICES,
-        verbose_name='Tipo de Desconto'
+        choices=TIPO_CONCESSAO_CHOICES,
+        verbose_name='Tipo de Concessão'
     )
-    valor_desconto = models.DecimalField(
+    valor_concessao = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name='Valor do Desconto',
+        verbose_name='Valor da Concessão',
         help_text='Valor fixo em R$ ou percentual (ex: 15.00 = 15%)'
     )
     
@@ -42,7 +42,7 @@ class RegraCashback(models.Model):
         decimal_places=2,
         default=Decimal('0.00'),
         verbose_name='Valor Mínimo da Compra',
-        help_text='Valor mínimo da transação para aplicar cashback'
+        help_text='Valor mínimo da transação para conceder cashback'
     )
     valor_maximo_cashback = models.DecimalField(
         max_digits=10,
@@ -50,7 +50,7 @@ class RegraCashback(models.Model):
         null=True,
         blank=True,
         verbose_name='Valor Máximo de Cashback',
-        help_text='Teto de cashback por transação (deixe em branco para ilimitado)'
+        help_text='Valor máximo de cashback concedido por transação (deixe em branco para ilimitado)'
     )
     
     # Vigência
@@ -66,7 +66,7 @@ class RegraCashback(models.Model):
     
     def calcular_cashback(self, valor_base):
         """
-        Calcula valor do cashback baseado no tipo de desconto.
+        Calcula valor do cashback baseado no tipo de concessão.
         
         Args:
             valor_base: Valor da transação após todos os descontos
@@ -74,10 +74,10 @@ class RegraCashback(models.Model):
         Returns:
             Decimal: Valor do cashback calculado
         """
-        if self.tipo_desconto == 'FIXO':
-            cashback = self.valor_desconto
+        if self.tipo_concessao == 'FIXO':
+            cashback = self.valor_concessao
         else:  # PERCENTUAL
-            cashback = valor_base * (self.valor_desconto / Decimal('100'))
+            cashback = valor_base * (self.valor_concessao / Decimal('100'))
         
         # Aplicar teto se configurado
         if self.valor_maximo_cashback:

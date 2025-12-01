@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.1  
-**Data:** 21/11/2025  
-**Fontes:** Fases 1-7 (92%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Integração Own Financial, Roteador Multi-Gateway, Webhooks tempo real
+**Versão:** 4.2  
+**Data:** 01/12/2025  
+**Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
+**Mudanças:** Sistema de Ofertas completo, Cashback em testes
 
 ---
 
@@ -948,6 +948,105 @@ docker exec wallclub-redis redis-cli ping
 
 ---
 
-**Última atualização:** 02/11/2025  
-**Próxima revisão:** Fase 6D (Separação física containers)  
+**Última atualização:** 01/12/2025  
+**Próxima revisão:** Testes Ofertas e Cashback  
 **Manutenção:** Jean Lessa + Claude AI
+
+---
+
+## 🎁 SISTEMA DE OFERTAS
+
+**Status:** Implementado (01/12/2025)
+
+### Estrutura de Tabelas
+
+**ofertas:**
+- `id`, `canal_id`, `loja_id`, `grupo_economico_id`
+- `titulo`, `texto_push`, `descricao`, `imagem_url`
+- `vigencia_inicio`, `vigencia_fim`, `ativo`
+- `tipo_segmentacao` (todos_canal, grupo_customizado)
+- `grupo_id` (referência a grupos de clientes)
+- `usuario_criador_id`, `created_at`, `updated_at`
+
+**ofertas_grupos_segmentacao:**
+- `id`, `canal_id`, `nome`, `descricao`
+- `criterio_tipo` (manual, regra_automatica)
+- `criterio_json`, `ativo`
+
+**ofertas_grupos_clientes:**
+- `id`, `grupo_id`, `cliente_id`, `adicionado_em`
+
+**oferta_disparos:**
+- `id`, `oferta_id`, `data_disparo`, `usuario_disparador_id`
+- `status` (processando, concluido, erro)
+- `total_clientes`, `total_enviados`, `total_falhas`
+
+**oferta_envios:**
+- `id`, `oferta_disparo_id`, `cliente_id`
+- `enviado`, `data_envio`, `erro`
+
+### Regras de Negócio
+
+**Escopo da Oferta:**
+```python
+# Loja específica
+loja_id = 123
+grupo_economico_id = NULL
+
+# Todas as lojas do grupo econômico
+loja_id = NULL
+grupo_economico_id = 456
+```
+
+**Segmentação de Clientes:**
+```python
+# Todos os clientes do canal
+tipo_segmentacao = 'todos_canal'
+grupo_id = NULL
+
+# Grupo customizado
+tipo_segmentacao = 'grupo_customizado'
+grupo_id = 789
+```
+
+**Permissões:**
+- **Portal Lojista:** Sempre cria com `loja_id` ou `grupo_economico_id`
+- **Portal Admin:** Pode criar com `loja_id=NULL` e `grupo_economico_id=NULL` (todas as lojas do canal)
+
+**Disparo de Push:**
+```python
+# Service busca clientes elegíveis baseado em:
+# 1. tipo_segmentacao (todos_canal ou grupo_customizado)
+# 2. Clientes ativos com firebase_token
+# 3. Registra disparo e envios individuais
+```
+
+### Portal Lojista
+
+**Menu:** `/ofertas/` (visível no sidebar)
+
+**Funcionalidades:**
+- Listar ofertas (próprias + globais do admin)
+- Criar oferta (com escopo loja ou grupo econômico)
+- Editar oferta (apenas próprias)
+- Disparar push (apenas próprias)
+- Histórico de disparos
+
+**Filtros:**
+```python
+# Lista ofertas da loja OU ofertas globais (admin)
+ofertas = Oferta.objects.filter(
+    canal_id=canal_id,
+    Q(loja_id=loja_id) | Q(loja_id__isnull=True)
+)
+```
+
+### APIs Internas
+
+**Ofertas Service:**
+- `criar_oferta()` - Criar nova oferta
+- `listar_ofertas_vigentes(cliente_id)` - Ofertas para cliente
+- `disparar_push(oferta_id)` - Enviar push notification
+- `buscar_clientes_elegiveis()` - Clientes para disparo
+
+**Status:** ⚠️ Em testes (aguardando validação em produção)

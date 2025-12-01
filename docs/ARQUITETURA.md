@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.2  
-**Data:** 22/11/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial)
+**Versão:** 5.3  
+**Data:** 01/12/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Ofertas completo
 
 ---
 
@@ -3041,5 +3041,38 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
 
 ---
 
-**Última atualização:** 22/11/2025  
+**Última atualização:** 01/12/2025  
 **Manutenção:** Jean Lessa + Claude AI
+
+---
+
+## 🎁 SISTEMA DE OFERTAS E CASHBACK
+
+### Status Atual (01/12/2025)
+
+**Ofertas:** ✅ Implementado
+- 5 tabelas criadas (ofertas, grupos, disparos, envios)
+- Portal Lojista com menu ativo
+- Escopo: loja específica ou grupo econômico
+- Segmentação: todos do canal ou grupo customizado
+- Push notifications via Firebase/APN
+- Histórico de disparos com métricas
+
+**Cashback:** ⚠️ Em testes
+- Estrutura implementada
+- Regras de concessão em validação
+- Contabilização pendente
+- Portal Lojista com menu ativo
+
+### Pendências
+
+**Ofertas:**
+- Testes em produção
+- Validação de disparos em massa
+- Métricas de conversão
+
+**Cashback:**
+- Testes de concessão
+- Contabilização (cashback loja vs cashback wall)
+- Integração com conta digital
+- Relatórios financeiros

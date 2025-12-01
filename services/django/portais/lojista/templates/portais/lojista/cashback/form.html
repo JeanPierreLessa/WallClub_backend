@@ -67,23 +67,23 @@
                             </div>
                             
                             <div class="col-md-3 mb-3">
-                                <label class="form-label">Tipo de Desconto *</label>
-                                <select name="tipo_desconto" class="form-select" required>
-                                    {% for value, label in tipos_desconto %}
-                                    <option value="{{ value }}" {% if regra.tipo_desconto == value %}selected{% endif %}>{{ label }}</option>
+                                <label class="form-label">Tipo de Concessão *</label>
+                                <select name="tipo_concessao" class="form-select" required>
+                                    {% for value, label in tipos_concessao %}
+                                    <option value="{{ value }}" {% if regra.tipo_concessao == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             
                             <div class="col-md-3 mb-3">
-                                <label class="form-label">Valor do Desconto *</label>
-                                <input type="number" name="valor_desconto" class="form-control" value="{{ regra.valor_desconto }}" step="0.01" min="0" required>
+                                <label class="form-label">Valor da Concessão *</label>
+                                <input type="number" name="valor_concessao" class="form-control" value="{% if regra.valor_concessao is not None %}{{ regra.valor_concessao }}{% endif %}" step="0.01" min="0" required>
                                 <small class="text-muted">R$ ou % conforme tipo</small>
                             </div>
                             
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Valor Mínimo Compra</label>
-                                <input type="number" name="valor_minimo_compra" class="form-control" value="{{ regra.valor_minimo_compra|default:'0.00' }}" step="0.01" min="0">
+                                <input type="number" name="valor_minimo_compra" class="form-control" value="{% if regra.valor_minimo_compra is not None %}{{ regra.valor_minimo_compra }}{% else %}0.00{% endif %}" step="0.01" min="0">
                             </div>
                             
                             <div class="col-md-3 mb-3">
