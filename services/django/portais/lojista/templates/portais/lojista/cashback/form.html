@@ -78,18 +78,18 @@
                             
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Valor da Concessão *</label>
-                                <input type="number" name="valor_concessao" class="form-control" value="{% if regra.valor_concessao is not None %}{% localize off %}{{ regra.valor_concessao|floatformat:2 }}{% endlocalize %}{% endif %}" step="0.01" min="0" required>
+                                <input type="number" name="valor_concessao" class="form-control" value="{{ valor_concessao_str }}" step="0.01" min="0" required>
                                 <small class="text-muted">R$ ou % conforme tipo</small>
                             </div>
                             
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Valor Mínimo Compra</label>
-                                <input type="number" name="valor_minimo_compra" class="form-control" value="{% if regra.valor_minimo_compra is not None %}{% localize off %}{{ regra.valor_minimo_compra|floatformat:2 }}{% endlocalize %}{% else %}0.00{% endif %}" step="0.01" min="0">
+                                <input type="number" name="valor_minimo_compra" class="form-control" value="{{ valor_minimo_str }}" step="0.01" min="0">
                             </div>
                             
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Valor Máximo Cashback</label>
-                                <input type="number" name="valor_maximo_cashback" class="form-control" value="{% if regra.valor_maximo_cashback %}{% localize off %}{{ regra.valor_maximo_cashback|floatformat:2 }}{% endlocalize %}{% endif %}" step="0.01" min="0">
+                                <input type="number" name="valor_maximo_cashback" class="form-control" value="{{ valor_maximo_str }}" step="0.01" min="0">
                                 <small class="text-muted">Deixe vazio para ilimitado</small>
                             </div>
                         </div>

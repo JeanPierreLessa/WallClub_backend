@@ -170,10 +170,18 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
         
         lojas_acessiveis = self.get_lojas_acessiveis()
         
+        # Converter valores decimais para string com ponto (formato US)
+        valor_concessao_str = str(regra.valor_concessao) if regra.valor_concessao is not None else ''
+        valor_minimo_str = str(regra.valor_minimo_compra) if regra.valor_minimo_compra is not None else '0.00'
+        valor_maximo_str = str(regra.valor_maximo_cashback) if regra.valor_maximo_cashback else ''
+        
         context = {
             'regra': regra,
             'tipos_concessao': RegraCashbackLoja._meta.get_field('tipo_concessao').choices,
             'lojas_acessiveis': lojas_acessiveis,
+            'valor_concessao_str': valor_concessao_str,
+            'valor_minimo_str': valor_minimo_str,
+            'valor_maximo_str': valor_maximo_str,
         }
         return render(request, 'portais/lojista/cashback/form.html', context)
     
