@@ -433,7 +433,8 @@ class TRDataOwnService:
                 valor_desconto_pos,
                 valor_cashback_pos,
                 cashback_concedido_pos,
-                autorizacao_id
+                autorizacao_id,
+                cupom_valor_desconto
             )
 
             # 12. Retornar dados completos para comprovante
@@ -594,7 +595,7 @@ class TRDataOwnService:
                               cpf: str, nome: str, valores_calculados: Dict,
                               valor_original: float, valor_desconto: float,
                               valor_cashback: float, cashback_concedido: float,
-                              autorizacao_id: str) -> Dict[str, Any]:
+                              autorizacao_id: str, cupom_valor_desconto: float = 0) -> Dict[str, Any]:
         """Gera JSON de resposta formatado EXATAMENTE como Pinbank"""
 
         def formatar_valor_monetario(valor):
@@ -710,8 +711,8 @@ class TRDataOwnService:
                 array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}"
                 array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(desconto)}"
                 
-                if valor_desconto > 0:
-                    array["vl_cupom_utilizado"] = f"Cupom de desconto: R$ {formatar_valor_monetario(valor_desconto)}"
+                if cupom_valor_desconto > 0:
+                    array["vl_cupom_utilizado"] = f"Cupom de desconto: R$ {formatar_valor_monetario(cupom_valor_desconto)}"
                 
                 if saldo_cashback_usado > 0:
                     array["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
@@ -729,8 +730,8 @@ class TRDataOwnService:
                 array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}"
                 array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
                 
-                if valor_desconto > 0:
-                    array["vl_cupom_utilizado"] = f"Cupom de desconto: R$ {formatar_valor_monetario(valor_desconto)}"
+                if cupom_valor_desconto > 0:
+                    array["vl_cupom_utilizado"] = f"Cupom de desconto: R$ {formatar_valor_monetario(cupom_valor_desconto)}"
                 
                 if saldo_cashback_usado > 0:
                     array["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
