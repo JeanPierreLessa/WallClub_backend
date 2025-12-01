@@ -19,30 +19,44 @@ from apps.cliente.jwt_cliente import ClienteJWTAuthentication
 from wallclub_core.oauth.decorators import require_oauth_posp2
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @authentication_classes([ClienteJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def cupons_ativos(request):
     """
-    GET /api/cupons/ativos/
+    POST /api/cupons/ativos/
     Lista cupons ativos disponíveis para o cliente autenticado
     Autenticação: JWT (App Mobile) - extrai cliente_id do token
     
     Retorna cupons de TODAS as lojas que o cliente pode usar:
     - Cupons genéricos ativos e vigentes
     - Cupons individuais vinculados ao cliente
+    
+    Payload (opcional):
+    {
+        "loja_id": 26  // Opcional: filtrar por loja específica
+    }
     """
     # Cliente ID vem do JWT (request.user.cliente_id)
     cliente_id = request.user.cliente_id
     
+    # Parâmetros opcionais do body
+    loja_id = request.data.get('loja_id') if hasattr(request, 'data') else None
+    
     try:
-        # Buscar cupons ativos e vigentes de TODAS as lojas
+        # Buscar cupons ativos e vigentes
         agora = timezone.now()
-        cupons = Cupom.objects.filter(
-            ativo=True,
-            data_inicio__lte=agora,
-            data_fim__gte=agora
-        )
+        filtros = {
+            'ativo': True,
+            'data_inicio__lte': agora,
+            'data_fim__gte': agora
+        }
+        
+        # Filtrar por loja se informado
+        if loja_id:
+            filtros['loja_id'] = loja_id
+        
+        cupons = Cupom.objects.filter(**filtros)
         
         # Filtrar cupons que ainda têm usos disponíveis
         cupons_disponiveis = []

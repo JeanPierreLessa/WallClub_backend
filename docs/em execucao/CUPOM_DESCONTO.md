@@ -430,7 +430,7 @@ ADD INDEX idx_cupom_id (cupom_id);
 
 ### ✅ Etapa 4: APIs REST - CONCLUÍDA
 **APIs implementadas:**
-1. `GET /api/v1/cupons/ativos/` - Lista cupons ativos disponíveis para o cliente (App Mobile)
+1. `POST /api/v1/cupons/ativos/` - Lista cupons ativos disponíveis para o cliente (App Mobile)
 2. `POST /api/v1/cupons/validar/` - Valida cupom e retorna desconto (POS + Checkout Web)
 3. `POST /api/v1/cupons/verificar_disponiveis/` - Verifica se existem cupons ativos para uma loja (POS)
 
@@ -439,7 +439,16 @@ ADD INDEX idx_cupom_id (cupom_id);
 - API de validação: `@require_oauth_posp2` (OAuth Token do POS)
 - API de verificação: `@require_oauth_posp2` (OAuth Token do POS)
 
-**IMPORTANTE:** A validação do cupom no POS e Checkout usa **exatamente a mesma API** `/api/v1/cupons/validar/` para garantir consistência.
+**IMPORTANTE:** 
+- Todas as APIs usam **POST** (padrão obrigatório do projeto - DIRETRIZES.md)
+- A validação do cupom no POS e Checkout usa **exatamente a mesma API** `/api/v1/cupons/validar/` para garantir consistência
+
+**Payload da API de listagem (opcional):**
+```json
+{
+  "loja_id": 26  // Opcional: filtrar cupons de uma loja específica
+}
+```
 
 **Payload da API de validação:**
 ```json

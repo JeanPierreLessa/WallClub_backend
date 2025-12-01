@@ -71,10 +71,6 @@ class TRDataOwnService:
             
             # Flag para indicar se é Wall Club
             wall_club = 'S' if cpf and cpf.strip() else 'N'
-            
-            # Extrair cupom (opcional) - POS envia código e valor do desconto
-            cupom_codigo = dados.get('cupom_codigo', '')
-            cupom_valor_desconto = Decimal(str(dados.get('cupom_valor_desconto', 0)))
 
             registrar_log('posp2', f'📥 Recebido request /trdata_own/ - Terminal: {terminal}, CPF: {cpf}, Valor: {valororiginal}')
 
@@ -95,6 +91,13 @@ class TRDataOwnService:
                     'sucesso': False,
                     'mensagem': f'Erro ao decodificar trdata: {e}'
                 }
+            
+            # Extrair cupom (opcional) - POS envia dentro do trdata
+            cupom_codigo = dados_trdata.get('cupom_codigo', '')
+            cupom_valor_desconto = Decimal(str(dados_trdata.get('cupom_valor_desconto', 0)))
+            
+            if cupom_codigo:
+                registrar_log('posp2', f'🎟️ Cupom detectado no trdata: {cupom_codigo}, desconto: R$ {cupom_valor_desconto}')
 
             # 4. Validar SDK
             sdk = dados_trdata.get('sdk', '')
