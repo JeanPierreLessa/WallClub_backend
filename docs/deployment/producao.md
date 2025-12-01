@@ -83,9 +83,9 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 
 # Rebuild e restart (apenas containers Django)
-docker-compose build --no-cache wallclub-portais wallclub-apis wallclub-pos
-docker-compose down
-docker-compose up -d
+docker-compose build wallclub-portais
+docker-compose stop wallclub-portais
+docker-compose up -d wallclub-portais
 
 # Verificar
 docker ps

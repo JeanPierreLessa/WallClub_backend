@@ -83,8 +83,7 @@
                                 <tr>
                                     <th>Nome</th>
                                     <th>Tipo</th>
-                                    <th>Valor</th>
-                                    <th>Retenção</th>
+                                    <th>Valor da Concessão</th>
                                     <th>Vigência</th>
                                     <th>Status</th>
                                     <th>Ações</th>
@@ -100,20 +99,19 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if regra.tipo_desconto == 'FIXO' %}
+                                        {% if regra.tipo_concessao == 'FIXO' %}
                                         <span class="badge bg-primary">Fixo</span>
                                         {% else %}
                                         <span class="badge bg-info">Percentual</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if regra.tipo_desconto == 'FIXO' %}
-                                        R$ {{ regra.valor_desconto }}
+                                        {% if regra.tipo_concessao == 'FIXO' %}
+                                        R$ {{ regra.valor_concessao }}
                                         {% else %}
-                                        {{ regra.valor_desconto }}%
+                                        {{ regra.valor_concessao }}%
                                         {% endif %}
                                     </td>
-                                    <td>{{ regra.periodo_retencao_dias }} dias</td>
                                     <td>
                                         <small>{{ regra.vigencia_inicio|date:"d/m/Y" }} até {{ regra.vigencia_fim|date:"d/m/Y" }}</small>
                                     </td>
