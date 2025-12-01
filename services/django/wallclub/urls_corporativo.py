@@ -1,5 +1,5 @@
 """
-URLs para Portal Corporativo (corporativo.wallclub.com.br, wallclub.com.br, www.wallclub.com.br)
+URLs para Portal Corporativo
 Responde na raiz (/) sem prefixo /portal_corporativo/
 """
 from django.contrib import admin

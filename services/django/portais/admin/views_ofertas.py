@@ -109,7 +109,7 @@ def ofertas_create(request):
                 nome_arquivo = f'ofertas/temp_{timestamp}_{imagem.name}'
                 
                 caminho = default_storage.save(nome_arquivo, imagem)
-                imagem_url = f'https://apidj.wallclub.com.br/media/{caminho}'
+                imagem_url = f'{settings.WC_API_BASE_URL}/media/{caminho}'
             
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')
@@ -178,7 +178,7 @@ def ofertas_create(request):
                             
                             # Atualizar URL via API
                             ofertas_api.atualizar_oferta(oferta_id, {
-                                'imagem_url': f'https://apidj.wallclub.com.br/media/{nome_final}'
+                                'imagem_url': f'{settings.WC_API_BASE_URL}/media/{nome_final}'
                             })
                             
                             registrar_log('portais.admin', f'Imagem renomeada: {nome_final}')
@@ -273,7 +273,7 @@ def ofertas_edit(request, oferta_id):
                 nome_arquivo = f'ofertas/oferta_{oferta_id}_{timestamp}_{imagem.name}'
                 
                 caminho = default_storage.save(nome_arquivo, imagem)
-                imagem_url = f'https://apidj.wallclub.com.br/media/{caminho}'
+                imagem_url = f'{settings.WC_API_BASE_URL}/media/{caminho}'
             
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')

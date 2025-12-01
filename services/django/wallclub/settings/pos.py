@@ -7,17 +7,7 @@ import os
 # Debug mode (ativar para desenvolvimento local)
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
-# ALLOWED_HOSTS - priorizar .env, depois fallback baseado em DEBUG
-allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '').strip()
-if allowed_hosts_env:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
-elif DEBUG:
-    ALLOWED_HOSTS = ['*']
-else:
-    ALLOWED_HOSTS = [
-        'api.wallclub.com.br',
-        'wcapi.wallclub.com.br',
-    ]
+# ALLOWED_HOSTS - usar variável de ambiente do base.py
 
 # Apps específicos do container POS
 INSTALLED_APPS = [

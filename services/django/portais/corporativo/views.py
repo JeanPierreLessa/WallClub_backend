@@ -97,12 +97,12 @@ MENSAGEM:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Esta mensagem foi enviada através do site: https://wcinstitucional.wallclub.com.br/contato/
+Esta mensagem foi enviada através do site: https://{settings.MAIN_URL}/contato/
             """
             
             # Enviar email
             try:
-                destinatarios = ['atendimento@wallclub.com.br', 'jp.ferreira@wallclub.com.br']
+                destinatarios = [settings.CONTACT_EMAIL, settings.ADMIN_EMAIL]
                 
                 send_mail(
                     subject=assunto,
@@ -148,7 +148,7 @@ def api_informacoes(request):
             'Pagamento de fornecedores'
         ],
         'contato': {
-            'email': 'atendimento@wallclub.com.br',
+            'email': settings.CONTACT_EMAIL,
             'telefone': '(11) 3254-7462',
             'endereco': 'Avenida Paulista, 726 18º andar - São Paulo - SP',
             'cep': '01.310-100'

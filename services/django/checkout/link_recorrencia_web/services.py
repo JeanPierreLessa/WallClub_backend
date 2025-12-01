@@ -60,8 +60,7 @@ class RecorrenciaTokenService:
             )
             
             # Gerar link
-            base_url = settings.BASE_URL or 'https://apidj.wallclub.com.br'
-            link_checkout = f"{base_url}/api/v1/checkout/recorrencia/?token={token_obj.token}"
+            link_checkout = f"{settings.CHECKOUT_BASE_URL}/api/v1/checkout/recorrencia/?token={token_obj.token}"
             
             # Enviar email usando serviço centralizado
             context = {

@@ -311,12 +311,20 @@ EMAIL_HOST_PASSWORD = _email_config.get('password')
 DEFAULT_FROM_EMAIL = 'noreply@wallclub.com.br'
 
 # URLs base - obrigatórias via variáveis de ambiente
-BASE_URL = os.environ.get('BASE_URL', 'https://wcadmin.wallclub.com.br')
-CHECKOUT_BASE_URL = os.environ.get('CHECKOUT_BASE_URL', 'https://checkout.wallclub.com.br')
-PORTAL_LOJISTA_URL = os.environ.get('PORTAL_LOJISTA_URL', 'https://wclojista.wallclub.com.br')
-PORTAL_VENDAS_URL = os.environ.get('PORTAL_VENDAS_URL', 'https://wcvendas.wallclub.com.br')
-MEDIA_BASE_URL = os.environ.get('MEDIA_BASE_URL', 'https://wcapi.wallclub.com.br')
-MERCHANT_URL = os.environ.get('MERCHANT_URL', 'wallclub.com.br')
+BASE_URL = os.environ.get('BASE_URL')
+CHECKOUT_BASE_URL = os.environ.get('CHECKOUT_BASE_URL')
+PORTAL_LOJISTA_URL = os.environ.get('PORTAL_LOJISTA_URL')
+PORTAL_VENDAS_URL = os.environ.get('PORTAL_VENDAS_URL')
+MAIN_URL = os.environ.get('MAIN_URL')
+
+# URLs de API (compatibilidade e migração)
+WC_API_BASE_URL = os.environ.get('WC_API_BASE_URL')  # Atual - compatibilidade com POS/APP
+API_BASE_URL = os.environ.get('API_BASE_URL')  # Nova - para migração futura
+
+# Emails
+CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL')
+NOREPLY_EMAIL = os.environ.get('NOREPLY_EMAIL')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
 
 # Configuração de Logging
 import os

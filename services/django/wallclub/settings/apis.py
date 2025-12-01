@@ -7,20 +7,6 @@ import os
 # Debug mode (ativar para desenvolvimento local)
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
-# ALLOWED_HOSTS - priorizar .env, depois fallback baseado em DEBUG
-allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '').strip()
-if allowed_hosts_env:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
-elif DEBUG:
-    ALLOWED_HOSTS = ['*']
-else:
-    ALLOWED_HOSTS = [
-        'api.wallclub.com.br',
-        'checkout.wallclub.com.br',
-        'wcapi.wallclub.com.br',
-        'wccheckout.wallclub.com.br',
-    ]
-
 # Apps específicos do container APIs
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -29,16 +15,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party apps
     'rest_framework',
     'corsheaders',
-    
+
     # Core
     'wallclub_core',
     'wallclub_core.oauth',
     'wallclub_core.estr_organizacional.apps.EstrOrganizacionalConfig',  # Necessário para model Loja (usado por checkout)
-    
+
     # Apps do container APIs
     'apps.cliente',
     'apps.transacoes',

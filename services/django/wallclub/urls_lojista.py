@@ -1,5 +1,5 @@
 """
-URLs para Portal Lojista (lojista.wallclub.com.br)
+URLs para Portal Lojista
 Responde na raiz (/) sem prefixo /portal_lojista/
 """
 from django.contrib import admin

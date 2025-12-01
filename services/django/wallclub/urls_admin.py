@@ -1,5 +1,5 @@
 """
-URLs para Portal Admin (admin.wallclub.com.br)
+URLs para Portal Admin
 Responde na raiz (/) sem prefixo /portal_admin/
 """
 from django.contrib import admin as django_admin

@@ -33,11 +33,6 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
-# CSRF trusted origins
-CSRF_TRUSTED_ORIGINS = [
-    'https://wcapi.wallclub.com.br',
-]
-
 # Static files
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'

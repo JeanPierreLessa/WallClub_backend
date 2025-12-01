@@ -2,8 +2,7 @@
 Middleware de Roteamento por Subdomínio
 
 Detecta o subdomínio e roteia para o URLconf correto dentro do container portais.
-Permite que admin.wallclub.com.br, vendas.wallclub.com.br e lojista.wallclub.com.br
-respondam cada um em sua raiz (/) sem prefixos.
+Permite que cada portal responda em sua raiz (/) sem prefixos.
 """
 import logging
 

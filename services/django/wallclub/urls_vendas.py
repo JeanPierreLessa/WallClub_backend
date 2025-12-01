@@ -1,5 +1,5 @@
 """
-URLs para Portal Vendas (vendas.wallclub.com.br)
+URLs para Portal Vendas
 Responde na raiz (/) sem prefixo /portal_vendas/
 """
 from django.contrib import admin
