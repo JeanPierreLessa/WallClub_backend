@@ -305,10 +305,14 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                     cursor.execute(sql_totais, params)
                     totais_row = cursor.fetchone()
                     
+                registrar_log('portais.lojista', f"VENDAS DEBUG TOTAIS - Row: {totais_row}")
+                    
                 totais = {
                     'total_bruto': float(totais_row[0] or 0),
                     'total_pago': float(totais_row[1] or 0)
                 }
+                
+                registrar_log('portais.lojista', f"VENDAS DEBUG TOTAIS - Dict: {totais}")
                 
                 # Query de contagem para paginação
                 sql_count = f"""
