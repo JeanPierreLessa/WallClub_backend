@@ -135,10 +135,11 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
                 orcamento_mensal=Decimal(request.POST.get('orcamento_mensal')) if request.POST.get('orcamento_mensal') else None,
             )
             
+            usuario_nome = getattr(request.portal_usuario, 'nome', None) or getattr(request.portal_usuario, 'username', 'N/A')
             registrar_log(
                 'portais.lojista.cashback',
                 f'Regra de cashback criada - ID: {regra.id}, Loja: {loja_id}, Nome: {regra.nome}, '
-                f'Usuário: {request.portal_usuario.nome}'
+                f'Usuário: {usuario_nome}'
             )
             
             messages.success(request, f'Regra de cashback "{regra.nome}" criada com sucesso!')
@@ -218,10 +219,11 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
             
             regra.save()
             
+            usuario_nome = getattr(request.portal_usuario, 'nome', None) or getattr(request.portal_usuario, 'username', 'N/A')
             registrar_log(
                 'portais.lojista.cashback',
                 f'Regra de cashback editada - ID: {regra.id}, Nome: {regra.nome}, '
-                f'Usuário: {request.portal_usuario.nome}'
+                f'Usuário: {usuario_nome}'
             )
             
             messages.success(request, f'Regra "{regra.nome}" atualizada com sucesso!')

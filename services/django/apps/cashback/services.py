@@ -454,16 +454,17 @@ class CashbackService:
         
         # Forma de pagamento
         if regra.formas_pagamento:
-            # Garantir que formas_pagamento é lista
+            # Garantir que formas_pagamento é lista e não vazia
             formas = regra.formas_pagamento if isinstance(regra.formas_pagamento, list) else []
-            if formas and forma_pagamento not in formas:
+            # Se lista vazia ou string vazia, aceita todas
+            if formas and len(formas) > 0 and forma_pagamento not in formas:
                 registrar_log('apps.cashback', f'Forma pagamento não aceita - Regra: {regra.id}, Forma: {forma_pagamento}, Aceitas: {formas}', nivel='DEBUG')
                 return False
         
         # Dia da semana
         if regra.dias_semana:
             dias = regra.dias_semana if isinstance(regra.dias_semana, list) else []
-            if dias and dia_semana not in dias:
+            if dias and len(dias) > 0 and dia_semana not in dias:
                 return False
         
         # Horário
