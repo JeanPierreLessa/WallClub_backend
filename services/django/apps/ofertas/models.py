@@ -58,7 +58,8 @@ class Oferta(models.Model):
     
     id = models.AutoField(primary_key=True)
     canal_id = models.IntegerField(help_text='Canal da oferta')
-    loja_id = models.IntegerField(null=True, blank=True, help_text='ID da loja (NULL = todas as lojas do canal)')
+    loja_id = models.IntegerField(null=True, blank=True, help_text='ID da loja (NULL = todas as lojas do canal/grupo)')
+    grupo_economico_id = models.IntegerField(null=True, blank=True, help_text='ID do grupo econômico (NULL = não se aplica)')
     
     titulo = models.CharField(max_length=255, help_text='Título da oferta exibido no app')
     texto_push = models.CharField(max_length=255, help_text='Texto curto enviado via push notification')
@@ -87,6 +88,7 @@ class Oferta(models.Model):
             models.Index(fields=['vigencia_inicio', 'vigencia_fim', 'ativo'], name='idx_vigencia'),
             models.Index(fields=['canal_id', 'ativo'], name='idx_canal'),
             models.Index(fields=['loja_id'], name='idx_loja'),
+            models.Index(fields=['grupo_economico_id'], name='idx_grupo_economico'),
             models.Index(fields=['tipo_segmentacao', 'grupo_id'], name='idx_segmentacao'),
             models.Index(fields=['created_at'], name='idx_created'),
         ]

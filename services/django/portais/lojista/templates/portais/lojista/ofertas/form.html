@@ -114,6 +114,54 @@
                         </div>
 
                         <hr class="my-4">
+                        <h6 class="mb-3"><i class="fas fa-store text-primary me-2"></i>Escopo da Oferta</h6>
+                        
+                        <div class="mb-3">
+                            <label for="loja_id" class="form-label">
+                                <i class="fas fa-building text-primary me-2"></i>Selecione a Loja *
+                            </label>
+                            <select class="form-select" id="loja_id" name="loja_id" required>
+                                <option value="">Selecione uma loja...</option>
+                                {% for loja in lojas_acessiveis %}
+                                <option value="{{ loja.id }}" {% if oferta and oferta.loja_id == loja.id %}selected{% endif %}>
+                                    {{ loja.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Selecione a loja para esta oferta</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Aplicar oferta para: *</label>
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="escopo" 
+                                       id="escopo_loja" 
+                                       value="loja"
+                                       {% if not oferta or not oferta.grupo_economico_id %}checked{% endif %}>
+                                <label class="form-check-label" for="escopo_loja">
+                                    <i class="fas fa-store text-info me-2"></i>
+                                    <strong>Apenas esta loja</strong>
+                                    <br><small class="text-muted">Oferta válida somente para a loja selecionada</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="escopo" 
+                                       id="escopo_grupo" 
+                                       value="grupo_economico"
+                                       {% if oferta and oferta.grupo_economico_id %}checked{% endif %}>
+                                <label class="form-check-label" for="escopo_grupo">
+                                    <i class="fas fa-building text-primary me-2"></i>
+                                    <strong>Todas as lojas do grupo econômico</strong>
+                                    <br><small class="text-muted">Oferta válida para todas as lojas do mesmo grupo econômico</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
                         <h6 class="mb-3"><i class="fas fa-users text-primary me-2"></i>Segmentação</h6>
                         
                         <div class="mb-3">

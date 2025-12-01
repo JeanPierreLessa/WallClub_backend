@@ -21,7 +21,7 @@ class OfertaService:
 
     @staticmethod
     def criar_oferta(titulo, texto_push, descricao, imagem_url, vigencia_inicio, vigencia_fim,
-                    canal_id, tipo_segmentacao, grupo_id, usuario_criador_id, ativo=True, loja_id=None):
+                    canal_id, tipo_segmentacao, grupo_id, usuario_criador_id, ativo=True, loja_id=None, grupo_economico_id=None):
         """Cria uma nova oferta
 
         Args:
@@ -36,7 +36,8 @@ class OfertaService:
             grupo_id (int): ID do grupo (obrigatório se tipo=grupo_customizado)
             usuario_criador_id (int): ID do usuário criador
             ativo (bool): Oferta ativa
-            loja_id (int): ID da loja (NULL = todas as lojas do canal)
+            loja_id (int): ID da loja (NULL = todas as lojas do canal/grupo)
+            grupo_economico_id (int): ID do grupo econômico (NULL = não se aplica)
 
         Returns:
             tuple: (sucesso: bool, mensagem: str, oferta_id: int)
@@ -65,6 +66,7 @@ class OfertaService:
                 vigencia_fim=vigencia_fim,
                 canal_id=canal_id,
                 loja_id=loja_id,
+                grupo_economico_id=grupo_economico_id,
                 tipo_segmentacao=tipo_segmentacao,
                 grupo_id=grupo_id,
                 usuario_criador_id=usuario_criador_id,
@@ -73,7 +75,7 @@ class OfertaService:
             )
             oferta.save()
 
-            registrar_log('apps.ofertas', f'Oferta criada: {oferta.id} - {titulo} (canal={canal_id}, loja={loja_id}, tipo={tipo_segmentacao})')
+            registrar_log('apps.ofertas', f'Oferta criada: {oferta.id} - {titulo} (canal={canal_id}, loja={loja_id}, grupo_econ={grupo_economico_id}, tipo={tipo_segmentacao})')
             return True, 'Oferta criada com sucesso', oferta.id
 
         except Exception as e:

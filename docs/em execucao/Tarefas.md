@@ -1,40 +1,17 @@
 ## Tarefas Pendentes
 
-### Portal de Vendas (07/11/2025)
-- ✅ Criar sistema de primeiro acesso com link único
-- ✅ Corrigir import datetime em primeiro_acesso_view
-- ✅ Corrigir busca de clientes (import CheckoutClienteTelefone)
-- ✅ Configurar domínio checkout.wallclub.com.br
-- ✅ Adicionar checkout.wallclub.com.br ao ALLOWED_HOSTS
-- ⏳ **Investigar erro "Erro interno" na página de checkout** (em andamento)
-  - Log adicionado para traceback completo
-  - Aguardando novo teste para ver erro detalhado
-
-### Gestão Admin (10/11/2025)
-- ✅ Filtro "Incluir transações Credenciadora" usando campo `tipo_operacao`
-- ✅ Coluna "Tipo de Transação" adicionada como primeira coluna (tabela + exports)
-- ✅ App `pinbank` adicionado ao INSTALLED_APPS do container portais
-- ✅ Exports (Excel/CSV) funcionando corretamente
-- ✅ Excel sem linhas inúteis (headers na linha 1)
-- ✅ RPR com filtros JavaScript alinhados ao servidor
-
-### Melhorias Implementadas (12/11/2025)
-- ✅ IP real capturado através do Load Balancer (Nginx configurado)
-- ✅ Limite de dispositivos aumentado de 2 para 5 por cliente
-- ✅ POS não cria mais senha inútil (hash dummy até cadastro completo no app)
-- ✅ Código preparado para registrar dispositivo no cadastro (aguarda app enviar device_fingerprint)
-
-### Outras Tarefas
+- Ofertas: preparar pro lojista criar so a dele e mandar pra todos os usuarios do canal
 - Email Aclub nao esta indo com layout correto (portal lojista)
-- Gestao: contabilizacao de cashback
-- Voucher
 - Testar concessao de cashback
 - nao envia mensagem de baixar app no checkout
 - ⏳ App: Adicionar device_fingerprint no payload de POST /api/v1/cliente/cadastro/validar_otp/
-- configurar nginx para receber ip real e ver alguns temmplates de remover cliente_auth
 - UK em loja (remover felipe)
 - Alteracao em loja (alterar, mudar vendedor, todas as lojas)
 
+Contabilizar
+- cupom
+- cashback loja
+- cashback wall
 
 
 Visao geral dos testes

@@ -63,14 +63,27 @@ class OfertasCreateView(LojistaAuthMixin, View):
     
     def get(self, request):
         from apps.ofertas.services import OfertaService
+        from portais.controle_acesso.models import PortalUsuario
+        from portais.controle_acesso.filtros import FiltrosAcessoService
         
         # Buscar grupos do canal para dropdown via service
         canal_id = request.session.get('canal_id')
         grupos = OfertaService.listar_grupos_segmentacao(canal_id=canal_id, apenas_ativos=True) if canal_id else []
         
+        # Buscar lojas acessíveis ao usuário
+        usuario_id = request.session.get('lojista_usuario_id')
+        lojas_acessiveis = []
+        if usuario_id:
+            try:
+                usuario = PortalUsuario.objects.get(id=usuario_id)
+                lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+            except PortalUsuario.DoesNotExist:
+                pass
+        
         context = {
             'current_page': 'ofertas',
-            'grupos': grupos
+            'grupos': grupos,
+            'lojas_acessiveis': lojas_acessiveis
         }
         return render(request, 'portais/lojista/ofertas/form.html', context)
     
@@ -105,6 +118,10 @@ class OfertasCreateView(LojistaAuthMixin, View):
             grupo_id = request.POST.get('grupo_id')
             ativo = request.POST.get('ativo') == 'on'
             
+            # Novos campos: escopo e loja/grupo econômico
+            escopo = request.POST.get('escopo', 'loja')  # 'loja' ou 'grupo_economico'
+            loja_selecionada_id = request.POST.get('loja_id')
+            
             # Validações
             if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str:
                 messages.error(request, 'Título, texto push, data início e data fim são obrigatórios')
@@ -123,16 +140,33 @@ class OfertasCreateView(LojistaAuthMixin, View):
                 messages.error(request, 'Selecione um grupo para segmentação customizada')
                 return redirect('lojista:ofertas_create')
             
-            # Buscar canal_id e loja_id
-            canal_id = request.session.get('canal_id')
-            loja_id = request.session.get('loja_id')
-            
-            if not canal_id or not loja_id:
-                messages.error(request, 'Canal ou loja não identificados')
+            # Validar escopo
+            if not loja_selecionada_id:
+                messages.error(request, 'Selecione uma loja')
                 return redirect('lojista:ofertas_create')
             
-            # Criar oferta via service (sempre com loja_id no portal lojista)
-            usuario_id = request.session.get('usuario_id')
+            # Buscar canal_id
+            canal_id = request.session.get('canal_id')
+            if not canal_id:
+                messages.error(request, 'Canal não identificado')
+                return redirect('lojista:ofertas_create')
+            
+            # Determinar loja_id e grupo_economico_id baseado no escopo
+            loja_id = None
+            grupo_economico_id = None
+            
+            if escopo == 'loja':
+                loja_id = int(loja_selecionada_id)
+            elif escopo == 'grupo_economico':
+                # Buscar grupo_economico_id da loja selecionada
+                from wallclub_core.estr_organizacional.loja import Loja
+                loja_obj = Loja.get_loja(int(loja_selecionada_id))
+                if loja_obj and hasattr(loja_obj, 'GrupoEconomicoId'):
+                    grupo_economico_id = loja_obj.GrupoEconomicoId
+                    loja_id = None  # NULL quando é grupo econômico
+            
+            # Criar oferta via service
+            usuario_id = request.session.get('lojista_usuario_id')
             sucesso, mensagem, oferta_id = OfertaService.criar_oferta(
                 titulo=titulo,
                 texto_push=texto_push,
@@ -141,7 +175,8 @@ class OfertasCreateView(LojistaAuthMixin, View):
                 vigencia_inicio=vigencia_inicio,
                 vigencia_fim=vigencia_fim,
                 canal_id=canal_id,
-                loja_id=loja_id,  # SEMPRE atribuir loja no portal lojista
+                loja_id=loja_id,
+                grupo_economico_id=grupo_economico_id,
                 tipo_segmentacao=tipo_segmentacao,
                 grupo_id=int(grupo_id) if grupo_id else None,
                 usuario_criador_id=usuario_id,

@@ -82,8 +82,6 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 
-
-
 # Rebuild e restart (apenas containers Django)
 docker-compose build --no-cache wallclub-portais wallclub-apis wallclub-pos
 docker-compose down
