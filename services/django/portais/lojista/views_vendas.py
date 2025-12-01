@@ -471,8 +471,8 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                 <td>{venda.get("Loja", "-")}</td>
                 <td>{venda.get("Data", "-")}</td>
                 <td>{venda.get("Hora", "-")}</td>
-                <td>R$ {safe_float_convert(venda.get("Vl Bruto(R$)", 0)):,.2f}</td>
-                <td>R$ {safe_float_convert(venda.get("Vl Liq Pago(R$)", 0)):,.2f}</td>
+                <td>R$ {safe_float_convert(venda.get("Vl. Bruto(R$)", 0)):,.2f}</td>
+                <td>R$ {safe_float_convert(venda.get("Vl. Líq. Pago(R$)", 0)):,.2f}</td>
                 <td>{venda.get("Status Pgto", "-")}</td>
                 <td>{venda.get("Data Pgto", "-")}</td>
                 <td>{venda.get("Plano", "-")}</td>

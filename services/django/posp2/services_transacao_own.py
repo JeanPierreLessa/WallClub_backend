@@ -710,6 +710,9 @@ class TRDataOwnService:
                 array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}"
                 array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(desconto)}"
                 
+                if valor_desconto > 0:
+                    array["vl_cupom_utilizado"] = f"Cupom de desconto: R$ {formatar_valor_monetario(valor_desconto)}"
+                
                 if saldo_cashback_usado > 0:
                     array["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
                 
@@ -725,6 +728,9 @@ class TRDataOwnService:
             elif forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"] and desconto >= 0:
                 array["voriginal"] = f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}"
                 array["desconto"] = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
+                
+                if valor_desconto > 0:
+                    array["vl_cupom_utilizado"] = f"Cupom de desconto: R$ {formatar_valor_monetario(valor_desconto)}"
                 
                 if saldo_cashback_usado > 0:
                     array["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"

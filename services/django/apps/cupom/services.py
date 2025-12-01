@@ -1,7 +1,7 @@
 from decimal import Decimal
 from datetime import datetime
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import transaction, models
 from django.apps import apps
 import logging
 
