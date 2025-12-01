@@ -292,9 +292,9 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                 sql_totais = f"""
                     SELECT 
                         SUM(CAST(var19 AS DECIMAL(15,2))) as total_bruto,
-                        SUM(CAST(var44 AS DECIMAL(15,2))) as total_pago
+                        SUM(CAST(COALESCE(NULLIF(var44, 0), var42) AS DECIMAL(15,2))) as total_pago
                     FROM (
-                        SELECT var19, var44,
+                        SELECT var19, var42, var44,
                                ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
                         FROM baseTransacoesGestao 
                         WHERE {where_clause}

@@ -200,6 +200,7 @@ class TRDataOwnService:
             # 6.1. Validar cupom (opcional) - POS já calculou e aplicou o desconto
             cupom_obj = None
             cupom_id = None
+            cupom_cliente_id = None  # Variável para armazenar cliente_id do cupom
             
             if cupom_codigo and cupom_valor_desconto > 0:
                 try:
@@ -223,7 +224,6 @@ class TRDataOwnService:
                         loja_id = result[0]
                         
                         # Buscar cliente_id pelo CPF
-                        cliente_id = None
                         if cpf:
                             cursor.execute("""
                                 SELECT id 
@@ -232,11 +232,11 @@ class TRDataOwnService:
                             """, [cpf])
                             result = cursor.fetchone()
                             if result:
-                                cliente_id = result[0]
+                                cupom_cliente_id = result[0]
                             else:
                                 registrar_log('posp2', f'⚠️ Cliente não encontrado: CPF={cpf}', nivel='WARNING')
                     
-                    if not cliente_id:
+                    if not cupom_cliente_id:
                         raise ValueError("CPF do cliente é obrigatório para usar cupom")
                     
                     # Apenas validar se o cupom existe e está ativo
@@ -334,14 +334,14 @@ class TRDataOwnService:
             registrar_log('posp2', f'✅ Transação Own inserida: ID={transaction_id}, TxID={tx_transaction_id}')
             
             # 8.1. Registrar uso do cupom (se aplicado)
-            if cupom_obj and cupom_id:
+            if cupom_obj and cupom_id and cupom_cliente_id:
                 try:
                     from apps.cupom.services import CupomService
                     
                     cupom_service = CupomService()
                     cupom_service.registrar_uso(
                         cupom=cupom_obj,
-                        cliente_id=cliente_id,
+                        cliente_id=cupom_cliente_id,
                         loja_id=loja_id,
                         transacao_tipo='POS',
                         transacao_id=transaction_id,
