@@ -808,12 +808,64 @@ class CheckoutService:
                     else:
                         descricao = '(s/juros)'
 
+                    # Calcular cashback Wall
+                    cashback_wall_valor = Decimal('0')
+                    cashback_wall_percentual = Decimal('0')
+                    if wall.upper() == 'S':
+                        try:
+                            valor_com_cashback = calculadora.calcular_desconto(
+                                valor_original=valor_avista,
+                                data=data_atual,
+                                forma='A VISTA',
+                                parcelas=1,
+                                id_loja=loja_id,
+                                wall='C'
+                            )
+                            cashback_wall_valor = valor_avista - valor_com_cashback if valor_com_cashback else Decimal('0')
+                            cashback_wall_percentual = (cashback_wall_valor / valor_avista * 100) if valor_avista > 0 else Decimal('0')
+                        except Exception as e:
+                            registrar_log('checkout', f'Erro ao calcular cashback Wall: {str(e)}', nivel='WARNING')
+
+                    # Simular cashback loja
+                    cashback_loja_info = {"aplicavel": False, "valor": "0.00"}
+                    cashback_loja_valor = Decimal('0')
+                    try:
+                        from apps.cashback.services import CashbackService
+                        resultado_loja = CashbackService.simular_cashback_loja(
+                            loja_id=loja_id,
+                            cliente_id=0,
+                            canal_id=1,
+                            valor_transacao=valor_avista,
+                            forma_pagamento='CREDITO'
+                        )
+                        if resultado_loja and resultado_loja.get('aplicavel'):
+                            cashback_loja_valor = Decimal(str(resultado_loja['valor']))
+                            cashback_loja_info = {
+                                'aplicavel': True,
+                                'valor': f"{cashback_loja_valor:.2f}",
+                                'regra_id': resultado_loja['regra_id'],
+                                'regra_nome': resultado_loja['regra_nome'],
+                                'tipo_concessao': resultado_loja['tipo_concessao'],
+                                'valor_concessao': f"{resultado_loja['valor_concessao']:.2f}"
+                            }
+                    except Exception as e:
+                        registrar_log('checkout', f'Erro ao simular cashback loja: {str(e)}', nivel='WARNING')
+
+                    cashback_total = cashback_wall_valor + cashback_loja_valor
+
                     parcelas_resultado['CREDITO_1X'] = {
                         'num_parcelas': 1,
-                        'valor_parcela': float(valor_avista),
-                        'valor_desconto': float(valor_avista),
+                        'valor_original': f"{valor:.2f}",
+                        'valor_total': f"{valor_avista:.2f}",
+                        'valor_parcela': f"{valor_avista:.2f}",
                         'descricao': descricao,
-                        'cashback': 0
+                        'desconto_wall': f"{(valor - valor_avista):.2f}",
+                        'cashback_wall': {
+                            'valor': f"{cashback_wall_valor:.2f}",
+                            'percentual': f"{cashback_wall_percentual:.2f}"
+                        },
+                        'cashback_loja': cashback_loja_info,
+                        'cashback_total': f"{cashback_total:.2f}"
                     }
             except Exception as e:
                 registrar_log('checkout', f"Erro ao calcular CRÉDITO 1x: {str(e)}", nivel='WARNING')
@@ -841,12 +893,64 @@ class CheckoutService:
                         else:
                             descricao = '(s/juros)'
 
+                        # Calcular cashback Wall
+                        cashback_wall_valor = Decimal('0')
+                        cashback_wall_percentual = Decimal('0')
+                        if wall.upper() == 'S':
+                            try:
+                                valor_com_cashback = calculadora.calcular_desconto(
+                                    valor_original=valor_parcelado,
+                                    data=data_atual,
+                                    forma='PARCELADO SEM JUROS',
+                                    parcelas=num_parcelas,
+                                    id_loja=loja_id,
+                                    wall='C'
+                                )
+                                cashback_wall_valor = valor_parcelado - valor_com_cashback if valor_com_cashback else Decimal('0')
+                                cashback_wall_percentual = (cashback_wall_valor / valor_parcelado * 100) if valor_parcelado > 0 else Decimal('0')
+                            except Exception as e:
+                                registrar_log('checkout', f'Erro ao calcular cashback Wall: {str(e)}', nivel='WARNING')
+
+                        # Simular cashback loja
+                        cashback_loja_info = {"aplicavel": False, "valor": "0.00"}
+                        cashback_loja_valor = Decimal('0')
+                        try:
+                            from apps.cashback.services import CashbackService
+                            resultado_loja = CashbackService.simular_cashback_loja(
+                                loja_id=loja_id,
+                                cliente_id=0,
+                                canal_id=1,
+                                valor_transacao=valor_parcelado,
+                                forma_pagamento='CREDITO'
+                            )
+                            if resultado_loja and resultado_loja.get('aplicavel'):
+                                cashback_loja_valor = Decimal(str(resultado_loja['valor']))
+                                cashback_loja_info = {
+                                    'aplicavel': True,
+                                    'valor': f"{cashback_loja_valor:.2f}",
+                                    'regra_id': resultado_loja['regra_id'],
+                                    'regra_nome': resultado_loja['regra_nome'],
+                                    'tipo_concessao': resultado_loja['tipo_concessao'],
+                                    'valor_concessao': f"{resultado_loja['valor_concessao']:.2f}"
+                                }
+                        except Exception as e:
+                            registrar_log('checkout', f'Erro ao simular cashback loja: {str(e)}', nivel='WARNING')
+
+                        cashback_total = cashback_wall_valor + cashback_loja_valor
+
                         parcelas_resultado[f'CREDITO_{num_parcelas}X'] = {
                             'num_parcelas': num_parcelas,
-                            'valor_parcela': float(valor_parcela),
-                            'valor_desconto': float(valor_parcelado),
+                            'valor_original': f"{valor:.2f}",
+                            'valor_total': f"{valor_parcelado:.2f}",
+                            'valor_parcela': f"{valor_parcela:.2f}",
                             'descricao': descricao,
-                            'cashback': 0
+                            'desconto_wall': f"{(valor - valor_parcelado):.2f}",
+                            'cashback_wall': {
+                                'valor': f"{cashback_wall_valor:.2f}",
+                                'percentual': f"{cashback_wall_percentual:.2f}"
+                            },
+                            'cashback_loja': cashback_loja_info,
+                            'cashback_total': f"{cashback_total:.2f}"
                         }
                 except Exception as e:
                     registrar_log('checkout', f"Erro ao calcular {num_parcelas}x: {str(e)}", nivel='WARNING')

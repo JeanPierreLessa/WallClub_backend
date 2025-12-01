@@ -77,6 +77,26 @@ def simular_parcelas(request):
 @require_http_methods(["POST"])
 @require_oauth_posp2
 @handle_api_errors
+@validate_required_params('valor', 'terminal')
+def simular_parcelas_v2(request):
+    """Simula valores de parcelas incluindo cashback loja (V2)"""
+    data = json.loads(request.body)
+    valor = data.get('valor')
+    terminal = data.get('terminal')
+    wall = data.get('wall', 's')
+    cliente_id = data.get('cliente_id', 0)
+    
+    from .services_v2 import POSP2ServiceV2
+    service = POSP2ServiceV2()
+    resultado = service.simular_parcelas_v2(valor, terminal, wall, cliente_id)
+    
+    return JsonResponse(resultado)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@require_oauth_posp2
+@handle_api_errors
 @validate_required_params('valoro', 'forma', 'terminal')
 def calcular_desconto_parcela(request):
     """Calcula desconto para forma de pagamento específica"""

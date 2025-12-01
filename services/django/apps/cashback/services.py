@@ -111,7 +111,7 @@ class CashbackService:
             forma_pagamento: 'PIX', 'DEBITO', 'CREDITO'
             
         Returns:
-            dict ou None: Dados da simulação ou None se nenhuma regra aplicável
+            dict: Dados da simulação com estrutura padronizada
         """
         from apps.cashback.models import RegraCashbackLoja
         
@@ -125,7 +125,7 @@ class CashbackService:
             ativo=True,
             vigencia_inicio__lte=agora,
             vigencia_fim__gte=agora
-        ).order_by('-prioridade', '-valor_desconto')
+        ).order_by('-prioridade', '-valor_concessao')
         
         for regra in regras:
             # Validar condições
@@ -142,11 +142,12 @@ class CashbackService:
             valor_cashback = regra.calcular_cashback(valor_transacao)
             
             return {
+                'aplicavel': True,
                 'valor': float(valor_cashback),
                 'regra_id': regra.id,
                 'regra_nome': regra.nome,
-                'tipo_desconto': regra.tipo_desconto,
-                'valor_desconto': float(regra.valor_desconto),
+                'tipo_concessao': regra.tipo_concessao,
+                'valor_concessao': float(regra.valor_concessao),
             }
         
         return None
