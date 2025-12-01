@@ -10,12 +10,12 @@ app_name = 'vendas'
 
 urlpatterns = [
     # Autenticação
-    path('login/', views.login_view, name='login'),
+    path('', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('primeiro_acesso/<str:token>/', views.primeiro_acesso_view, name='primeiro_acesso'),
     
     # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    path('home/', views.dashboard, name='dashboard'),
     
     # Perfil e Troca de Senha
     path('perfil/', views_perfil.perfil_view, name='perfil'),
