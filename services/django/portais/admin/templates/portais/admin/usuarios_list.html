@@ -29,7 +29,22 @@
         <div class="filters-form">
             <form method="GET" id="formFiltros">
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
+                        <label for="filtro_canal" class="form-label">
+                            <i class="fas fa-broadcast-tower me-1"></i>
+                            Canal
+                        </label>
+                        <select class="form-select" id="filtro_canal" name="canal_id">
+                            <option value="">Todos os canais</option>
+                            {% for canal in canais %}
+                            <option value="{{ canal.id }}" {% if request.GET.canal_id == canal.id|stringformat:"s" %}selected{% endif %}>
+                                {{ canal.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
                         <label for="filtro_grupo" class="form-label">
                             <i class="fas fa-users me-1"></i>
                             Grupo Econômico
@@ -44,7 +59,7 @@
                         </select>
                     </div>
                     
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="filtro_loja" class="form-label">
                             <i class="fas fa-store me-1"></i>
                             Loja
@@ -216,31 +231,72 @@
 
 {% block extra_js %}
 <script>
-// Filtro dinâmico de lojas baseado no grupo econômico
+// Filtro em cascata: Canal → Grupo → Loja
 document.addEventListener('DOMContentLoaded', function() {
+    const canalSelect = document.getElementById('filtro_canal');
     const grupoSelect = document.getElementById('filtro_grupo');
     const lojaSelect = document.getElementById('filtro_loja');
     
-    // Carregar lojas quando grupo é selecionado
-    if (grupoSelect) {
-        grupoSelect.addEventListener('change', function() {
-            const grupoId = this.value;
+    // Quando canal muda, atualizar grupos
+    if (canalSelect) {
+        canalSelect.addEventListener('change', function() {
+            const canalId = this.value;
             
-            if (!grupoId) {
-                // Recarregar todas as lojas
-                window.location.href = '{% url "portais_admin:usuarios_list" %}';
+            // Limpar grupo e loja
+            grupoSelect.innerHTML = '<option value="">Todos os grupos</option>';
+            lojaSelect.innerHTML = '<option value="">Todas as lojas</option>';
+            
+            if (!canalId) {
                 return;
             }
             
-            // Buscar lojas do grupo via AJAX
-            fetch(`/ajax_lojas/?grupo_id=${grupoId}`, {
+            // Buscar grupos do canal via AJAX
+            fetch(`/ajax_grupos_economicos/?canal_id=${canalId}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => response.json())
             .then(data => {
-                lojaSelect.innerHTML = '<option value="">Todas as lojas</option>';
+                data.grupos.forEach(grupo => {
+                    const option = document.createElement('option');
+                    option.value = grupo.id;
+                    option.textContent = grupo.nome;
+                    grupoSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar grupos:', error));
+        });
+    }
+    
+    // Quando grupo muda, atualizar lojas
+    if (grupoSelect) {
+        grupoSelect.addEventListener('change', function() {
+            const grupoId = this.value;
+            const canalId = canalSelect.value;
+            
+            // Limpar lojas
+            lojaSelect.innerHTML = '<option value="">Todas as lojas</option>';
+            
+            if (!grupoId && !canalId) {
+                return;
+            }
+            
+            // Buscar lojas do grupo ou canal via AJAX
+            let url = '/ajax_lojas/?';
+            if (grupoId) {
+                url += `grupo_id=${grupoId}`;
+            } else if (canalId) {
+                url += `canal_id=${canalId}`;
+            }
+            
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
                 data.lojas.forEach(loja => {
                     const option = document.createElement('option');
                     option.value = loja.id;

@@ -56,6 +56,7 @@ def usuarios_list(request):
             return redirect('portais_admin:usuarios_list')
 
     # GET: Buscar usuários filtrados
+    canal_id = request.GET.get('canal_id')
     grupo_id = request.GET.get('grupo_id')
     loja_id = request.GET.get('loja_id')
     
@@ -63,8 +64,8 @@ def usuarios_list(request):
         usuario_logado=usuario_logado
     )
     
-    # Aplicar filtros de grupo e loja
-    if grupo_id or loja_id:
+    # Aplicar filtros de canal, grupo e loja
+    if canal_id or grupo_id or loja_id:
         usuarios_filtrados = []
         for usuario in usuarios:
             # Buscar acessos do usuário
@@ -73,40 +74,110 @@ def usuarios_list(request):
                 ativo=True
             )
             
-            # Verificar se tem acesso à loja ou grupo filtrado
+            incluir_usuario = False
+            
             for acesso in acessos:
-                if loja_id and acesso.entidade_tipo == 'loja' and str(acesso.entidade_id) == loja_id:
-                    usuarios_filtrados.append(usuario)
-                    break
-                elif grupo_id and acesso.entidade_tipo == 'grupo_economico':
-                    # Verificar se a loja do acesso pertence ao grupo
-                    with connection.cursor() as cursor:
-                        cursor.execute("""
-                            SELECT COUNT(*) FROM loja 
-                            WHERE GrupoEconomicoId = %s AND id = %s
-                        """, [grupo_id, acesso.entidade_id])
-                        if cursor.fetchone()[0] > 0:
-                            usuarios_filtrados.append(usuario)
-                            break
+                # Filtro por loja
+                if loja_id:
+                    if acesso.entidade_tipo == 'loja' and str(acesso.entidade_id) == loja_id:
+                        incluir_usuario = True
+                        break
+                    elif acesso.entidade_tipo == 'grupo_economico':
+                        # Verificar se o grupo contém a loja
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                SELECT COUNT(*) FROM loja 
+                                WHERE id = %s AND GrupoEconomicoId = %s
+                            """, [loja_id, acesso.entidade_id])
+                            if cursor.fetchone()[0] > 0:
+                                incluir_usuario = True
+                                break
+                    elif acesso.entidade_tipo == 'canal':
+                        # Verificar se a loja pertence ao canal
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                SELECT COUNT(*) FROM loja 
+                                WHERE id = %s AND canal_id = %s
+                            """, [loja_id, acesso.entidade_id])
+                            if cursor.fetchone()[0] > 0:
+                                incluir_usuario = True
+                                break
+                
+                # Filtro por grupo econômico
+                elif grupo_id:
+                    if acesso.entidade_tipo == 'grupo_economico' and str(acesso.entidade_id) == grupo_id:
+                        incluir_usuario = True
+                        break
+                    elif acesso.entidade_tipo == 'canal':
+                        # Verificar se o grupo pertence ao canal
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                SELECT COUNT(*) FROM gruposeconomicos g
+                                JOIN vendedores v ON g.vendedorId = v.id
+                                JOIN regionais r ON v.regionalId = r.id
+                                WHERE g.id = %s AND r.canalId = %s
+                            """, [grupo_id, acesso.entidade_id])
+                            if cursor.fetchone()[0] > 0:
+                                incluir_usuario = True
+                                break
+                
+                # Filtro por canal
+                elif canal_id:
+                    if acesso.entidade_tipo == 'canal' and str(acesso.entidade_id) == canal_id:
+                        incluir_usuario = True
+                        break
+            
+            if incluir_usuario:
+                usuarios_filtrados.append(usuario)
         
         usuarios = usuarios_filtrados
     
-    # Buscar grupos econômicos para o filtro
+    # Buscar canais para o filtro
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT id, nome FROM gruposeconomicos
+            SELECT id, nome FROM canal
             ORDER BY nome
         """)
+        canais = [{'id': row[0], 'nome': row[1]} for row in cursor.fetchall()]
+    
+    # Buscar grupos econômicos para o filtro
+    with connection.cursor() as cursor:
+        if canal_id:
+            cursor.execute("""
+                SELECT DISTINCT g.id, g.nome 
+                FROM gruposeconomicos g
+                JOIN vendedores v ON g.vendedorId = v.id
+                JOIN regionais r ON v.regionalId = r.id
+                WHERE r.canalId = %s
+                ORDER BY g.nome
+            """, [canal_id])
+        else:
+            cursor.execute("""
+                SELECT id, nome FROM gruposeconomicos
+                ORDER BY nome
+            """)
         grupos_economicos = [{'id': row[0], 'nome': row[1]} for row in cursor.fetchall()]
     
     # Buscar lojas para o filtro
     with connection.cursor() as cursor:
-        if grupo_id:
+        if loja_id:
+            # Se já tem loja selecionada, manter apenas ela
+            cursor.execute("""
+                SELECT id, razao_social FROM loja
+                WHERE id = %s
+            """, [loja_id])
+        elif grupo_id:
             cursor.execute("""
                 SELECT id, razao_social FROM loja
                 WHERE GrupoEconomicoId = %s
                 ORDER BY razao_social
             """, [grupo_id])
+        elif canal_id:
+            cursor.execute("""
+                SELECT id, razao_social FROM loja
+                WHERE canal_id = %s
+                ORDER BY razao_social
+            """, [canal_id])
         else:
             cursor.execute("""
                 SELECT id, razao_social FROM loja
@@ -119,6 +190,7 @@ def usuarios_list(request):
         'nivel_usuario': nivel_usuario,
         'is_admin_canal': (nivel_usuario == 'admin_canal'),
         'is_admin_total': (nivel_usuario == 'admin_total'),
+        'canais': canais,
         'grupos_economicos': grupos_economicos,
         'lojas': lojas,
     }
