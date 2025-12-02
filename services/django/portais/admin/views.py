@@ -361,13 +361,35 @@ def ajax_lojas(request):
 
     usuario_logado = request.portal_usuario
     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
+    
+    # Parâmetros de filtro
+    canal_id = request.GET.get('canal_id')
+    grupo_id = request.GET.get('grupo_id')
 
     with connection.cursor() as cursor:
-        if nivel_usuario == 'admin_canal':
+        if grupo_id:
+            # Filtrar por grupo econômico
+            cursor.execute("""
+                SELECT id, razao_social
+                FROM loja
+                WHERE GrupoEconomicoId = %s
+                AND razao_social IS NOT NULL
+                ORDER BY razao_social
+            """, [grupo_id])
+        elif canal_id:
+            # Filtrar por canal
+            cursor.execute("""
+                SELECT id, razao_social
+                FROM loja
+                WHERE canal_id = %s
+                AND razao_social IS NOT NULL
+                ORDER BY razao_social
+            """, [canal_id])
+        elif nivel_usuario == 'admin_canal':
             # Filtrar lojas apenas do canal do usuário via hierarquia
             canal_ids = ControleAcessoService.obter_canais_usuario(usuario_logado)
             if not canal_ids:
-                return JsonResponse([], safe=False)
+                return JsonResponse({'lojas': []}, safe=False)
 
             placeholders = ','.join(['%s'] * len(canal_ids))
 
@@ -392,7 +414,7 @@ def ajax_lojas(request):
 
         lojas = cursor.fetchall()
 
-    data = [{'id': loja[0], 'nome': f"{loja[1]} (ID: {loja[0]})"} for loja in lojas]
+    data = {'lojas': [{'id': loja[0], 'razao_social': loja[1]} for loja in lojas]}
     return JsonResponse(data, safe=False)
 
 
@@ -405,18 +427,32 @@ def ajax_grupos_economicos(request):
 
     usuario_logado = AutenticacaoService.obter_usuario_sessao(request)
     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
+    
+    # Parâmetro de filtro
+    canal_id = request.GET.get('canal_id')
 
     with connection.cursor() as cursor:
-        if nivel_usuario == 'admin_canal':
+        if canal_id:
+            # Filtrar por canal específico
+            cursor.execute("""
+                SELECT DISTINCT g.id, g.nome
+                FROM gruposeconomicos g
+                JOIN vendedores v ON g.vendedorId = v.id
+                JOIN regionais r ON v.regionalId = r.id
+                WHERE r.canalId = %s
+                AND g.nome IS NOT NULL
+                ORDER BY g.nome
+            """, [canal_id])
+        elif nivel_usuario == 'admin_canal':
             # Filtrar apenas grupos econômicos do canal do usuário via hierarquia
             canal_ids = ControleAcessoService.obter_canais_usuario(usuario_logado)
             if not canal_ids:
-                return JsonResponse([], safe=False)
+                return JsonResponse({'grupos': []}, safe=False)
 
             placeholders = ','.join(['%s'] * len(canal_ids))
 
             cursor.execute(f"""
-                SELECT DISTINCT ge.id, ge.nome, ge.vendedorId
+                SELECT DISTINCT ge.id, ge.nome
                 FROM gruposeconomicos ge
                 JOIN vendedores v ON ge.vendedorId = v.id
                 JOIN regionais r ON v.regionalId = r.id
@@ -427,7 +463,7 @@ def ajax_grupos_economicos(request):
         else:
             # admin_total vê todos
             cursor.execute("""
-                SELECT id, nome, vendedorId
+                SELECT id, nome
                 FROM gruposeconomicos
                 WHERE nome IS NOT NULL
                 ORDER BY nome
@@ -435,7 +471,7 @@ def ajax_grupos_economicos(request):
 
         grupos = cursor.fetchall()
 
-    data = [{'id': grupo[0], 'nome': f"{grupo[1]} (Vendedor: {grupo[2]})"} for grupo in grupos]
+    data = {'grupos': [{'id': grupo[0], 'nome': grupo[1]} for grupo in grupos]}
     return JsonResponse(data, safe=False)
 
 
