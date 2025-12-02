@@ -29,11 +29,6 @@ class Loja(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Campos Pinbank
-    pinbank_CodigoCanal = models.IntegerField(null=True, blank=True)
-    pinbank_CodigoCliente = models.IntegerField(null=True, blank=True)
-    pinbank_KeyValueLoja = models.CharField(max_length=20, null=True, blank=True)
-
     class Meta:
         db_table = 'loja'
         managed = False  # Django não gerencia esta tabela (legado)
