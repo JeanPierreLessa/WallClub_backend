@@ -13,6 +13,8 @@ from wallclub_core.utilitarios.log_control import registrar_log
 @require_admin_access
 def usuarios_list(request):
     """Lista usuários com filtros por canal"""
+    from django.db import connection
+    
     usuario_logado = request.portal_usuario
     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
 
@@ -53,16 +55,72 @@ def usuarios_list(request):
             
             return redirect('portais_admin:usuarios_list')
 
-    # GET: Buscar usuários filtrados por nível de acesso
+    # GET: Buscar usuários filtrados
+    grupo_id = request.GET.get('grupo_id')
+    loja_id = request.GET.get('loja_id')
+    
     usuarios = UsuarioService.buscar_usuarios(
         usuario_logado=usuario_logado
     )
+    
+    # Aplicar filtros de grupo e loja
+    if grupo_id or loja_id:
+        usuarios_filtrados = []
+        for usuario in usuarios:
+            # Buscar acessos do usuário
+            acessos = PortalUsuarioAcesso.objects.filter(
+                usuario_id=usuario.id,
+                ativo=True
+            )
+            
+            # Verificar se tem acesso à loja ou grupo filtrado
+            for acesso in acessos:
+                if loja_id and acesso.entidade_tipo == 'loja' and str(acesso.entidade_id) == loja_id:
+                    usuarios_filtrados.append(usuario)
+                    break
+                elif grupo_id and acesso.entidade_tipo == 'grupo_economico':
+                    # Verificar se a loja do acesso pertence ao grupo
+                    with connection.cursor() as cursor:
+                        cursor.execute("""
+                            SELECT COUNT(*) FROM loja 
+                            WHERE GrupoEconomicoId = %s AND id = %s
+                        """, [grupo_id, acesso.entidade_id])
+                        if cursor.fetchone()[0] > 0:
+                            usuarios_filtrados.append(usuario)
+                            break
+        
+        usuarios = usuarios_filtrados
+    
+    # Buscar grupos econômicos para o filtro
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, nome FROM gruposeconomicos
+            ORDER BY nome
+        """)
+        grupos_economicos = [{'id': row[0], 'nome': row[1]} for row in cursor.fetchall()]
+    
+    # Buscar lojas para o filtro
+    with connection.cursor() as cursor:
+        if grupo_id:
+            cursor.execute("""
+                SELECT id, razao_social FROM loja
+                WHERE GrupoEconomicoId = %s
+                ORDER BY razao_social
+            """, [grupo_id])
+        else:
+            cursor.execute("""
+                SELECT id, razao_social FROM loja
+                ORDER BY razao_social
+            """)
+        lojas = [{'id': row[0], 'razao_social': row[1]} for row in cursor.fetchall()]
 
     context = {
         'usuarios': usuarios,
         'nivel_usuario': nivel_usuario,
         'is_admin_canal': (nivel_usuario == 'admin_canal'),
         'is_admin_total': (nivel_usuario == 'admin_total'),
+        'grupos_economicos': grupos_economicos,
+        'lojas': lojas,
     }
 
     return render(request, 'portais/admin/usuarios_list.html', context)

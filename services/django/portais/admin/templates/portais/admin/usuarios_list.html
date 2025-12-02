@@ -27,23 +27,48 @@
     <!-- Filtros no topo -->
     <div class="filters-top">
         <div class="filters-form">
-            <div class="form-group">
-                <label>Filtrar por Status</label>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="#" class="btn btn-success btn-colorido filter-btn active" data-filter="todos">
-                        <i class="fas fa-users me-1"></i> Todos
-                    </a>
-                    <a href="#" class="btn btn-info btn-colorido filter-btn" data-filter="validados">
-                        <i class="fas fa-check-circle me-1"></i> Validados
-                    </a>
-                    <a href="#" class="btn btn-warning btn-colorido filter-btn" data-filter="pendentes">
-                        <i class="fas fa-clock me-1"></i> Pendentes
-                    </a>
-                    <a href="#" class="btn btn-danger btn-colorido filter-btn" data-filter="inativos">
-                        <i class="fas fa-times-circle me-1"></i> Inativos
+            <form method="GET" id="formFiltros">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="filtro_grupo" class="form-label">
+                            <i class="fas fa-users me-1"></i>
+                            Grupo Econômico
+                        </label>
+                        <select class="form-select" id="filtro_grupo" name="grupo_id">
+                            <option value="">Todos os grupos</option>
+                            {% for grupo in grupos_economicos %}
+                            <option value="{{ grupo.id }}" {% if request.GET.grupo_id == grupo.id|stringformat:"s" %}selected{% endif %}>
+                                {{ grupo.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="filtro_loja" class="form-label">
+                            <i class="fas fa-store me-1"></i>
+                            Loja
+                        </label>
+                        <select class="form-select" id="filtro_loja" name="loja_id">
+                            <option value="">Todas as lojas</option>
+                            {% for loja in lojas %}
+                            <option value="{{ loja.id }}" {% if request.GET.loja_id == loja.id|stringformat:"s" %}selected{% endif %}>
+                                {{ loja.razao_social }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i>Filtrar
+                    </button>
+                    <a href="{% url 'portais_admin:usuarios_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Limpar Filtros
                     </a>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -73,8 +98,7 @@
                         </thead>
                         <tbody>
                             {% for u in usuarios %}
-                            <tr onclick="ref('{{ u.id }}', '{{ u.nome|escapejs }}', '{{ u.email|escapejs }}');" style="cursor: pointer;" 
-                                data-status="{% if u.is_usuario_valido %}validados{% elif u.senha_temporaria %}pendentes{% elif not u.ativo %}inativos{% else %}indefinidos{% endif %}">
+                            <tr onclick="ref('{{ u.id }}', '{{ u.nome|escapejs }}', '{{ u.email|escapejs }}');" style="cursor: pointer;">
                                 <td class="align-middle">
                                     <span class="badge bg-primary">#{{ u.id }}</span>
                                 </td>
@@ -192,29 +216,41 @@
 
 {% block extra_js %}
 <script>
-// Filtros de usuário
+// Filtro dinâmico de lojas baseado no grupo econômico
 document.addEventListener('DOMContentLoaded', function() {
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const userRows = document.querySelectorAll('tbody tr[data-status]');
+    const grupoSelect = document.getElementById('filtro_grupo');
+    const lojaSelect = document.getElementById('filtro_loja');
     
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            filterBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+    // Carregar lojas quando grupo é selecionado
+    if (grupoSelect) {
+        grupoSelect.addEventListener('change', function() {
+            const grupoId = this.value;
             
-            const filter = this.dataset.filter;
+            if (!grupoId) {
+                // Recarregar todas as lojas
+                window.location.href = '{% url "portais_admin:usuarios_list" %}';
+                return;
+            }
             
-            userRows.forEach(row => {
-                if (filter === 'todos') {
-                    row.style.display = '';
-                } else {
-                    const status = row.dataset.status;
-                    row.style.display = status === filter ? '' : 'none';
+            // Buscar lojas do grupo via AJAX
+            fetch(`/ajax_lojas/?grupo_id=${grupoId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-            });
+            })
+            .then(response => response.json())
+            .then(data => {
+                lojaSelect.innerHTML = '<option value="">Todas as lojas</option>';
+                data.lojas.forEach(loja => {
+                    const option = document.createElement('option');
+                    option.value = loja.id;
+                    option.textContent = loja.razao_social;
+                    lojaSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar lojas:', error));
         });
-    });
+    }
 });
 
 // Função para preencher o formulário
