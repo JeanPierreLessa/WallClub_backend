@@ -159,6 +159,7 @@ class RegraCashbackLoja(RegraCashback):
     )
     
     class Meta:
+        app_label = 'cashback'
         db_table = 'cashback_regra_loja'
         verbose_name = 'Regra Cashback Loja'
         verbose_name_plural = 'Regras Cashback Loja'
