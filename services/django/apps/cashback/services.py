@@ -132,6 +132,10 @@ class CashbackService:
         registrar_log('apps.cashback', f'Regras encontradas: {regras.count()}', nivel='DEBUG')
         
         for regra in regras:
+            registrar_log('apps.cashback', f'Testando regra {regra.id}: {regra.nome}', nivel='DEBUG')
+            registrar_log('apps.cashback', f'  - formas_pagamento: {repr(regra.formas_pagamento)} (type: {type(regra.formas_pagamento)})', nivel='DEBUG')
+            registrar_log('apps.cashback', f'  - dias_semana: {repr(regra.dias_semana)} (type: {type(regra.dias_semana)})', nivel='DEBUG')
+            registrar_log('apps.cashback', f'  - valor_minimo: {regra.valor_minimo_compra}, valor_transacao: {valor_transacao}', nivel='DEBUG')
             # Validar condições
             if not CashbackService._valida_condicoes_loja(
                 regra, valor_transacao, forma_pagamento, dia_semana, horario

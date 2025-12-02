@@ -16,17 +16,17 @@ class POSP2ServiceV2(POSP2Service):
     """
     Serviço V2 com cashback loja integrado na simulação
     """
-    
+
     def simular_parcelas_v2(self, valor: float, terminal: str, wall: str = 's', cliente_id: int = 0) -> Dict[str, Any]:
         """
         Simula valores para todas as modalidades incluindo cashback loja.
-        
+
         Args:
             valor: Valor da transação
             terminal: ID do terminal
             wall: Modalidade (S=Com Wall, N=Sem Wall)
             cliente_id: ID do cliente (0 se não identificado)
-            
+
         Returns:
             Dict com estrutura completa incluindo cashback loja
         """
@@ -57,17 +57,17 @@ class POSP2ServiceV2(POSP2Service):
 
             loja_id = dados_terminal['loja_id']
             canal_id = dados_terminal.get('canal_id', 1)
-            
+
             # Usar calculadora do parametros_wallclub
             from parametros_wallclub.services import CalculadoraDesconto
             from apps.cashback.services import CashbackService
-            
+
             calculadora = CalculadoraDesconto()
             data = datetime.now().strftime('%Y-%m-%d')
             valor_original = Decimal(str(valor)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-            
+
             parcelas_resultado = {}
-            
+
             # Simular PIX
             parcelas_resultado["PIX"] = self._simular_modalidade_v2(
                 calculadora=calculadora,
@@ -82,7 +82,7 @@ class POSP2ServiceV2(POSP2Service):
                 forma_pagamento_key='CASH',
                 descricao_base='PIX'
             )
-            
+
             # Simular DÉBITO
             parcelas_resultado["DEBITO"] = self._simular_modalidade_v2(
                 calculadora=calculadora,
@@ -97,12 +97,12 @@ class POSP2ServiceV2(POSP2Service):
                 forma_pagamento_key='DEBIT',
                 descricao_base='Débito'
             )
-            
+
             # Simular CRÉDITO 1x até 12x
             for num_parcelas in range(1, 13):
                 forma = "A VISTA" if num_parcelas == 1 else "PARCELADO SEM JUROS"
                 forma_key = "CREDIT_ONE_INSTALLMENT" if num_parcelas == 1 else "CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST"
-                
+
                 parcelas_resultado[num_parcelas] = self._simular_modalidade_v2(
                     calculadora=calculadora,
                     valor_original=valor_original,
@@ -116,9 +116,9 @@ class POSP2ServiceV2(POSP2Service):
                     forma_pagamento_key=forma_key,
                     descricao_base='Crédito'
                 )
-            
+
             registrar_log('posp2.v2', f'Simulação V2 concluída - {len(parcelas_resultado)} opções geradas')
-            
+
             return {
                 'sucesso': True,
                 'mensagem': 'Simulação realizada com sucesso',
@@ -127,7 +127,7 @@ class POSP2ServiceV2(POSP2Service):
                     'cards_principais': [3, 6, 10, 12]
                 }
             }
-            
+
         except Exception as e:
             registrar_log('posp2.v2', f'Erro ao simular parcelas V2: {str(e)}', nivel='ERROR')
             return {
@@ -135,13 +135,13 @@ class POSP2ServiceV2(POSP2Service):
                 'mensagem': f'Erro interno na simulação: {str(e)}',
                 'dados': {'parcelas': {}}
             }
-    
-    def _simular_modalidade_v2(self, calculadora, valor_original, forma, num_parcelas, 
-                               loja_id, canal_id, cliente_id, wall, data, 
+
+    def _simular_modalidade_v2(self, calculadora, valor_original, forma, num_parcelas,
+                               loja_id, canal_id, cliente_id, wall, data,
                                forma_pagamento_key, descricao_base):
         """Helper para simular uma modalidade específica"""
         from apps.cashback.services import CashbackService
-        
+
         # Calcular desconto Wall
         valor_com_desconto = calculadora.calcular_desconto(
             valor_original=valor_original,
@@ -151,13 +151,13 @@ class POSP2ServiceV2(POSP2Service):
             id_loja=loja_id,
             wall=wall
         )
-        
+
         if valor_com_desconto is None:
             return None
-        
+
         # Calcular valor da parcela
         valor_parcela = valor_com_desconto / num_parcelas if num_parcelas > 0 else valor_com_desconto
-        
+
         # Mensagem para cliente
         if valor_com_desconto < valor_original:
             mensagem = "(c/desconto)"
@@ -165,11 +165,11 @@ class POSP2ServiceV2(POSP2Service):
             mensagem = "(c/encargos)"
         else:
             mensagem = ""
-        
+
         # Calcular cashback Wall
         valor_cashback_wall = Decimal('0')
         percentual_cashback_wall = Decimal('0')
-        
+
         if wall.upper() == 'S':
             try:
                 valor_com_cashback = calculadora.calcular_desconto(
@@ -184,11 +184,11 @@ class POSP2ServiceV2(POSP2Service):
                 percentual_cashback_wall = (valor_cashback_wall / valor_com_desconto * 100) if valor_com_desconto > 0 else Decimal('0')
             except Exception as e:
                 registrar_log('posp2.v2', f'Erro ao calcular cashback Wall: {str(e)}', nivel='WARNING')
-        
+
         # Simular cashback loja
         cashback_loja_info = {"aplicavel": False, "valor": "0.00"}
         valor_cashback_loja = Decimal('0')
-        
+
         try:
             forma_pagamento_map = {
                 'CASH': 'PIX',
@@ -197,7 +197,7 @@ class POSP2ServiceV2(POSP2Service):
                 'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST': 'CREDITO'
             }
             forma_pagamento = forma_pagamento_map.get(forma_pagamento_key, 'CREDITO')
-            
+
             resultado_loja = CashbackService.simular_cashback_loja(
                 loja_id=loja_id,
                 cliente_id=cliente_id,
@@ -205,7 +205,7 @@ class POSP2ServiceV2(POSP2Service):
                 valor_transacao=valor_com_desconto,
                 forma_pagamento=forma_pagamento
             )
-            
+
             if resultado_loja and resultado_loja.get('aplicavel'):
                 valor_cashback_loja = Decimal(str(resultado_loja['valor']))
                 cashback_loja_info = {
@@ -218,10 +218,10 @@ class POSP2ServiceV2(POSP2Service):
                 }
         except Exception as e:
             registrar_log('posp2.v2', f'Erro ao simular cashback loja: {str(e)}', nivel='WARNING')
-        
+
         # Cashback total
         cashback_total = valor_cashback_wall + valor_cashback_loja
-        
+
         # Descrição formatada
         if num_parcelas == 0:
             descricao = f"{descricao_base}: R$ {valor_com_desconto:.2f}".replace('.', ',')
@@ -229,7 +229,7 @@ class POSP2ServiceV2(POSP2Service):
             descricao = f"À vista: R$ {valor_com_desconto:.2f}".replace('.', ',')
         else:
             descricao = f"{num_parcelas}x de R$ {valor_parcela:.2f}".replace('.', ',')
-        
+
         return {
             "num_parcelas": num_parcelas if num_parcelas > 0 else 1,
             "valor_original": f"{valor_original:.2f}",

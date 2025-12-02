@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'apps.cliente',
     'apps.transacoes',
     'apps.conta_digital',
+    'apps.cashback.apps.CashbackConfig',
     'apps.ofertas',
     'checkout',
     'checkout.link_pagamento_web',
