@@ -814,9 +814,8 @@ def loja_edit(request, loja_id):
     # Buscar dados da loja
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT id, razao_social, cnpj, complemento, canal_id, email, senha,
-                   cod_cliente, celular, aceite, nomebanco, numerobanco,
-                   agencia, conta, pix, GrupoEconomicoId
+            SELECT id, razao_social, cnpj, complemento, email, celular,
+                   nomebanco, numerobanco, agencia, conta, pix, GrupoEconomicoId, gateway_ativo
             FROM loja
             WHERE id = %s
         """, [loja_id])
@@ -828,11 +827,10 @@ def loja_edit(request, loja_id):
         
         loja = {
             'id': row[0], 'razao_social': row[1], 'cnpj': row[2],
-            'complemento': row[3], 'canal_id': row[4], 'email': row[5],
-            'senha': row[6], 'cod_cliente': row[7], 'celular': row[8],
-            'aceite': row[9], 'nomebanco': row[10], 'numerobanco': row[11],
-            'agencia': row[12], 'conta': row[13], 'pix': row[14],
-            'GrupoEconomicoId': row[15]
+            'complemento': row[3], 'email': row[4], 'celular': row[5],
+            'nomebanco': row[6], 'numerobanco': row[7],
+            'agencia': row[8], 'conta': row[9], 'pix': row[10],
+            'GrupoEconomicoId': row[11], 'gateway_ativo': row[12]
         }
     
     # Buscar grupos econômicos disponíveis
@@ -856,38 +854,54 @@ def loja_edit(request, loja_id):
     
     if request.method == 'POST':
         razao_social = request.POST.get('razao_social', '').strip()
-        cnpj = request.POST.get('cnpj', '').strip()
+        cnpj_raw = request.POST.get('cnpj', '').strip()
+        # Remove formatação do CNPJ/CPF (mantém apenas números)
+        cnpj = ''.join(filter(str.isdigit, cnpj_raw)) if cnpj_raw else ''
         complemento = request.POST.get('complemento', '').strip()
-        canal_id = request.POST.get('canal_id', '').strip()
         email = request.POST.get('email', '').strip()
-        senha = request.POST.get('senha', '').strip()
-        cod_cliente = request.POST.get('cod_cliente', '').strip()
         celular = request.POST.get('celular', '').strip()
-        aceite = 0  # Sempre mantém 0
         nomebanco = request.POST.get('nomebanco', '').strip()
         numerobanco = request.POST.get('numerobanco', '').strip()
         agencia = request.POST.get('agencia', '').strip()
         conta = request.POST.get('conta', '').strip()
         pix = request.POST.get('pix', '').strip()
         grupo_id = request.POST.get('GrupoEconomicoId')
+        gateway_ativo = request.POST.get('gateway_ativo', 'PINBANK').strip()
         
-        if not grupo_id:
+        # Validações
+        if not cnpj:
+            messages.error(request, 'CNPJ/CPF é obrigatório.')
+        elif len(cnpj) not in [11, 14]:
+            messages.error(request, 'CNPJ/CPF inválido. Deve ter 11 (CPF) ou 14 (CNPJ) dígitos.')
+        elif not grupo_id:
             messages.error(request, 'Grupo econômico é obrigatório.')
         else:
             try:
+                # Verificar se CNPJ já existe em outra loja
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT id FROM loja WHERE cnpj = %s AND id != %s
+                    """, [cnpj, loja_id])
+                    if cursor.fetchone():
+                        messages.error(request, f'CNPJ/CPF {cnpj_raw} já está cadastrado em outra loja.')
+                        return render(request, 'portais/admin/loja_edit.html', {
+                            'grupos': grupos,
+                            'loja': loja,
+                            'edit_mode': True
+                        })
+                
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         UPDATE loja SET
-                            razao_social = %s, cnpj = %s, complemento = %s, canal_id = %s,
-                            email = %s, senha = %s, cod_cliente = %s, celular = %s,
-                            aceite = %s, nomebanco = %s, numerobanco = %s, agencia = %s,
-                            conta = %s, pix = %s, GrupoEconomicoId = %s
+                            razao_social = %s, cnpj = %s, complemento = %s,
+                            email = %s, celular = %s,
+                            nomebanco = %s, numerobanco = %s, agencia = %s,
+                            conta = %s, pix = %s, GrupoEconomicoId = %s, gateway_ativo = %s
                         WHERE id = %s
-                    """, [razao_social or None, cnpj or None, complemento or None,
-                          int(canal_id) if canal_id else None, email or None, senha or None,
-                          cod_cliente or None, celular or None, int(aceite),
+                    """, [razao_social or None, cnpj,
+                          complemento or None, email or None, celular or None,
                           nomebanco or None, numerobanco or None, agencia or None,
-                          conta or None, pix or None, grupo_id, loja_id])
+                          conta or None, pix or None, grupo_id, gateway_ativo, loja_id])
                 
                 messages.success(request, f'Loja "{razao_social or "Loja"}" atualizada com sucesso!')
                 return redirect('portais_admin:loja_detail', loja_id=loja_id)

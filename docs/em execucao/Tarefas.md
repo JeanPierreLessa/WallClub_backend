@@ -7,6 +7,7 @@
 - ⏳ App: Adicionar device_fingerprint no payload de POST /api/v1/cliente/cadastro/validar_otp/
 - UK em loja (remover felipe)
 - Alteracao em loja (alterar, mudar vendedor, todas as lojas)
+- ⚠️ Cashback Loja: Investigar por que regras não estão sendo aplicadas (campo formas_pagamento vazio não valida corretamente)
 
 Contabilizar
 - cupom

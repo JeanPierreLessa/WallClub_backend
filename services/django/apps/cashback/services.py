@@ -115,6 +115,8 @@ class CashbackService:
         """
         from apps.cashback.models import RegraCashbackLoja
         
+        registrar_log('apps.cashback', f'Simulando cashback loja - Loja: {loja_id}, Valor: {valor_transacao}, Forma: {forma_pagamento}', nivel='DEBUG')
+        
         agora = datetime.now()
         dia_semana = agora.weekday()
         horario = agora.time()
@@ -126,6 +128,8 @@ class CashbackService:
             vigencia_inicio__lte=agora,
             vigencia_fim__gte=agora
         ).order_by('-prioridade', '-valor_concessao')
+        
+        registrar_log('apps.cashback', f'Regras encontradas: {regras.count()}', nivel='DEBUG')
         
         for regra in regras:
             # Validar condições
@@ -453,16 +457,15 @@ class CashbackService:
             return False
         
         # Forma de pagamento
-        if regra.formas_pagamento:
-            # Garantir que formas_pagamento é lista e não vazia
+        # Aceitar se campo for None, lista vazia, ou string vazia
+        if regra.formas_pagamento and regra.formas_pagamento != "":
             formas = regra.formas_pagamento if isinstance(regra.formas_pagamento, list) else []
-            # Se lista vazia ou string vazia, aceita todas
             if formas and len(formas) > 0 and forma_pagamento not in formas:
                 registrar_log('apps.cashback', f'Forma pagamento não aceita - Regra: {regra.id}, Forma: {forma_pagamento}, Aceitas: {formas}', nivel='DEBUG')
                 return False
         
         # Dia da semana
-        if regra.dias_semana:
+        if regra.dias_semana and regra.dias_semana != "":
             dias = regra.dias_semana if isinstance(regra.dias_semana, list) else []
             if dias and len(dias) > 0 and dia_semana not in dias:
                 return False

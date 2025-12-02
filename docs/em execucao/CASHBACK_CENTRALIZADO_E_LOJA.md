@@ -705,6 +705,42 @@ class CashbackService:
    - Body: `tipo` (WALL/LOJA), `cliente_id`, `loja_id`, `transacao_id`, `valor_cashback`
    - Retorna: `cashback_uso_id`, `status`, `data_liberacao`, `data_expiracao`
 
+### ✅ Etapa 7: Integração POSP2 V2 - CONCLUÍDA (01/12/2025)
+- ✅ Endpoint V2 `POST /api/v1/posp2/simula_parcelas_v2/` com cashback loja integrado
+- ✅ Service `POSP2ServiceV2` com simulação unificada (Wall + Loja)
+- ✅ Estrutura padronizada de resposta com `cashback_wall`, `cashback_loja` e `cashback_total`
+- ✅ Validação de formas de pagamento (campo vazio = todas as formas)
+- ✅ Correção de bugs em validação de JSONField (MySQL)
+
+**Arquivos criados:**
+- `posp2/services_v2.py` (270 linhas)
+- `posp2/views.py` - Endpoint `simular_parcelas_v2`
+- `posp2/urls.py` - Rota `/simula_parcelas_v2/`
+
+**Estrutura de Resposta V2:**
+```json
+{
+  "sucesso": true,
+  "dados": {
+    "parcelas": {
+      "PIX": {
+        "valor_original": "100.00",
+        "valor_total": "84.67",
+        "desconto_wall": "15.33",
+        "cashback_wall": {"valor": "0.00", "percentual": "0.00"},
+        "cashback_loja": {"aplicavel": true, "valor": "5.00", "regra_nome": "..."},
+        "cashback_total": "5.00"
+      }
+    }
+  }
+}
+```
+
+**Correções Técnicas:**
+- Validação robusta de `formas_pagamento` e `dias_semana` (lista vazia = aceita todos)
+- Tratamento de JSONField do MySQL (tipo `json` vs `jsonb`)
+- Logs de debug para troubleshooting
+
 ### ⏳ Etapa 7: Estorno - PENDENTE
 - Integrar `CashbackService.estornar_cashback()` nos fluxos de estorno
 - Testes de edge cases
