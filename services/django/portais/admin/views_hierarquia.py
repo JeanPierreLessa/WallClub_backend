@@ -530,13 +530,13 @@ def loja_detail(request, loja_id):
     with connection.cursor() as cursor:
         # Buscar dados da loja e hierarquia completa
         cursor.execute("""
-            SELECT l.id, l.razao_social, l.cnpj,
+            SELECT l.id, l.razao_social, l.cnpj, l.canal_id,
                    g.id, g.nome, v.id, v.nome, r.id, r.nome, c.id, c.nome, c.marca
             FROM loja l
-            JOIN gruposeconomicos g ON l.GrupoEconomicoId = g.id
-            JOIN vendedores v ON g.vendedorId = v.id
-            JOIN regionais r ON v.regionalId = r.id
-            JOIN canal c ON r.canalId = c.id
+            LEFT JOIN gruposeconomicos g ON l.GrupoEconomicoId = g.id
+            LEFT JOIN vendedores v ON g.vendedorId = v.id
+            LEFT JOIN regionais r ON v.regionalId = r.id
+            LEFT JOIN canal c ON r.canalId = c.id
             WHERE l.id = %s
         """, [loja_id])
         
@@ -551,23 +551,24 @@ def loja_detail(request, loja_id):
             'id': loja_data[0],
             'razao_social': loja_data[1],
             'cnpj': loja_data[2],
+            'canal_id': loja_data[3],
             'grupo': {
-                'id': loja_data[3],
-                'nome': loja_data[4],
+                'id': loja_data[4],
+                'nome': loja_data[5],
                 'vendedor': {
-                    'id': loja_data[5],
-                    'nome': loja_data[6],
+                    'id': loja_data[6],
+                    'nome': loja_data[7],
                     'regional': {
-                        'id': loja_data[7],
-                        'nome': loja_data[8],
+                        'id': loja_data[8],
+                        'nome': loja_data[9],
                         'canal': {
-                            'id': loja_data[9],
-                            'nome': loja_data[10],
-                            'marca': loja_data[11]
+                            'id': loja_data[10],
+                            'nome': loja_data[11],
+                            'marca': loja_data[12]
                         }
                     }
                 }
-            }
+            } if loja_data[4] else None
         }
     
     context = {

@@ -29,6 +29,7 @@
             <li class="breadcrumb-item">
                 <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
             </li>
+            {% if loja.grupo %}
             <li class="breadcrumb-item">
                 <a href="{% url 'portais_admin:canal_detail' loja.grupo.vendedor.regional.canal.id %}">
                     {{ loja.grupo.vendedor.regional.canal.nome }}
@@ -49,6 +50,7 @@
                     {{ loja.grupo.nome }}
                 </a>
             </li>
+            {% endif %}
             <li class="breadcrumb-item active">{{ loja.razao_social }}</li>
         </ol>
     </nav>
@@ -97,6 +99,7 @@
                 <div class="card-body">
                     <table class="table table-sm">
                         <tbody>
+                            {% if loja.grupo %}
                             <tr>
                                 <th width="40%">Canal:</th>
                                 <td>
@@ -140,6 +143,14 @@
                                     </a>
                                 </td>
                             </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Loja sem grupo econômico associado
+                                </td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -159,6 +170,11 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'portais_admin:usuarios_list' %}?loja_id={{ loja.id }}" 
+                           class="btn btn-outline-warning">
+                            <i class="fas fa-users me-1"></i>
+                            Ver Usuários com Acesso
+                        </a>
                         <a href="{% url 'portais_admin:parametros_list' %}?loja={{ loja.id }}" 
                            class="btn btn-outline-primary">
                             <i class="fas fa-cogs me-1"></i>
