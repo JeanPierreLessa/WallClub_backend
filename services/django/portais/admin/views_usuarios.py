@@ -60,9 +60,13 @@ def usuarios_list(request):
     grupo_id = request.GET.get('grupo_id')
     loja_id = request.GET.get('loja_id')
     
+    registrar_log('portais.admin', f'Filtros recebidos - Canal: {canal_id}, Grupo: {grupo_id}, Loja: {loja_id}')
+    
     usuarios = UsuarioService.buscar_usuarios(
         usuario_logado=usuario_logado
     )
+    
+    registrar_log('portais.admin', f'Total de usuários antes do filtro: {len(usuarios)}')
     
     # Aplicar filtros de canal, grupo e loja
     if canal_id or grupo_id or loja_id:
@@ -131,6 +135,7 @@ def usuarios_list(request):
                 usuarios_filtrados.append(usuario)
         
         usuarios = usuarios_filtrados
+        registrar_log('portais.admin', f'Total de usuários após filtro: {len(usuarios_filtrados)}')
     
     # Buscar canais para o filtro
     with connection.cursor() as cursor:
