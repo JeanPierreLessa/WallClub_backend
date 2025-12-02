@@ -14,20 +14,20 @@ class Loja(models.Model):
 
     id = models.AutoField(primary_key=True)
     razao_social = models.CharField(max_length=256, null=True, blank=True)
-    cnpj = models.CharField(max_length=256, null=True, blank=True)
+    cnpj = models.CharField(max_length=14, null=False)  # Alterado: varchar(14) NOT NULL UNIQUE
     complemento = models.TextField(null=True, blank=True)
-    canal_id = models.IntegerField(null=True, blank=True)
+    canal_id = models.IntegerField(null=False)  # Alterado: NOT NULL
+    gateway_ativo = models.CharField(max_length=20, null=True, blank=True, default='PINBANK')
     email = models.CharField(max_length=256, null=True, blank=True)
-    senha = models.CharField(max_length=256, null=True, blank=True)
-    cod_cliente = models.CharField(max_length=256, null=True, blank=True)
     celular = models.CharField(max_length=256, null=True, blank=True)
-    aceite = models.IntegerField(default=0)
     nomebanco = models.CharField(max_length=256, null=True, blank=True)
     numerobanco = models.CharField(max_length=256, null=True, blank=True)
     agencia = models.CharField(max_length=256, null=True, blank=True)
     conta = models.CharField(max_length=256, null=True, blank=True)
     pix = models.CharField(max_length=256, null=True, blank=True)
     GrupoEconomicoId = models.PositiveIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     # Campos Pinbank
     pinbank_CodigoCanal = models.IntegerField(null=True, blank=True)
@@ -218,9 +218,9 @@ class Loja(models.Model):
 
             # Campos comuns que podem ser atualizados
             campos_atualizaveis = [
-                'razao_social', 'cnpj', 'complemento', 'canal_id', 'email',
-                'senha', 'cod_cliente', 'celular', 'aceite', 'nomebanco',
-                'numerobanco', 'agencia', 'conta', 'pix', 'GrupoEconomicoId',
+                'razao_social', 'cnpj', 'complemento', 'canal_id', 'gateway_ativo',
+                'email', 'celular', 'nomebanco', 'numerobanco', 'agencia', 
+                'conta', 'pix', 'GrupoEconomicoId',
                 'pinbank_CodigoCanal', 'pinbank_CodigoCliente', 'pinbank_KeyValueLoja'
             ]
 
