@@ -309,12 +309,13 @@ class TRDataOwnService:
                 # SDK
                 'sdk': sdk or 'agilli',
 
-                # Wall Club
-                'valor_desconto': self._converter_valor_monetario(valor_desconto_pos),
-                'valor_cashback': self._converter_valor_monetario(valor_cashback_pos),
-                'cashback_concedido': self._converter_valor_monetario(cashback_concedido_pos),
-                'autorizacao_id': autorizacao_id or None,
-                'saldo_usado': 0,
+                # Wall Club (campos renomeados)
+                'desconto_wall': self._converter_valor_monetario(dados.get('desconto_wall', valor_desconto_pos)),
+                'cashback_debitado': self._converter_valor_monetario(dados.get('cashback_debitado', valor_cashback_pos)),
+                'cashback_creditado_wall': self._converter_valor_monetario(dados.get('cashback_creditado_wall', cashback_concedido_pos)),
+                'cashback_creditado_loja': self._converter_valor_monetario(dados.get('cashback_creditado_loja', 0)),
+                'autorizacao_uso_saldo_id': dados.get('autorizacao_uso_saldo_id', autorizacao_id) or None,
+                'saldo_debitado': self._converter_valor_monetario(dados.get('saldo_debitado', 0)),
                 'modalidade_wall': modalidade_wall or None,
                 
                 # Cupom
@@ -333,7 +334,61 @@ class TRDataOwnService:
 
             registrar_log('posp2', f'✅ Transação Own inserida: ID={transaction_id}, TxID={tx_transaction_id}')
             
-            # 8.1. Registrar uso do cupom (se aplicado)
+            # 8.1. Aplicar cashback (Wall e/ou Loja)
+            cashback_wall = self._converter_valor_monetario(dados.get('cashback_creditado_wall', cashback_concedido_pos))
+            cashback_loja = self._converter_valor_monetario(dados.get('cashback_creditado_loja', 0))
+            
+            if cashback_wall > 0 or cashback_loja > 0:
+                try:
+                    from apps.cashback.services import CashbackService
+                    
+                    # Buscar cliente_id pelo CPF
+                    cliente_id = None
+                    if cpf:
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT id FROM cliente WHERE cpf = %s LIMIT 1", [cpf])
+                            cliente_row = cursor.fetchone()
+                            if cliente_row:
+                                cliente_id = cliente_row[0]
+                    
+                    if cliente_id and loja_id and canal_id:
+                        # Aplicar cashback Wall
+                        if cashback_wall > 0:
+                            CashbackService.aplicar_cashback_wall(
+                                parametro_wall_id=0,  # TODO: buscar parametro_wall_id correto
+                                cliente_id=cliente_id,
+                                loja_id=loja_id,
+                                canal_id=canal_id,
+                                transacao_tipo='POS',
+                                transacao_id=transaction_id,
+                                valor_transacao=Decimal(str(valor_original)),
+                                valor_cashback=Decimal(str(cashback_wall))
+                            )
+                            registrar_log('posp2', f'✅ Cashback Wall aplicado: R$ {cashback_wall}')
+                        
+                        # Aplicar cashback Loja
+                        if cashback_loja > 0:
+                            # Buscar regra_loja_id (assumindo que vem do payload ou usar 0)
+                            regra_loja_id = dados.get('regra_loja_id', 0)
+                            
+                            CashbackService.aplicar_cashback_loja(
+                                regra_loja_id=regra_loja_id,
+                                cliente_id=cliente_id,
+                                loja_id=loja_id,
+                                canal_id=canal_id,
+                                transacao_tipo='POS',
+                                transacao_id=transaction_id,
+                                valor_transacao=Decimal(str(valor_original)),
+                                valor_cashback=Decimal(str(cashback_loja))
+                            )
+                            registrar_log('posp2', f'✅ Cashback Loja aplicado: R$ {cashback_loja}')
+                    else:
+                        registrar_log('posp2', f'⚠️ Cashback não aplicado - dados insuficientes (cliente_id={cliente_id}, loja_id={loja_id})', nivel='WARNING')
+                        
+                except Exception as e:
+                    registrar_log('posp2', f'❌ Erro ao aplicar cashback: {e}', nivel='ERROR')
+            
+            # 8.2. Registrar uso do cupom (se aplicado)
             if cupom_obj and cupom_id and cupom_cliente_id:
                 try:
                     from apps.cupom.services import CupomService
@@ -485,8 +540,8 @@ class TRDataOwnService:
                         terminalTimestamp, hostTimestamp,
                         status, capturedTransaction,
                         cnpj, sdk,
-                        valor_desconto, valor_cashback, cashback_concedido, autorizacao_id,
-                        saldo_usado, modalidade_wall,
+                        desconto_wall, cashback_debitado, cashback_creditado_wall, cashback_creditado_loja,
+                        autorizacao_uso_saldo_id, saldo_debitado, modalidade_wall,
                         cupom_id, cupom_valor_desconto
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s,
@@ -499,7 +554,7 @@ class TRDataOwnService:
                         %s, %s,
                         %s, %s,
                         %s, %s, %s, %s,
-                        %s, %s,
+                        %s, %s, %s,
                         %s, %s
                     )
                 """, [
@@ -514,9 +569,11 @@ class TRDataOwnService:
                     dados['terminalTimestamp'], dados['hostTimestamp'],
                     dados['status'], dados['capturedTransaction'],
                     dados['cnpj'], dados['sdk'],
-                    dados['valor_desconto'], dados['valor_cashback'], dados['cashback_concedido'],
-                    dados['autorizacao_id'], dados['saldo_usado'], dados['modalidade_wall'],
-                    dados['cupom_id'], dados['cupom_valor_desconto']
+                    dados.get('desconto_wall', 0), dados.get('cashback_debitado', 0),
+                    dados.get('cashback_creditado_wall', 0), dados.get('cashback_creditado_loja', 0),
+                    dados.get('autorizacao_uso_saldo_id'), dados.get('saldo_debitado', 0),
+                    dados.get('modalidade_wall'),
+                    dados.get('cupom_id'), dados.get('cupom_valor_desconto')
                 ])
 
                 return cursor.lastrowid

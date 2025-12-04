@@ -233,22 +233,35 @@ class TransactionDataOwn(models.Model):
     sdk = models.CharField(max_length=20, default='agilli', verbose_name="SDK")
     
     # Campos Wall Club
-    valor_desconto = models.DecimalField(
+    desconto_wall = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, default=0,
-        verbose_name="Valor Desconto"
+        verbose_name="Desconto Wall",
+        help_text="Desconto Wall aplicado (wall=S)"
     )
-    valor_cashback = models.DecimalField(
+    cashback_debitado = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, default=0,
-        verbose_name="Valor Cashback"
+        verbose_name="Cashback Debitado",
+        help_text="Cashback usado para pagar a transação"
     )
-    autorizacao_id = models.CharField(max_length=40, null=True, blank=True)
-    cashback_concedido = models.DecimalField(
+    autorizacao_uso_saldo_id = models.CharField(
+        max_length=40, null=True, blank=True,
+        verbose_name="ID Autorização Uso Saldo",
+        help_text="ID da autorização de uso de saldo"
+    )
+    cashback_creditado_wall = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, default=0,
-        verbose_name="Cashback Concedido"
+        verbose_name="Cashback Creditado Wall",
+        help_text="Cashback Wall concedido (wall=C)"
     )
-    saldo_usado = models.DecimalField(
+    cashback_creditado_loja = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, default=0,
+        verbose_name="Cashback Creditado Loja",
+        help_text="Cashback Loja concedido"
+    )
+    saldo_debitado = models.DecimalField(
         max_digits=10, decimal_places=2, default=0,
-        verbose_name="Saldo Usado"
+        verbose_name="Saldo Debitado",
+        help_text="Saldo da conta digital usado para pagar"
     )
     modalidade_wall = models.CharField(
         max_length=1, null=True, blank=True,

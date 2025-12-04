@@ -414,7 +414,7 @@ def ajax_lojas(request):
 
         lojas = cursor.fetchall()
 
-    data = {'lojas': [{'id': loja[0], 'razao_social': loja[1]} for loja in lojas]}
+    data = [{'id': loja[0], 'nome': loja[1]} for loja in lojas]
     return JsonResponse(data, safe=False)
 
 
@@ -471,7 +471,7 @@ def ajax_grupos_economicos(request):
 
         grupos = cursor.fetchall()
 
-    data = {'grupos': [{'id': grupo[0], 'nome': grupo[1]} for grupo in grupos]}
+    data = [{'id': grupo[0], 'nome': grupo[1]} for grupo in grupos]
     return JsonResponse(data, safe=False)
 
 

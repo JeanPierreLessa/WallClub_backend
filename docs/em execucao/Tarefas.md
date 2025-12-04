@@ -7,7 +7,6 @@
 - ⏳ App: Adicionar device_fingerprint no payload de POST /api/v1/cliente/cadastro/validar_otp/
 - UK em loja (remover felipe)
 - Alteracao em loja (alterar, mudar vendedor, todas as lojas)
-- ⚠️ Cashback Loja: Investigar por que regras não estão sendo aplicadas (campo formas_pagamento vazio não valida corretamente)
 
 Contabilizar
 - cupom
@@ -49,3 +48,12 @@ Ajuste de nome de log e nivel de log (feito)
 - sistema bancario
 - wallclub
 
+
+
+ALTER TABLE transactiondata_own
+  CHANGE COLUMN valor_desconto desconto_wall DECIMAL(10,2) DEFAULT 0.00,
+  CHANGE COLUMN valor_cashback cashback_debitado DECIMAL(10,2) DEFAULT 0.00,
+  CHANGE COLUMN autorizacao_id autorizacao_uso_saldo_id VARCHAR(40),
+  CHANGE COLUMN cashback_concedido cashback_creditado_wall DECIMAL(10,2) DEFAULT 0.00,
+  ADD COLUMN cashback_creditado_loja DECIMAL(10,2) DEFAULT 0.00 AFTER cashback_creditado_wall,
+  CHANGE COLUMN saldo_usado saldo_debitado DECIMAL(10,2) DEFAULT 0.00;

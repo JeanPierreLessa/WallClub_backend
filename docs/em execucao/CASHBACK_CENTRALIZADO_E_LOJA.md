@@ -705,17 +705,25 @@ class CashbackService:
    - Body: `tipo` (WALL/LOJA), `cliente_id`, `loja_id`, `transacao_id`, `valor_cashback`
    - Retorna: `cashback_uso_id`, `status`, `data_liberacao`, `data_expiracao`
 
-### ✅ Etapa 7: Integração POSP2 V2 - CONCLUÍDA (01/12/2025)
+### ✅ Etapa 7: Integração POSP2 V2 - CONCLUÍDA (02/12/2025)
 - ✅ Endpoint V2 `POST /api/v1/posp2/simula_parcelas_v2/` com cashback loja integrado
 - ✅ Service `POSP2ServiceV2` com simulação unificada (Wall + Loja)
 - ✅ Estrutura padronizada de resposta com `cashback_wall`, `cashback_loja` e `cashback_total`
 - ✅ Validação de formas de pagamento (campo vazio = todas as formas)
 - ✅ Correção de bugs em validação de JSONField (MySQL)
+- ✅ Adição de `app_label = 'cashback'` nos models para evitar erro de INSTALLED_APPS
+- ✅ Configuração de `apps.cashback` no INSTALLED_APPS do container APIs
+- ✅ Deploy em produção e testes validados com sucesso
 
 **Arquivos criados:**
-- `posp2/services_v2.py` (270 linhas)
+- `posp2/services_v2.py` (249 linhas)
 - `posp2/views.py` - Endpoint `simular_parcelas_v2`
 - `posp2/urls.py` - Rota `/simula_parcelas_v2/`
+
+**Arquivos modificados:**
+- `apps/cashback/models.py` - Adicionado `app_label = 'cashback'` em RegraCashbackLoja
+- `wallclub/settings/apis.py` - Adicionado `apps.cashback.apps.CashbackConfig` no INSTALLED_APPS
+- `apps/cashback/services.py` - Logs de debug para troubleshooting
 
 **Estrutura de Resposta V2:**
 ```json
@@ -728,7 +736,14 @@ class CashbackService:
         "valor_total": "84.67",
         "desconto_wall": "15.33",
         "cashback_wall": {"valor": "0.00", "percentual": "0.00"},
-        "cashback_loja": {"aplicavel": true, "valor": "5.00", "regra_nome": "..."},
+        "cashback_loja": {
+          "aplicavel": true, 
+          "valor": "5.00", 
+          "regra_id": 2,
+          "regra_nome": "Regra Teste Cashback",
+          "tipo_concessao": "FIXO",
+          "valor_concessao": "5.00"
+        },
         "cashback_total": "5.00"
       }
     }
@@ -740,8 +755,15 @@ class CashbackService:
 - Validação robusta de `formas_pagamento` e `dias_semana` (lista vazia = aceita todos)
 - Tratamento de JSONField do MySQL (tipo `json` vs `jsonb`)
 - Logs de debug para troubleshooting
+- Configuração correta de app_label para evitar erro "doesn't declare an explicit app_label"
+- Build sem cache para garantir atualização dos models no container
 
-### ⏳ Etapa 7: Estorno - PENDENTE
+**Testes em Produção:**
+- ✅ Simulação com regra de cashback fixo R$ 5,00 funcionando
+- ✅ Aplicação em todas as formas de pagamento (PIX, DÉBITO, CRÉDITO)
+- ✅ Resposta JSON com estrutura completa e dados corretos
+
+### ⏳ Etapa 8: Estorno - PENDENTE
 - Integrar `CashbackService.estornar_cashback()` nos fluxos de estorno
 - Testes de edge cases
 

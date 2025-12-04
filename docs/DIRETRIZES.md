@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.2  
-**Data:** 01/12/2025  
+**Versão:** 4.3  
+**Data:** 02/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Sistema de Ofertas completo, Cashback em testes
+**Mudanças:** Sistema de Cashback Centralizado (Wall + Loja) em produção
 
 ---
 
@@ -948,8 +948,8 @@ docker exec wallclub-redis redis-cli ping
 
 ---
 
-**Última atualização:** 01/12/2025  
-**Próxima revisão:** Testes Ofertas e Cashback  
+**Última atualização:** 02/12/2025  
+**Próxima revisão:** Testes completos Cashback Loja  
 **Manutenção:** Jean Lessa + Claude AI
 
 ---
@@ -1050,3 +1050,150 @@ ofertas = Oferta.objects.filter(
 - `buscar_clientes_elegiveis()` - Clientes para disparo
 
 **Status:** ⚠️ Em testes (aguardando validação em produção)
+
+---
+
+## 💰 SISTEMA DE CASHBACK CENTRALIZADO
+
+**Status:** Implementado (02/12/2025)
+
+### Estrutura de Tabelas
+
+**cashback_regra_loja:**
+- `id`, `loja_id`, `nome`, `descricao`, `ativo`, `prioridade`
+- `tipo_concessao` (FIXO, PERCENTUAL), `valor_concessao`
+- `valor_minimo_compra`, `valor_maximo_cashback`
+- `formas_pagamento` (JSON: PIX, DEBITO, CREDITO), `dias_semana` (JSON: 0-6)
+- `horario_inicio`, `horario_fim`
+- `limite_uso_cliente_dia`, `limite_uso_cliente_mes`
+- `orcamento_mensal`, `gasto_mes_atual`
+- `vigencia_inicio`, `vigencia_fim`
+
+**cashback_uso:**
+- `id`, `tipo_origem` (WALL, LOJA)
+- `parametro_wall_id`, `regra_loja_id`
+- `cliente_id`, `loja_id`, `canal_id`
+- `transacao_tipo` (POS, CHECKOUT), `transacao_id`
+- `valor_transacao`, `valor_cashback`
+- `status` (RETIDO, LIBERADO, EXPIRADO, ESTORNADO)
+- `aplicado_em`, `liberado_em`, `expira_em`
+- `movimentacao_id` (referência conta digital)
+
+**transactiondata_own (campos renomeados):**
+- `desconto_wall` - Desconto Wall aplicado (wall=S)
+- `cashback_debitado` - Cashback usado para pagar
+- `cashback_creditado_wall` - Cashback Wall concedido
+- `cashback_creditado_loja` - Cashback Loja concedido (NOVO)
+- `autorizacao_uso_saldo_id` - ID autorização uso saldo
+- `saldo_debitado` - Saldo conta digital usado
+
+### Regras de Negócio
+
+**Cashback Wall:**
+- Concedido pela plataforma WallClub
+- Baseado em parâmetros globais (wall='C')
+- Custo absorvido pela WallClub
+
+**Cashback Loja:**
+- Concedido pela loja (regras customizadas)
+- Lojista define: valor, condições, limites
+- Custo absorvido pela loja
+- Prioridade: maior número = maior prioridade
+
+**Retenção e Expiração (Global):**
+```python
+# settings/base.py
+CASHBACK_PERIODO_RETENCAO_DIAS = 30  # Dias retido antes de liberar
+CASHBACK_PERIODO_EXPIRACAO_DIAS = 90  # Dias após liberação para expirar
+```
+
+**Fluxo de Estados:**
+1. `RETIDO` - Creditado mas bloqueado (30 dias)
+2. `LIBERADO` - Disponível para uso (90 dias)
+3. `EXPIRADO` - Não usado no prazo
+4. `ESTORNADO` - Transação estornada
+
+### APIs REST
+
+**Simulação V2 (POSP2):**
+```bash
+POST /api/v1/posp2/simula_parcelas_v2/
+{
+  "valor": 100.00,
+  "terminal": "PB59237K70569",
+  "wall": "s",
+  "cliente_id": 123
+}
+
+# Resposta inclui:
+{
+  "cashback_wall": {"valor": "0.00", "percentual": "0.00"},
+  "cashback_loja": {
+    "aplicavel": true,
+    "valor": "5.00",
+    "regra_id": 2,
+    "regra_nome": "Cashback 5% PIX"
+  },
+  "cashback_total": "5.00"
+}
+```
+
+**Aplicação de Cashback:**
+```python
+# Após transação aprovada (trdata_own)
+CashbackService.aplicar_cashback_wall(
+    parametro_wall_id=1,
+    cliente_id=123,
+    loja_id=456,
+    canal_id=1,
+    transacao_tipo='POS',
+    transacao_id=789,
+    valor_transacao=Decimal('100.00'),
+    valor_cashback=Decimal('5.00')
+)
+
+CashbackService.aplicar_cashback_loja(
+    regra_loja_id=2,
+    cliente_id=123,
+    loja_id=456,
+    canal_id=1,
+    transacao_tipo='POS',
+    transacao_id=789,
+    valor_transacao=Decimal('100.00'),
+    valor_cashback=Decimal('5.00')
+)
+```
+
+### Portal Lojista
+
+**Menu:** `/cashback/` (CRUD completo)
+
+**Funcionalidades:**
+- Listar regras (filtros: busca, status, vigência)
+- Criar/Editar regra (formulário completo)
+- Ativar/Desativar regra
+- Detalhes + estatísticas de uso
+- Relatório de uso com filtros avançados
+
+**Validações:**
+- Lojista só gerencia regras da própria loja
+- Orçamento mensal controlado automaticamente
+- Limites de uso por cliente validados
+
+### Jobs Celery
+
+**Diários:**
+- `liberar_cashback_retido()` - Libera cashback após período de retenção
+- `expirar_cashback_vencido()` - Expira cashback não usado
+
+**Mensais:**
+- `resetar_gasto_mensal_lojas()` - Zera `gasto_mes_atual` dia 1
+
+### Contabilização
+
+**Separação de Custos:**
+- Cashback Wall: custo WallClub (`tipo_origem='WALL'`)
+- Cashback Loja: custo Loja (`tipo_origem='LOJA'`)
+- Relatórios separados por tipo de origem
+
+**Status:** ✅ Em produção (simulação V2 funcionando)

@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.3  
-**Data:** 01/12/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Ofertas completo
+**Versão:** 5.4  
+**Data:** 02/12/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado em produção
 
 ---
 
@@ -489,7 +489,31 @@ docker-compose logs -f riskengine
 
 **Documentação:** [TESTE_CURL_USUARIO.md](../TESTE_CURL_USUARIO.md)
 
-### 2. Sistema de Ofertas Push
+### 2. Sistema de Cashback Centralizado ⭐
+
+**Status:** Implementado (02/12/2025)
+
+**Tipos:**
+- **Cashback Wall:** Concedido pela WallClub (custo WallClub)
+- **Cashback Loja:** Concedido pela loja (custo loja)
+
+**Tabelas:**
+- `cashback_regra_loja` - Regras customizadas por loja
+- `cashback_uso` - Histórico unificado (Wall + Loja)
+- `transactiondata_own` - Campos renomeados (desconto_wall, cashback_creditado_wall, cashback_creditado_loja)
+
+**Fluxo:**
+1. Simulação V2: `/api/v1/posp2/simula_parcelas_v2/` retorna cashback Wall + Loja
+2. Transação: POS envia valores para `/api/v1/posp2/trdata_own/`
+3. Aplicação: `CashbackService` credita na conta digital (RETIDO → LIBERADO → EXPIRADO)
+4. Jobs Celery: Liberação (30 dias) e expiração (90 dias)
+
+**Portal Lojista:**
+- CRUD regras cashback (`/cashback/`)
+- Configuração: valor, condições, limites, orçamento
+- Relatórios de uso
+
+### 3. Sistema de Ofertas Push
 
 **Segmentação:**
 - todos_canal (todos ativos)
