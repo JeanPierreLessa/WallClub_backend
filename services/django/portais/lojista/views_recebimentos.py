@@ -922,13 +922,13 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
             
             # Formatar data para nome do arquivo
             data_formatada = data_recebimento.replace('-', '').replace('/', '')
-            nome_arquivo = f"transacoes_vendas_{data_formatada}_{datetime.now().strftime('%H%M%S')}"
+            nome_arquivo = f"detalhes_recebimentos_{data_formatada}_{datetime.now().strftime('%H%M%S')}"
             
             if formato == 'excel':
                 return exportar_excel(
                     nome_arquivo=nome_arquivo,
                     dados=results,
-                    titulo=f"Transações Vendas {data_recebimento}",
+                    titulo=f"Detalhes Recebimentos - {data_recebimento}",
                     colunas_monetarias=colunas_monetarias,
                     lojas_incluidas=lojas_incluidas
                 )
@@ -942,7 +942,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 return exportar_pdf(
                     nome_arquivo=nome_arquivo,
                     dados=results,
-                    titulo=f"Transações de Vendas - {data_recebimento}",
+                    titulo=f"Detalhes Recebimentos - {data_recebimento}",
                     colunas_monetarias=colunas_monetarias,
                     lojas_incluidas=lojas_incluidas
                 )
