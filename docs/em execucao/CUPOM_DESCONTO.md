@@ -499,15 +499,26 @@ ADD INDEX idx_cupom_id (cupom_id);
 - `wallclub/urls_pos.py` - Adicionado rota `/api/v1/cupons/`
 - `posp2/services.py` - Método `obter_logo_pos()` retorna `loja_id`
 
-### ⏳ Etapa 5: Integração Checkout Web - PENDENTE
-- Alterar `CheckoutTransaction`
-- Modificar `LinkPagamentoTransactionService` para usar API
-- Campo cupom no formulário
+### ❌ Etapa 5: Integração Checkout Web - NÃO IMPLEMENTADO
+
+**Status:** Feature não implementada no Checkout Web
+
+**Pendências:**
+- Alterar `CheckoutTransaction` (adicionar campos `cupom_id`, `cupom_valor_desconto`)
+- Modificar `LinkPagamentoTransactionService` para:
+  - Validar cupom via API `/api/v1/cupons/validar/`
+  - Aplicar desconto após calculadora
+  - Registrar uso do cupom
+- Adicionar campo cupom no formulário de pagamento
+- Atualizar template HTML do checkout
+- Validação client-side (opcional)
+
+**Observação:** API de validação já existe e funciona. Falta apenas integração no fluxo do checkout.
 
 ### ⏳ Etapa 5: Integração Pinbank (POSP2) - PENDENTE
-- Alterar `TransactionData`
-- Modificar `TRDataService`
-- Mesmo fluxo da Own
+- Alterar `TransactionData` (adicionar campos `cupom_id`, `cupom_valor_desconto`)
+- Modificar `TRDataService` para aplicar cupom
+- Mesmo fluxo da Own (já implementado)
 
 ### ⏳ Etapa 6: Contabilização - PENDENTE (aguardando definição de regras)
 - Alterar `BaseTransacoesGestao`

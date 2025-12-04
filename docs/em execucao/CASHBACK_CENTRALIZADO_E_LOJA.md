@@ -645,20 +645,18 @@ class CashbackService:
 - ⏳ Configurar schedule no Celery Beat (pendente)
 
 ### ⏳ Etapa 4: Migrar Cashback Wall - PENDENTE
-- Modificar fluxo POS para usar `CashbackService.aplicar_cashback_wall()`
-- Modificar fluxo Checkout para usar `CashbackService.aplicar_cashback_wall()`
+- ✅ Modificar fluxo POS para usar `CashbackService.aplicar_cashback_wall()`
+- ❌ **Modificar fluxo Checkout Web para usar `CashbackService.aplicar_cashback_wall()` - NÃO IMPLEMENTADO**
 - Validar que continua funcionando
 - Testes de regressão
 
-### ✅ Etapa 5: Cashback Loja (Portal Lojista) - CONCLUÍDA (26/11/2025)
-- ✅ CRUD de regras no portal lojista (6 views)
-- ✅ Templates HTML (lista, form, detalhe, relatório)
-- ✅ URLs configuradas
+### ✅ Etapa 5: Portal Lojista - CONCLUÍDA (25/11/2025)
 - ✅ Deploy em produção e correções de configuração
 - ✅ Pulldown de seleção de loja adicionado ao formulário
 - ✅ Remoção de campos `periodo_retencao_dias` e `periodo_expiracao_dias` (agora são globais)
 - ⏳ CRUD de regras no portal admin (pendente)
-- ⏳ Aplicação automática no fluxo POS/Checkout (pendente)
+- ✅ Aplicação automática no fluxo POS (implementado)
+- ❌ **Aplicação automática no fluxo Checkout Web - NÃO IMPLEMENTADO**
 
 **Arquivos criados:**
 - `portais/lojista/views_cashback.py` (380 linhas)

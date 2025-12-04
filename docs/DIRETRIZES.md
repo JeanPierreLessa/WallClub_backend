@@ -441,6 +441,21 @@ DB_PASSWORD = 'senha123'
 EMAIL_HOST_USER = os.environ.get('MAILSERVER_USERNAME')
 API_KEY = secrets.get('API_KEY')
 DB_PASSWORD = secrets.get('DB_PASSWORD')
+MERCHANT_URL = os.environ.get('MERCHANT_URL')  # Obrigatória para Own Financial
+```
+
+**Variáveis Obrigatórias no `.env`:**
+```bash
+# Desenvolvimento (services/django/.env)
+MERCHANT_URL=https://wallclub.com.br  # URL estabelecimento (payload Own)
+CHECKOUT_BASE_URL=http://localhost:8007
+BASE_URL=http://localhost:8005
+```
+
+**Variáveis Obrigatórias no `settings/base.py`:**
+```python
+# wallclub/settings/base.py
+MERCHANT_URL = os.environ.get('MERCHANT_URL')  # Adicionar junto com outras URLs
 ```
 
 **Locais onde credenciais NUNCA devem aparecer:**
@@ -867,18 +882,38 @@ logger.error("❌ Falha ao processar pagamento")
 
 ### Comandos Docker
 
+**Desenvolvimento:**
+```bash
+# Subir ambiente dev (sem nginx, celery, flower)
+cd /Users/jeanlessa/wall_projects/WallClub_backend
+docker exec wallclub-redis redis-cli FLUSHALL
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
+# Status containers
+docker ps
+
+# Logs tempo real
+docker logs wallclub-portais --tail 50 -f
+docker logs wallclub-apis --tail 50 -f
+
+# Restart container
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml restart wallclub-apis
+```
+
+**Produção:**
 ```bash
 # Status containers
 docker-compose ps
 
 # Logs tempo real
-docker-compose logs -f web
+docker-compose logs -f wallclub-portais
 
 # Restart container
-docker-compose restart web
+docker-compose restart wallclub-portais
 
 # Entrar no container
-docker exec -it wallclub-prod-release300 bash
+docker exec -it wallclub-portais bash
 
 # Redis CLI
 docker exec -it wallclub-redis redis-cli

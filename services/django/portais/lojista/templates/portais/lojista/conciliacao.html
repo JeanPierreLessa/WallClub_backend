@@ -116,32 +116,45 @@
 
 {% block extra_css %}
 <style>
-
-.table th {
-    background-color: #343a40 !important;
-    color: white !important;
-    font-size: 0.75rem;
-    padding: 8px 4px;
-    text-align: center;
-    vertical-align: middle;
-    background-color: #343a40 !important;
-    color: white !important;
-    font-size: 0.75rem;
-    padding: 8px 4px;
-    text-align: center;
-    vertical-align: middle;
+/* Container da tabela com scroll */
+.table-wrapper-scroll {
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
 }
 
-.table td {
+/* Cabeçalho fixo */
+.table-wrapper-scroll table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background-color: #343a40 !important;
+    color: white !important;
+    font-size: 0.75rem !important;
+    padding: 8px 4px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+}
+
+/* Células da tabela */
+.table-wrapper-scroll table td {
     font-size: 0.70rem;
     padding: 6px 4px;
     text-align: center;
     vertical-align: middle;
+    background-color: white;
 }
 
-.table-responsive {
-    max-height: 600px;
-    overflow-y: auto;
+/* Zebrado */
+.table-wrapper-scroll table tbody tr:nth-of-type(odd) td {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Garantir que a tabela não tenha margin */
+.table-wrapper-scroll table {
+    margin-bottom: 0 !important;
 }
 </style>
 {% endblock %}

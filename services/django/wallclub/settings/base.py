@@ -316,6 +316,7 @@ CHECKOUT_BASE_URL = os.environ.get('CHECKOUT_BASE_URL')
 PORTAL_LOJISTA_URL = os.environ.get('PORTAL_LOJISTA_URL')
 PORTAL_VENDAS_URL = os.environ.get('PORTAL_VENDAS_URL')
 MAIN_URL = os.environ.get('MAIN_URL')
+MERCHANT_URL = os.environ.get('MERCHANT_URL')
 
 # URLs de API (compatibilidade e migração)
 WC_API_BASE_URL = os.environ.get('WC_API_BASE_URL')  # Atual - compatibilidade com POS/APP

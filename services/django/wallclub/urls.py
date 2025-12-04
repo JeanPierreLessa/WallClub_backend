@@ -27,7 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # Portais (nova estrutura modular)
-    path('portal_admin/', include('portais.admin.urls')),  # Portal administrativo
+    path('portal_admin/', include('portais.admin.urls', namespace='portais_admin')),  # Portal administrativo
     path('portal_lojista/', include('portais.lojista.urls', namespace='lojista')),  # Portal lojista padrão (wallclub)
     path('portal_lojista/<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),  # Portal lojista por marca
     path('portal_corporativo/', include('portais.corporativo.urls')),  # Portal corporativo

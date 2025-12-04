@@ -239,9 +239,9 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
         
         # Tabela de conciliação
         html = '''
-        <div class="table-responsive">
-            <table class="table table-striped table-hover" style="font-size: 0.70rem;">
-                <thead class="table-dark">
+        <div class="table-wrapper-scroll">
+            <table class="table table-striped table-hover">
+                <thead>
                     <tr>
                         <th>Data</th>
                         <th>Dt Crédito</th>
@@ -274,6 +274,15 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
         '''
         
         for conciliacao in conciliacoes:
+            # Função helper para converter valores numéricos com segurança
+            def safe_float(valor, default=0):
+                if valor is None:
+                    return default
+                try:
+                    return float(valor)
+                except (ValueError, TypeError):
+                    return default
+            
             html += f'''
             <tr>
                 <td>{conciliacao.get("Data_formatada", "-")}</td>
@@ -287,15 +296,15 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 <td>{conciliacao.get("Autorizacao", "-")}</td>
                 <td>{conciliacao.get("Parcela", "-")}</td>
                 <td>{conciliacao.get("Prazo_Total", "-")}</td>
-                <td>R$ {float(conciliacao.get("Vl_Bruto", 0)):,.2f}</td>
-                <td>R$ {float(conciliacao.get("Tx_Adm_R", 0)):,.2f}</td>
-                <td>R$ {float(conciliacao.get("Vl_Liq", 0)):,.2f}</td>
-                <td>R$ {float(conciliacao.get("Vl_Canc", 0)):,.2f}</td>
-                <td>{float(conciliacao.get("Tx_Adm_Perc", 0)):,.2f}%</td>
-                <td>R$ {float(conciliacao.get("Vl_Liq_Pago", 0)):,.2f}</td>
-                <td>{float(conciliacao.get("Tx_Antec_Per", 0)):,.2f}%</td>
-                <td>R$ {float(conciliacao.get("Custo_Antec", 0)):,.2f}</td>
-                <td>{float(conciliacao.get("Tx_Antec_AM", 0)):,.2f}%</td>
+                <td>R$ {safe_float(conciliacao.get("Vl_Bruto")):,.2f}</td>
+                <td>R$ {safe_float(conciliacao.get("Tx_Adm_R")):,.2f}</td>
+                <td>R$ {safe_float(conciliacao.get("Vl_Liq")):,.2f}</td>
+                <td>R$ {safe_float(conciliacao.get("Vl_Canc")):,.2f}</td>
+                <td>{safe_float(conciliacao.get("Tx_Adm_Perc")):,.2f}%</td>
+                <td>R$ {safe_float(conciliacao.get("Vl_Liq_Pago")):,.2f}</td>
+                <td>{safe_float(conciliacao.get("Tx_Antec_Per")):,.2f}%</td>
+                <td>R$ {safe_float(conciliacao.get("Custo_Antec")):,.2f}</td>
+                <td>{safe_float(conciliacao.get("Tx_Antec_AM")):,.2f}%</td>
                 <td>{conciliacao.get("Status_Pagto", "-")}</td>
                 <td>{conciliacao.get("Plano", "-")}</td>
                 <td>{conciliacao.get("Bandeira", "-")}</td>

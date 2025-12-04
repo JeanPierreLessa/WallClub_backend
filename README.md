@@ -131,7 +131,7 @@ CHECKOUT_BASE_URL=https://checkout.wallclub.com.br
 PORTAL_LOJISTA_URL=https://wclojista.wallclub.com.br
 PORTAL_VENDAS_URL=https://wcvendas.wallclub.com.br
 MEDIA_BASE_URL=https://wcapi.wallclub.com.br
-MERCHANT_URL=wallclub.com.br
+MERCHANT_URL=https://wallclub.com.br  # URL do estabelecimento (obrigatória para Own Financial)
 ```
 
 **Segurança:**
@@ -289,26 +289,40 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,htt
 - Redis
 - Docker & Docker Compose
 
-### Setup
+### Setup Docker (Recomendado)
 
 ```bash
 # Clone o repositório
 git clone <url>
-cd wallclub
+cd WallClub_backend
 
-# Django (Portais)
-cd services/django
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-DJANGO_SETTINGS_MODULE=wallclub.settings.portais python manage.py runserver 8005
+# Desenvolvimento (sem nginx, celery, flower)
+docker exec wallclub-redis redis-cli FLUSHALL  # Limpar cache
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
-# Risk Engine
-cd services/riskengine
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python manage.py runserver 8008
+# Verificar status
+docker ps
+
+# Logs
+docker logs wallclub-portais --tail 50
+docker logs wallclub-apis --tail 50
+```
+
+**Acessos locais:**
+- Admin: http://localhost:8005/portal_admin/
+- Lojista: http://localhost:8005/portal_lojista/
+- Vendas: http://localhost:8005/portal_vendas/
+- APIs: http://localhost:8007/api/v1/
+- Checkout: http://localhost:8007/api/v1/checkout/
+
+**Arquivo `.env` (desenvolvimento):**
+```bash
+# services/django/.env
+DEBUG=True
+MERCHANT_URL=https://wallclub.com.br
+CHECKOUT_BASE_URL=http://localhost:8007
+# ... outras variáveis
 ```
 
 ### Docker (Produção)
@@ -318,13 +332,14 @@ python manage.py runserver 8008
 docker-compose up -d --build
 
 # Verificar logs
-docker-compose logs -f web
-docker-compose logs -f riskengine
+docker-compose logs -f wallclub-portais
+docker-compose logs -f wallclub-riskengine
 
 # Parar serviços
 docker-compose down
 ```
 
+## Arquitetura
 ### VSCode Workspace
 
 Abrir o workspace multi-folder:
