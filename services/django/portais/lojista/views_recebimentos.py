@@ -120,7 +120,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                     })
                 
                 # Renderizar HTML do resumo
-                html = self._render_resumo_recebimentos_html(recebimentos_resumo)
+                html = self._render_resumo_recebimentos_html(recebimentos_resumo, loja_selecionada, incluir_tef)
                 
                 return JsonResponse({
                     'success': True,
@@ -133,7 +133,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
         
         return self.get(request)
     
-    def _render_resumo_recebimentos_html(self, recebimentos_resumo):
+    def _render_resumo_recebimentos_html(self, recebimentos_resumo, loja_selecionada='', incluir_tef=False):
         """Renderizar HTML do resumo de recebimentos por data"""
         if not recebimentos_resumo:
             return '<div class="alert alert-info mt-3">Nenhum recebimento encontrado com os filtros informados.</div>'
