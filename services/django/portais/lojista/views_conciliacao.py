@@ -193,7 +193,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     CAST(t.var37 AS DECIMAL(10,2))                     AS `Tx_Adm_R`,
                     CAST(t.var42 AS DECIMAL(10,2))                     AS `Vl_Liq`,
                     CASE 
-                        WHEN t.var70 = '0001-01-01T00:00:00' OR t.var70 IS NULL
+                        WHEN TRIM(t.var70) = '0001-01-01T00:00:00' OR t.var70 IS NULL OR TRIM(t.var70) = ''
                              THEN 0
                         ELSE CAST(t.ValorBruto AS DECIMAL(10,2))
                     END                                                AS `Vl_Canc`, 
