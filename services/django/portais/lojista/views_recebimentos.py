@@ -891,7 +891,19 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 # Processar dados da transação
                 valor_bruto = float(transacao.get('valor_transacao', 0) or 0)
                 valor_liquido = float(transacao.get('valor_recebimento', 0) or 0)
-                valor_rebate = 0
+                tx_antec = float(transacao.get('tx_antecipacao', 0) or 0) * 100
+                custo_antec = float(transacao.get('custo_antecipacao', 0) or 0)
+                
+                # Determinar tipo
+                tipo = 'Crédito' if valor_liquido >= 0 else 'Débito'
+                
+                # Buscar nome da loja
+                loja_id = int(transacao['loja_id']) if transacao.get('loja_id') else None
+                nome_loja = f"Loja {loja_id}"
+                for loja_info in lojas_acessiveis:
+                    if loja_info.get('id') == loja_id:
+                        nome_loja = loja_info.get('nome', nome_loja)
+                        break
                 
                 # Formatar data da transação
                 data_transacao = transacao.get('data_transacao', '-')
@@ -899,22 +911,26 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                     data_transacao = data_transacao.strftime('%d/%m/%Y')
                 
                 results.append({
-                    'NSU': transacao.get('nsu', '-'),
-                    'Data Transação': data_transacao,
-                    'Valor Bruto (R$)': valor_bruto,
-                    'Valor Líquido (R$)': valor_liquido,
-                    'Valor Rebate (R$)': valor_rebate,
+                    'Loja': nome_loja,
+                    'Data': data_transacao,
+                    'Vl Líq(R$)': valor_liquido,
+                    'Tipo': tipo,
+                    'Status': '-',
+                    'Vl Bruto(R$)': valor_bruto,
+                    'Tx.Antec(%)': tx_antec,
+                    'Custo Antec(R$)': custo_antec,
+                    'Parcela': int(transacao.get('parcelas', 0) or 0),
+                    'Prazo Total': int(transacao.get('parcelas', 0) or 0),
                     'Plano': transacao.get('plano', '-') or '-',
                     'Bandeira': transacao.get('bandeira', '-') or '-',
-                    'Parcelas': int(transacao.get('parcelas', 0) or 0) if transacao.get('parcelas') not in ['-', None, ''] else '-',
-                    'Loja ID': transacao.get('loja_id', '-')
+                    'NSU': transacao.get('nsu', '-') or '-'
                 })
             
             # Coletar nomes únicos das lojas para o rodapé
             lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
             
             # Definir colunas monetárias para formatação
-            colunas_monetarias = ['Valor Bruto (R$)', 'Valor Líquido (R$)', 'Valor Rebate (R$)']
+            colunas_monetarias = ['Vl Bruto(R$)', 'Vl Líq(R$)', 'Custo Antec(R$)']
             
             # Verificar se há dados para exportar
             if not results:
