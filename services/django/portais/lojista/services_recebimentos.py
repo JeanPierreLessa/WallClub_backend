@@ -16,7 +16,7 @@ class RecebimentoService:
     """
     
     @staticmethod
-    def obter_recebimentos_por_data(lojas_ids, data_inicio=None, data_fim=None, nsu=None):
+    def obter_recebimentos_por_data(lojas_ids, data_inicio=None, data_fim=None, nsu=None, incluir_tef=True):
         """
         Busca recebimentos agrupados por data de recebimento.
         
@@ -51,6 +51,10 @@ class RecebimentoService:
         
         if nsu:
             where_clauses.append(f"var9 LIKE '%{nsu}%'")
+        
+        # Filtro TEF - se não incluir TEF, filtrar apenas transações não-Credenciadora
+        if not incluir_tef:
+            where_clauses.append("tipo_operacao != 'Credenciadora'")
         
         # Adicionar filtros de data direto no SQL
         # Como var45 está em formato DD/MM/YYYY, precisamos converter

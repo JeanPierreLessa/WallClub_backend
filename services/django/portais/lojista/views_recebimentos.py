@@ -53,6 +53,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
             data_fim = request.POST.get('data_fim', '')
             loja_selecionada = request.POST.get('loja', '')
             nsu = request.POST.get('nsu', '').strip()
+            incluir_tef = request.POST.get('incluir_tef') == 'on'
             
             # Validar acesso às lojas usando serviço centralizado
             from portais.controle_acesso.models import PortalUsuario
@@ -68,13 +69,23 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 loja_ids_acesso = []
             
             # Determinar lojas para consulta
-            if loja_selecionada and loja_selecionada != 'todas':
-                if int(loja_selecionada) in loja_ids_acesso:
-                    lojas_para_consulta = [int(loja_selecionada)]
-                else:
-                    return JsonResponse({'error': 'Acesso negado à loja selecionada'}, status=403)
+            from wallclub_core.utilitarios.log_control import registrar_log
+            registrar_log('portais.lojista', f"RECEBIMENTOS - Loja selecionada: '{loja_selecionada}' - Tipo: {type(loja_selecionada)}")
+            
+            if loja_selecionada and loja_selecionada != 'todas' and loja_selecionada.strip() != '':
+                try:
+                    loja_id = int(loja_selecionada)
+                    if loja_id in loja_ids_acesso:
+                        lojas_para_consulta = [loja_id]
+                        registrar_log('portais.lojista', f"RECEBIMENTOS - Filtrando por loja: {loja_id}")
+                    else:
+                        return JsonResponse({'error': 'Acesso negado à loja selecionada'}, status=403)
+                except ValueError:
+                    registrar_log('portais.lojista', f"RECEBIMENTOS - Erro ao converter loja_selecionada: '{loja_selecionada}'", nivel='ERROR')
+                    lojas_para_consulta = loja_ids_acesso
             else:
                 lojas_para_consulta = loja_ids_acesso
+                registrar_log('portais.lojista', f"RECEBIMENTOS - Usando todas as lojas: {lojas_para_consulta}")
             
             try:
                 # Usar RecebimentoService para buscar recebimentos agrupados por data
@@ -82,7 +93,8 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                     lojas_ids=lojas_para_consulta,
                     data_inicio=data_inicio if data_inicio else None,
                     data_fim=data_fim if data_fim else None,
-                    nsu=nsu if nsu else None
+                    nsu=nsu if nsu else None,
+                    incluir_tef=incluir_tef
                 )
                 
                 # Converter para formato esperado pelo template

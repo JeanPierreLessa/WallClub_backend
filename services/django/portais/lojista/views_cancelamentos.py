@@ -53,6 +53,7 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
             data_inicio = request.POST.get('data_inicio', '')
             data_fim = request.POST.get('data_fim', '')
             loja_selecionada = request.POST.get('loja', '')
+            incluir_tef = request.POST.get('incluir_tef') == 'on'
             
             # Validar acesso às lojas usando serviço centralizado
             from portais.controle_acesso.models import PortalUsuario
@@ -106,6 +107,11 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
                 if data_fim:
                     where_conditions.append("data_transacao <= %s")
                     params.append(f"{data_fim} 23:59:59")
+                
+                # Filtro TEF - se não incluir TEF, filtrar apenas transações não-Credenciadora
+                if not incluir_tef:
+                    where_conditions.append("tipo_operacao != %s")
+                    params.append('Credenciadora')
                 
                 where_clause = " AND ".join(where_conditions)
                 
