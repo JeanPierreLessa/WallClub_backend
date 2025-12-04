@@ -61,7 +61,7 @@ def ajustes_manuais_base_task(self):
         raise
 
 
-@shared_task(bind=True, name='pinbank.cargas_completas')
+@shared_task(bind=True, name='pinbank.cargas_completas', soft_time_limit=1800, time_limit=2400)
 def cargas_completas_task(self):
     """
     Task que executa o script executar_cargas_completas.py

@@ -40,8 +40,8 @@ class CargaExtratoPOSService:
 
         total_transacoes = 0
 
-        # Buscar todas as credenciais
-        credenciais = CredenciaisExtratoContaPinbank.objects.all()
+        # Buscar apenas credenciais ativas
+        credenciais = CredenciaisExtratoContaPinbank.objects.filter(ativo=1)
 
         for credencial in credenciais:
             try:
