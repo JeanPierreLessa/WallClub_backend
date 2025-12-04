@@ -182,13 +182,14 @@ class RecebimentoService:
         return dict(recebimentos_ordenados)
     
     @staticmethod
-    def obter_transacoes_por_data(lojas_ids, data_recebimento):
+    def obter_transacoes_por_data(lojas_ids, data_recebimento, incluir_tef=True):
         """
         Busca todas as transações de uma data específica.
         
         Args:
             lojas_ids (list): IDs das lojas acessíveis
             data_recebimento (str): Data no formato YYYY-MM-DD ou DD/MM/YYYY
+            incluir_tef (bool): Se False, exclui transações tipo_operacao='Credenciadora'
             
         Returns:
             list: Lista de transações da data
@@ -215,6 +216,11 @@ class RecebimentoService:
         
         # Buscar transações
         filtros = Q(var6__in=lojas_ids) & Q(var45=data_formatada)
+        
+        # Filtro TEF - se não incluir TEF, excluir transações Credenciadora
+        if not incluir_tef:
+            filtros &= ~Q(tipo_operacao='Credenciadora')
+        
         transacoes = BaseTransacoesGestao.objects.filter(filtros).order_by('var9', '-data_transacao')
         
         results = []

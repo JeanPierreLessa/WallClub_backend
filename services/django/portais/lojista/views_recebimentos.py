@@ -387,7 +387,8 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 # Buscar transações usando o service
                 transacoes_list = RecebimentoService.obter_transacoes_por_data(
                     lojas_ids=lojas_para_consulta,
-                    data_recebimento=data_recebimento
+                    data_recebimento=data_recebimento,
+                    incluir_tef=incluir_tef
                 )
                 
                 # Converter para formato esperado pelo template
@@ -871,7 +872,8 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
             
             transacoes_list = RecebimentoService.obter_transacoes_por_data(
                 lojas_ids=lojas_para_consulta,
-                data_recebimento=data_recebimento
+                data_recebimento=data_recebimento,
+                incluir_tef=incluir_tef
             )
             
             results = []
@@ -956,6 +958,7 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
         
         formato = request.POST.get('formato', 'excel')
         data_recebimento = request.POST.get('data_recebimento', '')
+        incluir_tef = request.POST.get('incluir_tef') == 'on'
         
         if not data_recebimento:
             return JsonResponse({'error': 'Data de recebimento é obrigatória'}, status=400)

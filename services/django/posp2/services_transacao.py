@@ -1303,6 +1303,7 @@ class TRDataService:
             dados_base_gestao = {
                 'idFilaExtrato': id_fila_extrato,
                 'banco': 'PINBANK',
+                'tipo_operacao': 'Wallet',
                 'data_transacao': data_transacao,
             }
             
