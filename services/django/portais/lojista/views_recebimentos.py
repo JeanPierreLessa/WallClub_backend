@@ -859,6 +859,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
         
         formato = request.POST.get('formato', 'excel')
         data_recebimento = request.POST.get('data_recebimento', '')
+        incluir_tef = request.POST.get('incluir_tef') == 'on'
         
         if not data_recebimento:
             return JsonResponse({'error': 'Data de recebimento é obrigatória'}, status=400)
