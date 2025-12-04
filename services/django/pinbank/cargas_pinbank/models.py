@@ -67,6 +67,7 @@ class CredenciaisExtratoContaPinbank(models.Model):
     canal = models.CharField(max_length=256, null=True, blank=True)
     codigo_cliente = models.CharField(max_length=10, null=True, blank=True)
     cliente_id = models.IntegerField(null=True, blank=True)
+    ativo = models.BooleanField(default=True, null=True, blank=True)
 
     class Meta:
         db_table = 'credenciaisExtratoContaPinbank'
