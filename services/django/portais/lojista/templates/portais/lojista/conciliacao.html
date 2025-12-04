@@ -116,45 +116,73 @@
 
 {% block extra_css %}
 <style>
-/* Container da tabela com scroll */
-.table-wrapper-scroll {
-    max-height: 600px;
-    overflow-y: auto;
-    overflow-x: auto;
-    position: relative;
+/* Container principal */
+.conciliacao-container {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 /* Cabeçalho fixo */
-.table-wrapper-scroll table thead th {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 100 !important;
-    background-color: #343a40 !important;
-    color: white !important;
-    font-size: 0.75rem !important;
-    padding: 8px 4px !important;
-    text-align: center !important;
-    vertical-align: middle !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+.conciliacao-header {
+    overflow-x: auto;
+    background-color: #343a40;
 }
 
-/* Células da tabela */
-.table-wrapper-scroll table td {
+.conciliacao-header table {
+    table-layout: fixed;
+    width: 2340px; /* Soma das larguras das colunas */
+}
+
+.conciliacao-header th {
+    background-color: #343a40 !important;
+    color: white !important;
+    font-size: 0.75rem;
+    padding: 8px 4px;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #495057 !important;
+    white-space: nowrap;
+}
+
+/* Corpo com scroll */
+.conciliacao-body {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.conciliacao-body table {
+    table-layout: fixed;
+    width: 2340px; /* Mesma largura do cabeçalho */
+}
+
+.conciliacao-body td {
     font-size: 0.70rem;
     padding: 6px 4px;
     text-align: center;
     vertical-align: middle;
-    background-color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Zebrado */
-.table-wrapper-scroll table tbody tr:nth-of-type(odd) td {
-    background-color: rgba(0, 0, 0, 0.05);
+/* Sincronizar scroll horizontal */
+.conciliacao-body::-webkit-scrollbar {
+    height: 8px;
 }
 
-/* Garantir que a tabela não tenha margin */
-.table-wrapper-scroll table {
-    margin-bottom: 0 !important;
+.conciliacao-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.conciliacao-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.conciliacao-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 </style>
 {% endblock %}
@@ -223,6 +251,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Executar pesquisa automaticamente ao carregar a página
     executarPesquisa();
+    
+    // Sincronizar scroll horizontal entre cabeçalho e corpo
+    document.addEventListener('scroll', function(e) {
+        if (e.target.classList && e.target.classList.contains('conciliacao-body')) {
+            const header = document.querySelector('.conciliacao-header');
+            if (header) {
+                header.scrollLeft = e.target.scrollLeft;
+            }
+        }
+    }, true);
+    
+    // Event listener para paginação
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.page-link[data-pagina]')) {
+            e.preventDefault();
+            const pagina = e.target.getAttribute('data-pagina');
+            
+            // Adicionar campo de página ao formulário
+            let inputPagina = document.getElementById('input_pagina');
+            if (!inputPagina) {
+                inputPagina = document.createElement('input');
+                inputPagina.type = 'hidden';
+                inputPagina.id = 'input_pagina';
+                inputPagina.name = 'pagina';
+                form.appendChild(inputPagina);
+            }
+            inputPagina.value = pagina;
+            
+            // Executar pesquisa
+            executarPesquisa();
+        }
+    });
     
     // Adicionar event listeners para exportação
     document.addEventListener('click', function(e) {

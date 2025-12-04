@@ -144,6 +144,33 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 # Montar WHERE clause
                 where_clause = " AND ".join(where_conditions)
                 
+                # Paginação
+                pagina = int(request.POST.get('pagina', 1))
+                por_pagina = 200
+                offset = (pagina - 1) * por_pagina
+                
+                # Contar total de registros primeiro
+                sql_count = f"""
+                SELECT COUNT(*) FROM (
+                    SELECT 1
+                    FROM (
+                        SELECT 
+                            btg.id,
+                            ROW_NUMBER() OVER (PARTITION BY btg.var9, pep.NumeroParcela ORDER BY btg.id DESC) as rn
+                        FROM baseTransacoesGestao btg
+                        INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
+                        WHERE {where_clause}
+                    ) t
+                    WHERE t.rn = 1
+                ) total
+                """
+                
+                with connection.cursor() as cursor:
+                    cursor.execute(sql_count, params)
+                    total_registros = cursor.fetchone()[0]
+                
+                total_paginas = (total_registros + por_pagina - 1) // por_pagina
+                
                 # Query completa com JOIN e deduplicação
                 sql = f"""
                 SELECT 
@@ -194,7 +221,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 ) t
                 WHERE t.rn = 1
                 ORDER BY t.data_transacao DESC
-                LIMIT 5000
+                LIMIT {por_pagina} OFFSET {offset}
                 """
                 
                 # Executar query
@@ -214,15 +241,14 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                         results.append(row_dict)
                 
                 # Renderizar HTML
-                html = self._render_conciliacao_html(results)
-                
-                # Contar registros únicos
-                total_registros = len(results)
+                html = self._render_conciliacao_html(results, pagina, total_paginas, total_registros)
                 
                 return JsonResponse({
                     'success': True,
                     'html': html,
-                    'total': total_registros
+                    'total': total_registros,
+                    'pagina': pagina,
+                    'total_paginas': total_paginas
                 })
                     
             except Exception as e:
@@ -232,45 +258,52 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
         # Se não for AJAX, redirecionar para GET
         return redirect('lojista:conciliacao')
     
-    def _render_conciliacao_html(self, conciliacoes):
+    def _render_conciliacao_html(self, conciliacoes, pagina, total_paginas, total_registros):
         """Renderizar HTML da conciliação"""
         if not conciliacoes:
             return '<div class="alert alert-info mt-3">Nenhum registro encontrado com os filtros informados.</div>'
         
-        # Tabela de conciliação
+        # Tabela de conciliação com cabeçalho fixo
         html = '''
-        <div class="table-wrapper-scroll">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Dt Crédito</th>
-                        <th>Dt Pagto</th>
-                        <th>Dt Cancel.</th>
-                        <th>Filial</th>
-                        <th>Cód.Estab.</th>
-                        <th>Terminal</th>
-                        <th>NSU</th>
-                        <th>Autorização</th>
-                        <th>Parcela</th>
-                        <th>Prazo Total</th>
-                        <th>Vl.Bruto(R$)</th>
-                        <th>Tx.Adm.(R$)</th>
-                        <th>Vl.Líq.(R$)</th>
-                        <th>Vl.Canc</th>
-                        <th>Tx.Adm(%)</th>
-                        <th>Vl.Líq.Pago(R$)</th>
-                        <th>Tx.Antec(% per)</th>
-                        <th>Custo Antec(R$)</th>
-                        <th>Tx.Antec(%a.m.)</th>
-                        <th>Status Pagto</th>
-                        <th>Plano</th>
-                        <th>Bandeira</th>
-                        <th>Status Trans</th>
-                        <th>NOP</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div class="conciliacao-container">
+            <!-- Cabeçalho fixo -->
+            <div class="conciliacao-header">
+                <table class="table table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 90px;">Data</th>
+                            <th style="width: 90px;">Dt Crédito</th>
+                            <th style="width: 90px;">Dt Pagto</th>
+                            <th style="width: 90px;">Dt Cancel.</th>
+                            <th style="width: 80px;">Filial</th>
+                            <th style="width: 80px;">Cód.Estab.</th>
+                            <th style="width: 100px;">Terminal</th>
+                            <th style="width: 100px;">NSU</th>
+                            <th style="width: 100px;">Autorização</th>
+                            <th style="width: 70px;">Parcela</th>
+                            <th style="width: 80px;">Prazo Total</th>
+                            <th style="width: 100px;">Vl.Bruto(R$)</th>
+                            <th style="width: 100px;">Tx.Adm.(R$)</th>
+                            <th style="width: 100px;">Vl.Líq.(R$)</th>
+                            <th style="width: 90px;">Vl.Canc</th>
+                            <th style="width: 90px;">Tx.Adm(%)</th>
+                            <th style="width: 110px;">Vl.Líq.Pago(R$)</th>
+                            <th style="width: 100px;">Tx.Antec(% per)</th>
+                            <th style="width: 110px;">Custo Antec(R$)</th>
+                            <th style="width: 100px;">Tx.Antec(%a.m.)</th>
+                            <th style="width: 100px;">Status Pagto</th>
+                            <th style="width: 80px;">Plano</th>
+                            <th style="width: 100px;">Bandeira</th>
+                            <th style="width: 100px;">Status Trans</th>
+                            <th style="width: 80px;">NOP</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+            <!-- Corpo com scroll -->
+            <div class="conciliacao-body">
+                <table class="table table-striped table-bordered table-hover mb-0">
+                    <tbody>
         '''
         
         for conciliacao in conciliacoes:
@@ -285,35 +318,74 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
             
             html += f'''
             <tr>
-                <td>{conciliacao.get("Data_formatada", "-")}</td>
-                <td>{conciliacao.get("Dt_credito_formatada", "-")}</td>
-                <td>{conciliacao.get("Dt_pagto_formatada", "-")}</td>
-                <td>{conciliacao.get("Dt_cancelamento_formatada", "-")}</td>
-                <td>{conciliacao.get("Filial", "-")}</td>
-                <td>{conciliacao.get("Cod_Estab", "-")}</td>
-                <td>{conciliacao.get("Terminal", "-")}</td>
-                <td>{conciliacao.get("NSU", "-")}</td>
-                <td>{conciliacao.get("Autorizacao", "-")}</td>
-                <td>{conciliacao.get("Parcela", "-")}</td>
-                <td>{conciliacao.get("Prazo_Total", "-")}</td>
-                <td>R$ {safe_float(conciliacao.get("Vl_Bruto")):,.2f}</td>
-                <td>R$ {safe_float(conciliacao.get("Tx_Adm_R")):,.2f}</td>
-                <td>R$ {safe_float(conciliacao.get("Vl_Liq")):,.2f}</td>
-                <td>R$ {safe_float(conciliacao.get("Vl_Canc")):,.2f}</td>
-                <td>{safe_float(conciliacao.get("Tx_Adm_Perc")):,.2f}%</td>
-                <td>R$ {safe_float(conciliacao.get("Vl_Liq_Pago")):,.2f}</td>
-                <td>{safe_float(conciliacao.get("Tx_Antec_Per")):,.2f}%</td>
-                <td>R$ {safe_float(conciliacao.get("Custo_Antec")):,.2f}</td>
-                <td>{safe_float(conciliacao.get("Tx_Antec_AM")):,.2f}%</td>
-                <td>{conciliacao.get("Status_Pagto", "-")}</td>
-                <td>{conciliacao.get("Plano", "-")}</td>
-                <td>{conciliacao.get("Bandeira", "-")}</td>
-                <td>{conciliacao.get("Status_Trans", "-")}</td>
-                <td>{conciliacao.get("NOP", "-")}</td>
+                <td style="width: 90px;">{conciliacao.get("Data_formatada", "-")}</td>
+                <td style="width: 90px;">{conciliacao.get("Dt_credito_formatada", "-")}</td>
+                <td style="width: 90px;">{conciliacao.get("Dt_pagto_formatada", "-")}</td>
+                <td style="width: 90px;">{conciliacao.get("Dt_cancelamento_formatada", "-")}</td>
+                <td style="width: 80px;">{conciliacao.get("Filial", "-")}</td>
+                <td style="width: 80px;">{conciliacao.get("Cod_Estab", "-")}</td>
+                <td style="width: 100px;">{conciliacao.get("Terminal", "-")}</td>
+                <td style="width: 100px;">{conciliacao.get("NSU", "-")}</td>
+                <td style="width: 100px;">{conciliacao.get("Autorizacao", "-")}</td>
+                <td style="width: 70px;">{conciliacao.get("Parcela", "-")}</td>
+                <td style="width: 80px;">{conciliacao.get("Prazo_Total", "-")}</td>
+                <td style="width: 100px;">R$ {safe_float(conciliacao.get("Vl_Bruto")):,.2f}</td>
+                <td style="width: 100px;">R$ {safe_float(conciliacao.get("Tx_Adm_R")):,.2f}</td>
+                <td style="width: 100px;">R$ {safe_float(conciliacao.get("Vl_Liq")):,.2f}</td>
+                <td style="width: 90px;">R$ {safe_float(conciliacao.get("Vl_Canc")):,.2f}</td>
+                <td style="width: 90px;">{safe_float(conciliacao.get("Tx_Adm_Perc")):,.2f}%</td>
+                <td style="width: 110px;">R$ {safe_float(conciliacao.get("Vl_Liq_Pago")):,.2f}</td>
+                <td style="width: 100px;">{safe_float(conciliacao.get("Tx_Antec_Per")):,.2f}%</td>
+                <td style="width: 110px;">R$ {safe_float(conciliacao.get("Custo_Antec")):,.2f}</td>
+                <td style="width: 100px;">{safe_float(conciliacao.get("Tx_Antec_AM")):,.2f}%</td>
+                <td style="width: 100px;">{conciliacao.get("Status_Pagto", "-")}</td>
+                <td style="width: 80px;">{conciliacao.get("Plano", "-")}</td>
+                <td style="width: 100px;">{conciliacao.get("Bandeira", "-")}</td>
+                <td style="width: 100px;">{conciliacao.get("Status_Trans", "-")}</td>
+                <td style="width: 80px;">{conciliacao.get("NOP", "-")}</td>
             </tr>
             '''
         
         html += '</tbody></table></div>'
+        
+        # Paginação
+        html += '<div class="d-flex justify-content-between align-items-center mt-3 px-3">'
+        html += f'<div class="text-muted">Mostrando {len(conciliacoes)} de {total_registros} registros (Página {pagina} de {total_paginas})</div>'
+        html += '<nav><ul class="pagination mb-0">'
+        
+        # Botão Anterior
+        if pagina > 1:
+            html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{pagina-1}">Anterior</a></li>'
+        else:
+            html += '<li class="page-item disabled"><span class="page-link">Anterior</span></li>'
+        
+        # Páginas
+        inicio = max(1, pagina - 2)
+        fim = min(total_paginas, pagina + 2)
+        
+        if inicio > 1:
+            html += '<li class="page-item"><a class="page-link" href="#" data-pagina="1">1</a></li>'
+            if inicio > 2:
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>'
+        
+        for p in range(inicio, fim + 1):
+            if p == pagina:
+                html += f'<li class="page-item active"><span class="page-link">{p}</span></li>'
+            else:
+                html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{p}">{p}</a></li>'
+        
+        if fim < total_paginas:
+            if fim < total_paginas - 1:
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>'
+            html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{total_paginas}">{total_paginas}</a></li>'
+        
+        # Botão Próximo
+        if pagina < total_paginas:
+            html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{pagina+1}">Próximo</a></li>'
+        else:
+            html += '<li class="page-item disabled"><span class="page-link">Próximo</span></li>'
+        
+        html += '</ul></nav></div></div>'
         
         return html
 
