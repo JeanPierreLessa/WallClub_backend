@@ -147,9 +147,11 @@ function handleExportClick(e) {
         const formato = target.getAttribute('data-formato');
         const tipo = target.getAttribute('data-tipo');
         
-        // Obter a data do recebimento da URL
+        // Obter parâmetros da URL
         const urlParams = new URLSearchParams(window.location.search);
         const dataRecebimento = urlParams.get('data');
+        const loja = urlParams.get('loja');
+        const incluirTef = urlParams.get('incluir_tef');
         
         if (!dataRecebimento) {
             alert('Data de recebimento não encontrada');
@@ -197,6 +199,24 @@ function handleExportClick(e) {
         dataInput.name = 'data_recebimento';
         dataInput.value = dataRecebimento;
         tempForm.appendChild(dataInput);
+        
+        // Adicionar loja se existir
+        if (loja) {
+            const lojaInput = document.createElement('input');
+            lojaInput.type = 'hidden';
+            lojaInput.name = 'loja';
+            lojaInput.value = loja;
+            tempForm.appendChild(lojaInput);
+        }
+        
+        // Adicionar incluir_tef se existir
+        if (incluirTef) {
+            const tefInput = document.createElement('input');
+            tefInput.type = 'hidden';
+            tefInput.name = 'incluir_tef';
+            tefInput.value = incluirTef;
+            tempForm.appendChild(tefInput);
+        }
         
         document.body.appendChild(tempForm);
         tempForm.submit();
