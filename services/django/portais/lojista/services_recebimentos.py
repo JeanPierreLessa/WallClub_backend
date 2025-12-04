@@ -225,6 +225,8 @@ class RecebimentoService:
                 'bandeira': transacao.var12,
                 'parcelas': transacao.var13,
                 'plano': transacao.var8,
+                'tx_antecipacao': transacao.var40,  # Taxa de antecipação
+                'custo_antecipacao': transacao.var41,  # Custo de antecipação
             })
         
         registrar_log(

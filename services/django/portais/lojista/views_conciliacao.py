@@ -187,8 +187,8 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     t.var2                                             AS `Terminal`,
                     t.NsuOperacao                                      AS `NSU`,
                     t.CodAutorizAdquirente                             AS `Autorizacao`,
-                    CAST(t.NumeroParcela AS UNSIGNED)                  AS `Parcela`,
-                    CAST(t.var13 AS UNSIGNED)                          AS `Prazo_Total`,
+                    CAST(t.NumeroParcela AS SIGNED)                    AS `Parcela`,
+                    CAST(t.var13 AS SIGNED)                            AS `Prazo_Total`,
                     CAST(t.var19 AS DECIMAL(10,2))                     AS `Vl_Bruto`,
                     CAST(t.var37 AS DECIMAL(10,2))                     AS `Tx_Adm_R`,
                     CAST(t.var42 AS DECIMAL(10,2))                     AS `Vl_Liq`,
@@ -520,8 +520,7 @@ class LojistaConciliacaoExportView(View):
                 STR_TO_DATE(btg.var43, '%%d/%%m/%%Y')       AS `Dt_credito`,
                 STR_TO_DATE(btg.var45, '%%d/%%m/%%Y')       AS `Dt_pagto`,
                 CASE 
-                    WHEN btg.var70 = '0001-01-01T00:00:00'
-                        OR btg.var70 IS NULL
+                    WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
                         THEN NULL
                     ELSE STR_TO_DATE(LEFT(btg.var70, 10), '%%Y-%%m-%%d')
                 END                                          AS `Dt_cancelamento`,
@@ -530,14 +529,13 @@ class LojistaConciliacaoExportView(View):
                 btg.var2                                     AS `Terminal`,
                 pep.NsuOperacao                              AS `NSU`,
                 pep.CodAutorizAdquirente                     AS `Autorizacao`,
-                CAST(pep.NumeroParcela AS DECIMAL(3,0))      AS `Parcela`,
-                CAST(btg.var13 AS DECIMAL(3,0))              AS `Prazo_Total`,
+                CAST(pep.NumeroParcela AS SIGNED)            AS `Parcela`,
+                CAST(btg.var13 AS SIGNED)                    AS `Prazo_Total`,
                 CAST(btg.var19 AS DECIMAL(10,2))             AS `Vl_Bruto`,
                 CAST(btg.var37 AS DECIMAL(10,2))             AS `Tx_Adm_R`,
                 CAST(btg.var42 AS DECIMAL(10,2))             AS `Vl_Liq`,
                 CASE 
-                    WHEN btg.var70 = '0001-01-01T00:00:00' 
-                         OR btg.var70 IS NULL 
+                    WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
                          THEN 0
                     ELSE CAST(pep.ValorBruto AS DECIMAL(10,2))
                 END                                          AS `Vl_Canc`, 
@@ -699,8 +697,7 @@ class LojistaConciliacaoExportView(View):
                         STR_TO_DATE(btg.var43, '%%d/%%m/%%Y')       AS `Dt_credito`,
                         STR_TO_DATE(btg.var45, '%%d/%%m/%%Y')       AS `Dt_pagto`,
                         CASE 
-                            WHEN btg.var70 = '0001-01-01T00:00:00'
-                                OR btg.var70 IS NULL
+                            WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
                                 THEN NULL
                             ELSE STR_TO_DATE(LEFT(btg.var70, 10), '%%Y-%%m-%%d')
                         END                                          AS `Dt_cancelamento`,
@@ -709,14 +706,13 @@ class LojistaConciliacaoExportView(View):
                         btg.var2                                     AS `Terminal`,
                         pep.NsuOperacao                              AS `NSU`,
                         pep.CodAutorizAdquirente                     AS `Autorizacao`,
-                        CAST(pep.NumeroParcela AS DECIMAL(3,0))      AS `Parcela`,
-                        CAST(btg.var13 AS DECIMAL(3,0))              AS `Prazo_Total`,
+                        CAST(pep.NumeroParcela AS SIGNED)            AS `Parcela`,
+                        CAST(btg.var13 AS SIGNED)                    AS `Prazo_Total`,
                         CAST(btg.var19 AS DECIMAL(10,2))             AS `Vl_Bruto`,
                         CAST(btg.var37 AS DECIMAL(10,2))             AS `Tx_Adm_R`,
                         CAST(btg.var42 AS DECIMAL(10,2))             AS `Vl_Liq`,
                         CASE 
-                            WHEN btg.var70 = '0001-01-01T00:00:00' 
-                                 OR btg.var70 IS NULL 
+                            WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
                                  THEN 0
                             ELSE CAST(pep.ValorBruto AS DECIMAL(10,2))
                         END                                          AS `Vl_Canc`, 

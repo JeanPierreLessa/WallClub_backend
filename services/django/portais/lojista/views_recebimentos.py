@@ -395,6 +395,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                             nome_loja = loja_info.get('nome', nome_loja)
                             break
                     
+                    # Buscar taxa e custo de antecipação
+                    tx_antec = float(transacao.get('tx_antecipacao', 0) or 0) * 100
+                    custo_antec = float(transacao.get('custo_antecipacao', 0) or 0)
+                    
                     row_dict = {
                         'Loja': nome_loja,
                         'Data': transacao.get('data_transacao', '-'),
@@ -402,10 +406,10 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         'Tipo': tipo,
                         'Status': '-',
                         'Vl Bruto(R$)': vl_bruto,
-                        'Tx.Antec(R$)': 0,
-                        'Custo Antec(R$)': 0,
-                        'Parcela': transacao.get('parcelas', 0) or 0,
-                        'Prazo Total': transacao.get('parcelas', 0) or 0,
+                        'Tx.Antec(R$)': tx_antec,
+                        'Custo Antec(R$)': custo_antec,
+                        'Parcela': int(transacao.get('parcelas', 0) or 0),
+                        'Prazo Total': int(transacao.get('parcelas', 0) or 0),
                         'Plano': transacao.get('plano', '-') or '-',
                         'Bandeira': transacao.get('bandeira', '-') or '-',
                         'NSU': transacao.get('nsu', '-') or '-',
@@ -878,7 +882,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                     'Valor Rebate (R$)': valor_rebate,
                     'Plano': transacao.get('plano', '-') or '-',
                     'Bandeira': transacao.get('bandeira', '-') or '-',
-                    'Parcelas': transacao.get('parcelas', '-') or '-',
+                    'Parcelas': int(transacao.get('parcelas', 0) or 0) if transacao.get('parcelas') not in ['-', None, ''] else '-',
                     'Loja ID': transacao.get('loja_id', '-')
                 })
             
