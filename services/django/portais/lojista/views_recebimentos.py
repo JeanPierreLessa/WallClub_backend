@@ -944,7 +944,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 return exportar_excel(
                     nome_arquivo=nome_arquivo,
                     dados=results,
-                    titulo=f"Detalhes Recebimentos - {data_recebimento}",
+                    titulo=f"Recebimentos {data_recebimento}",
                     colunas_monetarias=colunas_monetarias,
                     lojas_incluidas=lojas_incluidas
                 )
@@ -958,7 +958,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 return exportar_pdf(
                     nome_arquivo=nome_arquivo,
                     dados=results,
-                    titulo=f"Detalhes Recebimentos - {data_recebimento}",
+                    titulo=f"Recebimentos {data_recebimento}",
                     colunas_monetarias=colunas_monetarias,
                     lojas_incluidas=lojas_incluidas
                 )
