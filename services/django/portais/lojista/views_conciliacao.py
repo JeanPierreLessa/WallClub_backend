@@ -178,7 +178,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     t.var43                                            AS `Dt_credito`,
                     t.var45                                            AS `Dt_pagto`,
                     CASE 
-                        WHEN t.var70 = '0001-01-01T00:00:00' OR t.var70 IS NULL
+                        WHEN TRIM(t.var70) = '0001-01-01T00:00:00' OR t.var70 IS NULL OR TRIM(t.var70) = ''
                             THEN NULL
                         ELSE DATE_FORMAT(STR_TO_DATE(LEFT(t.var70, 10), '%%Y-%%m-%%d'), '%%d/%%m/%%Y')
                     END                                                AS `Dt_cancelamento`,
@@ -236,7 +236,12 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                         # Datas já vem formatadas do SQL
                         # Apenas copiar para campos _formatada para compatibilidade com template
                         for campo in ['Data', 'Dt_credito', 'Dt_pagto', 'Dt_cancelamento']:
-                            row_dict[f'{campo}_formatada'] = row_dict.get(campo) or '-'
+                            valor = row_dict.get(campo)
+                            # Tratar datas inválidas como "-"
+                            if not valor or valor in ['00/00/0000', '01/01/0001']:
+                                row_dict[f'{campo}_formatada'] = '-'
+                            else:
+                                row_dict[f'{campo}_formatada'] = valor
                         
                         results.append(row_dict)
                 
