@@ -189,6 +189,14 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
         
         for item in recebimentos_resumo:
             total_item = item['valor_pago_repasse'] + item['valor_pago_rebate'] + item['outros_lancamentos']
+            
+            # Construir URL com parâmetros
+            url_params = f"data={item['data_recebimento_raw']}"
+            if loja_selecionada and loja_selecionada != 'todas':
+                url_params += f"&loja={loja_selecionada}"
+            if incluir_tef:
+                url_params += "&incluir_tef=on"
+            
             html += f'''
             <tr>
                 <td>{item['data_recebimento']}</td>
@@ -197,7 +205,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 <td>R$ {item['outros_lancamentos']:,.2f}</td>
                 <td><strong>R$ {total_item:,.2f}</strong></td>
                 <td>
-                    <a href="/recebimentos/detalhes/?data={item['data_recebimento_raw']}" 
+                    <a href="/recebimentos/detalhes/?{url_params}" 
                        class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-eye me-1"></i>Ver Detalhes
                     </a>
@@ -352,6 +360,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
             data_recebimento = request.POST.get('data_recebimento', '')
             loja_selecionada = request.POST.get('loja', '')
             nsu = request.POST.get('nsu', '').strip()
+            incluir_tef = request.POST.get('incluir_tef') == 'on'
             
             if not data_recebimento:
                 return JsonResponse({'error': 'Data de recebimento é obrigatória'}, status=400)

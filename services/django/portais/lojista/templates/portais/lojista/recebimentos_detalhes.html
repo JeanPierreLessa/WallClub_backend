@@ -64,13 +64,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar dados automaticamente ao abrir a página
     const urlParams = new URLSearchParams(window.location.search);
     const data = urlParams.get('data');
+    const loja = urlParams.get('loja');
+    const incluirTef = urlParams.get('incluir_tef');
     
-    console.log('Data do parâmetro URL:', data);
+    console.log('Parâmetros URL:', { data, loja, incluirTef });
     
     if (data) {
         // Aguardar um pouco para garantir que a página carregou completamente
         setTimeout(() => {
-            carregarDetalhes(data);
+            carregarDetalhes(data, loja, incluirTef);
         }, 100);
     } else {
         // Se não há data, esconder loading
@@ -80,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function carregarDetalhes(data) {
+function carregarDetalhes(data, loja, incluirTef) {
     const loading = document.getElementById('loading');
     const resultados = document.getElementById('resultados');
     
@@ -92,6 +94,14 @@ function carregarDetalhes(data) {
     const formData = new FormData();
     formData.append('data_recebimento', data);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    // Adicionar parâmetros opcionais
+    if (loja) {
+        formData.append('loja', loja);
+    }
+    if (incluirTef) {
+        formData.append('incluir_tef', incluirTef);
+    }
     
     fetch('{% url "lojista:recebimentos_detalhes" %}', {
         method: 'POST',
