@@ -209,14 +209,30 @@ def processar_dados_transacao(request):
 @require_http_methods(["POST"])
 @require_oauth_posp2
 @handle_api_errors
-def processar_dados_transacao_own(request):
-    """Processa dados de transação Own/Ágilli e gera comprovante"""
-    from .services_transacao_own import TRDataOwnService
+def processar_dados_transacao_pinbank(request):
+    """Processa dados de transação Pinbank V2 (com cupom + cashback centralizado)"""
+    from .services_transacao_pos import TRDataPosService
     
     dados_json = request.body.decode('utf-8')
     
-    service = TRDataOwnService()
-    resultado = service.processar_dados_transacao(dados_json)
+    service = TRDataPosService()
+    resultado = service.processar_transacao_pinbank(dados_json)
+    
+    return JsonResponse(resultado)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@require_oauth_posp2
+@handle_api_errors
+def processar_dados_transacao_own(request):
+    """Processa dados de transação Own/Ágilli V2 (com cupom + cashback centralizado)"""
+    from .services_transacao_pos import TRDataPosService
+    
+    dados_json = request.body.decode('utf-8')
+    
+    service = TRDataPosService()
+    resultado = service.processar_transacao_own(dados_json)
     
     return JsonResponse(resultado)
 

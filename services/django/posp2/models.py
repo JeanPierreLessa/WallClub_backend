@@ -176,6 +176,98 @@ class TransactionData(models.Model):
         return f"Transaction {self.id} - NSU: {self.nsuPinbank}"
 
 
+class TransactionDataPos(models.Model):
+    """
+    Modelo para tabela transactiondata_pos - Tabela unificada para transações POS
+    Suporta Pinbank e Own (Ágilli) na mesma estrutura
+    Substitui gradualmente transactiondata (legado) e transactiondata_own
+    """
+    
+    GATEWAY_CHOICES = [
+        ('PINBANK', 'Pinbank'),
+        ('OWN', 'Own/Ágilli'),
+    ]
+    
+    id = models.BigAutoField(primary_key=True)
+    
+    # Origem
+    gateway = models.CharField(max_length=20, choices=GATEWAY_CHOICES, db_index=True)
+    
+    # Dados básicos (COMUM)
+    datahora = models.DateTimeField()
+    valor_original = models.DecimalField(max_digits=10, decimal_places=2)
+    celular = models.CharField(max_length=20, null=True, blank=True)
+    cpf = models.CharField(max_length=14, null=True, blank=True, db_index=True)
+    terminal = models.CharField(max_length=20, db_index=True)
+    operador_pos = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Identificadores (FLEXÍVEL)
+    nsu_gateway = models.CharField(max_length=50, null=True, blank=True, db_index=True,
+                                    help_text='nsuPinbank (Pinbank) ou txTransactionId (Own)')
+    nsuAcquirer = models.CharField(max_length=50, null=True, blank=True)
+    nsuTerminal = models.CharField(max_length=50, null=True, blank=True)
+    nsuHost = models.CharField(max_length=50, null=True, blank=True, help_text='Usado por Own')
+    authorizationCode = models.CharField(max_length=50, null=True, blank=True)
+    transactionReturn = models.CharField(max_length=10, null=True, blank=True)
+    
+    # Valores (COMUM)
+    amount = models.BigIntegerField(null=True, blank=True)
+    originalAmount = models.BigIntegerField(null=True, blank=True)
+    totalInstallments = models.IntegerField(default=1)
+    
+    # Método de pagamento (COMUM)
+    paymentMethod = models.CharField(max_length=100, null=True, blank=True)
+    operationId = models.IntegerField(null=True, blank=True, help_text='Usado por Own')
+    brand = models.CharField(max_length=50, null=True, blank=True)
+    cardNumber = models.CharField(max_length=50, null=True, blank=True)
+    cardName = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Timestamps (COMUM)
+    hostTimestamp = models.CharField(max_length=20, null=True, blank=True)
+    terminalTimestamp = models.BigIntegerField(null=True, blank=True)
+    
+    # Específico Own (NULL se Pinbank)
+    sdk = models.CharField(max_length=20, null=True, blank=True)
+    customerTicket = models.TextField(null=True, blank=True)
+    estabTicket = models.TextField(null=True, blank=True)
+    e2ePixId = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Wall Club (COMUM)
+    modalidade_wall = models.CharField(max_length=1, null=True, blank=True)
+    autorizacao_id = models.CharField(max_length=36, null=True, blank=True)
+    valor_desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    valor_cashback = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cashback_concedido = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # CUPOM (COMUM)
+    cupom_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    cupom_valor_desconto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # CASHBACK CENTRALIZADO (COMUM)
+    cashback_wall_parametro_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    cashback_loja_regra_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    
+    # Auditoria
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'transactiondata_pos'
+        managed = False
+        verbose_name = 'Transaction Data POS'
+        verbose_name_plural = 'Transaction Data POS'
+        ordering = ['-datahora']
+        indexes = [
+            models.Index(fields=['gateway', 'datahora']),
+            models.Index(fields=['terminal', 'datahora']),
+            models.Index(fields=['cpf', 'datahora']),
+            models.Index(fields=['nsu_gateway']),
+        ]
+    
+    def __str__(self):
+        return f"{self.gateway} {self.nsu_gateway} - {self.terminal} - R$ {self.valor_original}"
+
+
 class TransactionDataOwn(models.Model):
     """
     Modelo para tabela transactiondata_own - dados de transações POS via SDK Ágilli (Own)
@@ -276,6 +368,18 @@ class TransactionDataOwn(models.Model):
     cupom_valor_desconto = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         verbose_name="Valor Desconto Cupom"
+    )
+    
+    # Cashback Centralizado (segregado)
+    cashback_wall_parametro_id = models.BigIntegerField(
+        null=True, blank=True, db_index=True,
+        verbose_name="ID ParametrosWall",
+        help_text="ID do ParametrosWall usado (wall=C)"
+    )
+    cashback_loja_regra_id = models.BigIntegerField(
+        null=True, blank=True, db_index=True,
+        verbose_name="ID RegraCashbackLoja",
+        help_text="ID da RegraCashbackLoja usada"
     )
     
     # Auditoria

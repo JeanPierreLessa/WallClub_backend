@@ -388,33 +388,36 @@ class SaldoService:
 class CashbackService:
     """Service para operações de cashback no POS"""
     
-    # Período de retenção hardcoded: 30 dias
-    DIAS_RETENCAO = 30
-    
     @staticmethod
-    def concessao_cashback(cliente_id: int, canal_id: int, valor_cashback: Decimal,
-                          nsu_transacao: str, cpf: str, terminal: str) -> Dict[str, Any]:
+    def concessao_cashback(cliente_id: int, canal_id: int, loja_id: int, 
+                          valor_transacao: Decimal, valor_cashback: Decimal,
+                          nsu_transacao: str, cpf: str, terminal: str,
+                          tipo_cashback: str = 'WALL', parametro_id: int = None) -> Dict[str, Any]:
         """
         Concede cashback na conta digital do cliente após transação POS.
-        Cashback criado com retenção de 30 dias (hardcoded).
+        Usa sistema centralizado de cashback (apps/cashback/services.py).
         
         Args:
             cliente_id: ID do cliente
             canal_id: ID do canal
+            loja_id: ID da loja
+            valor_transacao: Valor total da transação
             valor_cashback: Valor do cashback a conceder
             nsu_transacao: NSU da transação origem
             cpf: CPF do cliente (para log)
             terminal: Terminal da transação
+            tipo_cashback: 'WALL' ou 'LOJA' (padrão: WALL)
+            parametro_id: ID do ParametrosWall ou RegraCashbackLoja
             
         Returns:
-            Dict com sucesso, mensagem, movimentacao_id, data_liberacao
+            Dict com sucesso, mensagem, cashback_uso_id, movimentacao_id, data_liberacao
         """
-        from apps.conta_digital.services import ContaDigitalService
+        from apps.cashback.services import CashbackService as CashbackServiceCentralizado
         
         try:
             registrar_log('posp2', 
                 f'💎 [CASHBACK] Iniciando concessão: cliente={cliente_id}, '
-                f'valor={valor_cashback}, NSU={nsu_transacao}, terminal={terminal}')
+                f'tipo={tipo_cashback}, valor={valor_cashback}, NSU={nsu_transacao}, terminal={terminal}')
             
             # Validar valor
             if valor_cashback <= 0:
@@ -425,38 +428,61 @@ class CashbackService:
                     'mensagem': 'Valor de cashback deve ser positivo'
                 }
             
-            # Calcular data de liberação: hoje + 30 dias
-            data_liberacao = datetime.now() + timedelta(days=CashbackService.DIAS_RETENCAO)
-            
-            registrar_log('posp2',
-                f'🔒 [CASHBACK] Criando com retenção: '
-                f'liberação={data_liberacao.strftime("%d/%m/%Y")}, '
-                f'dias={CashbackService.DIAS_RETENCAO}')
-            
-            # Creditar cashback com retenção via ContaDigitalService
-            resultado = ContaDigitalService.creditar_cashback_transacao_pos(
-                cliente_id=cliente_id,
-                canal_id=canal_id,
-                valor_cashback=valor_cashback,
-                nsu_transacao=nsu_transacao,
-                descricao=f'Cashback POS - Terminal {terminal}',
-                data_liberacao=data_liberacao
-            )
-            
-            if resultado['sucesso']:
+            # Validar parametro_id
+            if not parametro_id:
                 registrar_log('posp2',
-                    f'✅ [CASHBACK] Concedido com sucesso: '
-                    f'cliente={cliente_id}, valor={valor_cashback}, '
-                    f'NSU={nsu_transacao}, liberação={data_liberacao.strftime("%d/%m/%Y")}')
+                    f'❌ [CASHBACK] parametro_id obrigatório para tipo={tipo_cashback}',
+                    nivel='ERROR')
+                return {
+                    'sucesso': False,
+                    'mensagem': f'parametro_id obrigatório para cashback {tipo_cashback}'
+                }
+            
+            # Usar sistema centralizado baseado no tipo
+            if tipo_cashback == 'WALL':
+                resultado = CashbackServiceCentralizado.aplicar_cashback_wall(
+                    parametro_wall_id=parametro_id,
+                    cliente_id=cliente_id,
+                    loja_id=loja_id,
+                    canal_id=canal_id,
+                    transacao_tipo='POS',
+                    transacao_id=nsu_transacao,  # Usar NSU como ID da transação
+                    valor_transacao=valor_transacao,
+                    valor_cashback=valor_cashback
+                )
                 
-                # Adicionar data_liberacao na resposta
-                resultado['data_liberacao'] = data_liberacao.strftime('%Y-%m-%d')
-                resultado['dias_retencao'] = CashbackService.DIAS_RETENCAO
+                registrar_log('posp2',
+                    f'✅ [CASHBACK WALL] Concedido: cashback_uso_id={resultado.get("cashback_uso_id")}, '
+                    f'movimentacao_id={resultado.get("movimentacao_id")}, '
+                    f'status={resultado.get("status")}, liberação={resultado.get("data_liberacao")}')
+                
+            elif tipo_cashback == 'LOJA':
+                resultado = CashbackServiceCentralizado.aplicar_cashback_loja(
+                    regra_loja_id=parametro_id,
+                    cliente_id=cliente_id,
+                    loja_id=loja_id,
+                    canal_id=canal_id,
+                    transacao_tipo='POS',
+                    transacao_id=nsu_transacao,
+                    valor_transacao=valor_transacao,
+                    valor_cashback=valor_cashback
+                )
+                
+                registrar_log('posp2',
+                    f'✅ [CASHBACK LOJA] Concedido: cashback_uso_id={resultado.get("cashback_uso_id")}, '
+                    f'movimentacao_id={resultado.get("movimentacao_id")}, '
+                    f'status={resultado.get("status")}, liberação={resultado.get("data_liberacao")}')
             else:
                 registrar_log('posp2',
-                    f'❌ [CASHBACK] Erro na concessão: {resultado.get("mensagem")}, '
-                    f'NSU={nsu_transacao}', nivel='ERROR')
+                    f'❌ [CASHBACK] Tipo inválido: {tipo_cashback}',
+                    nivel='ERROR')
+                return {
+                    'sucesso': False,
+                    'mensagem': f'Tipo de cashback inválido: {tipo_cashback}'
+                }
             
+            # Adicionar flag de sucesso
+            resultado['sucesso'] = True
             return resultado
             
         except Exception as e:
