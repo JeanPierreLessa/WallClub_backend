@@ -148,21 +148,37 @@ RegraCashbackLoja.gasto_mes_atual atualizado
 
 ### 3. Integração POS → Sistema Centralizado
 
-**Status:** 🔄 **EM AJUSTE**
+**Status:** ✅ **IMPLEMENTADO**
 
-**Situação Atual:**
-- POS usa método temporário `ContaDigitalService.creditar_cashback_transacao_pos()`
-- ⚠️ **Não usa sistema centralizado** (CashbackService)
-- ⚠️ **Não registra em CashbackUso** (histórico incompleto)
-- ⚠️ **Retenção hardcoded** (30 dias fixo)
+**Implementação Atual:**
+- Novos endpoints `/trdata_pinbank/` e `/trdata_own/` usam sistema centralizado
+- Service unificado: `TRDataPosService` em `posp2/services_transacao_pos.py`
+- Tabela unificada: `transactiondata_pos` (gateway='PINBANK' ou 'OWN')
+- ✅ Usa `CashbackService.aplicar_cashback_wall()` e `.aplicar_cashback_loja()`
+- ✅ Registra em `cashback_uso` com rastreabilidade completa
+- ✅ IDs das regras vêm da simulação (`/simula_parcelas_v2/`)
 
-**Situação Desejada:**
-- POS deve chamar `CashbackService.concessao_cashback()` atualizado
-- Método deve determinar tipo (WALL ou LOJA) e chamar:
-  - `CashbackService.aplicar_cashback_wall()` ou
-  - `CashbackService.aplicar_cashback_loja()`
+**Payload POS:**
+```json
+{
+  "cpf": "08733318697",
+  "terminal": "PBF923BH70797",
+  "valororiginal": "R$100,00",
+  "cupom_codigo": "DESC10",
+  "cupom_valor_desconto": 10.00,
+  "cashback_wall_parametro_id": 124,
+  "cashback_wall_valor": 3.00,
+  "cashback_loja_regra_id": 12,
+  "cashback_loja_valor": 5.00,
+  "trdata": "{...}"
+}
+```
 
-**Arquivo:** `posp2/services_conta_digital.py` (linhas 388-495)
+**Arquivos:** 
+- `posp2/services_transacao_pos.py` (service unificado)
+- `posp2/models.py` (TransactionDataPos)
+- `parametros_wallclub/services.py` (CalculadoraDesconto com parametro_id)
+- `posp2/services_v2.py` (simulação retorna IDs)
 
 **Novo método (já implementado):**
 ```python

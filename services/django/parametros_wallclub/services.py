@@ -333,6 +333,7 @@ class CalculadoraDesconto:
         self.valores = {}
         self.logs = []
         self.id_plano_encontrado = None
+        self.parametro_id = None
 
     def calcular_desconto(self, valor_original: Decimal, data: str, forma: str,
                          parcelas: int, id_loja: int, wall: str) -> Optional[Decimal]:
@@ -411,6 +412,7 @@ class CalculadoraDesconto:
         self._log(f"Configuração encontrada: {config is not None}")
         if config:
             self._log(f"Config ID: {config.id}, loja_id: {config.loja_id}, plano: {config.id_plano}, wall: {config.wall}")
+            self.parametro_id = config.id  # Armazenar para retorno
         else:
             self._log("ERRO: Nenhuma configuração encontrada - retornando valor original")
             self._log(f"Parâmetros de busca: id_loja={id_loja}, data={data_referencia}, plano={id_plano}, wall={wall}")

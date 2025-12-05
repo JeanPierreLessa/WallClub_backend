@@ -63,10 +63,6 @@ class TRDataPosService:
             dados = json.loads(dados_json)
             trdata = json.loads(dados.get('trdata', '{}'))
             
-            # Extrair cashback
-            cashback_wall_data = trdata.get('cashback_wall', {})
-            cashback_loja_data = trdata.get('cashback_loja', {})
-            
             dados_normalizados = {
                 'gateway': 'PINBANK',
                 
@@ -77,27 +73,27 @@ class TRDataPosService:
                 'operador_pos': dados.get('operador_pos', ''),
                 'valor_original': self._converter_valor_monetario(dados.get('valororiginal', '')),
                 
-                # Identificadores Pinbank
-                'nsu_gateway': trdata.get('nsuPinbank', ''),
+                # Identificadores Pinbank (do trdata nativo)
+                'nsu_gateway': str(trdata.get('nsuPinbank', '')),
                 'nsuAcquirer': trdata.get('nsuAcquirer', ''),
-                'nsuTerminal': trdata.get('nsuTerminal', ''),
-                'nsuHost': None,
+                'nsuTerminal': str(trdata.get('nsuTerminal', '')),
+                'nsuHost': str(trdata.get('nsuHost', '')) if trdata.get('nsuHost') else None,
                 'authorizationCode': trdata.get('authorizationCode', ''),
-                'transactionReturn': trdata.get('transactionReturn', ''),
+                'transactionReturn': trdata.get('status', ''),
                 
-                # Valores
+                # Valores (do trdata nativo)
                 'amount': int(trdata.get('amount', 0)),
                 'originalAmount': int(trdata.get('originalAmount', 0)),
                 'totalInstallments': int(trdata.get('totalInstallments', 1)),
                 
-                # Método de pagamento
+                # Método de pagamento (do trdata nativo)
                 'paymentMethod': trdata.get('paymentMethod', ''),
                 'operationId': None,
                 'brand': trdata.get('brand', ''),
                 'cardNumber': trdata.get('cardNumber', ''),
                 'cardName': trdata.get('cardName', ''),
                 
-                # Timestamps
+                # Timestamps (do trdata nativo)
                 'hostTimestamp': str(trdata.get('hostTimestamp', '')),
                 'terminalTimestamp': int(trdata.get('terminalTimestamp', 0)),
                 
@@ -107,22 +103,22 @@ class TRDataPosService:
                 'estabTicket': None,
                 'e2ePixId': None,
                 
-                # Wall Club
-                'modalidade_wall': dados.get('modalidade_wall', ''),
+                # Wall Club (do payload principal)
+                'modalidade_wall': None,
                 'autorizacao_id': dados.get('autorizacao_id', ''),
                 'valor_desconto': float(dados.get('valor_desconto', 0)),
                 'valor_cashback': float(dados.get('valor_cashback', 0)),
                 'cashback_concedido': float(dados.get('cashback_concedido', 0)),
                 
-                # Cupom
-                'cupom_codigo': trdata.get('cupom_codigo', ''),
-                'cupom_valor_desconto': Decimal(str(trdata.get('cupom_valor_desconto', 0))),
+                # Cupom (do payload principal - NÃO do trdata)
+                'cupom_codigo': dados.get('cupom_codigo', ''),
+                'cupom_valor_desconto': Decimal(str(dados.get('cupom_valor_desconto', 0))),
                 
-                # Cashback centralizado
-                'cashback_wall_parametro_id': cashback_wall_data.get('parametro_id') if cashback_wall_data else None,
-                'cashback_wall_valor': Decimal(str(cashback_wall_data.get('valor', 0))) if cashback_wall_data else Decimal('0'),
-                'cashback_loja_regra_id': cashback_loja_data.get('regra_id') if cashback_loja_data else None,
-                'cashback_loja_valor': Decimal(str(cashback_loja_data.get('valor', 0))) if cashback_loja_data else Decimal('0'),
+                # Cashback centralizado (do payload principal - NÃO do trdata)
+                'cashback_wall_parametro_id': dados.get('cashback_wall_parametro_id'),
+                'cashback_wall_valor': Decimal(str(dados.get('cashback_wall_valor', 0))),
+                'cashback_loja_regra_id': dados.get('cashback_loja_regra_id'),
+                'cashback_loja_valor': Decimal(str(dados.get('cashback_loja_valor', 0))),
             }
             
             registrar_log('posp2', f'📥 Pinbank: Terminal={dados_normalizados["terminal"]}, NSU={dados_normalizados["nsu_gateway"]}, Valor=R$ {dados_normalizados["valor_original"]}')
@@ -139,10 +135,6 @@ class TRDataPosService:
             dados = json.loads(dados_json)
             trdata = json.loads(dados.get('trdata', '{}'))
             
-            # Extrair cashback
-            cashback_wall_data = trdata.get('cashback_wall', {})
-            cashback_loja_data = trdata.get('cashback_loja', {})
-            
             dados_normalizados = {
                 'gateway': 'OWN',
                 
@@ -153,7 +145,7 @@ class TRDataPosService:
                 'operador_pos': dados.get('operador_pos', ''),
                 'valor_original': self._converter_valor_monetario(dados.get('valororiginal', '')),
                 
-                # Identificadores Own
+                # Identificadores Own (do trdata nativo)
                 'nsu_gateway': trdata.get('txTransactionId', ''),
                 'nsuAcquirer': None,
                 'nsuTerminal': trdata.get('nsuTerminal', ''),
@@ -161,44 +153,44 @@ class TRDataPosService:
                 'authorizationCode': trdata.get('authorizationCode', ''),
                 'transactionReturn': trdata.get('transactionReturn', ''),
                 
-                # Valores
+                # Valores (do trdata nativo)
                 'amount': int(trdata.get('amount', 0)),
                 'originalAmount': int(trdata.get('originalAmount', 0)),
                 'totalInstallments': int(trdata.get('totalInstallments', 1)),
                 
-                # Método de pagamento
+                # Método de pagamento (do trdata nativo)
                 'paymentMethod': trdata.get('paymentMethod', ''),
                 'operationId': int(trdata.get('operationId', 1)),
                 'brand': trdata.get('brand', ''),
                 'cardNumber': trdata.get('cardNumber', ''),
                 'cardName': trdata.get('cardName', ''),
                 
-                # Timestamps
+                # Timestamps (do trdata nativo)
                 'hostTimestamp': str(trdata.get('hostTimestamp', '')),
                 'terminalTimestamp': int(trdata.get('terminalTimestamp', 0)),
                 
-                # Específico Own
+                # Específico Own (do trdata nativo)
                 'sdk': trdata.get('sdk', 'agilli'),
                 'customerTicket': trdata.get('customerTicket', ''),
                 'estabTicket': trdata.get('estabTicket', ''),
                 'e2ePixId': trdata.get('e2ePixId', ''),
                 
-                # Wall Club
-                'modalidade_wall': dados.get('modalidade_wall', ''),
+                # Wall Club (do payload principal)
+                'modalidade_wall': None,
                 'autorizacao_id': dados.get('autorizacao_id', ''),
                 'valor_desconto': float(dados.get('valor_desconto', 0)),
                 'valor_cashback': float(dados.get('valor_cashback', 0)),
                 'cashback_concedido': float(dados.get('cashback_concedido', 0)),
                 
-                # Cupom
-                'cupom_codigo': trdata.get('cupom_codigo', ''),
-                'cupom_valor_desconto': Decimal(str(trdata.get('cupom_valor_desconto', 0))),
+                # Cupom (do payload principal - NÃO do trdata)
+                'cupom_codigo': dados.get('cupom_codigo', ''),
+                'cupom_valor_desconto': Decimal(str(dados.get('cupom_valor_desconto', 0))),
                 
-                # Cashback centralizado
-                'cashback_wall_parametro_id': cashback_wall_data.get('parametro_id') if cashback_wall_data else None,
-                'cashback_wall_valor': Decimal(str(cashback_wall_data.get('valor', 0))) if cashback_wall_data else Decimal('0'),
-                'cashback_loja_regra_id': cashback_loja_data.get('regra_id') if cashback_loja_data else None,
-                'cashback_loja_valor': Decimal(str(cashback_loja_data.get('valor', 0))) if cashback_loja_data else Decimal('0'),
+                # Cashback centralizado (do payload principal - NÃO do trdata)
+                'cashback_wall_parametro_id': dados.get('cashback_wall_parametro_id'),
+                'cashback_wall_valor': Decimal(str(dados.get('cashback_wall_valor', 0))),
+                'cashback_loja_regra_id': dados.get('cashback_loja_regra_id'),
+                'cashback_loja_valor': Decimal(str(dados.get('cashback_loja_valor', 0))),
             }
             
             registrar_log('posp2', f'📥 Own: Terminal={dados_normalizados["terminal"]}, TxID={dados_normalizados["nsu_gateway"]}, Valor=R$ {dados_normalizados["valor_original"]}')

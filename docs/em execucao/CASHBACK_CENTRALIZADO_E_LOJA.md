@@ -1,8 +1,8 @@
 # SISTEMA DE CASHBACK CENTRALIZADO - ESPECIFICAÇÃO TÉCNICA
 
-**Versão:** 1.0
-**Data:** 23/11/2025
-**Status:** Especificação para implementação
+**Versão:** 2.0
+**Data:** 05/12/2025
+**Status:** ✅ Implementado (POS integrado)
 
 ---
 
@@ -761,11 +761,19 @@ class CashbackService:
 - ✅ Aplicação em todas as formas de pagamento (PIX, DÉBITO, CRÉDITO)
 - ✅ Resposta JSON com estrutura completa e dados corretos
 
-### ⏳ Etapa 8: Estorno - PENDENTE
+### ✅ Etapa 6: Integração POS - CONCLUÍDO
+- ✅ Endpoints `/trdata_pinbank/` e `/trdata_own/` criados
+- ✅ Service unificado `TRDataPosService` implementado
+- ✅ Tabela `transactiondata_pos` criada (gateway='PINBANK' ou 'OWN')
+- ✅ Simulação retorna `parametro_id` e `regra_id`
+- ✅ POS envia IDs no payload de transação
+- ✅ Cashback registrado em `cashback_uso` com rastreabilidade
+
+### ⏳ Etapa 7: Estorno - PENDENTE
 - Integrar `CashbackService.estornar_cashback()` nos fluxos de estorno
 - Testes de edge cases
 
-### ⏳ Etapa 7: Testes e Homologação - PENDENTE
+### ⏳ Etapa 8: Testes e Homologação - PENDENTE
 - Testes integração
 - Homologação
 - Deploy produção

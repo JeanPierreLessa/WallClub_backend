@@ -169,10 +169,12 @@ class POSP2ServiceV2(POSP2Service):
         # Calcular cashback Wall
         valor_cashback_wall = Decimal('0')
         percentual_cashback_wall = Decimal('0')
+        cashback_wall_parametro_id = None
 
         if wall.upper() == 'S':
             try:
-                valor_com_cashback = calculadora.calcular_desconto(
+                calculadora_cashback = CalculadoraDesconto()
+                valor_com_cashback = calculadora_cashback.calcular_desconto(
                     valor_original=valor_com_desconto,
                     data=data,
                     forma=forma,
@@ -182,6 +184,7 @@ class POSP2ServiceV2(POSP2Service):
                 )
                 valor_cashback_wall = valor_com_desconto - valor_com_cashback if valor_com_cashback else Decimal('0')
                 percentual_cashback_wall = (valor_cashback_wall / valor_com_desconto * 100) if valor_com_desconto > 0 else Decimal('0')
+                cashback_wall_parametro_id = calculadora_cashback.parametro_id
             except Exception as e:
                 registrar_log('posp2.v2', f'Erro ao calcular cashback Wall: {str(e)}', nivel='WARNING')
 
@@ -239,9 +242,11 @@ class POSP2ServiceV2(POSP2Service):
             "forma_pagamento": forma_pagamento_key,
             "mensagem_para_cliente": mensagem,
             "desconto_wall": f"{(valor_original - valor_com_desconto):.2f}",
+            "desconto_wall_parametro_id": calculadora.parametro_id,
             "cashback_wall": {
                 "valor": f"{valor_cashback_wall:.2f}",
-                "percentual": f"{percentual_cashback_wall:.2f}"
+                "percentual": f"{percentual_cashback_wall:.2f}",
+                "parametro_id": cashback_wall_parametro_id
             },
             "cashback_loja": cashback_loja_info,
             "cashback_total": f"{cashback_total:.2f}"
