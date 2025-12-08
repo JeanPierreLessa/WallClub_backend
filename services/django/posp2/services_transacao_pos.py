@@ -415,9 +415,11 @@ class TRDataPosService:
         
         try:
             from apps.cliente.models import Cliente
-            from apps.conta_digital.services import ContaDigitalService
+            from apps.conta_digital.models import ContaDigital, TipoMovimentacao, MovimentacaoContaDigital
+            from django.utils import timezone
             
             cliente = Cliente.objects.get(cpf=cpf, canal_id=canal_id)
+            conta = ContaDigital.objects.get(cliente_id=cliente.id, canal_id=canal_id)
             
             # Mapear paymentMethod para tipo de compra
             payment_method = dados.get('paymentMethod', '')
@@ -432,15 +434,21 @@ class TRDataPosService:
                 parcelas = dados.get('totalInstallments', 1)
                 descricao = f'Compra Cartão {parcelas}x - {dados["terminal"]}'
             
-            # Registrar movimentação informativa (usa valor real mas não debita)
-            ContaDigitalService.creditar(
-                cliente_id=cliente.id,
-                canal_id=canal_id,
+            # Buscar tipo de movimentação
+            tipo = TipoMovimentacao.objects.get(codigo=tipo_codigo)
+            
+            # Criar movimentação informativa (não afeta saldo)
+            MovimentacaoContaDigital.objects.create(
+                conta_digital=conta,
+                tipo_movimentacao=tipo,
                 valor=dados['valor_original'],
+                saldo_anterior=conta.saldo_atual,
+                saldo_posterior=conta.saldo_atual,  # Não muda
                 descricao=descricao,
-                tipo_codigo=tipo_codigo,
                 referencia_externa=f'{dados["gateway"]}:{dados["nsu_gateway"]}',
-                sistema_origem='POS'
+                sistema_origem='POS',
+                data_movimentacao=timezone.now(),
+                status='CONCLUIDA'
             )
             
             registrar_log('posp2', f'✅ Compra informativa registrada: {tipo_codigo} - R$ {dados["valor_original"]}')
