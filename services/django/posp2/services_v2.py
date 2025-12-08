@@ -10,6 +10,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from .services import POSP2Service
 from wallclub_core.utilitarios.log_control import registrar_log
+from parametros_wallclub.services import CalculadoraDesconto
 
 
 class POSP2ServiceV2(POSP2Service):
