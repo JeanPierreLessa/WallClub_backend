@@ -61,7 +61,6 @@ class POSP2ServiceV2(POSP2Service):
             canal_id = dados_terminal.get('canal_id', 1)
 
             # Usar calculadora do parametros_wallclub
-            from parametros_wallclub.services import CalculadoraDesconto
             from apps.cashback.services import CashbackService
 
             calculadora = CalculadoraDesconto()
