@@ -20,7 +20,6 @@ class POSP2ServiceV2(POSP2Service):
     def simular_parcelas_v2(self, valor: float, terminal: str, wall: str = 's', cliente_id: int = 0) -> Dict[str, Any]:
         """
         Simula valores para todas as modalidades incluindo cashback loja.
-
         Args:
             valor: Valor da transação
             terminal: ID do terminal
@@ -214,9 +213,12 @@ class POSP2ServiceV2(POSP2Service):
                 else:
                     registrar_log('posp2.v2', f'Plano NÃO encontrado para forma={forma}, parcelas={num_parcelas}')
             except Exception as e:
-                registrar_log('posp2.v2', f'Erro ao calcular cashback Wall: {str(e)}', nivel='WARNING')
                 import traceback
-                registrar_log('posp2.v2', f'Traceback: {traceback.format_exc()}', nivel='WARNING')
+                import sys
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                registrar_log('posp2.v2', f'Erro ao calcular cashback Wall: {str(e)}', nivel='ERROR')
+                registrar_log('posp2.v2', f'Tipo: {exc_type}', nivel='ERROR')
+                registrar_log('posp2.v2', f'Traceback completo: {traceback.format_exc()}', nivel='ERROR')
 
         # Simular cashback loja
         cashback_loja_info = {"aplicavel": False, "valor": "0.00"}
