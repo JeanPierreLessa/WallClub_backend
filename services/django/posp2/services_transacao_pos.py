@@ -432,11 +432,11 @@ class TRDataPosService:
                 parcelas = dados.get('totalInstallments', 1)
                 descricao = f'Compra Cartão {parcelas}x - {dados["terminal"]}'
             
-            # Registrar movimentação informativa (não afeta saldo)
+            # Registrar movimentação informativa (usa valor real mas não debita)
             ContaDigitalService.creditar(
                 cliente_id=cliente.id,
                 canal_id=canal_id,
-                valor=Decimal('0.00'),  # Valor zero = apenas informativo
+                valor=dados['valor_original'],
                 descricao=descricao,
                 tipo_codigo=tipo_codigo,
                 referencia_externa=f'{dados["gateway"]}:{dados["nsu_gateway"]}',

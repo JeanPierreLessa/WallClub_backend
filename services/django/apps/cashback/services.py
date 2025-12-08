@@ -2,6 +2,7 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
