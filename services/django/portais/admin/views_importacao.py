@@ -14,6 +14,7 @@ from decimal import Decimal
 from wallclub_core.integracoes.parametros_api_client import parametros_api
 from ..controle_acesso.decorators import require_admin_access
 from wallclub_core.utilitarios.log_control import registrar_log
+from parametros_wallclub.models import ImportacaoConfiguracoes
 
 
 @require_admin_access
