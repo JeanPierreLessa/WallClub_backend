@@ -10,8 +10,6 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from .services import POSP2Service
 from wallclub_core.utilitarios.log_control import registrar_log
-from parametros_wallclub.services import CalculadoraDesconto, ParametrosService
-from parametros_wallclub.models import Plano
 
 
 class POSP2ServiceV2(POSP2Service):
@@ -61,6 +59,7 @@ class POSP2ServiceV2(POSP2Service):
             canal_id = dados_terminal.get('canal_id', 1)
 
             # Usar calculadora do parametros_wallclub
+            from parametros_wallclub.services import CalculadoraDesconto
             from apps.cashback.services import CashbackService
 
             calculadora = CalculadoraDesconto()
@@ -174,6 +173,9 @@ class POSP2ServiceV2(POSP2Service):
 
         if wall.upper() == 'S':
             try:
+                from parametros_wallclub.models import Plano
+                from parametros_wallclub.services import ParametrosService
+                
                 # Buscar plano
                 if forma == 'PIX':
                     plano = Plano.objects.filter(nome='PIX', prazo_dias=0, bandeira='PIX').first()
