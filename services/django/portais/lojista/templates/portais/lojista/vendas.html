@@ -51,7 +51,7 @@
                                     <i class="fas fa-search me-1"></i>
                                     Pesquisar
                                 </button>
-                                <button type="button" class="btn btn-outline-primary me-2" id="btnPesquisarOperador">
+                                <button type="button" class="btn btn-primary me-2" id="btnPesquisarOperador" style="background-color: #0d6efd; border-color: #0d6efd;">
                                     <i class="fas fa-user-tie me-1"></i>
                                     Pesquisar venda por operador
                                 </button>
@@ -138,6 +138,12 @@
 .table-responsive {
     position: relative;
     z-index: 1;
+}
+
+/* Botão pesquisar operador - hover mais claro */
+#btnPesquisarOperador:hover {
+    background-color: #3d8bfd !important;
+    border-color: #3d8bfd !important;
 }
 </style>
 {% endblock %}
