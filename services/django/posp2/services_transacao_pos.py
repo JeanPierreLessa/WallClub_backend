@@ -433,10 +433,10 @@ class TRDataPosService:
                 descricao = f'Compra Cartão {parcelas}x - {dados["terminal"]}'
             
             # Registrar movimentação informativa (não afeta saldo)
-            ContaDigitalService.registrar_movimentacao_informativa(
+            ContaDigitalService.creditar(
                 cliente_id=cliente.id,
                 canal_id=canal_id,
-                valor=dados['valor_original'],
+                valor=Decimal('0.00'),  # Valor zero = apenas informativo
                 descricao=descricao,
                 tipo_codigo=tipo_codigo,
                 referencia_externa=f'{dados["gateway"]}:{dados["nsu_gateway"]}',

@@ -61,7 +61,7 @@ class CashbackService:
                 canal_id=canal_id,
                 valor=valor_cashback,
                 descricao=f"Cashback Wall - {nome_plano}",
-                tipo_codigo='CASHBACK_WALL',
+                tipo_codigo='CASHBACK_CREDITO',
                 referencia_externa=f'WALL:{parametro_wall_id}',
                 sistema_origem='CASHBACK'
             )
