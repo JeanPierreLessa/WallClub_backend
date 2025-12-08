@@ -411,6 +411,52 @@ class TRDataOwnService:
                     
                 except Exception as e:
                     registrar_log('posp2', f'⚠️ Erro ao registrar uso do cupom: {e}', nivel='WARNING')
+            
+            # 8.3. Registrar compra informativa na conta digital
+            if cpf and cliente_id:
+                try:
+                    from apps.conta_digital.services import ContaDigitalService
+                    
+                    # Determinar forma de pagamento
+                    payment_method = dados_trdata.get('paymentMethod', '')
+                    forma_map = {
+                        'CREDIT_ONE_INSTALLMENT': 'CREDITO',
+                        'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST': 'CREDITO',
+                        'DEBIT': 'DEBITO',
+                        'PIX': 'PIX',
+                        'VOUCHER': 'VOUCHER'
+                    }
+                    forma_pagamento = forma_map.get(payment_method, payment_method)
+                    
+                    # Dados adicionais da compra
+                    dados_adicionais = {
+                        'forma_pagamento': forma_pagamento,
+                        'parcelas': int(dados_trdata.get('totalInstallments', 1)),
+                        'bandeira': dados_trdata.get('brand', ''),
+                        'estabelecimento': info_loja.get('nome_fantasia', '') if 'info_loja' in locals() else '',
+                        'valor_original': float(valor_original),
+                        'desconto_aplicado': float(valor_desconto_pos) if valor_desconto_pos else 0,
+                        'cupom_desconto': float(cupom_valor_desconto) if cupom_valor_desconto else 0,
+                        'cashback_concedido': float(cashback_wall) + float(cashback_loja) if cashback_wall or cashback_loja else 0
+                    }
+                    
+                    # Valor final pago pelo cliente
+                    valor_final_pago = float(valor_original) - (float(valor_desconto_pos) if valor_desconto_pos else 0) - (float(cupom_valor_desconto) if cupom_valor_desconto else 0)
+                    
+                    ContaDigitalService.registrar_compra_informativa(
+                        cliente_id=cliente_id,
+                        canal_id=canal_id,
+                        valor=Decimal(str(valor_final_pago)),
+                        descricao=f"Compra - {info_loja.get('nome_fantasia', 'Loja') if 'info_loja' in locals() else 'Loja'}",
+                        referencia_externa=dados_trdata.get('nsuHost', ''),
+                        sistema_origem='POSP2',
+                        dados_adicionais=dados_adicionais
+                    )
+                    
+                    registrar_log('posp2', f'✅ Compra informativa registrada: R$ {valor_final_pago}')
+                    
+                except Exception as e:
+                    registrar_log('posp2', f'⚠️ Erro ao registrar compra informativa: {e}', nivel='WARNING')
 
             # 9. BUSCAR DADOS DA TRANSAÇÃO INSERIDA PARA CALCULADORA
             with connection.cursor() as cursor:

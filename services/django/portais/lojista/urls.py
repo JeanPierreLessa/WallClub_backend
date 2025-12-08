@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views_vendas import LojistaVendasView, LojistaVendasExportView
+from .views_vendas_operador import LojistaVendasOperadorView
 from .views_recebimentos import (
     LojistaRecebimentosView, 
     LojistaRecebimentosExportView, 
@@ -51,6 +52,7 @@ urlpatterns = [
     path('vendas/', LojistaVendasView.as_view(), name='vendas'),
     path('vendas/ajax/', LojistaVendasView.as_view(), name='vendas_ajax'),
     path('vendas/export/', LojistaVendasExportView.as_view(), name='vendas_export'),
+    path('vendas/operador/', LojistaVendasOperadorView.as_view(), name='vendas_operador'),
     
     # Cancelamentos
     path('cancelamentos/', LojistaCancelamentosView.as_view(), name='cancelamentos'),

@@ -51,6 +51,10 @@
                                     <i class="fas fa-search me-1"></i>
                                     Pesquisar
                                 </button>
+                                <button type="button" class="btn btn-info me-2" id="btnPesquisarOperador">
+                                    <i class="fas fa-user-tie me-1"></i>
+                                    Pesquisar venda por operador
+                                </button>
                             </div>
                             <div class="col-md-6 text-end">
                                 <div class="form-check d-inline-block">
@@ -271,6 +275,21 @@ function exportarDados(formato) {
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar eventos de exportação usando função comum
     inicializarEventosExportacao('{% url "lojista:vendas_export" %}');
+    
+    // Botão pesquisar por operador
+    document.getElementById('btnPesquisarOperador').addEventListener('click', function() {
+        const form = document.getElementById('filtroForm');
+        const formData = new FormData(form);
+        
+        // Construir query string com os filtros
+        const params = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+            if (value) params.append(key, value);
+        }
+        
+        // Redirecionar para página de operadores
+        window.location.href = '{% url "lojista:vendas_operador" %}?' + params.toString();
+    });
 });
 </script>
 {% endblock %}

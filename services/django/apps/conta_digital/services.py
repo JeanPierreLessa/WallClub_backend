@@ -777,3 +777,82 @@ class ContaDigitalService:
                 'mensagem': f'Erro ao estornar: {str(e)}'
             }
     
+    @staticmethod
+    def registrar_compra_informativa(cliente_id, canal_id, valor, descricao,
+                                     referencia_externa=None, sistema_origem='POSP2',
+                                     dados_adicionais=None):
+        """
+        Registra uma compra como movimentação informativa (não afeta saldo).
+        Usado para mostrar histórico completo de compras no extrato.
+        
+        Args:
+            cliente_id: ID do cliente
+            canal_id: ID do canal
+            valor: Valor da compra
+            descricao: Descrição da compra
+            referencia_externa: NSU ou ID da transação
+            sistema_origem: Sistema que originou (POSP2, CHECKOUT)
+            dados_adicionais: Dict com informações extras (forma_pagamento, parcelas, etc)
+        
+        Returns:
+            MovimentacaoContaDigital criada
+        """
+        try:
+            registrar_log('apps.conta_digital', 
+                f'🛒 Registrando compra informativa: cliente={cliente_id}, valor={valor}, ref={referencia_externa}')
+            
+            with transaction.atomic():
+                # Obter ou criar conta
+                conta = ContaDigitalService.obter_ou_criar_conta(cliente_id, canal_id)
+                
+                # Buscar tipo de movimentação COMPRA_CARTAO
+                try:
+                    tipo_compra = TipoMovimentacao.objects.get(codigo='COMPRA_CARTAO')
+                except TipoMovimentacao.DoesNotExist:
+                    registrar_log('apps.conta_digital', 
+                        '⚠️ Tipo COMPRA_CARTAO não existe, criando...', nivel='WARNING')
+                    tipo_compra = TipoMovimentacao.objects.create(
+                        codigo='COMPRA_CARTAO',
+                        nome='Compra com Cartão',
+                        descricao='Registro informativo de compra (não afeta saldo)',
+                        debita_saldo=False,
+                        permite_estorno=False,
+                        visivel_extrato=True,
+                        categoria='DEBITO',
+                        afeta_cashback=False
+                    )
+                
+                # Saldo não muda (movimentação informativa)
+                saldo_atual = conta.saldo_atual
+                
+                # Adicionar dados extras na observação
+                observacoes = None
+                if dados_adicionais:
+                    import json
+                    observacoes = json.dumps(dados_adicionais, ensure_ascii=False)
+                
+                # Criar movimentação informativa
+                movimentacao = MovimentacaoContaDigital.objects.create(
+                    conta_digital=conta,
+                    tipo_movimentacao=tipo_compra,
+                    saldo_anterior=saldo_atual,
+                    saldo_posterior=saldo_atual,  # Não muda
+                    valor=valor,
+                    descricao=descricao,
+                    observacoes=observacoes,
+                    referencia_externa=referencia_externa,
+                    sistema_origem=sistema_origem,
+                    status='PROCESSADA',
+                    processada_em=ContaDigitalService._get_local_now()
+                )
+                
+                registrar_log('apps.conta_digital', 
+                    f'✅ Compra informativa registrada: ID={movimentacao.id}, valor={valor}')
+                
+                return movimentacao
+                
+        except Exception as e:
+            registrar_log('apps.conta_digital', 
+                f'❌ Erro ao registrar compra informativa: {str(e)}', nivel='ERROR')
+            raise
+    
