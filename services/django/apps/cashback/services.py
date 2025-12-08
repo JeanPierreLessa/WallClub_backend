@@ -213,7 +213,7 @@ class CashbackService:
                 canal_id=canal_id,
                 valor=valor_cashback,
                 descricao=f"Cashback Loja - {regra.nome}",
-                tipo_codigo='CASHBACK_LOJA',
+                tipo_codigo='CASHBACK_CREDITO',
                 referencia_externa=f'LOJA:{regra_loja_id}',
                 sistema_origem='CASHBACK'
             )
@@ -556,7 +556,7 @@ class CashbackService:
                 canal_id=canal_id,
                 valor=valor_cashback,
                 descricao=f"Cashback Loja - {regra.nome}",
-                tipo_codigo='CASHBACK_LOJA',
+                tipo_codigo='CASHBACK_CREDITO',
                 referencia_externa=f'LOJA:{regra.id}',
                 sistema_origem='CASHBACK'
             )
