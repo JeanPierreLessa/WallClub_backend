@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.5  
+**Versão:** 5.6  
 **Data:** 08/12/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas em produção
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + Transactiondata_pos unificada em produção
 
 ---
 
@@ -170,13 +170,15 @@ Internet (80/443)
 
 **Funcionalidades:**
 - `posp2/` - Terminal POS (OAuth 2.0)
-  - `/trdata/` - Endpoint transações Pinbank
-  - `/trdata_own/` - Endpoint transações Own/Ágilli ✅ NOVO
+  - `/trdata_pinbank/` - Endpoint transações Pinbank 
+  - `/trdata_own/` - Endpoint transações Own/Ágilli 
+  - Tabela: `transactiondata_pos` (gateway: PINBANK/OWN)
+  - Service: `TRDataPosService` (parser específico por gateway)
 - `pinbank/` - Integração Pinbank + Cargas
-- `adquirente_own/` - Integração Own Financial ✅ NOVO
-  - ✅ OAuth 2.0 (token cache 4min)
-  - ✅ API OPPWA E-commerce (timeout 60s)
-  - ⚠️ API QA com problemas de performance (timeout >60s)
+- `adquirente_own/` - Integração Own Financial 
+  - OAuth 2.0 (token cache 4min)
+  - API OPPWA E-commerce (timeout 60s)
+  - API QA com problemas de performance (timeout >60s)
 - `parametros_wallclub/` - Parâmetros financeiros (3.840 configs)
 
 **Comunicação:**

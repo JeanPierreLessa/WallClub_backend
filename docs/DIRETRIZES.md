@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.4  
+**Versão:** 4.5  
 **Data:** 08/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Sistema de Compras Informativas na Conta Digital + Relatório Vendas por Operador
+**Mudanças:** Transactiondata_pos unificada + Sistema Cashback corrigido + Compras Informativas implementadas
 
 ---
 
@@ -296,16 +296,22 @@ agora = datetime.now()
 data_futura = datetime.now() + timedelta(days=30)
 ```
 
-**NUNCA usar:**
+**EXCEÇÃO - Django timezone para campos específicos:**
 ```python
 from django.utils import timezone
 
-# ❌ ERRADO - Gera timezone-aware
+# ✅ PERMITIDO apenas em contextos específicos (ex: CashbackService)
+# Quando o campo do model exige timezone-aware
 agora = timezone.now()
+```
+
+**NUNCA usar em models com USE_TZ=False:**
+```python
+# ❌ ERRADO - Gera erro com MySQL
 data_aware = timezone.make_aware(datetime.now())
 ```
 
-**Motivo:** MySQL backend do Django não suporta timezone-aware datetimes quando USE_TZ=False
+**Motivo:** MySQL backend do Django não suporta timezone-aware datetimes quando USE_TZ=False, exceto em casos específicos onde o Django gerencia internamente
 
 **Arquivos Corrigidos (26/10/2025):**
 - posp2/models.py

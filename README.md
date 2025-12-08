@@ -618,12 +618,23 @@ Proprietary - WallClub © 2025
 **Responsável:** Equipe WallClub
 
 ### Atualizações Recentes (08/12/2025)
+- ✅ **Transactiondata_pos - Tabela Unificada Pinbank + Own**
+  - Campo `gateway` (PINBANK/OWN) para identificar origem
+  - Campo `desconto_wall_parametro_id` para rastrear regra de desconto aplicada
+  - Campos `cashback_wall_parametro_id` e `cashback_loja_regra_id` já existentes
+  - Endpoints: `/trdata_pinbank/` e `/trdata_own/`
+  - Service: `TRDataPosService` (parser específico por gateway)
+- ✅ **Sistema Cashback Centralizado - Correções Críticas**
+  - Corrigido erro `ParametrosWall.plano` (não existe - usar `id_plano`)
+  - Import `timezone` adicionado em `CashbackService`
+  - Tipo movimentação: `CASHBACK_CREDITO` (já existente na tabela)
+  - Integração completa com Conta Digital
 - ✅ **Conta Digital - Compras Informativas**
-  - Tipo de movimentação `COMPRA_CARTAO` (não afeta saldo)
-  - Método `ContaDigitalService.registrar_compra_informativa()`
-  - Integrado no fluxo POS Own
-  - Armazena dados da transação em JSON (forma pagamento, parcelas, bandeira, etc)
-  - Exibe histórico completo de compras no extrato
+  - 3 tipos: `COMPRA_CARTAO`, `COMPRA_PIX`, `COMPRA_DEBITO` (categoria INFORMATIVO)
+  - Registro direto em `MovimentacaoContaDigital` (não usa `creditar()`)
+  - Saldo inalterado: `saldo_anterior = saldo_posterior`
+  - Status: `PROCESSADA` (único válido na tabela)
+  - Integrado no fluxo POS Own (`_registrar_compra_informativa()`)
   - Pendente: integração POS Pinbank e Checkout Web
 - ✅ **Portal Lojista - Vendas por Operador**
   - Botão "Pesquisar venda por operador" na página de vendas
