@@ -174,8 +174,8 @@ class POSP2ServiceV2(POSP2Service):
 
         if wall.upper() == 'S':
             try:
-                from parametros_wallclub.services import ParametrosService
                 from parametros_wallclub.models import Plano
+                from parametros_wallclub.services import ParametrosService
                 
                 # Buscar plano
                 if forma == 'PIX':
