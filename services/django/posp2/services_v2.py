@@ -186,6 +186,8 @@ class POSP2ServiceV2(POSP2Service):
                 else:  # PARCELADO SEM JUROS
                     plano = Plano.objects.filter(nome='PARCELADO SEM JUROS', prazo_dias=num_parcelas, bandeira='MASTERCARD').first()
                 
+                registrar_log('posp2.v2', f'Buscando cashback - forma: {forma}, parcelas: {num_parcelas}, plano_id: {plano.id if plano else None}')
+                
                 if plano:
                     # Buscar configuração wall='C' para cashback
                     config_cashback = ParametrosService.get_configuracao_ativa(
@@ -195,16 +197,26 @@ class POSP2ServiceV2(POSP2Service):
                         data_referencia=datetime.now()
                     )
                     
+                    registrar_log('posp2.v2', f'Config cashback encontrada: {config_cashback is not None}')
+                    
                     if config_cashback:
                         # Cashback baseado em parametro_loja_7 (percentual)
                         param_7 = getattr(config_cashback, 'parametro_loja_7', None)
+                        registrar_log('posp2.v2', f'parametro_loja_7: {param_7}')
+                        
                         if param_7 and param_7 > 0:
                             percentual_cashback_wall = param_7 * 100  # Converter para percentual
                             valor_cashback_wall = valor_com_desconto * param_7
                             cashback_wall_parametro_id = config_cashback.id
                             registrar_log('posp2.v2', f'Cashback Wall: {valor_cashback_wall} ({percentual_cashback_wall}%) - parametro_id: {cashback_wall_parametro_id}')
+                    else:
+                        registrar_log('posp2.v2', f'Config cashback NÃO encontrada para loja_id={loja_id}, plano_id={plano.id}, wall=C')
+                else:
+                    registrar_log('posp2.v2', f'Plano NÃO encontrado para forma={forma}, parcelas={num_parcelas}')
             except Exception as e:
                 registrar_log('posp2.v2', f'Erro ao calcular cashback Wall: {str(e)}', nivel='WARNING')
+                import traceback
+                registrar_log('posp2.v2', f'Traceback: {traceback.format_exc()}', nivel='WARNING')
 
         # Simular cashback loja
         cashback_loja_info = {"aplicavel": False, "valor": "0.00"}
