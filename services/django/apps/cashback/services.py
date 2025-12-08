@@ -37,6 +37,7 @@ class CashbackService:
         from apps.conta_digital.services import ContaDigitalService
         from parametros_wallclub.models import ParametrosWall
         from django.conf import settings
+        from django.utils import timezone
         
         # Usar configurações globais se não fornecidas
         if periodo_retencao_dias is None:
@@ -187,6 +188,7 @@ class CashbackService:
         from apps.cashback.models import RegraCashbackLoja, CashbackUso
         from apps.conta_digital.services import ContaDigitalService
         from django.conf import settings
+        from django.utils import timezone
         
         # Usar configurações globais se não fornecidas
         if periodo_retencao_dias is None:
