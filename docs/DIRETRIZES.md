@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.3  
-**Data:** 02/12/2025  
+**Versão:** 4.4  
+**Data:** 08/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Sistema de Cashback Centralizado (Wall + Loja) em produção
+**Mudanças:** Sistema de Compras Informativas na Conta Digital + Relatório Vendas por Operador
 
 ---
 
@@ -1232,3 +1232,159 @@ CashbackService.aplicar_cashback_loja(
 - Relatórios separados por tipo de origem
 
 **Status:** ✅ Em produção (simulação V2 funcionando)
+
+---
+
+## 📊 CONTA DIGITAL - COMPRAS INFORMATIVAS
+
+**Status:** Implementado (08/12/2025)
+
+### Tipo de Movimentação COMPRA_CARTAO
+
+**Características:**
+- Registro informativo (não afeta saldo)
+- Exibe histórico completo de compras no extrato
+- Armazena dados da transação em JSON
+
+**Tabela:** `conta_digital_tipo_movimentacao`
+```sql
+codigo: 'COMPRA_CARTAO'
+nome: 'Compra com Cartão'
+descricao: 'Registro informativo de compra (não afeta saldo)'
+debita_saldo: FALSE
+permite_estorno: FALSE
+visivel_extrato: TRUE
+categoria: 'DEBITO'
+afeta_cashback: FALSE
+```
+
+### Método ContaDigitalService.registrar_compra_informativa()
+
+**Parâmetros:**
+```python
+def registrar_compra_informativa(
+    cliente_id: int,
+    canal_id: int,
+    valor: Decimal,
+    descricao: str,
+    referencia_externa: str = None,  # NSU da transação
+    sistema_origem: str = 'POSP2',   # POSP2, CHECKOUT
+    dados_adicionais: dict = None    # JSON com detalhes
+):
+```
+
+**Dados Adicionais (JSON):**
+```json
+{
+  "forma_pagamento": "PIX|DEBITO|CREDITO",
+  "parcelas": 1,
+  "bandeira": "MASTERCARD",
+  "estabelecimento": "Nome da Loja",
+  "valor_original": 100.00,
+  "desconto_aplicado": 10.00,
+  "cupom_desconto": 5.00,
+  "cashback_concedido": 2.50
+}
+```
+
+### Integração nos Fluxos
+
+**POS Own (Implementado):**
+```python
+# services/django/posp2/services_transacao_own.py
+# Após salvar transação e aplicar cashback/cupom
+ContaDigitalService.registrar_compra_informativa(
+    cliente_id=cliente_id,
+    canal_id=canal_id,
+    valor=valor_final_pago,
+    descricao=f"Compra - {loja_nome}",
+    referencia_externa=nsu,
+    sistema_origem='POSP2',
+    dados_adicionais={...}
+)
+```
+
+**POS Pinbank (Pendente):**
+- Integrar em `services_transacao.py`
+
+**Checkout Web (Pendente):**
+- Integrar em fluxo de pagamento aprovado
+
+### Visualização no Extrato
+
+**Movimentações exibidas:**
+1. Compra informativa (COMPRA_CARTAO)
+2. Débito de saldo (se usado)
+3. Débito de cashback (se usado)
+4. Crédito de cashback (se concedido)
+
+**Exemplo de extrato:**
+```
+08/12/2025 14:30 - Compra - Loja ABC        R$ 95,00
+08/12/2025 14:30 - Cashback concedido       R$ 2,50
+```
+
+**Status:** ✅ POS Own implementado | ⏳ POS Pinbank e Checkout pendentes
+
+---
+
+## 📈 PORTAL LOJISTA - VENDAS POR OPERADOR
+
+**Status:** Implementado (08/12/2025)
+
+### Funcionalidade
+
+**Localização:** `/vendas/` → Botão "Pesquisar venda por operador"
+
+**Página:** `/vendas/operador/`
+
+**Filtros:**
+- Data inicial/final (obrigatórios)
+- Loja (se múltiplas lojas)
+- NSU (opcional)
+
+### Query Agrupada
+
+```sql
+SELECT   
+    x.nome AS nome_operador,
+    SUM(x.var11) AS valor_total,
+    COUNT(1) AS qtde_vendas
+FROM (
+    SELECT DISTINCT 
+        b.var9, b.var6, b.var11, 
+        t.operador_pos,
+        teops.nome 
+    FROM baseTransacoesGestao b
+    INNER JOIN transactiondata t ON b.var9 = t.nsuPinbank 
+    LEFT JOIN terminais_operadores_pos tepos ON t.operador_pos = tepos.id 
+    LEFT JOIN terminais_operadores teops ON tepos.operador = teops.operador
+    WHERE {filtros}
+        AND t.operador_pos IS NOT NULL
+) x
+GROUP BY x.nome
+ORDER BY valor_total DESC
+```
+
+### Relatório Exibido
+
+**Cards de Totais:**
+- Total de operadores
+- Total de vendas
+- Valor total
+
+**Tabela:**
+- Nome do operador
+- Quantidade de vendas
+- Valor total (R$)
+- Ticket médio (calculado)
+
+**Totalizador:** Linha final com soma geral
+
+**Arquivos:**
+- Template: `portais/lojista/templates/portais/lojista/vendas_operador.html`
+- View: `portais/lojista/views_vendas_operador.py`
+- URL: `vendas/operador/`
+
+**Status:** ✅ Implementado e funcional
+

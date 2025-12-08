@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.4  
-**Data:** 02/12/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado em produção
+**Versão:** 5.5  
+**Data:** 08/12/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas em produção
 
 ---
 
@@ -3072,7 +3072,7 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
 
 ## 🎁 SISTEMA DE OFERTAS E CASHBACK
 
-### Status Atual (01/12/2025)
+### Status Atual (08/12/2025)
 
 **Ofertas:** ✅ Implementado
 - 5 tabelas criadas (ofertas, grupos, disparos, envios)
@@ -3082,11 +3082,13 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
 - Push notifications via Firebase/APN
 - Histórico de disparos com métricas
 
-**Cashback:** ⚠️ Em testes
-- Estrutura implementada
-- Regras de concessão em validação
-- Contabilização pendente
-- Portal Lojista com menu ativo
+**Cashback:** ✅ Em produção
+- Sistema centralizado (Wall + Loja)
+- Regras de concessão validadas
+- Contabilização separada por tipo
+- Portal Lojista com CRUD completo
+- Integração com conta digital completa
+- Compras informativas (tipo COMPRA_CARTAO)
 
 ### Pendências
 
@@ -3095,8 +3097,29 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
 - Validação de disparos em massa
 - Métricas de conversão
 
-**Cashback:**
-- Testes de concessão
-- Contabilização (cashback loja vs cashback wall)
-- Integração com conta digital
-- Relatórios financeiros
+**Conta Digital:**
+- Integrar compras informativas no POS Pinbank
+- Integrar compras informativas no Checkout Web
+
+---
+
+## 📊 PORTAL LOJISTA - NOVAS FUNCIONALIDADES
+
+### Vendas por Operador (08/12/2025)
+
+**Localização:** `/vendas/` → Botão "Pesquisar venda por operador"
+
+**Funcionalidades:**
+- Relatório agrupado por operador POS
+- Filtros: data inicial/final, loja, NSU
+- Métricas: qtde vendas, valor total, ticket médio
+- Totalizador geral
+
+**Query:**
+```sql
+SELECT nome_operador, SUM(valor), COUNT(*)
+FROM baseTransacoesGestao + transactiondata + terminais_operadores
+GROUP BY nome_operador
+```
+
+**Status:** ✅ Implementado e funcional

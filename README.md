@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 02/12/2025
+**Última Atualização:** 08/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -614,10 +614,25 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025  
-**Última atualização:** 01/12/2025  
+**Última atualização:** 08/12/2025  
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (01/12/2025)
+### Atualizações Recentes (08/12/2025)
+- ✅ **Conta Digital - Compras Informativas**
+  - Tipo de movimentação `COMPRA_CARTAO` (não afeta saldo)
+  - Método `ContaDigitalService.registrar_compra_informativa()`
+  - Integrado no fluxo POS Own
+  - Armazena dados da transação em JSON (forma pagamento, parcelas, bandeira, etc)
+  - Exibe histórico completo de compras no extrato
+  - Pendente: integração POS Pinbank e Checkout Web
+- ✅ **Portal Lojista - Vendas por Operador**
+  - Botão "Pesquisar venda por operador" na página de vendas
+  - Relatório agrupado por operador POS
+  - Métricas: qtde vendas, valor total, ticket médio
+  - Totalizador geral
+  - URL: `/vendas/operador/`
+
+### Atualizações Anteriores (01/12/2025)
 - ✅ **Sistema de Ofertas** - Implementação completa
   - 5 tabelas criadas (ofertas, grupos_segmentacao, grupos_clientes, disparos, envios)
   - Campo `loja_id` e `grupo_economico_id` para escopo
@@ -626,9 +641,10 @@ Proprietary - WallClub © 2025
   - Filtros: lojista vê ofertas próprias + ofertas globais (admin)
   - Push notifications via Firebase/APN
   - Histórico de disparos com métricas (total enviados, falhas, taxa sucesso)
-- ⚠️ **Sistema de Cashback** - Em testes
-  - Estrutura implementada, aguardando validação
-  - Contabilização pendente (cashback loja vs wall)
+- ✅ **Sistema de Cashback** - Em produção
+  - Sistema centralizado (Wall + Loja)
+  - Contabilização separada por tipo
+  - Portal Lojista com CRUD completo
 
 ### Atualizações Anteriores (22/11/2025)
 - ✅ **Segurança e Domínios** - Ajustes para produção
