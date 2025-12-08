@@ -448,7 +448,7 @@ class TRDataPosService:
                 referencia_externa=f'{dados["gateway"]}:{dados["nsu_gateway"]}',
                 sistema_origem='POS',
                 data_movimentacao=timezone.now(),
-                status='CONCLUIDA'
+                status='PROCESSADA'
             )
             
             registrar_log('posp2', f'✅ Compra informativa registrada: {tipo_codigo} - R$ {dados["valor_original"]}')
