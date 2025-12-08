@@ -46,7 +46,7 @@ class CashbackService:
         with transaction.atomic():
             # Buscar parâmetro Wall para obter nome/descrição
             parametro = ParametrosWall.objects.get(id=parametro_wall_id)
-            nome_plano = parametro.plano.nome if parametro.plano else 'Padrão'
+            nome_plano = f'Plano {parametro.id_plano}' if parametro.id_plano else 'Padrão'
             
             # Calcular datas
             agora = datetime.now()
