@@ -171,7 +171,7 @@ class POSP2ServiceV2(POSP2Service):
         percentual_cashback_wall = Decimal('0')
         cashback_wall_parametro_id = None
 
-        if wall.upper() == 'S':
+        if wall.upper() == 'C':
             try:
                 calculadora_cashback = CalculadoraDesconto()
                 valor_com_cashback = calculadora_cashback.calcular_desconto(
