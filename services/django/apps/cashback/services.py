@@ -50,7 +50,7 @@ class CashbackService:
             nome_plano = f'Plano {parametro.id_plano}' if parametro.id_plano else 'Padrão'
             
             # Calcular datas
-            agora = datetime.now()
+            agora = timezone.now()
             data_liberacao = agora + timedelta(days=periodo_retencao_dias)
             data_expiracao = None
             if periodo_expiracao_dias > 0:
@@ -118,7 +118,7 @@ class CashbackService:
         
         registrar_log('apps.cashback', f'Simulando cashback loja - Loja: {loja_id}, Valor: {valor_transacao}, Forma: {forma_pagamento}', nivel='DEBUG')
         
-        agora = datetime.now()
+        agora = timezone.now()
         dia_semana = agora.weekday()
         horario = agora.time()
         
@@ -198,7 +198,7 @@ class CashbackService:
             regra = RegraCashbackLoja.objects.get(id=regra_loja_id)
             
             # Calcular datas
-            agora = datetime.now()
+            agora = timezone.now()
             data_liberacao = agora + timedelta(days=periodo_retencao_dias)
             data_expiracao = None
             if periodo_expiracao_dias > 0:
@@ -271,7 +271,7 @@ class CashbackService:
         """
         from apps.cashback.models import RegraCashbackLoja
         
-        agora = datetime.now()
+        agora = timezone.now()
         dia_semana = agora.weekday()
         horario = agora.time()
         
@@ -539,7 +539,7 @@ class CashbackService:
         
         with transaction.atomic():
             # Calcular datas
-            agora = datetime.now()
+            agora = timezone.now()
             data_liberacao = agora + timedelta(days=regra.periodo_retencao_dias)
             data_expiracao = None
             if regra.periodo_expiracao_dias > 0:

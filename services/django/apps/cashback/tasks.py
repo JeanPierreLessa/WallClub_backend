@@ -1,5 +1,6 @@
 from celery import shared_task
 from datetime import datetime
+from django.utils import timezone
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
@@ -12,7 +13,7 @@ def liberar_cashback_retido():
     from apps.cashback.models import CashbackUso
     from apps.cashback.services import CashbackService
     
-    agora = datetime.now()
+    agora = timezone.now()
     
     # Buscar cashback retido pronto para liberar
     cashbacks = CashbackUso.objects.filter(
@@ -62,7 +63,7 @@ def expirar_cashback_vencido():
     from apps.cashback.models import CashbackUso
     from apps.cashback.services import CashbackService
     
-    agora = datetime.now()
+    agora = timezone.now()
     
     # Buscar cashback liberado que expirou
     cashbacks = CashbackUso.objects.filter(
