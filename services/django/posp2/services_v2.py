@@ -166,27 +166,43 @@ class POSP2ServiceV2(POSP2Service):
         else:
             mensagem = ""
 
-        # Calcular cashback Wall
+        # Calcular cashback Wall - buscar parâmetros wall='C' diretamente
         valor_cashback_wall = Decimal('0')
         percentual_cashback_wall = Decimal('0')
         cashback_wall_parametro_id = None
 
         if wall.upper() == 'S':
             try:
-                calculadora_cashback = CalculadoraDesconto()
-                valor_com_cashback = calculadora_cashback.calcular_desconto(
-                    valor_original=valor_com_desconto,
-                    data=data,
-                    forma=forma,
-                    parcelas=num_parcelas,
-                    id_loja=loja_id,
-                    wall='C'
-                )
-                # Parâmetros wall='C' com valores positivos aumentam o valor (cashback)
-                valor_cashback_wall = valor_com_cashback - valor_com_desconto if valor_com_cashback else Decimal('0')
-                percentual_cashback_wall = (valor_cashback_wall / valor_com_desconto * 100) if valor_com_desconto > 0 else Decimal('0')
-                cashback_wall_parametro_id = calculadora_cashback.parametro_id
-                registrar_log('posp2.v2', f'Cashback Wall calculado: {valor_cashback_wall} (parametro_id: {cashback_wall_parametro_id})')
+                from parametros_wallclub.services import ParametrosService
+                from parametros_wallclub.models import Plano
+                
+                # Buscar plano
+                if forma == 'PIX':
+                    plano = Plano.objects.filter(nome='PIX', prazo_dias=0, bandeira='PIX').first()
+                elif forma == 'DEBITO':
+                    plano = Plano.objects.filter(nome='DEBITO', prazo_dias=0, bandeira='MASTERCARD').first()
+                elif forma == 'A VISTA':
+                    plano = Plano.objects.filter(nome='A VISTA', prazo_dias=1, bandeira='MASTERCARD').first()
+                else:  # PARCELADO SEM JUROS
+                    plano = Plano.objects.filter(nome='PARCELADO SEM JUROS', prazo_dias=num_parcelas, bandeira='MASTERCARD').first()
+                
+                if plano:
+                    # Buscar configuração wall='C' para cashback
+                    config_cashback = ParametrosService.get_configuracao_ativa(
+                        loja_id=loja_id,
+                        id_plano=plano.id,
+                        wall='C',
+                        data_referencia=datetime.now()
+                    )
+                    
+                    if config_cashback:
+                        # Cashback baseado em parametro_loja_7 (percentual)
+                        param_7 = getattr(config_cashback, 'parametro_loja_7', None)
+                        if param_7 and param_7 > 0:
+                            percentual_cashback_wall = param_7 * 100  # Converter para percentual
+                            valor_cashback_wall = valor_com_desconto * param_7
+                            cashback_wall_parametro_id = config_cashback.id
+                            registrar_log('posp2.v2', f'Cashback Wall: {valor_cashback_wall} ({percentual_cashback_wall}%) - parametro_id: {cashback_wall_parametro_id}')
             except Exception as e:
                 registrar_log('posp2.v2', f'Erro ao calcular cashback Wall: {str(e)}', nivel='WARNING')
 
