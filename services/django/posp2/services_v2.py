@@ -182,7 +182,8 @@ class POSP2ServiceV2(POSP2Service):
                     id_loja=loja_id,
                     wall='C'
                 )
-                valor_cashback_wall = valor_com_desconto - valor_com_cashback if valor_com_cashback else Decimal('0')
+                # Parâmetros wall='C' com valores positivos aumentam o valor (cashback)
+                valor_cashback_wall = valor_com_cashback - valor_com_desconto if valor_com_cashback else Decimal('0')
                 percentual_cashback_wall = (valor_cashback_wall / valor_com_desconto * 100) if valor_com_desconto > 0 else Decimal('0')
                 cashback_wall_parametro_id = calculadora_cashback.parametro_id
             except Exception as e:
