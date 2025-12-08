@@ -60,8 +60,10 @@ class POSP2ServiceV2(POSP2Service):
             # Usar calculadora do parametros_wallclub
             from parametros_wallclub.services import CalculadoraDesconto
             from apps.cashback.services import CashbackService
-
+            
+            registrar_log('posp2.v2', 'DEBUG: CalculadoraDesconto importada com sucesso')
             calculadora = CalculadoraDesconto()
+            registrar_log('posp2.v2', 'DEBUG: CalculadoraDesconto instanciada com sucesso')
             data = datetime.now().strftime('%Y-%m-%d')
             valor_original = Decimal(str(valor)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
