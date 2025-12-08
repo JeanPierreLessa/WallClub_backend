@@ -4,7 +4,7 @@ Operações atômicas e validações de negócio.
 """
 from decimal import Decimal
 from django.db import transaction
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from django.core.exceptions import ValidationError
 from .models import ContaDigital, TipoMovimentacao, MovimentacaoContaDigital, ConfiguracaoContaDigital, CashbackRetencao
@@ -135,7 +135,7 @@ class ContaDigitalService:
                         )
                         
                         # Criar registro de retenção
-                        data_liberacao = ContaDigitalService._get_local_now() + timezone.timedelta(days=tipo_movimentacao.periodo_retencao_dias)
+                        data_liberacao = ContaDigitalService._get_local_now() + timedelta(days=tipo_movimentacao.periodo_retencao_dias)
                         CashbackRetencao.objects.create(
                             conta_digital=conta,
                             movimentacao_origem=movimentacao,
