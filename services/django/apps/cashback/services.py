@@ -116,6 +116,7 @@ class CashbackService:
             dict: Dados da simulação com estrutura padronizada
         """
         from apps.cashback.models import RegraCashbackLoja
+        from django.utils import timezone
         
         registrar_log('apps.cashback', f'Simulando cashback loja - Loja: {loja_id}, Valor: {valor_transacao}, Forma: {forma_pagamento}', nivel='DEBUG')
         
@@ -272,6 +273,7 @@ class CashbackService:
             CashbackUso ou None: Registro do cashback aplicado ou None se nenhuma regra aplicável
         """
         from apps.cashback.models import RegraCashbackLoja
+        from django.utils import timezone
         
         agora = timezone.now()
         dia_semana = agora.weekday()
@@ -538,6 +540,7 @@ class CashbackService:
         """
         from apps.cashback.models import CashbackUso
         from apps.conta_digital.services import ContaDigitalService
+        from django.utils import timezone
         
         with transaction.atomic():
             # Calcular datas
