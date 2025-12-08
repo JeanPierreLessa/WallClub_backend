@@ -170,7 +170,10 @@ class POSP2ServiceV2(POSP2Service):
         percentual_cashback_wall = Decimal('0')
         cashback_wall_parametro_id = None
 
+        registrar_log('posp2.v2', f'DEBUG: Iniciando cálculo cashback Wall - wall={wall}')
+        
         if wall.upper() == 'S':
+            registrar_log('posp2.v2', f'DEBUG: Entrando no bloco de cashback Wall')
             try:
                 from parametros_wallclub.models import Plano
                 from parametros_wallclub.services import ParametrosService
