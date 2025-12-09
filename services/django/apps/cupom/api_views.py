@@ -152,6 +152,81 @@ def verificar_cupons_disponiveis(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def validar_cupom_checkout(request):
+    """
+    POST /api/cupom/validar/
+    Valida cupom para o checkout (chamada interna entre containers)
+    SEM autenticação (uso interno apenas)
+    
+    Payload:
+    {
+        "cupom_codigo": "PROMO10",
+        "loja_id": 26,
+        "cliente_id": 0,  // 0 para validação prévia
+        "valor_transacao": 100.00
+    }
+    
+    Response:
+    {
+        "sucesso": true,
+        "desconto": 10.00,
+        "tipo_desconto": "FIXO",
+        "valor_desconto": 10.00,
+        "mensagem": "Cupom válido"
+    }
+    """
+    try:
+        data = json.loads(request.body)
+        
+        cupom_codigo = data.get('cupom_codigo')
+        loja_id = data.get('loja_id')
+        cliente_id = data.get('cliente_id', 0)
+        valor_transacao = Decimal(str(data.get('valor_transacao', 0)))
+        
+        if not all([cupom_codigo, loja_id, valor_transacao]):
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Dados inválidos: cupom_codigo, loja_id e valor_transacao são obrigatórios'
+            }, status=400)
+        
+        cupom_service = CupomService()
+        
+        # Validar cupom (cliente_id=0 para validação prévia)
+        cupom = cupom_service.validar_cupom(
+            codigo=cupom_codigo,
+            loja_id=loja_id,
+            cliente_id=cliente_id,
+            valor_transacao=valor_transacao
+        )
+        
+        # Calcular desconto
+        valor_desconto = cupom_service.calcular_desconto(cupom, valor_transacao)
+        
+        return JsonResponse({
+            'sucesso': True,
+            'desconto': float(valor_desconto),
+            'tipo_desconto': cupom.tipo_desconto,
+            'valor_desconto': float(cupom.valor_desconto),
+            'mensagem': 'Cupom válido'
+        })
+        
+    except ValueError as e:
+        # Erro de validação do cupom
+        return JsonResponse({
+            'sucesso': False,
+            'mensagem': str(e)
+        }, status=400)
+        
+    except Exception as e:
+        registrar_log('apps.cupom', f'Erro ao validar cupom checkout: {e}', nivel='ERROR')
+        return JsonResponse({
+            'sucesso': False,
+            'mensagem': 'Erro ao validar cupom'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 @require_oauth_posp2
 def validar_cupom(request):
     """

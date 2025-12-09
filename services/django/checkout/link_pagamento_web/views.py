@@ -591,20 +591,40 @@ class ValidarCupomView(APIView):
                     'mensagem': 'Dados incompletos'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Validação de cupom será feita no momento do pagamento
-            # Aqui apenas retornamos sucesso para não bloquear o fluxo
-            # A validação real acontece no service quando processar o pagamento
-            from decimal import Decimal
+            # Fazer chamada interna para o container Portais validar o cupom
+            # usando o CupomService real (mesma lógica do processamento)
+            import requests
+            from django.conf import settings
             
-            # Simular validação básica (apenas para feedback visual)
-            # A validação real será feita no LinkPagamentoService.processar_checkout_link_pagamento
-            return Response({
-                'sucesso': True,
-                'mensagem': 'Cupom será validado no momento do pagamento',
-                'desconto': 0.00,  # Desconto será calculado no processamento
-                'tipo_desconto': 'PERCENTUAL',
-                'valor_desconto': 0.00
-            }, status=status.HTTP_200_OK)
+            # URL interna do container Portais
+            portais_url = getattr(settings, 'PORTAIS_INTERNAL_URL', 'http://wallclub-portais:8001')
+            
+            try:
+                response = requests.post(
+                    f'{portais_url}/api/cupom/validar/',
+                    json={
+                        'cupom_codigo': cupom_codigo,
+                        'loja_id': loja_id,
+                        'valor_transacao': valor_transacao,
+                        'cliente_id': 0  # Cliente temporário para validação prévia
+                    },
+                    timeout=5
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    return Response(data, status=status.HTTP_200_OK)
+                else:
+                    data = response.json()
+                    return Response(data, status=response.status_code)
+                    
+            except requests.exceptions.RequestException as e:
+                registrar_log("checkout.link_pagamento_web", 
+                             f"Erro ao chamar Portais para validar cupom: {str(e)}", nivel='ERROR')
+                return Response({
+                    'sucesso': False,
+                    'mensagem': 'Erro ao validar cupom. Tente novamente.'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except Exception as e:
             import traceback
