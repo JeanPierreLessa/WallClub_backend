@@ -597,7 +597,17 @@ class ValidarCupomView(APIView):
             from django.conf import settings
             
             # URL interna do container Portais
-            portais_url = settings.PORTAIS_INTERNAL_URL
+            try:
+                portais_url = settings.PORTAIS_INTERNAL_URL
+                registrar_log("checkout.link_pagamento_web", 
+                             f"PORTAIS_INTERNAL_URL: {portais_url}", nivel='INFO')
+            except AttributeError as e:
+                registrar_log("checkout.link_pagamento_web", 
+                             f"PORTAIS_INTERNAL_URL não definido: {str(e)}", nivel='ERROR')
+                return Response({
+                    'sucesso': False,
+                    'mensagem': 'Configuração inválida'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             try:
                 url_completa = f'{portais_url}/api/cupom/validar/'
