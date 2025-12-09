@@ -380,7 +380,9 @@ class ProcessarCheckoutView(APIView):
                 return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            registrar_log("checkout.link_pagamento_web", f"Erro: {str(e)}", nivel='ERROR')
+            import traceback
+            erro_completo = traceback.format_exc()
+            registrar_log("checkout.link_pagamento_web", f"Erro ao processar checkout: {str(e)}\n{erro_completo}", nivel='ERROR')
             return Response({
                 'sucesso': False,
                 'mensagem': 'Erro interno do servidor'
