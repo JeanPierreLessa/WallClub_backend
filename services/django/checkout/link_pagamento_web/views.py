@@ -591,65 +591,20 @@ class ValidarCupomView(APIView):
                     'mensagem': 'Dados incompletos'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Importar serviços
-            from apps.cupom.services import CupomService
-            from checkout.models import CheckoutCliente
-            from django.core.exceptions import ValidationError
+            # Validação de cupom será feita no momento do pagamento
+            # Aqui apenas retornamos sucesso para não bloquear o fluxo
+            # A validação real acontece no service quando processar o pagamento
             from decimal import Decimal
-            from django.apps import apps
             
-            cupom_service = CupomService()
-            
-            # Buscar loja usando Django ORM
-            Loja = apps.get_model('estr_organizacional', 'Loja')
-            try:
-                loja = Loja.objects.get(id=loja_id)
-            except Loja.DoesNotExist:
-                return Response({
-                    'sucesso': False,
-                    'mensagem': 'Loja não encontrada'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Buscar ou criar cliente temporário (usando CPF genérico para validação prévia)
-            # Na validação real, usaremos o CPF do cliente
-            cliente_temp, _ = CheckoutCliente.objects.get_or_create(
-                loja=loja,
-                cpf='00000000000',  # CPF temporário para validação
-                defaults={
-                    'nome': 'Validação Temporária',
-                    'email': 'temp@temp.com',
-                    'ativo': True
-                }
-            )
-            
-            try:
-                # Validar cupom
-                cupom_obj = cupom_service.validar_cupom(
-                    codigo=cupom_codigo,
-                    loja_id=loja_id,
-                    cliente_id=cliente_temp.id,
-                    valor_transacao=Decimal(str(valor_transacao))
-                )
-                
-                # Calcular desconto
-                desconto = cupom_service.calcular_desconto(
-                    cupom_obj,
-                    Decimal(str(valor_transacao))
-                )
-                
-                return Response({
-                    'sucesso': True,
-                    'mensagem': 'Cupom válido',
-                    'desconto': float(desconto),
-                    'tipo_desconto': cupom_obj.tipo_desconto,
-                    'valor_desconto': float(cupom_obj.valor_desconto)
-                }, status=status.HTTP_200_OK)
-                
-            except ValidationError as e:
-                return Response({
-                    'sucesso': False,
-                    'mensagem': str(e)
-                }, status=status.HTTP_400_BAD_REQUEST)
+            # Simular validação básica (apenas para feedback visual)
+            # A validação real será feita no LinkPagamentoService.processar_checkout_link_pagamento
+            return Response({
+                'sucesso': True,
+                'mensagem': 'Cupom será validado no momento do pagamento',
+                'desconto': 0.00,  # Desconto será calculado no processamento
+                'tipo_desconto': 'PERCENTUAL',
+                'valor_desconto': 0.00
+            }, status=status.HTTP_200_OK)
             
         except Exception as e:
             import traceback
