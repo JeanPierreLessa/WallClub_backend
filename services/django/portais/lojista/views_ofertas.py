@@ -31,7 +31,9 @@ class OfertasListView(LojistaAuthMixin, View):
             # Buscar ofertas do canal via service
             todas_ofertas = OfertaService.listar_todas_ofertas()
             # Filtrar: ofertas da loja OU ofertas sem loja (NULL = todas as lojas)
+            registrar_log('portais.lojista', f'DEBUG: Filtrando ofertas - canal_id={canal_id}, loja_id={loja_id}, total_ofertas={len(todas_ofertas)}')
             ofertas = [o for o in todas_ofertas if o.canal_id == canal_id and (o.loja_id == loja_id or o.loja_id is None)]
+            registrar_log('portais.lojista', f'DEBUG: Ofertas filtradas: {len(ofertas)} encontradas')
 
             # Buscar total de disparos por oferta via service
             ofertas_com_disparos = []
