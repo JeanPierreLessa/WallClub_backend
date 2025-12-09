@@ -21,8 +21,9 @@ class OfertasListView(LojistaAuthMixin, View):
             from apps.ofertas.services import OfertaService
 
             # Buscar canal_id e loja_id da sessão
-            canal_id = request.session.get('canal_id')
-            loja_id = request.session.get('loja_id')
+            canal_id = request.session.get('canal_id') or request.session.get('portal_canal_id')
+            loja_id = request.session.get('loja_id') or request.session.get('portal_loja_id')
+            tipo_usuario = request.session.get('tipo_usuario_wall')
 
             if not canal_id:
                 messages.error(request, 'Canal não identificado')
@@ -30,10 +31,16 @@ class OfertasListView(LojistaAuthMixin, View):
 
             # Buscar ofertas do canal via service
             todas_ofertas = OfertaService.listar_todas_ofertas()
-            # Filtrar: ofertas da loja OU ofertas sem loja (NULL = todas as lojas)
-            registrar_log('portais.lojista', f'DEBUG: Filtrando ofertas - canal_id={canal_id}, loja_id={loja_id}, total_ofertas={len(todas_ofertas)}')
-            ofertas = [o for o in todas_ofertas if o.canal_id == canal_id and (o.loja_id == loja_id or o.loja_id is None)]
-            registrar_log('portais.lojista', f'DEBUG: Ofertas filtradas: {len(ofertas)} encontradas')
+            
+            # Filtrar baseado no tipo de usuário
+            if tipo_usuario == 'grupo_economico':
+                # Grupo econômico: vê ofertas de todas as lojas do canal + ofertas globais (NULL)
+                ofertas = [o for o in todas_ofertas if o.canal_id == canal_id]
+            else:
+                # Lojista: vê apenas ofertas da sua loja + ofertas globais (NULL)
+                ofertas = [o for o in todas_ofertas if o.canal_id == canal_id and (o.loja_id == loja_id or o.loja_id is None)]
+            
+            registrar_log('portais.lojista', f'DEBUG: Filtrando ofertas - canal_id={canal_id}, loja_id={loja_id}, tipo={tipo_usuario}, total={len(ofertas)}')
 
             # Buscar total de disparos por oferta via service
             ofertas_com_disparos = []
