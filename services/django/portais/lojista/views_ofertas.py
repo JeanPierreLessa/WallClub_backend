@@ -198,7 +198,7 @@ class OfertasCreateView(LojistaAuthMixin, View):
             return redirect('lojista:ofertas_create')
 
 
-class OfertasEditView(LojistaAuthMixin, View):
+class OfertasEditView(LojistaAuthMixin, LojistaDataMixin, View):
     """Edita oferta existente"""
 
     def get(self, request, oferta_id):
@@ -212,11 +212,12 @@ class OfertasEditView(LojistaAuthMixin, View):
                 messages.error(request, 'Oferta não encontrada')
                 return redirect('lojista:ofertas_list')
 
-            # Verificar se usuário tem acesso (mesma loja)
-            canal_id = request.session.get('canal_id')
-            loja_id = request.session.get('loja_id')
+            # Verificar se usuário tem acesso à loja da oferta
+            canal_id = request.session.get('canal_id') or request.session.get('portal_canal_id')
+            lojas_acessiveis = self.get_lojas_acessiveis()
+            lojas_ids = [loja['id'] if isinstance(loja, dict) else loja.id for loja in lojas_acessiveis]
 
-            if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
+            if oferta.canal_id != canal_id or (oferta.loja_id and oferta.loja_id not in lojas_ids):
                 messages.error(request, 'Sem permissão para editar esta oferta')
                 return redirect('lojista:ofertas_list')
 
@@ -250,11 +251,12 @@ class OfertasEditView(LojistaAuthMixin, View):
                 messages.error(request, 'Oferta não encontrada')
                 return redirect('lojista:ofertas_list')
 
-            # Verificar acesso (mesma loja)
-            canal_id = request.session.get('canal_id')
-            loja_id = request.session.get('loja_id')
+            # Verificar acesso à loja da oferta
+            canal_id = request.session.get('canal_id') or request.session.get('portal_canal_id')
+            lojas_acessiveis = self.get_lojas_acessiveis()
+            lojas_ids = [loja['id'] if isinstance(loja, dict) else loja.id for loja in lojas_acessiveis]
 
-            if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
+            if oferta.canal_id != canal_id or (oferta.loja_id and oferta.loja_id not in lojas_ids):
                 messages.error(request, 'Sem permissão para editar esta oferta')
                 return redirect('lojista:ofertas_list')
 
@@ -324,7 +326,7 @@ class OfertasEditView(LojistaAuthMixin, View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class OfertasDispararView(View):
+class OfertasDispararView(LojistaDataMixin, View):
     """Dispara push notification para oferta"""
 
     def post(self, request, oferta_id):
@@ -348,11 +350,12 @@ class OfertasDispararView(View):
                     'mensagem': 'Oferta não encontrada'
                 }, status=404)
 
-            # Verificar permissão (mesma loja)
-            canal_id = request.session.get('canal_id')
-            loja_id = request.session.get('loja_id')
+            # Verificar permissão (loja acessível)
+            canal_id = request.session.get('canal_id') or request.session.get('portal_canal_id')
+            lojas_acessiveis = self.get_lojas_acessiveis()
+            lojas_ids = [loja['id'] if isinstance(loja, dict) else loja.id for loja in lojas_acessiveis]
 
-            if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
+            if oferta.canal_id != canal_id or (oferta.loja_id and oferta.loja_id not in lojas_ids):
                 return JsonResponse({
                     'sucesso': False,
                     'mensagem': 'Sem permissão para disparar esta oferta'
