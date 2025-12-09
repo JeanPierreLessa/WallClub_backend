@@ -492,8 +492,16 @@ class TRDataService:
                     registrar_log('posp2', f'Push não enviado: canal_id não encontrado (loja_info={loja_info})')
                 
                 if cpf and canal_id:
-                    # Usar o valor final após desconto (valores_calculados[26])
-                    valor_transacao = valores_calculados.get(26, valor_para_calculadora)
+                    # Calcular valor final para push (usar amount se valores_calculados[26] for None)
+                    valor_transacao = valores_calculados.get(26)
+                    if not valor_transacao or valor_transacao == 0:
+                        # Usar amount (valor cobrado do cartão)
+                        amount_centavos = dados.get('amount', 0)
+                        if amount_centavos:
+                            valor_transacao = float(amount_centavos) / 100
+                        else:
+                            valor_transacao = valor_para_calculadora
+                    
                     registrar_log('posp2', f'Usando valor final com desconto para push: {valor_transacao} (original: {valor_para_calculadora})')
                     
                     # Usar loja_info para obter o nome do estabelecimento
@@ -811,16 +819,18 @@ class TRDataService:
             # Valores conforme PHP
             parte0 = safe_float_convert(valores_calculados.get(26, 0))  # valor final
             
-            # Se parte0 for zero/None, usar valor original menos desconto
+            # Se parte0 for zero/None, usar amount (valor real cobrado)
             if not parte0 or parte0 == 0:
-                valor_original = safe_float_convert(valores_calculados.get(11, 0))
-                valor_desconto_wall = abs(safe_float_convert(dados.get('valor_desconto', 0)))
-                if valor_desconto_wall > 0:
-                    parte0 = valor_original - valor_desconto_wall
-                    registrar_log('posp2', f'💰 [DESCONTO] Ajustando parte0: {valor_original} - {valor_desconto_wall} = {parte0}')
+                # Usar amount (valor cobrado do cartão) em vez de valororiginal
+                amount_centavos = dados.get('amount', 0)
+                if amount_centavos:
+                    parte0 = safe_float_convert(amount_centavos) / 100
+                    registrar_log('posp2', f'💰 [AMOUNT] Usando amount: {amount_centavos} centavos = R$ {parte0}')
                 else:
+                    # Fallback: usar valor original
+                    valor_original = safe_float_convert(valores_calculados.get(11, 0))
                     parte0 = valor_original
-                    registrar_log('posp2', f'💰 [SEM DESCONTO] Usando valor original: {parte0}')
+                    registrar_log('posp2', f'💰 [FALLBACK] Usando valor original: {parte0}')
             
             parte1 = abs(desconto)  # valor absoluto do desconto
             

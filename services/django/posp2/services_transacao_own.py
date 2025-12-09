@@ -755,16 +755,18 @@ class TRDataOwnService:
         # Valores conforme PHP
         parte0 = float(valores_calculados.get(26, 0))  # valor final
         
-        # Se parte0 for zero/None, usar valor original menos desconto
+        # Se parte0 for zero/None, usar amount (valor real cobrado)
         if not parte0 or parte0 == 0:
-            valor_original = float(valores_calculados.get(11, 0))
-            valor_desconto_wall = abs(float(dados.get('valor_desconto', 0)))
-            if valor_desconto_wall > 0:
-                parte0 = valor_original - valor_desconto_wall
-                registrar_log('posp2', f'💰 [DESCONTO] Ajustando parte0: {valor_original} - {valor_desconto_wall} = {parte0}')
+            # Usar amount (valor cobrado do cartão) em vez de valororiginal
+            amount_centavos = dados.get('amount', 0)
+            if amount_centavos:
+                parte0 = float(amount_centavos) / 100
+                registrar_log('posp2', f'💰 [AMOUNT] Usando amount: {amount_centavos} centavos = R$ {parte0}')
             else:
+                # Fallback: usar valor original
+                valor_original = float(valores_calculados.get(11, 0))
                 parte0 = valor_original
-                registrar_log('posp2', f'💰 [SEM DESCONTO] Usando valor original: {parte0}')
+                registrar_log('posp2', f'💰 [FALLBACK] Usando valor original: {parte0}')
         
         parte1 = desconto  # valor absoluto do desconto
         
