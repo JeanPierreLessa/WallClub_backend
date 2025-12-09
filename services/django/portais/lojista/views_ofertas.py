@@ -282,21 +282,32 @@ class OfertasEditView(LojistaAuthMixin, LojistaDataMixin, View):
                 imagem_url = f'{settings.WC_API_BASE_URL}/media/{caminho}'
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')
+            data_agendamento_disparo_str = request.POST.get('data_agendamento_disparo')
             tipo_segmentacao = request.POST.get('tipo_segmentacao', 'todos_canal')
             grupo_id = request.POST.get('grupo_id')
             ativo = request.POST.get('ativo') == 'on'
+            loja_id = request.POST.get('loja_id')
 
             # Validações
-            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str:
-                messages.error(request, 'Título, texto push, data início e data fim são obrigatórios')
+            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str or not data_agendamento_disparo_str:
+                messages.error(request, 'Título, texto push, datas de vigência e data de disparo são obrigatórios')
+                return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
+
+            if not loja_id:
+                messages.error(request, 'Selecione a loja dona da oferta')
                 return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
 
             # Converter datas
             vigencia_inicio = datetime.strptime(vigencia_inicio_str, '%Y-%m-%dT%H:%M')
             vigencia_fim = datetime.strptime(vigencia_fim_str, '%Y-%m-%dT%H:%M')
+            data_agendamento_disparo = datetime.strptime(data_agendamento_disparo_str, '%Y-%m-%dT%H:%M')
 
             if vigencia_fim <= vigencia_inicio:
                 messages.error(request, 'Data fim deve ser posterior à data início')
+                return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
+
+            if data_agendamento_disparo < vigencia_inicio:
+                messages.error(request, 'Data de disparo deve ser igual ou posterior ao início da vigência')
                 return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
 
             # Validar segmentação
@@ -311,6 +322,8 @@ class OfertasEditView(LojistaAuthMixin, LojistaDataMixin, View):
             oferta.imagem_url = imagem_url
             oferta.vigencia_inicio = vigencia_inicio
             oferta.vigencia_fim = vigencia_fim
+            oferta.data_agendamento_disparo = data_agendamento_disparo
+            oferta.loja_id = int(loja_id)
             oferta.tipo_segmentacao = tipo_segmentacao
             oferta.grupo_id = int(grupo_id) if grupo_id else None
             oferta.ativo = ativo
