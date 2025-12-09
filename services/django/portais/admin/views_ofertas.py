@@ -15,42 +15,23 @@ from wallclub_core.estr_organizacional.canal import Canal
 
 @admin_required
 def ofertas_list(request):
-    """Lista todas as ofertas do sistema via API interna"""
+    """Lista todas as ofertas do sistema"""
     try:
-        # Buscar todas as ofertas via API
-        response = ofertas_api.listar_ofertas()
+        from apps.ofertas.services import OfertaService
         
-        if not response.get('sucesso'):
-            messages.error(request, response.get('mensagem', 'Erro ao carregar ofertas'))
-            return redirect('portais_admin:dashboard')
+        # Buscar todas as ofertas via service (não API)
+        todas_ofertas = OfertaService.listar_todas_ofertas()
         
-        ofertas = response.get('ofertas', [])
-        
-        # Converter dicts para objetos-like (para compatibilidade com template)
-        class OfertaObj:
-            def __init__(self, data):
-                for key, value in data.items():
-                    setattr(self, key, value)
-        
+        # Buscar total de disparos por oferta via service
         ofertas_com_disparos = []
-        for oferta_data in ofertas:
-            # Formatar datas para exibição (remover segundos da string ISO)
-            if 'vigencia_inicio' in oferta_data and oferta_data['vigencia_inicio']:
-                oferta_data['vigencia_inicio_formatted'] = oferta_data['vigencia_inicio'][:16]
-            if 'vigencia_fim' in oferta_data and oferta_data['vigencia_fim']:
-                oferta_data['vigencia_fim_formatted'] = oferta_data['vigencia_fim'][:16]
-            if 'data_agendamento_disparo' in oferta_data and oferta_data['data_agendamento_disparo']:
-                oferta_data['data_agendamento_disparo'] = oferta_data['data_agendamento_disparo'][:16]
-            
-            # Garantir que disparada existe
-            if 'disparada' not in oferta_data:
-                oferta_data['disparada'] = False
-            
-            oferta_obj = OfertaObj(oferta_data)
+        for oferta in todas_ofertas:
+            disparos = OfertaService.listar_disparos_oferta(oferta.id)
+            ultimo_disparo = disparos[0] if disparos else None
+
             ofertas_com_disparos.append({
-                'oferta': oferta_obj,
-                'total_disparos': 0,  # TODO: API de disparos
-                'ultimo_disparo': None
+                'oferta': oferta,
+                'total_disparos': len(disparos),
+                'ultimo_disparo': ultimo_disparo
             })
         
         context = {

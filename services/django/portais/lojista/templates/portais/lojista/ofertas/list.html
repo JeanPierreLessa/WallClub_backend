@@ -91,6 +91,12 @@
                                            title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        {% else %}
+                                        <a href="{% url 'lojista:ofertas_edit' item.oferta.id %}" 
+                                           class="btn btn-sm btn-secondary" 
+                                           title="Visualizar">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                         {% endif %}
                                         
                                         <a href="{% url 'lojista:ofertas_historico' item.oferta.id %}" 

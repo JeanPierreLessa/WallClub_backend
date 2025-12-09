@@ -30,11 +30,17 @@
                     <form method="post" id="form-oferta" enctype="multipart/form-data">
                         {% csrf_token %}
                         
+                        {% if oferta.disparada %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-lock me-2"></i><strong>Modo visualização:</strong> Esta oferta já foi disparada e não pode ser editada.
+                        </div>
+                        {% endif %}
+                        
                         <div class="mb-3">
                             <label for="loja_id" class="form-label">
                                 <i class="fas fa-store text-primary me-2"></i>Loja Dona da Oferta *
                             </label>
-                            <select class="form-select" id="loja_id" name="loja_id" required>
+                            <select class="form-select" id="loja_id" name="loja_id" required {% if oferta.disparada %}disabled{% endif %}>
                                 <option value="">Selecione a loja...</option>
                                 {% for loja in lojas_acessiveis %}
                                 <option value="{% if loja.id %}{{ loja.id }}{% else %}{{ loja.Id }}{% endif %}" 
@@ -57,7 +63,8 @@
                                    value="{{ oferta.titulo|default:'' }}"
                                    required
                                    maxlength="255"
-                                   placeholder="Ex: Black Friday - 50% de desconto">
+                                   placeholder="Ex: Black Friday - 50% de desconto"
+                                   {% if oferta.disparada %}readonly{% endif %}>
                             <small class="form-text text-muted">Título exibido no app do cliente</small>
                         </div>
 
@@ -72,7 +79,8 @@
                                    value="{{ oferta.texto_push|default:'' }}"
                                    required
                                    maxlength="255"
-                                   placeholder="Ex: Aproveite 50% OFF na Black Friday!">
+                                   placeholder="Ex: Aproveite 50% OFF na Black Friday!"
+                                   {% if oferta.disparada %}readonly{% endif %}>
                             <small class="form-text text-muted">Texto curto enviado na notificação push</small>
                         </div>
 
@@ -84,7 +92,8 @@
                                       id="descricao" 
                                       name="descricao" 
                                       rows="4"
-                                      placeholder="Descreva os detalhes da oferta...">{{ oferta.descricao|default:'' }}</textarea>
+                                      placeholder="Descreva os detalhes da oferta..."
+                                      {% if oferta.disparada %}readonly{% endif %}>{{ oferta.descricao|default:'' }}</textarea>
                             <small class="form-text text-muted">Descrição detalhada exibida na página do app</small>
                         </div>
 
@@ -96,7 +105,8 @@
                                    class="form-control" 
                                    id="imagem" 
                                    name="imagem" 
-                                   accept="image/*">
+                                   accept="image/*"
+                                   {% if oferta.disparada %}disabled{% endif %}>
                             <small class="form-text text-muted">Envie uma imagem para a oferta (JPG, PNG ou GIF - opcional)</small>
                             {% if oferta and oferta.imagem_url %}
                             <div class="mt-2">
@@ -115,8 +125,9 @@
                                        class="form-control" 
                                        id="vigencia_inicio" 
                                        name="vigencia_inicio" 
-                                       value="{{ vigencia_inicio_formatted }}"
-                                       required>
+                                       value="{{ vigencia_inicio_formatted|default:'' }}"
+                                       required
+                                       {% if oferta.disparada %}readonly{% endif %}>
                             </div>
 
                             <div class="col-md-4 mb-3">
@@ -127,8 +138,9 @@
                                        class="form-control" 
                                        id="vigencia_fim" 
                                        name="vigencia_fim" 
-                                       value="{{ vigencia_fim_formatted }}"
-                                       required>
+                                       value="{{ vigencia_fim_formatted|default:'' }}"
+                                       required
+                                       {% if oferta.disparada %}readonly{% endif %}>
                             </div>
 
                             <div class="col-md-4 mb-3">
@@ -139,8 +151,9 @@
                                        class="form-control" 
                                        id="data_agendamento_disparo" 
                                        name="data_agendamento_disparo" 
-                                       value="{{ data_agendamento_disparo_formatted }}"
-                                       required>
+                                       value="{{ data_agendamento_disparo_formatted|default:'' }}"
+                                       required
+                                       {% if oferta.disparada %}readonly{% endif %}>
                                 <small class="form-text text-muted">Push será enviado automaticamente nesta data/hora</small>
                             </div>
                         </div>
@@ -156,7 +169,8 @@
                                        name="tipo_segmentacao" 
                                        id="tipo_todos" 
                                        value="todos_canal"
-                                       {% if not oferta or oferta.tipo_segmentacao == 'todos_canal' %}checked{% endif %}>
+                                       {% if not oferta or oferta.tipo_segmentacao == 'todos_canal' %}checked{% endif %}
+                                       {% if oferta.disparada %}disabled{% endif %}>
                                 <label class="form-check-label" for="tipo_todos">
                                     <i class="fas fa-broadcast-tower text-success me-2"></i>
                                     <strong>Todos os clientes do canal</strong>
@@ -169,7 +183,8 @@
                                        name="tipo_segmentacao" 
                                        id="tipo_grupo" 
                                        value="grupo_customizado"
-                                       {% if oferta and oferta.tipo_segmentacao == 'grupo_customizado' %}checked{% endif %}>
+                                       {% if oferta and oferta.tipo_segmentacao == 'grupo_customizado' %}checked{% endif %}
+                                       {% if oferta.disparada %}disabled{% endif %}>
                                 <label class="form-check-label" for="tipo_grupo">
                                     <i class="fas fa-user-tag text-warning me-2"></i>
                                     <strong>Grupo customizado</strong>
@@ -182,7 +197,7 @@
                             <label for="grupo_id" class="form-label">
                                 <i class="fas fa-layer-group text-primary me-2"></i>Selecione o Grupo *
                             </label>
-                            <select class="form-select" id="grupo_id" name="grupo_id">
+                            <select class="form-select" id="grupo_id" name="grupo_id" {% if oferta.disparada %}disabled{% endif %}>
                                 <option value="">Selecione um grupo...</option>
                                 {% for grupo in grupos %}
                                 <option value="{{ grupo.id }}" {% if oferta and oferta.grupo_id == grupo.id %}selected{% endif %}>
@@ -207,7 +222,8 @@
                                        type="checkbox" 
                                        id="ativo" 
                                        name="ativo"
-                                       {% if not oferta or oferta.ativo %}checked{% endif %}>
+                                       {% if not oferta or oferta.ativo %}checked{% endif %}
+                                       {% if oferta.disparada %}disabled{% endif %}>
                                 <label class="form-check-label" for="ativo">
                                     <i class="fas fa-toggle-on text-success me-2"></i>Oferta Ativa
                                 </label>
@@ -218,11 +234,14 @@
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Salvar
+                            {% if not oferta.disparada %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>
+                                {% if oferta %}Atualizar{% else %}Criar{% endif %} Oferta
                             </button>
+                            {% endif %}
                             <a href="{% url 'lojista:ofertas_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i>Cancelar
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
                             </a>
                         </div>
                     </form>
