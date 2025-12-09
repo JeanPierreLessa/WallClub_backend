@@ -200,39 +200,30 @@ def ofertas_create(request):
 
 @admin_required
 def ofertas_edit(request, oferta_id):
-    """Edita oferta existente via API interna"""
+    """Edita oferta existente"""
     try:
-        # Buscar oferta via API
-        response = ofertas_api.obter_oferta(oferta_id)
+        from apps.ofertas.services import OfertaService
         
-        if not response.get('sucesso'):
+        # Buscar oferta via service (não API)
+        oferta = OfertaService.obter_oferta_por_id(oferta_id)
+        
+        if not oferta:
             messages.error(request, 'Oferta não encontrada')
             return redirect('portais_admin:ofertas_list')
-        
-        oferta_data = response.get('oferta', {})
-        
-        # Converter para objeto
-        class OfertaObj:
-            def __init__(self, data):
-                for key, value in data.items():
-                    setattr(self, key, value)
-        
-        oferta = OfertaObj(oferta_data)
         
         # Formatar datas para input datetime-local (formato: 2025-10-12T06:48)
         vigencia_inicio_formatted = None
         vigencia_fim_formatted = None
+        data_agendamento_disparo_formatted = None
         
         if oferta.vigencia_inicio:
-            # Remover segundos e timezone da string ISO
-            vigencia_inicio_formatted = oferta.vigencia_inicio[:16]  # "2025-10-12T06:48:00" -> "2025-10-12T06:48"
+            vigencia_inicio_formatted = oferta.vigencia_inicio.strftime('%Y-%m-%dT%H:%M')
         
         if oferta.vigencia_fim:
-            vigencia_fim_formatted = oferta.vigencia_fim[:16]
+            vigencia_fim_formatted = oferta.vigencia_fim.strftime('%Y-%m-%dT%H:%M')
         
-        data_agendamento_disparo_formatted = None
-        if hasattr(oferta, 'data_agendamento_disparo') and oferta.data_agendamento_disparo:
-            data_agendamento_disparo_formatted = oferta.data_agendamento_disparo[:16]
+        if oferta.data_agendamento_disparo:
+            data_agendamento_disparo_formatted = oferta.data_agendamento_disparo.strftime('%Y-%m-%dT%H:%M')
         
         if request.method == 'GET':
             # Buscar grupos via API
@@ -261,6 +252,11 @@ def ofertas_edit(request, oferta_id):
             return render(request, 'portais/admin/ofertas_form.html', context)
         
         elif request.method == 'POST':
+            # Bloquear edição se oferta já foi disparada
+            if oferta.disparada:
+                messages.error(request, 'Não é possível editar uma oferta que já foi disparada')
+                return redirect('portais_admin:ofertas_edit', oferta_id=oferta_id)
+            
             # Extrair dados
             titulo = request.POST.get('titulo')
             texto_push = request.POST.get('texto_push')

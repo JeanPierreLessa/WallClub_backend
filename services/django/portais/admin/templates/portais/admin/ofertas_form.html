@@ -176,7 +176,7 @@
                                 <option value="">Selecione a loja...</option>
                                 {% for loja in lojas %}
                                 <option value="{{ loja.id }}" {% if oferta and oferta.loja_id == loja.id %}selected{% endif %}>
-                                    {{ loja.nome }}
+                                    {{ loja.nome }} (ID: {{ loja.id }})
                                 </option>
                                 {% endfor %}
                             </select>
