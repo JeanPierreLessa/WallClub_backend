@@ -861,8 +861,9 @@ class TRDataService:
                 vparcela = parte0 / parcelas if parcelas > 0 else parte0
             
             # $tarifas = abs($valores[13] * $vparcela - $valores[16]) - $encargos;
-            valor_liquido = valores_calculados.get(16, 0)
-            tarifas = round(abs(valores_calculados.get(13, 1) * vparcela - valor_liquido) - encargos, 2)
+            valor_liquido = safe_float_convert(valores_calculados.get(16, 0))
+            vparcela_float = safe_float_convert(vparcela)
+            tarifas = round(abs(valores_calculados.get(13, 1) * vparcela_float - valor_liquido) - encargos, 2)
             
             registrar_log('posp2', f'=== CÁLCULO PHP REPLICADO ===')
             registrar_log('posp2', f'encargos = abs({valores_calculados.get(88, 0)} + {valores_94_0}) = {encargos}')

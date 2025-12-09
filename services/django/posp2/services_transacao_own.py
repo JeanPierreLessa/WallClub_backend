@@ -784,8 +784,9 @@ class TRDataOwnService:
             vparcela = parte0 / parcelas if parcelas > 0 else parte0
         
         # tarifas = abs(parcelas * vparcela - valor_liquido) - encargos
-        valor_liquido = valores_calculados.get(16, 0)
-        tarifas = round(abs(parcelas * vparcela - valor_liquido) - encargos, 2)
+        valor_liquido = float(valores_calculados.get(16, 0))
+        vparcela_float = float(vparcela)
+        tarifas = round(abs(parcelas * vparcela_float - valor_liquido) - encargos, 2)
         
         # Buscar saldo usado de cashback via autorizacao_id
         saldo_cashback_usado = 0.0
