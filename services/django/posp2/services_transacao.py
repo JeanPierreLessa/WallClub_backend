@@ -810,6 +810,18 @@ class TRDataService:
             
             # Valores conforme PHP
             parte0 = safe_float_convert(valores_calculados.get(26, 0))  # valor final
+            
+            # Se parte0 for zero/None, usar valor original menos desconto
+            if not parte0 or parte0 == 0:
+                valor_original = safe_float_convert(valores_calculados.get(11, 0))
+                valor_desconto_wall = abs(safe_float_convert(dados.get('valor_desconto', 0)))
+                if valor_desconto_wall > 0:
+                    parte0 = valor_original - valor_desconto_wall
+                    registrar_log('posp2', f'💰 [DESCONTO] Ajustando parte0: {valor_original} - {valor_desconto_wall} = {parte0}')
+                else:
+                    parte0 = valor_original
+                    registrar_log('posp2', f'💰 [SEM DESCONTO] Usando valor original: {parte0}')
+            
             parte1 = abs(desconto)  # valor absoluto do desconto
             
             # vparcela e cálculos de tarifas/encargos conforme PHP
