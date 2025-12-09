@@ -596,13 +596,22 @@ class ValidarCupomView(APIView):
             from checkout.models import CheckoutCliente
             from django.core.exceptions import ValidationError
             from decimal import Decimal
+            from wallclub_core.estr_organizacional.loja import Loja
             
             cupom_service = CupomService()
+            
+            # Buscar loja
+            loja = Loja.get_loja(loja_id)
+            if not loja:
+                return Response({
+                    'sucesso': False,
+                    'mensagem': 'Loja não encontrada'
+                }, status=status.HTTP_400_BAD_REQUEST)
             
             # Buscar ou criar cliente temporário (usando CPF genérico para validação prévia)
             # Na validação real, usaremos o CPF do cliente
             cliente_temp, _ = CheckoutCliente.objects.get_or_create(
-                loja_id=loja_id,
+                loja=loja,
                 cpf='00000000000',  # CPF temporário para validação
                 defaults={
                     'nome': 'Validação Temporária',
