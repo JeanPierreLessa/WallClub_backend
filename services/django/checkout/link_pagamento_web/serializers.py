@@ -100,6 +100,9 @@ class ProcessarCheckoutSerializer(serializers.Serializer):
     # Opção para salvar cartão (opcional)
     salvar_cartao = serializers.BooleanField(required=False, default=False)
     
+    # Cupom de desconto (opcional)
+    cupom_codigo = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
+    
     def validate_cpf(self, value):
         """Validar CPF"""
         # Remove caracteres não numéricos

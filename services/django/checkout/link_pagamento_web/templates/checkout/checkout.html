@@ -252,6 +252,20 @@
                     <input type="hidden" id="valor_total" name="valor_total" value="">
                 </div>
                 
+                <!-- Cupom de Desconto -->
+                <div class="mb-3">
+                    <label for="cupom_codigo" class="form-label">
+                        <i class="fas fa-tag me-2"></i>Cupom de Desconto (Opcional)
+                    </label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="cupom_codigo" name="cupom_codigo" placeholder="Digite o código do cupom" maxlength="50">
+                        <button class="btn btn-outline-secondary" type="button" id="btn-validar-cupom">
+                            <i class="fas fa-check me-1"></i>Validar
+                        </button>
+                    </div>
+                    <small id="cupom-feedback" class="form-text"></small>
+                </div>
+                
                 <!-- Checkbox Salvar Cartão -->
                 <div class="mb-4">
                     <div class="form-check">
@@ -549,6 +563,81 @@
             const codigo = getCodigoOTP();
             document.getElementById('btn-validar-otp').disabled = codigo.length !== 6;
         }
+        
+        // Validação de cupom
+        let cupomValidado = false;
+        let cupomDesconto = 0;
+        
+        document.getElementById('btn-validar-cupom').addEventListener('click', async function() {
+            const cupomCodigo = document.getElementById('cupom_codigo').value.trim();
+            const feedback = document.getElementById('cupom-feedback');
+            
+            if (!cupomCodigo) {
+                feedback.className = 'form-text text-warning';
+                feedback.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Digite um código de cupom';
+                return;
+            }
+            
+            // Mostrar loading
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Validando...';
+            feedback.className = 'form-text text-muted';
+            feedback.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Verificando cupom...';
+            
+            try {
+                const response = await fetch('/api/v1/checkout/validar-cupom/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        cupom_codigo: cupomCodigo,
+                        loja_id: CONFIG.lojaId,
+                        valor_transacao: parseFloat(document.getElementById('valor_total').value || CONFIG.valorOriginal)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    cupomValidado = true;
+                    cupomDesconto = data.desconto;
+                    feedback.className = 'form-text text-success';
+                    feedback.innerHTML = `<i class="fas fa-check-circle me-1"></i>Cupom válido! Desconto de R$ ${data.desconto.toFixed(2)}`;
+                    this.innerHTML = '<i class="fas fa-check me-1"></i>Aplicado';
+                    this.className = 'btn btn-success';
+                    document.getElementById('cupom_codigo').readOnly = true;
+                } else {
+                    cupomValidado = false;
+                    cupomDesconto = 0;
+                    feedback.className = 'form-text text-danger';
+                    feedback.innerHTML = `<i class="fas fa-times-circle me-1"></i>${data.mensagem}`;
+                    this.innerHTML = '<i class="fas fa-check me-1"></i>Validar';
+                    this.disabled = false;
+                }
+            } catch (error) {
+                console.error('Erro ao validar cupom:', error);
+                feedback.className = 'form-text text-danger';
+                feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Erro ao validar cupom. Tente novamente.';
+                this.innerHTML = '<i class="fas fa-check me-1"></i>Validar';
+                this.disabled = false;
+            }
+        });
+        
+        // Limpar validação ao alterar cupom
+        document.getElementById('cupom_codigo').addEventListener('input', function() {
+            if (cupomValidado) {
+                cupomValidado = false;
+                cupomDesconto = 0;
+                document.getElementById('cupom-feedback').innerHTML = '';
+                const btnValidar = document.getElementById('btn-validar-cupom');
+                btnValidar.innerHTML = '<i class="fas fa-check me-1"></i>Validar';
+                btnValidar.className = 'btn btn-outline-secondary';
+                btnValidar.disabled = false;
+                this.readOnly = false;
+            }
+        });
         
         // Configurar eventos para cada input OTP
         otpInputs.forEach((input, index) => {

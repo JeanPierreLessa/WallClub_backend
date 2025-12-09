@@ -19,6 +19,9 @@ urlpatterns = [
     # API para simular parcelas usando CalculadoraDesconto
     path('simular_parcelas/', views.SimularParcelasView.as_view(), name='simular_parcelas'),
     
+    # API para validar cupom
+    path('validar-cupom/', views.ValidarCupomView.as_view(), name='validar_cupom'),
+    
     # API para status da transação
     path('status/<str:token>/', views.StatusCheckoutView.as_view(), name='status'),
     

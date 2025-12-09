@@ -129,6 +129,59 @@ class LinkPagamentoService:
             valor_original = Decimal(str(token_obj.item_valor)) if not isinstance(token_obj.item_valor, Decimal) else token_obj.item_valor
             valor_final = Decimal(str(dados_sessao['valor_total']))
             
+            # =============================================================================
+            # VALIDAR E APLICAR CUPOM (SE FORNECIDO)
+            # =============================================================================
+            cupom_obj = None
+            cupom_desconto = Decimal('0.00')
+            cupom_codigo = dados_sessao.get('cupom_codigo', '').strip() if dados_sessao.get('cupom_codigo') else None
+            
+            if cupom_codigo:
+                from apps.cupom.services import CupomService
+                from django.core.exceptions import ValidationError
+                
+                cupom_service = CupomService()
+                
+                try:
+                    # Buscar ou criar cliente temporário para validação
+                    from checkout.models import CheckoutCliente
+                    cliente_temp, _ = CheckoutCliente.objects.get_or_create(
+                        loja_id=token_obj.loja_id,
+                        cpf=session.cpf,
+                        defaults={
+                            'nome': session.nome,
+                            'email': session.cpf,  # Usar CPF como email temporário
+                            'ativo': True
+                        }
+                    )
+                    
+                    # Validar cupom (valor_final já vem com desconto da calculadora)
+                    cupom_obj = cupom_service.validar_cupom(
+                        codigo=cupom_codigo,
+                        loja_id=token_obj.loja_id,
+                        cliente_id=cliente_temp.id,
+                        valor_transacao=valor_final
+                    )
+                    
+                    # Calcular desconto do cupom
+                    cupom_desconto = cupom_service.calcular_desconto(cupom_obj, valor_final)
+                    
+                    # Aplicar desconto do cupom ao valor final
+                    valor_final = valor_final - cupom_desconto
+                    
+                    registrar_log('checkout.link_pagamento_web', 
+                                 f"✅ Cupom {cupom_codigo} aplicado - Desconto: R$ {cupom_desconto}")
+                    
+                except ValidationError as e:
+                    registrar_log('checkout.link_pagamento_web', 
+                                 f"❌ Cupom inválido: {str(e)}", nivel='WARNING')
+                    return {
+                        'sucesso': False,
+                        'mensagem': str(e),
+                        'tentativas_restantes': 3 - token_obj.tentativas_pagamento,
+                        'pode_tentar_novamente': True
+                    }
+            
             registrar_log('checkout.link_pagamento_web', '')
             registrar_log('checkout.link_pagamento_web', '=' * 80)
             registrar_log('checkout.link_pagamento_web', '🛡️  ANÁLISE ANTIFRAUDE - CHECKOUT WEB')
@@ -274,7 +327,33 @@ class LinkPagamentoService:
             transacao.ip_address_cliente = ip_address
             transacao.user_agent_cliente = user_agent
             transacao.processed_at = datetime.now()
+            
+            # Salvar dados do cupom (se usado)
+            if cupom_obj:
+                transacao.cupom_id = cupom_obj.id
+                transacao.cupom_valor_desconto = cupom_desconto
+            
             transacao.save()
+            
+            # Registrar uso do cupom após transação aprovada
+            if cupom_obj:
+                from apps.cupom.services import CupomService
+                cupom_service = CupomService()
+                cupom_service.registrar_uso(
+                    cupom=cupom_obj,
+                    cliente_id=cliente_temp.id,
+                    loja_id=token_obj.loja_id,
+                    transacao_tipo='CHECKOUT',
+                    transacao_id=transacao.id,
+                    valor_original=Decimal(str(dados_sessao['valor_total'])),  # Valor antes do cupom
+                    valor_desconto=cupom_desconto,
+                    valor_final=valor_final,  # Valor após cupom
+                    nsu=nsu,
+                    ip_address=ip_address
+                )
+                registrar_log('checkout.link_pagamento_web', 
+                             f"✅ Uso do cupom {cupom_obj.codigo} registrado - Transação {transacao.id}")
+            
             
             # Marcar token como usado
             token_obj.mark_as_used()

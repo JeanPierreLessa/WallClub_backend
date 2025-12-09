@@ -352,7 +352,8 @@ class ProcessarCheckoutView(APIView):
                 'parcelas': serializer.validated_data['parcelas'],
                 'tipo_pagamento': serializer.validated_data['tipo_pagamento'],
                 'valor_total': serializer.validated_data['valor_total'],
-                'salvar_cartao': serializer.validated_data.get('salvar_cartao', False)
+                'salvar_cartao': serializer.validated_data.get('salvar_cartao', False),
+                'cupom_codigo': serializer.validated_data.get('cupom_codigo')
             }
             
             # Processar via service
@@ -545,6 +546,86 @@ class StatusCheckoutView(APIView):
             return Response({
                 'sucesso': False,
                 'mensagem': 'Erro interno do servidor'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ValidarCupomView(APIView):
+    """API para validar cupom de desconto"""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """Valida cupom sem aplicar (apenas verifica se é válido)"""
+        try:
+            cupom_codigo = request.data.get('cupom_codigo', '').strip()
+            loja_id = request.data.get('loja_id')
+            valor_transacao = request.data.get('valor_transacao')
+            
+            if not cupom_codigo:
+                return Response({
+                    'sucesso': False,
+                    'mensagem': 'Código do cupom é obrigatório'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not loja_id or not valor_transacao:
+                return Response({
+                    'sucesso': False,
+                    'mensagem': 'Dados incompletos'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Importar serviços
+            from apps.cupom.services import CupomService
+            from checkout.models import CheckoutCliente
+            from django.core.exceptions import ValidationError
+            from decimal import Decimal
+            
+            cupom_service = CupomService()
+            
+            # Buscar ou criar cliente temporário (usando CPF genérico para validação prévia)
+            # Na validação real, usaremos o CPF do cliente
+            cliente_temp, _ = CheckoutCliente.objects.get_or_create(
+                loja_id=loja_id,
+                cpf='00000000000',  # CPF temporário para validação
+                defaults={
+                    'nome': 'Validação Temporária',
+                    'email': 'temp@temp.com',
+                    'ativo': True
+                }
+            )
+            
+            try:
+                # Validar cupom
+                cupom_obj = cupom_service.validar_cupom(
+                    codigo=cupom_codigo,
+                    loja_id=loja_id,
+                    cliente_id=cliente_temp.id,
+                    valor_transacao=Decimal(str(valor_transacao))
+                )
+                
+                # Calcular desconto
+                desconto = cupom_service.calcular_desconto(
+                    cupom_obj,
+                    Decimal(str(valor_transacao))
+                )
+                
+                return Response({
+                    'sucesso': True,
+                    'mensagem': 'Cupom válido',
+                    'desconto': float(desconto),
+                    'tipo_desconto': cupom_obj.tipo_desconto,
+                    'valor_desconto': float(cupom_obj.valor_desconto)
+                }, status=status.HTTP_200_OK)
+                
+            except ValidationError as e:
+                return Response({
+                    'sucesso': False,
+                    'mensagem': str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            registrar_log("checkout.link_pagamento_web", f"Erro ao validar cupom: {str(e)}", nivel='ERROR')
+            return Response({
+                'sucesso': False,
+                'mensagem': 'Erro ao validar cupom'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

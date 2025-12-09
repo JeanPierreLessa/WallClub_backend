@@ -213,6 +213,10 @@ class CheckoutTransaction(models.Model):
     forma_pagamento = models.CharField(max_length=50, null=True, blank=True, help_text="Tipo de pagamento usado")
     parcelas = models.IntegerField(null=True, blank=True, help_text="Número de parcelas (NULL quando cliente ainda não escolheu)")
     
+    # Cupom de desconto
+    cupom_id = models.BigIntegerField(null=True, blank=True, db_index=True, help_text="ID do cupom usado (se aplicável)")
+    cupom_valor_desconto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Valor do desconto do cupom aplicado")
+    
     # ID do pedido no sistema da loja (opcional)
     pedido_origem_loja = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     
