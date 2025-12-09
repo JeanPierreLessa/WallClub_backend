@@ -228,6 +228,7 @@ class OfertasEditView(LojistaAuthMixin, LojistaDataMixin, View):
                 'current_page': 'ofertas',
                 'oferta': oferta,
                 'grupos': grupos,
+                'lojas_acessiveis': lojas_acessiveis,
                 'vigencia_inicio_formatted': oferta.vigencia_inicio.strftime('%Y-%m-%dT%H:%M'),
                 'vigencia_fim_formatted': oferta.vigencia_fim.strftime('%Y-%m-%dT%H:%M'),
                 'data_agendamento_disparo_formatted': oferta.data_agendamento_disparo.strftime('%Y-%m-%dT%H:%M') if oferta.data_agendamento_disparo else ''

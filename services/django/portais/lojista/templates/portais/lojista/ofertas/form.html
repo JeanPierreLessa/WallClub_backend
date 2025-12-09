@@ -37,8 +37,9 @@
                             <select class="form-select" id="loja_id" name="loja_id" required>
                                 <option value="">Selecione a loja...</option>
                                 {% for loja in lojas_acessiveis %}
-                                <option value="{{ loja.id }}" {% if oferta and oferta.loja_id == loja.id %}selected{% endif %}>
-                                    {{ loja.nome }}
+                                <option value="{% if loja.id %}{{ loja.id }}{% else %}{{ loja.Id }}{% endif %}" 
+                                        {% if oferta and oferta.loja_id == loja.id or oferta and oferta.loja_id == loja.Id %}selected{% endif %}>
+                                    {% if loja.nome %}{{ loja.nome }}{% else %}{{ loja.Nome }}{% endif %}
                                 </option>
                                 {% endfor %}
                             </select>
