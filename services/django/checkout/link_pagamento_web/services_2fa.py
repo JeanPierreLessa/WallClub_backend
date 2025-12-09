@@ -367,32 +367,11 @@ class CheckoutSecurityService:
                 f'Consultando Risk Engine: {riskengine_url}/api/antifraude/analisar/'
             )
             
-            # Obter token OAuth
-            from wallclub_core.integracoes.risk_engine_oauth import obter_token_riskengine
-            token = obter_token_riskengine(contexto='checkout')
-            
-            if not token:
-                registrar_log(
-                    'checkout.2fa',
-                    'Erro ao obter token OAuth do Risk Engine',
-                    nivel='ERROR'
-                )
-                # Fail-open: aprovar em caso de erro de autenticação
-                return {
-                    'score': 0,
-                    'bloqueado': False,
-                    'motivo': 'Erro de autenticação Risk Engine',
-                    'detalhes': {}
-                }
-            
-            # Chamar Risk Engine com OAuth
+            # Chamar Risk Engine (rede interna - sem OAuth)
             response = requests.post(
                 f'{riskengine_url}/api/antifraude/analisar/',
                 json=dados,
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bearer {token}'
-                },
+                headers={'Content-Type': 'application/json'},
                 timeout=3
             )
             
@@ -684,26 +663,33 @@ class CheckoutSecurityService:
                 }
             }
         
-        # Verificar se o código foi gerado
-        if 'codigo' not in resultado_otp:
-            registrar_log(
-                'checkout.2fa',
-                f'OTP gerado mas sem código: {resultado_otp}',
-                nivel='ERROR'
-            )
-            return {
-                'aprovado': False,
-                'motivo_bloqueio': 'Erro ao gerar código de verificação',
-                'otp_enviado': False,
-                'detalhes': {
-                    'etapa': 'geracao_otp'
+        # Buscar código do banco (em produção não vem no resultado)
+        codigo_otp = resultado_otp.get('codigo')
+        if not codigo_otp:
+            # Buscar do banco usando otp_id
+            try:
+                from wallclub_core.seguranca.models import AutenticacaoOTP
+                otp_obj = AutenticacaoOTP.objects.get(id=resultado_otp['otp_id'])
+                codigo_otp = otp_obj.codigo
+            except Exception as e:
+                registrar_log(
+                    'checkout.2fa',
+                    f'Erro ao buscar código OTP do banco: {str(e)}',
+                    nivel='ERROR'
+                )
+                return {
+                    'aprovado': False,
+                    'motivo_bloqueio': 'Erro ao gerar código de verificação',
+                    'otp_enviado': False,
+                    'detalhes': {
+                        'etapa': 'geracao_otp'
+                    }
                 }
-            }
         
         # Enviar OTP via WhatsApp
         otp_enviado_whatsapp = CheckoutSecurityService.enviar_otp_checkout(
             telefone=telefone_limpo,
-            codigo_otp=resultado_otp['codigo'],
+            codigo_otp=codigo_otp,
             valor=valor,
             ultimos_4_digitos=ultimos_4_digitos_cartao
         )
