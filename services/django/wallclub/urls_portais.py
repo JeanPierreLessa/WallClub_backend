@@ -6,6 +6,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 import logging
+from apps.cupom.api_views import validar_cupom_checkout
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ urlpatterns = [
     path('portal_vendas/', include('portais.vendas.urls')),
     
     # APIs internas (chamadas entre containers)
-    path('api/cupom/', include('apps.cupom.urls')),  # Validação de cupom
+    path('api/cupom/validar/', validar_cupom_checkout, name='validar_cupom_interno'),
 ]
 
 # APIs Internas (comunicação entre containers)

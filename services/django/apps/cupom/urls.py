@@ -8,7 +8,6 @@ app_name = 'cupom'
 
 urlpatterns = [
     path('ativos/', cupons_ativos, name='cupons_ativos'),
-    path('validar/', validar_cupom_checkout, name='cupom_validar_checkout'),  # Checkout (sem auth)
-    path('validar-pos/', validar_cupom, name='cupom_validar'),  # POS (com OAuth)
+    path('validar/', validar_cupom, name='cupom_validar'),  # POS (com OAuth) - rota principal
     path('verificar_disponiveis/', verificar_cupons_disponiveis, name='verificar_disponiveis'),
 ]
