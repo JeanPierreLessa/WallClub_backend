@@ -96,6 +96,19 @@ app.conf.beat_schedule = {
             'expires': 3600,  # Expira em 1 hora
         }
     },
+
+    # ============================================
+    # OFERTAS - DISPARO AUTOMÁTICO
+    # ============================================
+
+    # Processar ofertas agendadas - A cada 5 minutos
+    'processar-ofertas-agendadas': {
+        'task': 'apps.ofertas.processar_ofertas_agendadas',
+        'schedule': crontab(minute='*/5'),  # A cada 5 minutos
+        'options': {
+            'expires': 300,  # Expira em 5 minutos
+        }
+    },
 }
 
 # Timezone (mesmo do Django)

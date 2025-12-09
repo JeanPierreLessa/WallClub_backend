@@ -21,7 +21,8 @@ class OfertaService:
 
     @staticmethod
     def criar_oferta(titulo, texto_push, descricao, imagem_url, vigencia_inicio, vigencia_fim,
-                    canal_id, tipo_segmentacao, grupo_id, usuario_criador_id, ativo=True, loja_id=None, grupo_economico_id=None):
+                    canal_id, tipo_segmentacao, grupo_id, usuario_criador_id, ativo=True, loja_id=None, 
+                    grupo_economico_id=None, data_agendamento_disparo=None):
         """Cria uma nova oferta
 
         Args:
@@ -38,6 +39,7 @@ class OfertaService:
             ativo (bool): Oferta ativa
             loja_id (int): ID da loja (NULL = todas as lojas do canal/grupo)
             grupo_economico_id (int): ID do grupo econômico (NULL = não se aplica)
+            data_agendamento_disparo (datetime): Data/hora agendada para disparo automático
 
         Returns:
             tuple: (sucesso: bool, mensagem: str, oferta_id: int)
@@ -64,6 +66,8 @@ class OfertaService:
                 imagem_url=imagem_url,
                 vigencia_inicio=vigencia_inicio,
                 vigencia_fim=vigencia_fim,
+                data_agendamento_disparo=data_agendamento_disparo,
+                disparada=False,
                 canal_id=canal_id,
                 loja_id=loja_id,
                 grupo_economico_id=grupo_economico_id,
@@ -75,7 +79,7 @@ class OfertaService:
             )
             oferta.save()
 
-            registrar_log('apps.ofertas', f'Oferta criada: {oferta.id} - {titulo} (canal={canal_id}, loja={loja_id}, grupo_econ={grupo_economico_id}, tipo={tipo_segmentacao})')
+            registrar_log('apps.ofertas', f'Oferta criada: {oferta.id} - {titulo} (canal={canal_id}, loja={loja_id}, disparo={data_agendamento_disparo})')
             return True, 'Oferta criada com sucesso', oferta.id
 
         except Exception as e:

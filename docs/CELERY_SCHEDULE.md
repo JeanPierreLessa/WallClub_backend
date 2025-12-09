@@ -1,6 +1,6 @@
 # Celery Beat - Tasks Agendadas
 
-Documento atualizado em: 2025-11-21
+Documento atualizado em: 2025-12-09
 
 ## Tasks Agendadas Automaticamente
 
@@ -23,20 +23,33 @@ Documento atualizado em: 2025-11-21
   3. `carga_credenciadora`
   4. `ajustes_manuais_base`
 
-#### 3. `migrar-financeiro-pagamentos`
-- **Task:** `pinbank.migrar_financeiro_pagamentos`
-- **Agendamento:** De hora em hora, minuto :15 (24h)
-- **Parâmetros:** `limite=1000`
-- **Expira em:** 1 hora
-- **O que faz:** Migra dados de `wclub.financeiro` para `wallclub.pagamentos_efetuados`
-
 ### 💰 Conta Digital
 
-#### 4. `expirar-autorizacoes-saldo`
+#### 3. `expirar-autorizacoes-saldo`
 - **Task:** `apps.conta_digital.expirar_autorizacoes_saldo`
 - **Agendamento:** Diariamente às 01:00
 - **Expira em:** 1 hora
 - **O que faz:** Expira autorizações de uso de saldo vencidas
+
+### 🎁 Cashback
+
+#### 4. `liberar-cashback-retido`
+- **Task:** `cashback.liberar_cashback_retido`
+- **Agendamento:** Diariamente às 02:00
+- **Expira em:** 1 hora
+- **O que faz:** Libera cashback que completou período de retenção (move de bloqueado para disponível)
+
+#### 5. `expirar-cashback-vencido`
+- **Task:** `cashback.expirar_cashback_vencido`
+- **Agendamento:** Diariamente às 03:00
+- **Expira em:** 1 hora
+- **O que faz:** Expira cashback vencido (remove de disponível)
+
+#### 6. `resetar-gasto-mensal-lojas`
+- **Task:** `cashback.resetar_gasto_mensal_lojas`
+- **Agendamento:** Mensalmente no dia 1 às 04:00
+- **Expira em:** 1 hora
+- **O que faz:** Reseta `gasto_mes_atual` das regras de cashback de loja que possuem orçamento mensal
 
 ---
 
@@ -66,7 +79,7 @@ Documento atualizado em: 2025-11-21
 
 ## Resumo
 
-- **Total de tasks agendadas:** 4
+- **Total de tasks agendadas:** 6
 - **Total de tasks definidas:** 10+
 - **Broker:** Redis
 - **Containers:**

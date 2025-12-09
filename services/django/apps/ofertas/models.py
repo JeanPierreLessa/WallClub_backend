@@ -69,6 +69,8 @@ class Oferta(models.Model):
     # Controle de vigência
     vigencia_inicio = models.DateTimeField(help_text='Data/hora início da vigência')
     vigencia_fim = models.DateTimeField(help_text='Data/hora fim da vigência')
+    data_agendamento_disparo = models.DateTimeField(null=True, blank=True, help_text='Data/hora agendada para disparo automático')
+    disparada = models.BooleanField(default=False, help_text='Oferta já foi disparada (0=não, 1=sim)')
     ativo = models.BooleanField(default=True, help_text='Oferta ativa (1) ou inativa (0)')
     
     # Segmentação

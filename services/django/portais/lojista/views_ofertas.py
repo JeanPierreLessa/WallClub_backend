@@ -14,44 +14,44 @@ from wallclub_core.utilitarios.log_control import registrar_log
 
 class OfertasListView(LojistaAuthMixin, View):
     """Lista ofertas da loja/grupo econômico do usuário"""
-    
+
     def get(self, request):
         try:
             from apps.ofertas.services import OfertaService
-            
+
             # Buscar canal_id e loja_id da sessão
             canal_id = request.session.get('canal_id')
             loja_id = request.session.get('loja_id')
-            
+
             if not canal_id:
                 messages.error(request, 'Canal não identificado')
                 return redirect('lojista:home')
-            
+
             # Buscar ofertas do canal via service
             todas_ofertas = OfertaService.listar_todas_ofertas()
             # Filtrar: ofertas da loja OU ofertas sem loja (NULL = todas as lojas)
             ofertas = [o for o in todas_ofertas if o.canal_id == canal_id and (o.loja_id == loja_id or o.loja_id is None)]
-            
+
             # Buscar total de disparos por oferta via service
             ofertas_com_disparos = []
             for oferta in ofertas:
                 disparos = OfertaService.listar_disparos_oferta(oferta.id)
                 ultimo_disparo = disparos[0] if disparos else None
-                
+
                 ofertas_com_disparos.append({
                     'oferta': oferta,
                     'total_disparos': len(disparos),
                     'ultimo_disparo': ultimo_disparo
                 })
-            
+
             context = {
                 'current_page': 'ofertas',
                 'ofertas_com_disparos': ofertas_com_disparos,
                 'canal_id': canal_id
             }
-            
+
             return render(request, 'portais/lojista/ofertas/list.html', context)
-            
+
         except Exception as e:
             registrar_log('portais.lojista', f'Erro ao listar ofertas: {str(e)}', nivel='ERROR')
             messages.error(request, 'Erro ao carregar ofertas')
@@ -60,16 +60,16 @@ class OfertasListView(LojistaAuthMixin, View):
 
 class OfertasCreateView(LojistaAuthMixin, View):
     """Cria nova oferta"""
-    
+
     def get(self, request):
         from apps.ofertas.services import OfertaService
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         # Buscar grupos do canal para dropdown via service
         canal_id = request.session.get('canal_id')
         grupos = OfertaService.listar_grupos_segmentacao(canal_id=canal_id, apenas_ativos=True) if canal_id else []
-        
+
         # Buscar lojas acessíveis ao usuário
         usuario_id = request.session.get('lojista_usuario_id')
         lojas_acessiveis = []
@@ -79,92 +79,83 @@ class OfertasCreateView(LojistaAuthMixin, View):
                 lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
             except PortalUsuario.DoesNotExist:
                 pass
-        
+
         context = {
             'current_page': 'ofertas',
             'grupos': grupos,
             'lojas_acessiveis': lojas_acessiveis
         }
         return render(request, 'portais/lojista/ofertas/form.html', context)
-    
+
     def post(self, request):
         try:
             from apps.ofertas.services import OfertaService
-            
+
             # Extrair dados do formulário
             titulo = request.POST.get('titulo')
             texto_push = request.POST.get('texto_push')
             descricao = request.POST.get('descricao')
-            
+
             # Processar upload de imagem
             imagem_url = None
             if 'imagem' in request.FILES:
                 from django.core.files.storage import default_storage
                 import os
                 from datetime import datetime
-                
+
                 imagem = request.FILES['imagem']
                 # Gerar nome único para arquivo
                 ext = os.path.splitext(imagem.name)[1]
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 nome_arquivo = f'ofertas/{timestamp}_{imagem.name}'
-                
+
                 # Salvar arquivo
                 caminho = default_storage.save(nome_arquivo, imagem)
                 imagem_url = f'{settings.WC_API_BASE_URL}/media/{caminho}'
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')
+            data_agendamento_disparo_str = request.POST.get('data_agendamento_disparo')
             tipo_segmentacao = request.POST.get('tipo_segmentacao', 'todos_canal')
             grupo_id = request.POST.get('grupo_id')
             ativo = request.POST.get('ativo') == 'on'
-            
-            # Novos campos: escopo e loja/grupo econômico
-            escopo = request.POST.get('escopo', 'loja')  # 'loja' ou 'grupo_economico'
-            loja_selecionada_id = request.POST.get('loja_id')
-            
+            loja_id = request.POST.get('loja_id')
+
             # Validações
-            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str:
-                messages.error(request, 'Título, texto push, data início e data fim são obrigatórios')
+            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str or not data_agendamento_disparo_str:
+                messages.error(request, 'Título, texto push, datas de vigência e data de disparo são obrigatórios')
                 return redirect('lojista:ofertas_create')
-            
+
+            if not loja_id:
+                messages.error(request, 'Selecione a loja dona da oferta')
+                return redirect('lojista:ofertas_create')
+
             # Converter datas
             vigencia_inicio = datetime.strptime(vigencia_inicio_str, '%Y-%m-%dT%H:%M')
             vigencia_fim = datetime.strptime(vigencia_fim_str, '%Y-%m-%dT%H:%M')
-            
+            data_agendamento_disparo = datetime.strptime(data_agendamento_disparo_str, '%Y-%m-%dT%H:%M')
+
             if vigencia_fim <= vigencia_inicio:
                 messages.error(request, 'Data fim deve ser posterior à data início')
                 return redirect('lojista:ofertas_create')
-            
+
+            if data_agendamento_disparo < vigencia_inicio:
+                messages.error(request, 'Data de disparo deve ser igual ou posterior ao início da vigência')
+                return redirect('lojista:ofertas_create')
+
             # Validar segmentação
             if tipo_segmentacao == 'grupo_customizado' and not grupo_id:
                 messages.error(request, 'Selecione um grupo para segmentação customizada')
                 return redirect('lojista:ofertas_create')
-            
-            # Validar escopo
-            if not loja_selecionada_id:
-                messages.error(request, 'Selecione uma loja')
-                return redirect('lojista:ofertas_create')
-            
+
             # Buscar canal_id
             canal_id = request.session.get('canal_id')
             if not canal_id:
                 messages.error(request, 'Canal não identificado')
                 return redirect('lojista:ofertas_create')
-            
-            # Determinar loja_id e grupo_economico_id baseado no escopo
-            loja_id = None
-            grupo_economico_id = None
-            
-            if escopo == 'loja':
-                loja_id = int(loja_selecionada_id)
-            elif escopo == 'grupo_economico':
-                # Buscar grupo_economico_id da loja selecionada
-                from wallclub_core.estr_organizacional.loja import Loja
-                loja_obj = Loja.get_loja(int(loja_selecionada_id))
-                if loja_obj and hasattr(loja_obj, 'GrupoEconomicoId'):
-                    grupo_economico_id = loja_obj.GrupoEconomicoId
-                    loja_id = None  # NULL quando é grupo econômico
-            
+
+            # Converter loja_id para int
+            loja_id = int(loja_id)
+
             # Criar oferta via service
             usuario_id = request.session.get('lojista_usuario_id')
             sucesso, mensagem, oferta_id = OfertaService.criar_oferta(
@@ -174,22 +165,23 @@ class OfertasCreateView(LojistaAuthMixin, View):
                 imagem_url=imagem_url,
                 vigencia_inicio=vigencia_inicio,
                 vigencia_fim=vigencia_fim,
+                data_agendamento_disparo=data_agendamento_disparo,
                 canal_id=canal_id,
                 loja_id=loja_id,
-                grupo_economico_id=grupo_economico_id,
+                grupo_economico_id=None,  # Sempre NULL (não usado mais)
                 tipo_segmentacao=tipo_segmentacao,
                 grupo_id=int(grupo_id) if grupo_id else None,
                 usuario_criador_id=usuario_id,
                 ativo=ativo
             )
-            
+
             if sucesso:
                 messages.success(request, f'Oferta criada com sucesso! ID: {oferta_id}')
                 return redirect('lojista:ofertas_list')
             else:
                 messages.error(request, mensagem)
                 return redirect('lojista:ofertas_create')
-                
+
         except ValueError as e:
             messages.error(request, 'Formato de data inválido')
             return redirect('lojista:ofertas_create')
@@ -201,79 +193,80 @@ class OfertasCreateView(LojistaAuthMixin, View):
 
 class OfertasEditView(LojistaAuthMixin, View):
     """Edita oferta existente"""
-    
+
     def get(self, request, oferta_id):
         try:
             from apps.ofertas.services import OfertaService
-            
+
             # Buscar oferta via service
             oferta = OfertaService.obter_oferta_por_id(oferta_id)
-            
+
             if not oferta:
                 messages.error(request, 'Oferta não encontrada')
                 return redirect('lojista:ofertas_list')
-            
+
             # Verificar se usuário tem acesso (mesma loja)
             canal_id = request.session.get('canal_id')
             loja_id = request.session.get('loja_id')
-            
+
             if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
                 messages.error(request, 'Sem permissão para editar esta oferta')
                 return redirect('lojista:ofertas_list')
-            
+
             # Buscar grupos do canal para dropdown via service
             grupos = OfertaService.listar_grupos_segmentacao(canal_id=canal_id, apenas_ativos=True)
-            
+
             context = {
                 'current_page': 'ofertas',
                 'oferta': oferta,
                 'grupos': grupos,
                 'vigencia_inicio_formatted': oferta.vigencia_inicio.strftime('%Y-%m-%dT%H:%M'),
-                'vigencia_fim_formatted': oferta.vigencia_fim.strftime('%Y-%m-%dT%H:%M')
+                'vigencia_fim_formatted': oferta.vigencia_fim.strftime('%Y-%m-%dT%H:%M'),
+                'data_agendamento_disparo_formatted': oferta.data_agendamento_disparo.strftime('%Y-%m-%dT%H:%M') if oferta.data_agendamento_disparo else ''
             }
-            
+
             return render(request, 'portais/lojista/ofertas/form.html', context)
-            
+
         except Exception as e:
             registrar_log('portais.lojista', f'Erro ao carregar oferta: {str(e)}', nivel='ERROR')
             messages.error(request, 'Erro ao carregar oferta')
             return redirect('lojista:ofertas_list')
-    
+
     def post(self, request, oferta_id):
         try:
             from apps.ofertas.services import OfertaService
-            
+
             # Buscar oferta via service
             oferta = OfertaService.obter_oferta_por_id(oferta_id)
-            
+
             if not oferta:
                 messages.error(request, 'Oferta não encontrada')
                 return redirect('lojista:ofertas_list')
-            
+
             # Verificar acesso (mesma loja)
             canal_id = request.session.get('canal_id')
             loja_id = request.session.get('loja_id')
-            
+
             if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
                 messages.error(request, 'Sem permissão para editar esta oferta')
                 return redirect('lojista:ofertas_list')
-            
+
             # Extrair dados
             titulo = request.POST.get('titulo')
             texto_push = request.POST.get('texto_push')
             descricao = request.POST.get('descricao')
-            
+
             # Processar upload de imagem (se houver)
             imagem_url = oferta.imagem_url  # Manter a atual
             if 'imagem' in request.FILES:
                 from django.core.files.storage import default_storage
                 import os
-                
+
                 imagem = request.FILES['imagem']
                 # Gerar nome único para arquivo
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 nome_arquivo = f'ofertas/{timestamp}_{imagem.name}'
-                
+
                 # Salvar arquivo
                 caminho = default_storage.save(nome_arquivo, imagem)
                 imagem_url = f'{settings.WC_API_BASE_URL}/media/{caminho}'
@@ -282,25 +275,25 @@ class OfertasEditView(LojistaAuthMixin, View):
             tipo_segmentacao = request.POST.get('tipo_segmentacao', 'todos_canal')
             grupo_id = request.POST.get('grupo_id')
             ativo = request.POST.get('ativo') == 'on'
-            
+
             # Validações
             if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str:
                 messages.error(request, 'Título, texto push, data início e data fim são obrigatórios')
                 return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
-            
+
             # Converter datas
             vigencia_inicio = datetime.strptime(vigencia_inicio_str, '%Y-%m-%dT%H:%M')
             vigencia_fim = datetime.strptime(vigencia_fim_str, '%Y-%m-%dT%H:%M')
-            
+
             if vigencia_fim <= vigencia_inicio:
                 messages.error(request, 'Data fim deve ser posterior à data início')
                 return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
-            
+
             # Validar segmentação
             if tipo_segmentacao == 'grupo_customizado' and not grupo_id:
                 messages.error(request, 'Selecione um grupo para segmentação customizada')
                 return redirect('lojista:ofertas_edit', oferta_id=oferta_id)
-            
+
             # Atualizar oferta
             oferta.titulo = titulo
             oferta.texto_push = texto_push
@@ -313,10 +306,10 @@ class OfertasEditView(LojistaAuthMixin, View):
             oferta.ativo = ativo
             oferta.updated_at = datetime.now()
             oferta.save()
-            
+
             messages.success(request, 'Oferta atualizada com sucesso!')
             return redirect('lojista:ofertas_list')
-            
+
         except Exception as e:
             registrar_log('portais.lojista', f'Erro ao atualizar oferta: {str(e)}', nivel='ERROR')
             messages.error(request, 'Erro ao atualizar oferta')
@@ -326,7 +319,7 @@ class OfertasEditView(LojistaAuthMixin, View):
 @method_decorator(csrf_exempt, name='dispatch')
 class OfertasDispararView(View):
     """Dispara push notification para oferta"""
-    
+
     def post(self, request, oferta_id):
         # Verificar autenticação manualmente (não usar mixin em AJAX)
         if not request.session.get('lojista_authenticated'):
@@ -337,9 +330,9 @@ class OfertasDispararView(View):
             }, status=401)
         try:
             from apps.ofertas.services import OfertaService
-            
+
             data = json.loads(request.body)
-            
+
             # Verificar se oferta existe via service
             oferta = OfertaService.obter_oferta_por_id(oferta_id)
             if not oferta:
@@ -347,24 +340,24 @@ class OfertasDispararView(View):
                     'sucesso': False,
                     'mensagem': 'Oferta não encontrada'
                 }, status=404)
-            
+
             # Verificar permissão (mesma loja)
             canal_id = request.session.get('canal_id')
             loja_id = request.session.get('loja_id')
-            
+
             if oferta.canal_id != canal_id or oferta.loja_id != loja_id:
                 return JsonResponse({
                     'sucesso': False,
                     'mensagem': 'Sem permissão para disparar esta oferta'
                 }, status=403)
-            
+
             # Disparar push via service
             usuario_id = request.session.get('usuario_id')
             sucesso, mensagem, disparo_id = OfertaService.disparar_push(
                 oferta_id=oferta_id,
                 usuario_disparador_id=usuario_id
             )
-            
+
             if sucesso:
                 return JsonResponse({
                     'sucesso': True,
@@ -376,7 +369,7 @@ class OfertasDispararView(View):
                     'sucesso': False,
                     'mensagem': mensagem
                 }, status=400)
-                
+
         except json.JSONDecodeError:
             return JsonResponse({
                 'sucesso': False,
@@ -392,29 +385,29 @@ class OfertasDispararView(View):
 
 class OfertasHistoricoView(LojistaAuthMixin, View):
     """Mostra histórico de disparos de uma oferta"""
-    
+
     def get(self, request, oferta_id):
         try:
             from apps.ofertas.services import OfertaService
-            
+
             # Buscar oferta via service
             oferta = OfertaService.obter_oferta_por_id(oferta_id)
-            
+
             if not oferta:
                 messages.error(request, 'Oferta não encontrada')
                 return redirect('lojista:ofertas_list')
-            
+
             # Buscar disparos via service
             disparos = OfertaService.listar_disparos_oferta(oferta_id)
-            
+
             context = {
                 'current_page': 'ofertas',
                 'oferta': oferta,
                 'disparos': disparos
             }
-            
+
             return render(request, 'portais/lojista/ofertas/historico.html', context)
-            
+
         except Exception as e:
             registrar_log('portais.lojista', f'Erro ao carregar histórico: {str(e)}', nivel='ERROR')
             messages.error(request, 'Erro ao carregar histórico')

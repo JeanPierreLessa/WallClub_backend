@@ -3,18 +3,21 @@
 
 {% block title %}{% if oferta %}Editar{% else %}Nova{% endif %} Oferta - Portal Lojista{% endblock %}
 
-{% block page_header_compact %}
-<div class="page-header-compact">
-    <h1 class="page-title">
-        <i class="fas fa-{% if oferta %}edit{% else %}plus{% endif %}"></i>
-        {% if oferta %}Editar Oferta{% else %}Nova Oferta{% endif %}
-    </h1>
-    <p class="page-subtitle">Preencha os dados da oferta abaixo</p>
-</div>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-{% if oferta %}edit{% else %}plus{% endif %} me-2"></i>
+                        {% if oferta %}Editar Oferta{% else %}Nova Oferta{% endif %}
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-lg-8">
             <div class="card">
@@ -27,6 +30,21 @@
                     <form method="post" id="form-oferta" enctype="multipart/form-data">
                         {% csrf_token %}
                         
+                        <div class="mb-3">
+                            <label for="loja_id" class="form-label">
+                                <i class="fas fa-store text-primary me-2"></i>Loja Dona da Oferta *
+                            </label>
+                            <select class="form-select" id="loja_id" name="loja_id" required>
+                                <option value="">Selecione a loja...</option>
+                                {% for loja in lojas_acessiveis %}
+                                <option value="{{ loja.id }}" {% if oferta and oferta.loja_id == loja.id %}selected{% endif %}>
+                                    {{ loja.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Esta será a loja proprietária da oferta</small>
+                        </div>
+
                         <div class="mb-3">
                             <label for="titulo" class="form-label">
                                 <i class="fas fa-heading text-primary me-2"></i>Título *
@@ -88,7 +106,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="vigencia_inicio" class="form-label">
                                     <i class="fas fa-calendar-alt text-primary me-2"></i>Início da Vigência *
                                 </label>
@@ -100,7 +118,7 @@
                                        required>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="vigencia_fim" class="form-label">
                                     <i class="fas fa-calendar-check text-primary me-2"></i>Fim da Vigência *
                                 </label>
@@ -111,53 +129,18 @@
                                        value="{{ vigencia_fim_formatted }}"
                                        required>
                             </div>
-                        </div>
 
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="fas fa-store text-primary me-2"></i>Escopo da Oferta</h6>
-                        
-                        <div class="mb-3">
-                            <label for="loja_id" class="form-label">
-                                <i class="fas fa-building text-primary me-2"></i>Selecione a Loja *
-                            </label>
-                            <select class="form-select" id="loja_id" name="loja_id" required>
-                                <option value="">Selecione uma loja...</option>
-                                {% for loja in lojas_acessiveis %}
-                                <option value="{{ loja.id }}" {% if oferta and oferta.loja_id == loja.id %}selected{% endif %}>
-                                    {{ loja.nome }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <small class="form-text text-muted">Selecione a loja para esta oferta</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Aplicar oferta para: *</label>
-                            <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="radio" 
-                                       name="escopo" 
-                                       id="escopo_loja" 
-                                       value="loja"
-                                       {% if not oferta or not oferta.grupo_economico_id %}checked{% endif %}>
-                                <label class="form-check-label" for="escopo_loja">
-                                    <i class="fas fa-store text-info me-2"></i>
-                                    <strong>Apenas esta loja</strong>
-                                    <br><small class="text-muted">Oferta válida somente para a loja selecionada</small>
+                            <div class="col-md-4 mb-3">
+                                <label for="data_agendamento_disparo" class="form-label">
+                                    <i class="fas fa-clock text-primary me-2"></i>Data/Hora do Disparo *
                                 </label>
-                            </div>
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" 
-                                       type="radio" 
-                                       name="escopo" 
-                                       id="escopo_grupo" 
-                                       value="grupo_economico"
-                                       {% if oferta and oferta.grupo_economico_id %}checked{% endif %}>
-                                <label class="form-check-label" for="escopo_grupo">
-                                    <i class="fas fa-building text-primary me-2"></i>
-                                    <strong>Todas as lojas do grupo econômico</strong>
-                                    <br><small class="text-muted">Oferta válida para todas as lojas do mesmo grupo econômico</small>
-                                </label>
+                                <input type="datetime-local" 
+                                       class="form-control" 
+                                       id="data_agendamento_disparo" 
+                                       name="data_agendamento_disparo" 
+                                       value="{{ data_agendamento_disparo_formatted }}"
+                                       required>
+                                <small class="form-text text-muted">Push será enviado automaticamente nesta data/hora</small>
                             </div>
                         </div>
 
