@@ -1,8 +1,8 @@
 # ROTEIRO DE TESTES - FLUXO TRANSACIONAL COMPLETO
 
-**Versão:** 1.0  
-**Data:** 07/12/2025  
-**Objetivo:** Validar integração completa de Cupom + Cashback + Conta Digital  
+**Versão:** 1.0
+**Data:** 07/12/2025
+**Objetivo:** Validar integração completa de Cupom + Cashback + Conta Digital
 **Status:** 🔄 Pronto para execução
 
 ---
@@ -140,7 +140,7 @@ VALUES (
 
 ```sql
 -- Tipos de movimentação cadastrados
-SELECT codigo, nome, debita_saldo, afeta_cashback 
+SELECT codigo, nome, debita_saldo, afeta_cashback
 FROM conta_digital_tipos_movimentacao;
 
 -- Deve ter pelo menos:
@@ -150,9 +150,9 @@ FROM conta_digital_tipos_movimentacao;
 SELECT * FROM conta_digital_configuracoes WHERE canal_id = 1;
 
 -- Parâmetros Wall com cashback
-SELECT id, wall, percentual_desconto 
-FROM parametros_wallclub 
-WHERE wall = 'C' AND ativo = 1 
+SELECT id, wall, percentual_desconto
+FROM parametros_wallclub
+WHERE wall = 'C' AND ativo = 1
 LIMIT 1;
 ```
 
@@ -220,8 +220,8 @@ Espera-se:
 3. **Validar Banco:**
 ```sql
 -- 1. Transação criada
-SELECT * FROM transactiondata_own 
-WHERE cpf = '12345678900' 
+SELECT * FROM transactiondata_own
+WHERE cpf = '12345678900'
 ORDER BY created_at DESC LIMIT 1;
 
 -- Verificar:
@@ -229,7 +229,7 @@ ORDER BY created_at DESC LIMIT 1;
 -- cashback_creditado_loja = 4.25
 
 -- 2. Cashback registrado
-SELECT * FROM cashback_uso 
+SELECT * FROM cashback_uso
 WHERE cliente_id = (SELECT id FROM cliente WHERE cpf = '12345678900')
 ORDER BY aplicado_em DESC LIMIT 2;
 
@@ -249,8 +249,8 @@ ORDER BY data_movimentacao DESC LIMIT 2;
 -- CASHBACK_LOJA: +4.25 (afeta cashback_bloqueado)
 
 -- 4. Saldo da conta
-SELECT cashback_bloqueado, cashback_disponivel 
-FROM conta_digital 
+SELECT cashback_bloqueado, cashback_disponivel
+FROM conta_digital
 WHERE cpf = '12345678900';
 
 -- cashback_bloqueado deve ter aumentado 4.25
@@ -279,8 +279,8 @@ WHERE cpf = '12345678900';
 
 1. **Transação criada:**
 ```sql
-SELECT * FROM transactiondata_own 
-WHERE cpf = '12345678900' 
+SELECT * FROM transactiondata_own
+WHERE cpf = '12345678900'
 ORDER BY created_at DESC LIMIT 1;
 
 -- Verificar:
@@ -291,7 +291,7 @@ ORDER BY created_at DESC LIMIT 1;
 
 2. **Cupom usado:**
 ```sql
-SELECT * FROM cupom_uso 
+SELECT * FROM cupom_uso
 WHERE cupom_id = (SELECT id FROM cupom WHERE codigo = 'TESTE10')
 ORDER BY usado_em DESC LIMIT 1;
 
@@ -314,7 +314,7 @@ SELECT quantidade_usada FROM cupom WHERE codigo = 'TESTE10';
 -- Valor final = 75
 -- Cashback loja 5% = 3.75
 
-SELECT valor_cashback FROM cashback_uso 
+SELECT valor_cashback FROM cashback_uso
 WHERE tipo_origem = 'LOJA'
 AND cliente_id = (SELECT id FROM cliente WHERE cpf = '12345678900')
 ORDER BY aplicado_em DESC LIMIT 1;
@@ -367,13 +367,13 @@ curl -X POST http://localhost:8006/api/v1/posp2/solicitar_autorizacao/ \
 
 ```sql
 -- 1. Autorização concluída
-SELECT * FROM conta_digital_autorizacao_uso_saldo 
+SELECT * FROM conta_digital_autorizacao_uso_saldo
 WHERE autorizacao_id = 'AUTH123456';
 
 -- status = 'CONCLUIDA'
 
 -- 2. Saldo debitado
-SELECT m.*, t.codigo 
+SELECT m.*, t.codigo
 FROM conta_digital_movimentacoes m
 JOIN conta_digital_tipos_movimentacao t ON m.tipo_movimentacao_id = t.id
 WHERE conta_digital_id = (SELECT id FROM conta_digital WHERE cpf = '12345678900')
@@ -384,8 +384,8 @@ ORDER BY data_movimentacao DESC LIMIT 1;
 -- referencia_externa = NSU da transação
 
 -- 3. Saldo atualizado
-SELECT saldo_atual, saldo_bloqueado 
-FROM conta_digital 
+SELECT saldo_atual, saldo_bloqueado
+FROM conta_digital
 WHERE cpf = '12345678900';
 
 -- saldo_atual deve ter diminuído 50.00
@@ -416,7 +416,7 @@ WHERE cpf = '12345678900';
 
 ```sql
 -- 1. Cashback debitado
-SELECT m.*, t.codigo 
+SELECT m.*, t.codigo
 FROM conta_digital_movimentacoes m
 JOIN conta_digital_tipos_movimentacao t ON m.tipo_movimentacao_id = t.id
 WHERE conta_digital_id = (SELECT id FROM conta_digital WHERE cpf = '12345678900')
@@ -426,8 +426,8 @@ ORDER BY data_movimentacao DESC LIMIT 1;
 -- valor = 20.00
 
 -- 2. Saldo cashback atualizado
-SELECT cashback_disponivel 
-FROM conta_digital 
+SELECT cashback_disponivel
+FROM conta_digital
 WHERE cpf = '12345678900';
 
 -- Deve ter diminuído 20.00
@@ -453,8 +453,8 @@ WHERE cpf = '12345678900';
 
 ```sql
 -- 1. Cupom marcado como estornado
-SELECT estornado FROM cupom_uso 
-WHERE transacao_id = {transaction_id} 
+SELECT estornado FROM cupom_uso
+WHERE transacao_id = {transaction_id}
 AND transacao_tipo = 'POS';
 
 -- estornado = 1
@@ -464,8 +464,8 @@ SELECT quantidade_usada FROM cupom WHERE codigo = 'TESTE10';
 -- Mantém o valor (prevenção fraude)
 
 -- 3. Cashback estornado
-SELECT status FROM cashback_uso 
-WHERE transacao_tipo = 'POS' 
+SELECT status FROM cashback_uso
+WHERE transacao_tipo = 'POS'
 AND transacao_id = {transaction_id};
 
 -- status = 'ESTORNADO'
@@ -497,17 +497,17 @@ AND transacao_id = {transaction_id};
 
 ```sql
 -- 1. Transação criada
-SELECT * FROM checkoutTransaction 
-WHERE cpf = '12345678900' 
+SELECT * FROM checkoutTransaction
+WHERE cpf = '12345678900'
 ORDER BY created_at DESC LIMIT 1;
 
 -- 2. Cashback concedido (se aplicável)
-SELECT * FROM cashback_uso 
+SELECT * FROM cashback_uso
 WHERE transacao_tipo = 'CHECKOUT'
 AND transacao_id = {checkout_id};
 
 -- 3. Movimentações na conta
-SELECT * FROM conta_digital_movimentacoes 
+SELECT * FROM conta_digital_movimentacoes
 WHERE referencia_externa LIKE '%CHECKOUT%'
 ORDER BY data_movimentacao DESC;
 ```
@@ -560,7 +560,7 @@ ORDER BY codigo;
 ### 3. Configurações de Canal
 
 ```sql
-SELECT 
+SELECT
     canal_id,
     limite_diario_padrao,
     limite_mensal_padrao,
@@ -606,12 +606,12 @@ WHERE t.id IS NULL;
 
 ```sql
 -- Total cashback retido deve bater com saldo bloqueado
-SELECT 
+SELECT
     c.cpf,
     c.cashback_bloqueado as saldo_bloqueado,
     COALESCE(SUM(cu.valor_cashback), 0) as total_retido
 FROM conta_digital c
-LEFT JOIN cashback_uso cu ON cu.cliente_id = c.cliente_id 
+LEFT JOIN cashback_uso cu ON cu.cliente_id = c.cliente_id
     AND cu.canal_id = c.canal_id
     AND cu.status = 'RETIDO'
 GROUP BY c.id, c.cpf, c.cashback_bloqueado
@@ -624,7 +624,7 @@ HAVING ABS(c.cashback_bloqueado - total_retido) > 0.01;
 
 ```sql
 -- Quantidade usada deve bater com registros
-SELECT 
+SELECT
     c.codigo,
     c.quantidade_usada as contador,
     COUNT(cu.id) as usos_registrados
@@ -643,7 +643,7 @@ HAVING c.quantidade_usada != COUNT(cu.id);
 ### Query 1: Resumo Conta Digital por Cliente
 
 ```sql
-SELECT 
+SELECT
     c.cpf,
     c.nome,
     cd.saldo_atual,
@@ -661,7 +661,7 @@ WHERE c.cpf = '12345678900';
 ### Query 2: Histórico de Movimentações
 
 ```sql
-SELECT 
+SELECT
     m.data_movimentacao,
     t.codigo as tipo,
     t.nome as tipo_nome,
@@ -684,7 +684,7 @@ LIMIT 20;
 ### Query 3: Cashback Concedido (Wall + Loja)
 
 ```sql
-SELECT 
+SELECT
     cu.aplicado_em,
     cu.tipo_origem,
     cu.valor_transacao,
@@ -707,7 +707,7 @@ LIMIT 20;
 ### Query 4: Cupons Usados
 
 ```sql
-SELECT 
+SELECT
     cu.usado_em,
     c.codigo as cupom,
     c.tipo_desconto,
@@ -728,7 +728,7 @@ ORDER BY cu.usado_em DESC;
 ### Query 5: Autorizações de Uso de Saldo
 
 ```sql
-SELECT 
+SELECT
     a.autorizacao_id,
     a.valor,
     a.status,
@@ -748,7 +748,7 @@ LIMIT 10;
 
 ```sql
 -- Own
-SELECT 
+SELECT
     t.created_at,
     t.nsu,
     t.valor_original,
@@ -768,7 +768,7 @@ ORDER BY t.created_at DESC
 LIMIT 10;
 
 -- Pinbank (se implementado)
-SELECT 
+SELECT
     t.created_at,
     t.nsu,
     t.valor_original,
@@ -785,24 +785,24 @@ LIMIT 10;
 ### Query 7: Dashboard Resumo
 
 ```sql
-SELECT 
+SELECT
     -- Conta Digital
     (SELECT COUNT(*) FROM conta_digital WHERE ativo = 1) as contas_ativas,
     (SELECT SUM(saldo_atual) FROM conta_digital WHERE ativo = 1) as saldo_total,
     (SELECT SUM(cashback_disponivel) FROM conta_digital WHERE ativo = 1) as cashback_disponivel_total,
     (SELECT SUM(cashback_bloqueado) FROM conta_digital WHERE ativo = 1) as cashback_bloqueado_total,
-    
+
     -- Cashback
     (SELECT COUNT(*) FROM cashback_uso WHERE status = 'RETIDO') as cashback_retido_qtd,
     (SELECT SUM(valor_cashback) FROM cashback_uso WHERE status = 'RETIDO') as cashback_retido_valor,
     (SELECT COUNT(*) FROM cashback_uso WHERE status = 'LIBERADO') as cashback_liberado_qtd,
     (SELECT SUM(valor_cashback) FROM cashback_uso WHERE status = 'LIBERADO') as cashback_liberado_valor,
-    
+
     -- Cupons
     (SELECT COUNT(*) FROM cupom WHERE ativo = 1) as cupons_ativos,
     (SELECT COUNT(*) FROM cupom_uso WHERE DATE(usado_em) = CURDATE()) as cupons_usados_hoje,
     (SELECT SUM(valor_desconto_aplicado) FROM cupom_uso WHERE DATE(usado_em) = CURDATE()) as desconto_cupons_hoje,
-    
+
     -- Movimentações
     (SELECT COUNT(*) FROM conta_digital_movimentacoes WHERE DATE(data_movimentacao) = CURDATE()) as movimentacoes_hoje;
 ```
@@ -813,18 +813,18 @@ SELECT
 
 ### Estrutura Base
 
-- [ ] Tabelas criadas (cupom, cashback_*, conta_digital_*)
-- [ ] Índices criados
-- [ ] Tipos de movimentação cadastrados (14 tipos)
-- [ ] Configurações de canal criadas
-- [ ] Foreign keys configuradas
+- [X] Tabelas criadas (cupom, cashback_*, conta_digital_*)
+- [X] Índices criados
+- [X] Tipos de movimentação cadastrados (14 tipos)
+- [X] Configurações de canal criadas
+- [X] Foreign keys configuradas
 
 ### Funcionalidades - POS
 
-- [ ] Simulação retorna cashback Wall + Loja
-- [ ] Transação aplica cupom corretamente
-- [ ] Cashback Wall creditado e registrado
-- [ ] Cashback Loja creditado e registrado
+- [X] Simulação retorna cashback Wall + Loja
+- [X] Transação aplica cupom corretamente
+- [X] Cashback Wall creditado e registrado
+- [X] Cashback Loja creditado e registrado
 - [ ] Cupom usado e contador incrementado
 - [ ] Saldo debitado quando usa autorização
 - [ ] Cashback debitado quando usa cashback
@@ -1005,6 +1005,6 @@ Se encontrar problemas críticos:
 
 ---
 
-**Responsável:** Equipe Técnica WallClub  
-**Próxima Atualização:** Após execução dos testes  
+**Responsável:** Equipe Técnica WallClub
+**Próxima Atualização:** Após execução dos testes
 **Status:** 🔄 Aguardando execução

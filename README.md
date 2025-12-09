@@ -624,18 +624,23 @@ Proprietary - WallClub © 2025
   - Campos `cashback_wall_parametro_id` e `cashback_loja_regra_id` já existentes
   - Endpoints: `/trdata_pinbank/` e `/trdata_own/`
   - Service: `TRDataPosService` (parser específico por gateway)
-- ✅ **Sistema Cashback Centralizado - Correções Críticas**
+- ✅ **Sistema Cashback Centralizado - Funcionando**
   - Corrigido erro `ParametrosWall.plano` (não existe - usar `id_plano`)
-  - Import `timezone` adicionado em `CashbackService`
-  - Tipo movimentação: `CASHBACK_CREDITO` (já existente na tabela)
+  - Import `timezone` corrigido em todos os métodos de `CashbackService`
+  - Corrigido `timezone.timedelta` para `timedelta` em `ContaDigitalService`
+  - Tipo movimentação: `CASHBACK_CREDITO` (unificado para Wall e Loja)
   - Integração completa com Conta Digital
-- ✅ **Conta Digital - Compras Informativas**
-  - 3 tipos: `COMPRA_CARTAO`, `COMPRA_PIX`, `COMPRA_DEBITO` (categoria INFORMATIVO)
-  - Registro direto em `MovimentacaoContaDigital` (não usa `creditar()`)
-  - Saldo inalterado: `saldo_anterior = saldo_posterior`
-  - Status: `PROCESSADA` (único válido na tabela)
-  - Integrado no fluxo POS Own (`_registrar_compra_informativa()`)
-  - Pendente: integração POS Pinbank e Checkout Web
+  - Cashback Wall e Loja sendo creditados corretamente
+- ❌ **Conta Digital - Movimentações Informativas REMOVIDAS**
+  - Decisão: Conta digital deve ter apenas movimentações que afetam saldo/cashback
+  - Histórico de compras consultado diretamente de `transactiondata_pos` e `checkout_transaction`
+  - Tipos removidos: `COMPRA_CARTAO`, `COMPRA_PIX`, `COMPRA_DEBITO`
+  - Método `_registrar_compra_informativa()` removido
+- ⏳ **API Extrato Consolidado - PENDENTE**
+  - Endpoint futuro: `/api/v1/conta_digital/extrato_completo/`
+  - Consolidará: movimentações conta + transações POS + checkout
+  - Ordenação cronológica unificada
+  - Permite filtros por tipo, período, etc
 - ✅ **Portal Lojista - Vendas por Operador**
   - Botão "Pesquisar venda por operador" na página de vendas
   - Relatório agrupado por operador POS

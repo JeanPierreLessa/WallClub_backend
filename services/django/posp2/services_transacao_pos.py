@@ -251,12 +251,7 @@ class TRDataPosService:
                 dados, transaction_id, loja_id, canal_id
             )
 
-            # 7. Registrar compra informativa no extrato (COMUM)
-            self._registrar_compra_informativa(
-                dados, transaction_id, canal_id
-            )
-
-            # 8. Calcular valores via CalculadoraBaseGestao (COMUM)
+            # 7. Calcular valores via CalculadoraBaseGestao (COMUM)
             # TODO: Implementar quando necessário
 
             registrar_log('posp2', 'Processamento concluído com sucesso')
@@ -405,56 +400,6 @@ class TRDataPosService:
 
         except Exception as e:
             registrar_log('posp2', f'❌ Erro ao conceder cashback: {e}', nivel='ERROR')
-
-    def _registrar_compra_informativa(self, dados: Dict, transaction_id: int, canal_id: int):
-        """Registra compra informativa no extrato da conta digital"""
-        cpf = dados['cpf']
-        
-        if not cpf:
-            return
-        
-        try:
-            from apps.cliente.models import Cliente
-            from apps.conta_digital.models import ContaDigital, TipoMovimentacao, MovimentacaoContaDigital
-            from django.utils import timezone
-            
-            cliente = Cliente.objects.get(cpf=cpf, canal_id=canal_id)
-            conta = ContaDigital.objects.get(cliente_id=cliente.id, canal_id=canal_id)
-            
-            # Mapear paymentMethod para tipo de compra
-            payment_method = dados.get('paymentMethod', '')
-            if payment_method == 'CASH' or payment_method == 'PIX':
-                tipo_codigo = 'COMPRA_PIX'
-                descricao = f'Compra PIX - {dados["terminal"]}'
-            elif payment_method == 'DEBIT':
-                tipo_codigo = 'COMPRA_DEBITO'
-                descricao = f'Compra Débito - {dados["terminal"]}'
-            else:
-                tipo_codigo = 'COMPRA_CARTAO'
-                parcelas = dados.get('totalInstallments', 1)
-                descricao = f'Compra Cartão {parcelas}x - {dados["terminal"]}'
-            
-            # Buscar tipo de movimentação
-            tipo = TipoMovimentacao.objects.get(codigo=tipo_codigo)
-            
-            # Criar movimentação informativa (não afeta saldo)
-            MovimentacaoContaDigital.objects.create(
-                conta_digital=conta,
-                tipo_movimentacao=tipo,
-                valor=dados['valor_original'],
-                saldo_anterior=conta.saldo_atual,
-                saldo_posterior=conta.saldo_atual,  # Não muda
-                descricao=descricao,
-                referencia_externa=f'{dados["gateway"]}:{dados["nsu_gateway"]}',
-                sistema_origem='POS',
-                data_movimentacao=timezone.now(),
-                status='PROCESSADA'
-            )
-            
-            registrar_log('posp2', f'✅ Compra informativa registrada: {tipo_codigo} - R$ {dados["valor_original"]}')
-            
-        except Exception as e:
-            registrar_log('posp2', f'❌ Erro ao registrar compra informativa: {e}', nivel='ERROR')
 
     def _inserir_transacao_pos(self, dados: Dict, cupom_id: int) -> int:
         """Insere transação na tabela unificada transactiondata_pos"""

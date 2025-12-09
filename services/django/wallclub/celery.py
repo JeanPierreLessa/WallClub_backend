@@ -53,16 +53,6 @@ app.conf.beat_schedule = {
         }
     },
 
-    # Migração financeiro → pagamentos_efetuados - De hora em hora, minuto 15
-    'migrar-financeiro-pagamentos': {
-        'task': 'pinbank.migrar_financeiro_pagamentos',
-        'schedule': crontab(minute=15),  # xx:15 de hora em hora (24h)
-        'kwargs': {'limite': 1000},  # Processar 1000 registros por vez
-        'options': {
-            'expires': 3600,  # Expira em 1 hora
-        }
-    },
-
     # ============================================
     # CONTA DIGITAL - AUTORIZAÇÕES
     # ============================================
@@ -71,6 +61,37 @@ app.conf.beat_schedule = {
     'expirar-autorizacoes-saldo': {
         'task': 'apps.conta_digital.expirar_autorizacoes_saldo',
         'schedule': crontab(hour=1, minute=0),  # 01:00 todos os dias
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+
+    # ============================================
+    # CASHBACK - LIBERAÇÃO E EXPIRAÇÃO
+    # ============================================
+
+    # Liberar cashback retido - 1x ao dia às 02:00
+    'liberar-cashback-retido': {
+        'task': 'cashback.liberar_cashback_retido',
+        'schedule': crontab(hour=2, minute=0),  # 02:00 todos os dias
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+
+    # Expirar cashback vencido - 1x ao dia às 03:00
+    'expirar-cashback-vencido': {
+        'task': 'cashback.expirar_cashback_vencido',
+        'schedule': crontab(hour=3, minute=0),  # 03:00 todos os dias
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+
+    # Resetar gasto mensal das lojas - 1x ao mês no dia 1 às 04:00
+    'resetar-gasto-mensal-lojas': {
+        'task': 'cashback.resetar_gasto_mensal_lojas',
+        'schedule': crontab(hour=4, minute=0, day_of_month=1),  # 04:00 dia 1 de cada mês
         'options': {
             'expires': 3600,  # Expira em 1 hora
         }
