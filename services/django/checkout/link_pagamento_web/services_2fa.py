@@ -349,7 +349,7 @@ class CheckoutSecurityService:
             # Importar service do Risk Engine
             import requests
             
-            riskengine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
+            riskengine_url = settings.RISK_ENGINE_URL
             
             # Preparar dados
             dados = {

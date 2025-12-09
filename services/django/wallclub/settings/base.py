@@ -404,6 +404,9 @@ RISK_ENGINE_URL = os.environ.get('RISK_ENGINE_URL', 'http://wallclub-riskengine:
 ANTIFRAUDE_ENABLED = os.environ.get('ANTIFRAUDE_ENABLED', 'False') == 'True'
 ANTIFRAUDE_TIMEOUT = int(os.environ.get('ANTIFRAUDE_TIMEOUT', '5'))
 
+# URLs internas entre containers
+PORTAIS_INTERNAL_URL = os.environ.get('PORTAIS_INTERNAL_URL', 'http://wallclub-portais:8005')
+
 # Credenciais OAuth vêm do AWS Secrets Manager (sensíveis)
 # 3 pares de credenciais separadas por contexto
 def get_riskengine_credentials():

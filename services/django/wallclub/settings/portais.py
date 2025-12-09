@@ -9,8 +9,8 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
 # ALLOWED_HOSTS - usar variável de ambiente do base.py
 
-# URL base para APIs internas (container wallclub-apis)
-INTERNAL_API_BASE_URL = 'http://wallclub-apis:8007'
+# URL base para APIs internas (container wallclub-apis) - vem do .env
+INTERNAL_API_BASE_URL = os.environ.get('INTERNAL_API_BASE_URL', 'http://wallclub-apis:8007')
 
 # Apps específicos do container de portais (herda do base e adiciona apenas os específicos)
 INSTALLED_APPS = INSTALLED_APPS + [

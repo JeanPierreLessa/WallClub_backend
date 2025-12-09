@@ -597,7 +597,7 @@ class ValidarCupomView(APIView):
             from django.conf import settings
             
             # URL interna do container Portais
-            portais_url = getattr(settings, 'PORTAIS_INTERNAL_URL', 'http://wallclub-portais:8001')
+            portais_url = settings.PORTAIS_INTERNAL_URL
             
             try:
                 response = requests.post(

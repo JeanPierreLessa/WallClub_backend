@@ -28,7 +28,7 @@ class AntifraudeIntegrationService:
     """
     
     def __init__(self):
-        self.riskengine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
+        self.riskengine_url = settings.RISK_ENGINE_URL
         self.enabled = getattr(settings, 'ANTIFRAUDE_ENABLED', False)
         self.timeout = getattr(settings, 'ANTIFRAUDE_TIMEOUT', 5)
         # Usar credenciais POS específicas para transações POS

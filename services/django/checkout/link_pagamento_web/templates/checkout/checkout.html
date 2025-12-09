@@ -384,7 +384,7 @@
                     `;
                     
                     // Popular select de parcelas
-                    selectParcelas.innerHTML = '';
+                    selectParcelas.innerHTML = '<option value="">Escolha a parcela</option>';
                     
                     data.opcoes.forEach(opcao => {
                         const option = document.createElement('option');
@@ -395,13 +395,6 @@
                         option.dataset.cashbackTotal = opcao.cashback_total || 0;
                         selectParcelas.appendChild(option);
                     });
-                    
-                    // Selecionar primeira opção e atualizar valor_total
-                    if (selectParcelas.options.length > 0) {
-                        selectParcelas.selectedIndex = 0;
-                        const firstOption = selectParcelas.options[0];
-                        document.getElementById('valor_total').value = firstOption.dataset.valorTotal;
-                    }
                     
                     // Event listener para atualizar valor_total quando mudar parcela
                     selectParcelas.addEventListener('change', function() {

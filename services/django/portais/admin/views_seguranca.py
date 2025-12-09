@@ -29,7 +29,7 @@ def atividades_suspeitas(request):
         dias = request.GET.get('dias', '7')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
+        risk_engine_url = settings.RISK_ENGINE_URL
         api_url = f"{risk_engine_url}/api/antifraude/suspicious/"
         
         headers = {}
@@ -129,7 +129,7 @@ def investigar_atividade(request, atividade_id):
             return redirect('admin_atividades_suspeitas')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
+        risk_engine_url = settings.RISK_ENGINE_URL
         api_url = f"{risk_engine_url}/api/antifraude/investigate/"
         
         headers = {
@@ -184,7 +184,7 @@ def bloqueios_seguranca(request):
         dias = request.GET.get('dias', '30')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
+        risk_engine_url = settings.RISK_ENGINE_URL
         api_url = f"{risk_engine_url}/api/antifraude/blocks/"
         
         headers = {}
@@ -257,7 +257,7 @@ def criar_bloqueio(request):
             return redirect('admin_bloqueios_seguranca')
         
         # Chamar API do Risk Engine
-        risk_engine_url = getattr(settings, 'RISK_ENGINE_URL', 'http://wallclub-riskengine:8004')
+        risk_engine_url = settings.RISK_ENGINE_URL
         api_url = f"{risk_engine_url}/api/antifraude/block/"
         
         headers = {

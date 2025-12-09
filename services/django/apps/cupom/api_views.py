@@ -176,6 +176,8 @@ def validar_cupom_checkout(request):
     }
     """
     try:
+        from django.utils import timezone
+        
         data = json.loads(request.body)
         
         cupom_codigo = data.get('cupom_codigo')
@@ -189,17 +191,44 @@ def validar_cupom_checkout(request):
                 'mensagem': 'Dados inválidos: cupom_codigo, loja_id e valor_transacao são obrigatórios'
             }, status=400)
         
-        cupom_service = CupomService()
-        
-        # Validar cupom (cliente_id=0 para validação prévia)
-        cupom = cupom_service.validar_cupom(
-            codigo=cupom_codigo,
+        # Validação simplificada (sem usar CupomService para evitar validações de cliente)
+        # A validação completa acontece no processamento do pagamento
+        cupom = Cupom.objects.filter(
+            codigo__iexact=cupom_codigo.strip(),
             loja_id=loja_id,
-            cliente_id=cliente_id,
-            valor_transacao=valor_transacao
-        )
+            ativo=True
+        ).first()
+        
+        if not cupom:
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Cupom inválido ou inativo'
+            }, status=400)
+        
+        # Validar período
+        agora = timezone.now()
+        if not (cupom.data_inicio <= agora <= cupom.data_fim):
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Cupom fora do período de validade'
+            }, status=400)
+        
+        # Validar valor mínimo
+        if cupom.valor_minimo_compra and valor_transacao < cupom.valor_minimo_compra:
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': f'Valor mínimo para usar este cupom: R$ {float(cupom.valor_minimo_compra):.2f}'
+            }, status=400)
+        
+        # Validar limite global
+        if cupom.limite_uso_total and cupom.quantidade_usada >= cupom.limite_uso_total:
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Cupom esgotado'
+            }, status=400)
         
         # Calcular desconto
+        cupom_service = CupomService()
         valor_desconto = cupom_service.calcular_desconto(cupom, valor_transacao)
         
         return JsonResponse({
