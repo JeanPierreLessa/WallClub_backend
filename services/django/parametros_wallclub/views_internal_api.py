@@ -71,7 +71,7 @@ def buscar_configuracoes_loja(request):
                 'atualizado_em': config.atualizado_em.isoformat(),
             })
         
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Buscar configs loja {loja_id} - Total: {len(configs_list)}")
         
         return JsonResponse({
@@ -81,7 +81,7 @@ def buscar_configuracoes_loja(request):
         })
         
     except Exception as e:
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Erro ao buscar configurações: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -124,7 +124,7 @@ def contar_configuracoes_loja(request):
         })
         
     except Exception as e:
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Erro ao contar configurações: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -178,7 +178,7 @@ def obter_ultima_configuracao(request):
         })
         
     except Exception as e:
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Erro ao obter última configuração: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -232,7 +232,7 @@ def verificar_modalidades_loja(request):
         })
         
     except Exception as e:
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Erro ao verificar modalidades: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -279,7 +279,7 @@ def listar_planos(request):
         })
         
     except Exception as e:
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Erro ao listar planos: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -327,7 +327,7 @@ def listar_importacoes(request):
         })
         
     except Exception as e:
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Erro ao listar importações: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -376,7 +376,7 @@ def obter_importacao(request, importacao_id):
         })
         
     except Exception as e:
-        registrar_log('parametros.internal_api',
+        registrar_log('parametros_wallclub',
                      f"Erro ao obter importação: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({

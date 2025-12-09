@@ -34,7 +34,7 @@ class OfertasAPIClient:
         url = f"{self.base_url}/api/internal/ofertas/{endpoint}"
         
         try:
-            registrar_log('comum.integracoes.ofertas_api', 
+            registrar_log('comum.integracoes', 
                          f"[API INTERNA] {method} {url}", 
                          nivel='INFO')
             
@@ -50,13 +50,13 @@ class OfertasAPIClient:
             return response.json()
             
         except requests.exceptions.Timeout:
-            registrar_log('comum.integracoes.ofertas_api',
+            registrar_log('comum.integracoes',
                          f"[API INTERNA] Timeout ao chamar {url}",
                          nivel='ERROR')
             return {'sucesso': False, 'mensagem': 'Timeout ao consultar ofertas'}
             
         except requests.exceptions.RequestException as e:
-            registrar_log('comum.integracoes.ofertas_api',
+            registrar_log('comum.integracoes',
                          f"[API INTERNA] Erro ao chamar {url}: {str(e)}",
                          nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro ao consultar ofertas: {str(e)}'}

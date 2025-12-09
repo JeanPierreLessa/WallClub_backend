@@ -54,7 +54,7 @@ class CalculadoraBaseGestao:
                 identificador = dados_linha['NsuOperacao']  # NSU (Pinbank)
                 log_id = dados_linha.get('NsuOperacao', 'N/A')
             
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Iniciando cálculo para {tabela} ID: {log_id}")
+            registrar_log('parametros_wallclub', f"Iniciando cálculo para {tabela} ID: {log_id}")
             valores = {}
             
             # Validar se a operação é Club (Wall S) ou Normal (Wall N)
@@ -1079,14 +1079,14 @@ class CalculadoraBaseGestao:
             # Adicionar ID da fila de extrato para mapeamento
             valores['id_fila_extrato'] = dados_linha['id']
             
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Cálculo concluído para NSU: {dados_linha.get('NsuOperacao', 'N/A')} - {len(valores)} variáveis calculadas")
+            registrar_log('parametros_wallclub', f"Cálculo concluído para NSU: {dados_linha.get('NsuOperacao', 'N/A')} - {len(valores)} variáveis calculadas")
             return valores
             
         except Exception as e:
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Erro no cálculo para NSU {dados_linha.get('NsuOperacao', 'N/A')}: {str(e)}", nivel='ERROR')
+            registrar_log('parametros_wallclub', f"Erro no cálculo para NSU {dados_linha.get('NsuOperacao', 'N/A')}: {str(e)}", nivel='ERROR')
             import traceback
             tb_str = traceback.format_exc()
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Erro ao calcular valores primários: {str(e)}\nTraceback completo:\n{tb_str}", nivel='ERROR')
+            registrar_log('parametros_wallclub', f"Erro ao calcular valores primários: {str(e)}\nTraceback completo:\n{tb_str}", nivel='ERROR')
             
             # Log das variáveis que são None no momento do erro
             none_vars = []
@@ -1095,7 +1095,7 @@ class CalculadoraBaseGestao:
                     none_vars.append(f"valores[{key}]")
             
             if none_vars:
-                registrar_log('parametros_wallclub.calculadora_base_gestao', f"Variáveis None no momento do erro: {', '.join(none_vars)}", nivel='ERROR')
+                registrar_log('parametros_wallclub', f"Variáveis None no momento do erro: {', '.join(none_vars)}", nivel='ERROR')
             
             raise    
     

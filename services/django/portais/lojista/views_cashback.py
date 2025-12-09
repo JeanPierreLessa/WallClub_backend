@@ -137,7 +137,7 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
             
             usuario_nome = getattr(request.portal_usuario, 'nome', None) or getattr(request.portal_usuario, 'username', 'N/A')
             registrar_log(
-                'portais.lojista.cashback',
+                'portais.lojista',
                 f'Regra de cashback criada - ID: {regra.id}, Loja: {loja_id}, Nome: {regra.nome}, '
                 f'Usuário: {usuario_nome}'
             )
@@ -147,7 +147,7 @@ class CashbackCreateView(LojistaAccessMixin, LojistaDataMixin, View):
             
         except Exception as e:
             registrar_log(
-                'portais.lojista.cashback',
+                'portais.lojista',
                 f'Erro ao criar regra de cashback: {str(e)}',
                 nivel='ERROR'
             )
@@ -221,7 +221,7 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
             
             usuario_nome = getattr(request.portal_usuario, 'nome', None) or getattr(request.portal_usuario, 'username', 'N/A')
             registrar_log(
-                'portais.lojista.cashback',
+                'portais.lojista',
                 f'Regra de cashback editada - ID: {regra.id}, Nome: {regra.nome}, '
                 f'Usuário: {usuario_nome}'
             )
@@ -231,7 +231,7 @@ class CashbackEditView(LojistaAccessMixin, LojistaDataMixin, View):
             
         except Exception as e:
             registrar_log(
-                'portais.lojista.cashback',
+                'portais.lojista',
                 f'Erro ao editar regra de cashback {regra_id}: {str(e)}',
                 nivel='ERROR'
             )
@@ -299,7 +299,7 @@ class CashbackToggleView(LojistaAccessMixin, LojistaDataMixin, View):
             status = 'ativada' if regra.ativo else 'desativada'
             
             registrar_log(
-                'portais.lojista.cashback',
+                'portais.lojista',
                 f'Regra de cashback {status} - ID: {regra.id}, Nome: {regra.nome}, '
                 f'Usuário: {request.portal_usuario.nome}'
             )
@@ -309,7 +309,7 @@ class CashbackToggleView(LojistaAccessMixin, LojistaDataMixin, View):
             
         except Exception as e:
             registrar_log(
-                'portais.lojista.cashback',
+                'portais.lojista',
                 f'Erro ao alterar status da regra {regra_id}: {str(e)}',
                 nivel='ERROR'
             )

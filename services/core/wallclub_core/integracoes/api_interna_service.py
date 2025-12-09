@@ -47,7 +47,7 @@ class APIInternaService:
             base_url = cls.CONTAINER_URLS.get(contexto)
             if not base_url:
                 registrar_log(
-                    'wallclub_core.api_interna',
+                    'comum.integracoes',
                     f'Contexto inválido: {contexto}',
                     nivel='ERROR'
                 )
@@ -100,7 +100,7 @@ class APIInternaService:
                     }
             else:
                 registrar_log(
-                    'wallclub_core.api_interna',
+                    'comum.integracoes',
                     f'Erro na API interna: {response.status_code} - {response.text}',
                     nivel='ERROR'
                 )
