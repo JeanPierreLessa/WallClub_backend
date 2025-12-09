@@ -616,26 +616,32 @@ class ValidarCupomView(APIView):
                 )
                 
                 registrar_log("checkout.link_pagamento_web", 
-                             f"Resposta Portais - Status: {response.status_code}, Content-Type: {response.headers.get('Content-Type')}", 
+                             f"Resposta Portais - Status: {response.status_code}, Content-Type: {response.headers.get('Content-Type')}, Body: {response.text[:200]}", 
                              nivel='INFO')
                 
-                if response.status_code == 200:
+                # Tentar parsear JSON
+                try:
                     data = response.json()
-                    return Response(data, status=status.HTTP_200_OK)
-                else:
-                    # Tentar parsear JSON, se falhar retornar texto
-                    try:
-                        data = response.json()
+                    if response.status_code == 200:
+                        return Response(data, status=status.HTTP_200_OK)
+                    else:
                         return Response(data, status=response.status_code)
-                    except:
-                        registrar_log("checkout.link_pagamento_web", 
-                                     f"Resposta não-JSON do Portais: {response.text[:500]}", 
-                                     nivel='ERROR')
-                        return Response({
-                            'sucesso': False,
-                            'mensagem': 'Erro ao validar cupom'
-                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                except Exception as json_error:
+                    registrar_log("checkout.link_pagamento_web", 
+                                 f"Erro ao parsear JSON: {str(json_error)} - Resposta: {response.text[:500]}", 
+                                 nivel='ERROR')
+                    return Response({
+                        'sucesso': False,
+                        'mensagem': 'Erro ao validar cupom'
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                     
+            except requests.exceptions.JSONDecodeError as e:
+                registrar_log("checkout.link_pagamento_web", 
+                             f"Erro ao parsear JSON do Portais: {str(e)}", nivel='ERROR')
+                return Response({
+                    'sucesso': False,
+                    'mensagem': 'Erro ao validar cupom. Tente novamente.'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             except requests.exceptions.RequestException as e:
                 registrar_log("checkout.link_pagamento_web", 
                              f"Erro ao chamar Portais para validar cupom: {str(e)}", nivel='ERROR')
