@@ -367,11 +367,32 @@ class CheckoutSecurityService:
                 f'Consultando Risk Engine: {riskengine_url}/api/antifraude/analisar/'
             )
             
-            # Chamar Risk Engine (sem OAuth - rede interna)
+            # Obter token OAuth
+            from wallclub_core.integracoes.risk_engine_oauth import obter_token_riskengine
+            token = obter_token_riskengine(contexto='checkout')
+            
+            if not token:
+                registrar_log(
+                    'checkout.2fa',
+                    'Erro ao obter token OAuth do Risk Engine',
+                    nivel='ERROR'
+                )
+                # Fail-open: aprovar em caso de erro de autenticação
+                return {
+                    'score': 0,
+                    'bloqueado': False,
+                    'motivo': 'Erro de autenticação Risk Engine',
+                    'detalhes': {}
+                }
+            
+            # Chamar Risk Engine com OAuth
             response = requests.post(
                 f'{riskengine_url}/api/antifraude/analisar/',
                 json=dados,
-                headers={'Content-Type': 'application/json'},
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {token}'
+                },
                 timeout=3
             )
             
@@ -648,10 +669,31 @@ class CheckoutSecurityService:
             ip_solicitacao=ip_address
         )
         
-        if not resultado_otp['success']:
+        if not resultado_otp.get('success'):
+            registrar_log(
+                'checkout.2fa',
+                f'Erro ao gerar OTP: {resultado_otp.get("mensagem", "Erro desconhecido")}',
+                nivel='ERROR'
+            )
             return {
                 'aprovado': False,
-                'motivo_bloqueio': resultado_otp['mensagem'],
+                'motivo_bloqueio': resultado_otp.get('mensagem', 'Erro ao gerar código de verificação'),
+                'otp_enviado': False,
+                'detalhes': {
+                    'etapa': 'geracao_otp'
+                }
+            }
+        
+        # Verificar se o código foi gerado
+        if 'codigo' not in resultado_otp:
+            registrar_log(
+                'checkout.2fa',
+                f'OTP gerado mas sem código: {resultado_otp}',
+                nivel='ERROR'
+            )
+            return {
+                'aprovado': False,
+                'motivo_bloqueio': 'Erro ao gerar código de verificação',
                 'otp_enviado': False,
                 'detalhes': {
                     'etapa': 'geracao_otp'
