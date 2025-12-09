@@ -781,7 +781,7 @@ class TRDataOwnService:
         # vparcela
         vparcela = valores_calculados.get(20, 0)
         if vparcela is None or vparcela == 0:
-            vparcela = valores_calculados.get(11, 0)  # valor original como parcela única
+            vparcela = parte0 / parcelas if parcelas > 0 else parte0
         
         # tarifas = abs(parcelas * vparcela - valor_liquido) - encargos
         valor_liquido = valores_calculados.get(16, 0)

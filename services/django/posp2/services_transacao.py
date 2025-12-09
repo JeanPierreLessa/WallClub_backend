@@ -856,9 +856,9 @@ class TRDataService:
             
             # $vparcela = $valores[20];
             vparcela = valores_calculados.get(20, 0)
-            # Para débito e PIX, se vparcela for nulo ou zero, usar valor total (1 parcela)
+            # Para débito e PIX, se vparcela for nulo ou zero, usar parte0 / parcelas
             if vparcela is None or vparcela == 0:
-                vparcela = valores_calculados.get(11, 0)  # valor original como parcela única
+                vparcela = parte0 / parcelas if parcelas > 0 else parte0
             
             # $tarifas = abs($valores[13] * $vparcela - $valores[16]) - $encargos;
             valor_liquido = valores_calculados.get(16, 0)
