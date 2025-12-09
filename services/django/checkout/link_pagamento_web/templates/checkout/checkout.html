@@ -255,18 +255,20 @@
                     <input type="hidden" id="valor_total" name="valor_total" value="">
                 </div>
                 
-                <!-- Cupom de Desconto -->
-                <div class="mb-3">
+                <!-- Cupom de Desconto (habilitado apenas após escolher parcela) -->
+                <div class="mb-3" id="div-cupom" style="display: none;">
                     <label for="cupom_codigo" class="form-label">
                         <i class="fas fa-tag me-2"></i>Cupom de Desconto (Opcional)
                     </label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="cupom_codigo" name="cupom_codigo" placeholder="Digite o código do cupom" maxlength="50">
-                        <button class="btn btn-outline-secondary" type="button" id="btn-validar-cupom">
+                        <input type="text" class="form-control" id="cupom_codigo" name="cupom_codigo" placeholder="Digite o código do cupom" maxlength="50" disabled>
+                        <button class="btn btn-outline-secondary" type="button" id="btn-validar-cupom" disabled>
                             <i class="fas fa-check me-1"></i>Validar
                         </button>
                     </div>
-                    <small id="cupom-feedback" class="form-text"></small>
+                    <small id="cupom-feedback" class="form-text text-muted">
+                        <i class="fas fa-info-circle me-1"></i>Escolha a parcela primeiro
+                    </small>
                 </div>
                 
                 <!-- Checkbox Salvar Cartão -->
@@ -406,6 +408,28 @@
                         const selectedOption = this.options[this.selectedIndex];
                         if (selectedOption && selectedOption.dataset.valorTotal) {
                             document.getElementById('valor_total').value = selectedOption.dataset.valorTotal;
+                            
+                            // Habilitar campo de cupom após escolher parcela
+                            const divCupom = document.getElementById('div-cupom');
+                            const inputCupom = document.getElementById('cupom_codigo');
+                            const btnValidarCupom = document.getElementById('btn-validar-cupom');
+                            const feedbackCupom = document.getElementById('cupom-feedback');
+                            
+                            divCupom.style.display = 'block';
+                            inputCupom.disabled = false;
+                            btnValidarCupom.disabled = false;
+                            
+                            // Limpar cupom validado anteriormente (se houver)
+                            if (cupomValidado) {
+                                cupomValidado = false;
+                                cupomDesconto = 0;
+                                inputCupom.value = '';
+                                inputCupom.readOnly = false;
+                                btnValidarCupom.innerHTML = '<i class="fas fa-check me-1"></i>Validar';
+                                btnValidarCupom.className = 'btn btn-outline-secondary';
+                                feedbackCupom.className = 'form-text text-muted';
+                                feedbackCupom.innerHTML = '<i class="fas fa-info-circle me-1"></i>Digite o código do cupom';
+                            }
                         }
                     });
                 } else {
