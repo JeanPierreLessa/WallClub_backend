@@ -369,61 +369,52 @@
                 loadingIcon.classList.add('d-none');
                 selectParcelas.disabled = false;
                 
-                if (data.sucesso && data.todas_bandeiras) {
-                    // Armazenar todas bandeiras
-                    window.todasBandeiras = data.todas_bandeiras;
-                    
-                    // Popular select de bandeiras com apenas as disponíveis
+                if (data.sucesso && data.opcoes && data.opcoes.length > 0) {
+                    // Popular select de bandeiras (fixo: apenas crédito no checkout)
                     const selectBandeira = document.getElementById('bandeira');
-                    selectBandeira.innerHTML = '';
+                    selectBandeira.innerHTML = `
+                        <option value="MASTERCARD">Mastercard</option>
+                        <option value="VISA">Visa</option>
+                        <option value="ELO">Elo</option>
+                    `;
                     
-                    const nomesBandeiras = {
-                        'MASTERCARD': 'Mastercard',
-                        'VISA': 'Visa',
-                        'ELO': 'Elo'
-                    };
+                    // Popular select de parcelas
+                    selectParcelas.innerHTML = '';
                     
-                    for (const bandeira in data.todas_bandeiras) {
+                    data.opcoes.forEach(opcao => {
                         const option = document.createElement('option');
-                        option.value = bandeira;
-                        option.textContent = nomesBandeiras[bandeira] || bandeira;
-                        selectBandeira.appendChild(option);
-                    }
-                    
-                    // Atualizar parcelas para primeira bandeira
-                    const primeiraBandeira = Object.keys(data.todas_bandeiras)[0];
-                    atualizarParcelasPorBandeira(primeiraBandeira);
-                    
-                    // Event listener para mudar bandeira (remover duplicados primeiro)
-                    // Clonar elemento para remover todos os listeners antigos
-                    const novoSelectBandeira = selectBandeira.cloneNode(true);
-                    selectBandeira.parentNode.replaceChild(novoSelectBandeira, selectBandeira);
-                    
-                    // Adicionar event listener ao novo elemento
-                    novoSelectBandeira.addEventListener('change', function() {
-                        console.log('Bandeira mudou para:', this.value);
-                        atualizarParcelasPorBandeira(this.value);
+                        option.value = opcao.parcelas;
+                        option.textContent = opcao.texto;
+                        option.dataset.valorTotal = opcao.valor_total;
+                        option.dataset.valorParcela = opcao.valor_parcela;
+                        option.dataset.cashbackTotal = opcao.cashback_total || 0;
+                        selectParcelas.appendChild(option);
                     });
                     
-                    // Garantir que valor_total está preenchido logo após carregar
-                    setTimeout(() => {
-                        const selectParcelas = document.getElementById('parcelas');
-                        if (selectParcelas.options.length > 0 && selectParcelas.selectedIndex >= 0) {
-                            const firstOption = selectParcelas.options[selectParcelas.selectedIndex];
-                            if (firstOption.dataset.valorTotal) {
-                                document.getElementById('valor_total').value = firstOption.dataset.valorTotal;
-                            }
+                    // Selecionar primeira opção e atualizar valor_total
+                    if (selectParcelas.options.length > 0) {
+                        selectParcelas.selectedIndex = 0;
+                        const firstOption = selectParcelas.options[0];
+                        document.getElementById('valor_total').value = firstOption.dataset.valorTotal;
+                    }
+                    
+                    // Event listener para atualizar valor_total quando mudar parcela
+                    selectParcelas.addEventListener('change', function() {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption && selectedOption.dataset.valorTotal) {
+                            document.getElementById('valor_total').value = selectedOption.dataset.valorTotal;
                         }
-                    }, 100);
+                    });
                 } else {
                     // Fallback: opções estáticas
                     selectParcelas.innerHTML = `
-                        <option value="1">1x de R$ ${CONFIG.valorOriginal.toFixed(2)}</option>
-                        <option value="2">2x de R$ ${(CONFIG.valorOriginal/2).toFixed(2)}</option>
-                        <option value="3">3x de R$ ${(CONFIG.valorOriginal/3).toFixed(2)}</option>
-                        <option value="6">6x de R$ ${(CONFIG.valorOriginal/6).toFixed(2)}</option>
-                        <option value="12">12x de R$ ${(CONFIG.valorOriginal/12).toFixed(2)}</option>
+                        <option value="1" data-valor-total="${CONFIG.valorOriginal}">1x de R$ ${CONFIG.valorOriginal.toFixed(2)}</option>
+                        <option value="2" data-valor-total="${CONFIG.valorOriginal}">2x de R$ ${(CONFIG.valorOriginal/2).toFixed(2)}</option>
+                        <option value="3" data-valor-total="${CONFIG.valorOriginal}">3x de R$ ${(CONFIG.valorOriginal/3).toFixed(2)}</option>
+                        <option value="6" data-valor-total="${CONFIG.valorOriginal}">6x de R$ ${(CONFIG.valorOriginal/6).toFixed(2)}</option>
+                        <option value="12" data-valor-total="${CONFIG.valorOriginal}">12x de R$ ${(CONFIG.valorOriginal/12).toFixed(2)}</option>
                     `;
+                    document.getElementById('valor_total').value = CONFIG.valorOriginal;
                 }
             })
             .catch(error => {
@@ -441,47 +432,6 @@
                 `;
             });
         }
-        
-        // Função para atualizar parcelas quando bandeira muda
-        function atualizarParcelasPorBandeira(bandeira) {
-            const selectParcelas = document.getElementById('parcelas');
-            const valorTotalInput = document.getElementById('valor_total');
-            
-            if (!window.todasBandeiras || !window.todasBandeiras[bandeira]) {
-                console.warn('Bandeira não encontrada:', bandeira);
-                return;
-            }
-            
-            // Limpar valor_total anterior
-            valorTotalInput.value = '';
-            
-            // Limpar e adicionar opções da bandeira selecionada
-            selectParcelas.innerHTML = '';
-            window.todasBandeiras[bandeira].forEach(opcao => {
-                const option = document.createElement('option');
-                option.value = opcao.parcelas;
-                option.textContent = opcao.texto;
-                option.dataset.valorTotal = opcao.valor_total;
-                selectParcelas.appendChild(option);
-            });
-            
-            // Definir automaticamente o valor_total da primeira opção
-            if (selectParcelas.options.length > 0) {
-                const firstOption = selectParcelas.options[0];
-                if (firstOption.dataset.valorTotal) {
-                    valorTotalInput.value = firstOption.dataset.valorTotal;
-                }
-            }
-        }
-        
-        // Preencher valor_total quando selecionar parcela
-        document.getElementById('parcelas').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const valorTotal = selectedOption.dataset.valorTotal;
-            if (valorTotal) {
-                document.getElementById('valor_total').value = valorTotal;
-            }
-        });
         
         // Máscaras para os campos
         document.getElementById('cpf').addEventListener('input', function(e) {

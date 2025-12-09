@@ -391,14 +391,15 @@ class ProcessarCheckoutView(APIView):
 
 
 class SimularParcelasView(APIView):
-    """API para simular parcelas usando CalculadoraDesconto"""
+    """API para simular parcelas usando lógica V2 (com cashback Wall + Loja)"""
     permission_classes = [AllowAny]  # Público - chamado pelo browser do cliente no checkout
     
     def post(self, request):
-        """Simula valores de parcelas para todas as bandeiras de cartão"""
+        """Simula valores de parcelas incluindo cashback (mesma lógica do POS V2)"""
         try:
             valor = request.data.get('valor')
             loja_id = request.data.get('loja_id')
+            cliente_id = request.data.get('cliente_id', 0)  # 0 se não identificado
             
             if not valor or not loja_id:
                 return Response({
@@ -409,115 +410,133 @@ class SimularParcelasView(APIView):
             # Converter valor para Decimal
             try:
                 from decimal import Decimal, ROUND_HALF_UP
-                valor = Decimal(str(valor)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                valor_original = Decimal(str(valor)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             except (ValueError, TypeError):
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Valor inválido'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Importar CalculadoraDesconto
+            # Importar serviços
             from parametros_wallclub.services import CalculadoraDesconto
+            from apps.cashback.services import CashbackService
             from datetime import datetime
             
             calculadora = CalculadoraDesconto()
-            
-            # Obter data atual no formato YYYY-MM-DD
             data_atual = datetime.now().strftime('%Y-%m-%d')
+            wall = 'S'  # Checkout sempre usa Wall
             
-            # Usar loja_id diretamente do request
-            id_loja = loja_id
+            # Buscar canal_id da loja
+            from wallclub_core.estr_organizacional.loja import Loja
+            loja = Loja.get_loja(loja_id)
+            canal_id = loja.canal_id if loja else 1
             
-            # Wall = 'S' para checkout (assumindo que checkout usa Wall)
-            wall = 'S'
+            # Simular apenas crédito (1x a 12x) para checkout
+            opcoes = []
             
-            # Definir parcelas a simular: TODAS de 1 a 12
-            opcoes_parcelas = list(range(1, 13))  # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            
-            # Bandeiras de cartão aceitas
-            bandeiras = [
-                {'nome': 'MASTERCARD'},
-                {'nome': 'VISA'},
-                {'nome': 'ELO'},
-            ]
-            
-            # Resultados por bandeira
-            resultados_bandeiras = {}
-            
-            for bandeira_info in bandeiras:
-                bandeira = bandeira_info['nome']
+            for num_parcelas in range(1, 13):
+                forma = "A VISTA" if num_parcelas == 1 else "PARCELADO SEM JUROS"
+                forma_key = "CREDIT_ONE_INSTALLMENT" if num_parcelas == 1 else "CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST"
                 
-                opcoes = []
+                # Calcular desconto Wall
+                valor_com_desconto = calculadora.calcular_desconto(
+                    valor_original=valor_original,
+                    data=data_atual,
+                    forma=forma,
+                    parcelas=num_parcelas,
+                    id_loja=loja_id,
+                    wall=wall
+                )
                 
-                for num_parcelas in opcoes_parcelas:
-                    # Usar mesma lógica do Portal de Vendas
-                    if num_parcelas == 1:
-                        forma = 'A VISTA'
-                    else:
-                        forma = 'PARCELADO SEM JUROS'
+                # FILTRO: Se calculadora retornar None, PULAR esta parcela
+                if valor_com_desconto is None:
+                    continue
+                
+                # Calcular valor da parcela
+                valor_parcela = valor_com_desconto / num_parcelas
+                
+                # Determinar descrição
+                if valor_com_desconto > valor_original:
+                    info_extra = " (c/encargos)"
+                elif valor_com_desconto < valor_original:
+                    info_extra = " (c/desconto)"
+                else:
+                    info_extra = " (s/juros)"
+                
+                # Calcular cashback Wall
+                valor_cashback_wall = Decimal('0')
+                try:
+                    from parametros_wallclub.models import Plano
+                    from parametros_wallclub.services import ParametrosService
                     
-                    # Calcular valor com desconto usando CalculadoraDesconto
-                    valor_calculado = calculadora.calcular_desconto(
-                        valor_original=valor,
-                        data=data_atual,
-                        forma=forma,
-                        parcelas=num_parcelas,
-                        id_loja=id_loja,
-                        wall=wall
+                    # Buscar plano
+                    if forma == 'A VISTA':
+                        plano = Plano.objects.filter(nome='A VISTA', prazo_dias=1, bandeira='MASTERCARD').first()
+                    else:  # PARCELADO SEM JUROS
+                        plano = Plano.objects.filter(nome='PARCELADO SEM JUROS', prazo_dias=num_parcelas, bandeira='MASTERCARD').first()
+                    
+                    if plano:
+                        # Buscar configuração wall='C' para cashback
+                        config_cashback = ParametrosService.get_configuracao_ativa(
+                            loja_id=loja_id,
+                            id_plano=plano.id,
+                            wall='C',
+                            data_referencia=datetime.now()
+                        )
+                        
+                        if config_cashback:
+                            param_7 = getattr(config_cashback, 'parametro_loja_7', None)
+                            if param_7 and param_7 > 0:
+                                valor_cashback_wall = valor_com_desconto * param_7
+                except Exception as e:
+                    registrar_log("checkout.link_pagamento_web", f"Erro ao calcular cashback Wall: {str(e)}", nivel='WARNING')
+                
+                # Simular cashback loja
+                valor_cashback_loja = Decimal('0')
+                try:
+                    resultado_loja = CashbackService.simular_cashback_loja(
+                        loja_id=loja_id,
+                        cliente_id=cliente_id,
+                        canal_id=canal_id,
+                        valor_transacao=valor_com_desconto,
+                        forma_pagamento='CREDITO'
                     )
                     
-                    # FILTRO: Se calculadora retornar None, PULAR esta parcela
-                    if valor_calculado is None:
-                        continue
-                    
-                    # Calcular valor da parcela
-                    valor_parcela = valor_calculado / num_parcelas
-                    
-                    # Determinar descrição baseada na comparação com valor original (mesma lógica do Portal)
-                    if valor_calculado > valor:
-                        info_extra = " (c/encargos)"
-                    elif valor_calculado < valor:
-                        info_extra = " (c/desconto)"
-                    else:
-                        info_extra = " (s/juros)"
-                    
-                    # Formato: 3x de R$ 30,00 (s/juros) - Valor Total: R$ 90,00 (cashback R$ XX,XX)
-                    texto = f"{num_parcelas}x de R$ {valor_parcela:.2f}{info_extra} - Valor Total: R$ {valor_calculado:.2f}"
-                    
-                    # Cashback sempre 0 por enquanto (não implementado)
-                    cashback = 0
-                    if cashback > 0:
-                        texto += f" (cashback R$ {cashback:.2f})"
-                    
-                    opcoes.append({
-                        'parcelas': num_parcelas,
-                        'valor_total': round(valor_calculado, 2),
-                        'valor_parcela': round(valor_parcela, 2),
-                        'cashback': cashback,
-                        'texto': texto
-                    })
+                    if resultado_loja and resultado_loja.get('aplicavel'):
+                        valor_cashback_loja = Decimal(str(resultado_loja['valor']))
+                except Exception as e:
+                    registrar_log("checkout.link_pagamento_web", f"Erro ao simular cashback loja: {str(e)}", nivel='WARNING')
                 
-                # Só adicionar bandeira se tiver pelo menos 1 opção válida
-                if opcoes:
-                    resultados_bandeiras[bandeira] = opcoes
-            
-            # Por padrão, retornar a primeira bandeira disponível
-            opcoes_padrao = []
-            if resultados_bandeiras:
-                primeira_bandeira = list(resultados_bandeiras.keys())[0]
-                opcoes_padrao = resultados_bandeiras[primeira_bandeira]
+                # Cashback total
+                cashback_total = valor_cashback_wall + valor_cashback_loja
+                
+                # Formato: 3x de R$ 30,00 (s/juros) - Valor Total: R$ 90,00 (cashback R$ XX,XX)
+                texto = f"{num_parcelas}x de R$ {float(valor_parcela):.2f}{info_extra} - Valor Total: R$ {float(valor_com_desconto):.2f}"
+                
+                if cashback_total > 0:
+                    texto += f" (cashback R$ {float(cashback_total):.2f})"
+                
+                opcoes.append({
+                    'parcelas': num_parcelas,
+                    'valor_total': float(valor_com_desconto),
+                    'valor_parcela': float(valor_parcela),
+                    'cashback_wall': float(valor_cashback_wall),
+                    'cashback_loja': float(valor_cashback_loja),
+                    'cashback_total': float(cashback_total),
+                    'texto': texto
+                })
             
             registrar_log("checkout.link_pagamento_web", 
-                         f"Simulação concluída - Valor: {valor}, Loja: {id_loja}")
+                         f"Simulação V2 concluída - Valor: {valor}, Loja: {loja_id}, Opções: {len(opcoes)}")
             
             return Response({
                 'sucesso': True,
-                'opcoes': opcoes_padrao,  # Retorna MASTERCARD por padrão
-                'todas_bandeiras': resultados_bandeiras  # Retorna todas para escolha futura
+                'opcoes': opcoes
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
-            registrar_log("checkout.link_pagamento_web", f"Erro: {str(e)}", nivel='ERROR')
+            import traceback
+            registrar_log("checkout.link_pagamento_web", f"Erro: {str(e)}\n{traceback.format_exc()}", nivel='ERROR')
             return Response({
                 'sucesso': False,
                 'mensagem': 'Erro ao simular parcelas'
