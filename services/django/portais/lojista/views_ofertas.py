@@ -13,34 +13,31 @@ from wallclub_core.integracoes.ofertas_api_client import ofertas_api
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
-class OfertasListView(LojistaAuthMixin, View):
+class OfertasListView(LojistaAuthMixin, LojistaDataMixin, View):
     """Lista ofertas da loja/grupo econômico do usuário"""
 
     def get(self, request):
         try:
             from apps.ofertas.services import OfertaService
 
-            # Buscar canal_id e loja_id da sessão
+            # Buscar canal_id da sessão
             canal_id = request.session.get('canal_id') or request.session.get('portal_canal_id')
-            loja_id = request.session.get('loja_id') or request.session.get('portal_loja_id')
-            tipo_usuario = request.session.get('tipo_usuario_wall')
 
             if not canal_id:
                 messages.error(request, 'Canal não identificado')
                 return redirect('lojista:home')
 
+            # Buscar lojas acessíveis usando mixin
+            lojas_acessiveis = self.get_lojas_acessiveis()
+            lojas_ids = [loja.id for loja in lojas_acessiveis]
+
             # Buscar ofertas do canal via service
             todas_ofertas = OfertaService.listar_todas_ofertas()
             
-            # Filtrar baseado no tipo de usuário
-            if tipo_usuario == 'grupo_economico':
-                # Grupo econômico: vê ofertas de todas as lojas do canal + ofertas globais (NULL)
-                ofertas = [o for o in todas_ofertas if o.canal_id == canal_id]
-            else:
-                # Lojista: vê apenas ofertas da sua loja + ofertas globais (NULL)
-                ofertas = [o for o in todas_ofertas if o.canal_id == canal_id and (o.loja_id == loja_id or o.loja_id is None)]
+            # Filtrar: ofertas das lojas acessíveis OU ofertas globais (loja_id=NULL)
+            ofertas = [o for o in todas_ofertas if o.canal_id == canal_id and (o.loja_id in lojas_ids or o.loja_id is None)]
             
-            registrar_log('portais.lojista', f'DEBUG: Filtrando ofertas - canal_id={canal_id}, loja_id={loja_id}, tipo={tipo_usuario}, total={len(ofertas)}')
+            registrar_log('portais.lojista', f'DEBUG: Filtrando ofertas - canal_id={canal_id}, lojas_acessiveis={lojas_ids}, total={len(ofertas)}')
 
             # Buscar total de disparos por oferta via service
             ofertas_com_disparos = []
