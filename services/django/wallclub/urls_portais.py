@@ -18,6 +18,9 @@ urlpatterns = [
     path('portal_lojista/<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),
     path('portal_corporativo/', include('portais.corporativo.urls')),
     path('portal_vendas/', include('portais.vendas.urls')),
+    
+    # APIs internas (chamadas entre containers)
+    path('api/cupom/', include('apps.cupom.urls')),  # Validação de cupom
 ]
 
 # APIs Internas (comunicação entre containers)
