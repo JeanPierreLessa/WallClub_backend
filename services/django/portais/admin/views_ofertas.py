@@ -59,7 +59,7 @@ def ofertas_create(request):
         
         # Buscar lojas
         from wallclub_core.estr_organizacional.loja import Loja
-        lojas = Loja.listar_lojas_ativas()
+        lojas = Loja.listar_todas()
         
         # Converter para objetos
         class GrupoObj:
@@ -241,7 +241,7 @@ def ofertas_edit(request, oferta_id):
             
             # Buscar lojas
             from wallclub_core.estr_organizacional.loja import Loja
-            lojas = Loja.listar_lojas_ativas()
+            lojas = Loja.listar_todas()
             
             class GrupoObj:
                 def __init__(self, data):

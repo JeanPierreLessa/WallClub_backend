@@ -30,10 +30,13 @@
 <div class="container-fluid">
     <!-- Informações da Oferta -->
     <div class="card mb-3">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
                 <i class="fas fa-gift me-2"></i>Detalhes da Oferta
             </h5>
+            <a href="{% url 'lojista:ofertas_list' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Voltar
+            </a>
         </div>
         <div class="card-body">
             <div class="row">
