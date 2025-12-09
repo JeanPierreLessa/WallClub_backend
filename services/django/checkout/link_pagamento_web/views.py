@@ -596,13 +596,15 @@ class ValidarCupomView(APIView):
             from checkout.models import CheckoutCliente
             from django.core.exceptions import ValidationError
             from decimal import Decimal
-            from wallclub_core.estr_organizacional.loja import Loja
+            from django.apps import apps
             
             cupom_service = CupomService()
             
-            # Buscar loja
-            loja = Loja.get_loja(loja_id)
-            if not loja:
+            # Buscar loja usando Django ORM
+            Loja = apps.get_model('estr_organizacional', 'Loja')
+            try:
+                loja = Loja.objects.get(id=loja_id)
+            except Loja.DoesNotExist:
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Loja não encontrada'
@@ -650,10 +652,12 @@ class ValidarCupomView(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            registrar_log("checkout.link_pagamento_web", f"Erro ao validar cupom: {str(e)}", nivel='ERROR')
+            import traceback
+            erro_completo = traceback.format_exc()
+            registrar_log("checkout.link_pagamento_web", f"Erro ao validar cupom: {str(e)}\n{erro_completo}", nivel='ERROR')
             return Response({
                 'sucesso': False,
-                'mensagem': 'Erro ao validar cupom'
+                'mensagem': f'Erro ao validar cupom: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
