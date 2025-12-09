@@ -855,17 +855,19 @@ class CheckoutService:
 
                     parcelas_resultado['CREDITO_1X'] = {
                         'num_parcelas': 1,
-                        'valor_original': f"{valor:.2f}",
-                        'valor_total': f"{valor_avista:.2f}",
-                        'valor_parcela': f"{valor_avista:.2f}",
+                        'valor_original': float(valor),
+                        'valor_total': float(valor_avista),
+                        'valor_parcela': float(valor_avista),
+                        'valor_desconto': float(valor_avista),  # Alias para compatibilidade
                         'descricao': descricao,
-                        'desconto_wall': f"{(valor - valor_avista):.2f}",
+                        'desconto_wall': float(valor - valor_avista),
                         'cashback_wall': {
-                            'valor': f"{cashback_wall_valor:.2f}",
-                            'percentual': f"{cashback_wall_percentual:.2f}"
+                            'valor': float(cashback_wall_valor),
+                            'percentual': float(cashback_wall_percentual)
                         },
                         'cashback_loja': cashback_loja_info,
-                        'cashback_total': f"{cashback_total:.2f}"
+                        'cashback': float(cashback_total),  # Alias para compatibilidade
+                        'cashback_total': float(cashback_total)
                     }
             except Exception as e:
                 registrar_log('checkout', f"Erro ao calcular CRÉDITO 1x: {str(e)}", nivel='WARNING')
@@ -940,17 +942,19 @@ class CheckoutService:
 
                         parcelas_resultado[f'CREDITO_{num_parcelas}X'] = {
                             'num_parcelas': num_parcelas,
-                            'valor_original': f"{valor:.2f}",
-                            'valor_total': f"{valor_parcelado:.2f}",
-                            'valor_parcela': f"{valor_parcela:.2f}",
+                            'valor_original': float(valor),
+                            'valor_total': float(valor_parcelado),
+                            'valor_parcela': float(valor_parcela),
+                            'valor_desconto': float(valor_parcelado),  # Alias para compatibilidade
                             'descricao': descricao,
-                            'desconto_wall': f"{(valor - valor_parcelado):.2f}",
+                            'desconto_wall': float(valor - valor_parcelado),
                             'cashback_wall': {
-                                'valor': f"{cashback_wall_valor:.2f}",
-                                'percentual': f"{cashback_wall_percentual:.2f}"
+                                'valor': float(cashback_wall_valor),
+                                'percentual': float(cashback_wall_percentual)
                             },
                             'cashback_loja': cashback_loja_info,
-                            'cashback_total': f"{cashback_total:.2f}"
+                            'cashback': float(cashback_total),  # Alias para compatibilidade
+                            'cashback_total': float(cashback_total)
                         }
                 except Exception as e:
                     registrar_log('checkout', f"Erro ao calcular {num_parcelas}x: {str(e)}", nivel='WARNING')
