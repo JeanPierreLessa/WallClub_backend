@@ -600,8 +600,12 @@ class ValidarCupomView(APIView):
             portais_url = settings.PORTAIS_INTERNAL_URL
             
             try:
+                url_completa = f'{portais_url}/api/cupom/validar/'
+                registrar_log("checkout.link_pagamento_web", 
+                             f"Chamando Portais: {url_completa}", nivel='INFO')
+                
                 response = requests.post(
-                    f'{portais_url}/api/cupom/validar/',
+                    url_completa,
                     json={
                         'cupom_codigo': cupom_codigo,
                         'loja_id': loja_id,
@@ -611,12 +615,26 @@ class ValidarCupomView(APIView):
                     timeout=5
                 )
                 
+                registrar_log("checkout.link_pagamento_web", 
+                             f"Resposta Portais - Status: {response.status_code}, Content-Type: {response.headers.get('Content-Type')}", 
+                             nivel='INFO')
+                
                 if response.status_code == 200:
                     data = response.json()
                     return Response(data, status=status.HTTP_200_OK)
                 else:
-                    data = response.json()
-                    return Response(data, status=response.status_code)
+                    # Tentar parsear JSON, se falhar retornar texto
+                    try:
+                        data = response.json()
+                        return Response(data, status=response.status_code)
+                    except:
+                        registrar_log("checkout.link_pagamento_web", 
+                                     f"Resposta não-JSON do Portais: {response.text[:500]}", 
+                                     nivel='ERROR')
+                        return Response({
+                            'sucesso': False,
+                            'mensagem': 'Erro ao validar cupom'
+                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                     
             except requests.exceptions.RequestException as e:
                 registrar_log("checkout.link_pagamento_web", 
