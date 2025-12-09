@@ -39,6 +39,12 @@ def ofertas_list(request):
                 oferta_data['vigencia_inicio_formatted'] = oferta_data['vigencia_inicio'][:16]
             if 'vigencia_fim' in oferta_data and oferta_data['vigencia_fim']:
                 oferta_data['vigencia_fim_formatted'] = oferta_data['vigencia_fim'][:16]
+            if 'data_agendamento_disparo' in oferta_data and oferta_data['data_agendamento_disparo']:
+                oferta_data['data_agendamento_disparo'] = oferta_data['data_agendamento_disparo'][:16]
+            
+            # Garantir que disparada existe
+            if 'disparada' not in oferta_data:
+                oferta_data['disparada'] = False
             
             oferta_obj = OfertaObj(oferta_data)
             ofertas_com_disparos.append({

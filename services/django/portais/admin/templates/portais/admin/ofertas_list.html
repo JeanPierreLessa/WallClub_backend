@@ -116,18 +116,11 @@
                                 </td>
                                 <td class="align-middle text-center">
                                     <div class="d-inline-flex align-items-center gap-1">
+                                        {% if not item.oferta.disparada %}
                                         <a href="{% url 'portais_admin:ofertas_edit' item.oferta.id %}" 
                                            class="btn btn-sm btn-primary" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        {% if item.oferta.ativo %}
-                                        <button type="button" 
-                                                class="btn btn-sm btn-success btn-disparar" 
-                                                data-oferta-id="{{ item.oferta.id }}"
-                                                data-oferta-titulo="{{ item.oferta.titulo|escapejs }}"
-                                                title="Disparar Push">
-                                            <i class="fas fa-paper-plane"></i>
-                                        </button>
                                         {% endif %}
                                         <a href="{% url 'portais_admin:ofertas_historico' item.oferta.id %}" 
                                            class="btn btn-sm btn-info" title="Histórico">
