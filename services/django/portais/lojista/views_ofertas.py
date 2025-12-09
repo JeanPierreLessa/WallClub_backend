@@ -29,7 +29,7 @@ class OfertasListView(LojistaAuthMixin, LojistaDataMixin, View):
 
             # Buscar lojas acessíveis usando mixin
             lojas_acessiveis = self.get_lojas_acessiveis()
-            lojas_ids = [loja.id for loja in lojas_acessiveis]
+            lojas_ids = [loja['id'] if isinstance(loja, dict) else loja.id for loja in lojas_acessiveis]
 
             # Buscar ofertas do canal via service
             todas_ofertas = OfertaService.listar_todas_ofertas()
