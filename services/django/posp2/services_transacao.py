@@ -849,10 +849,11 @@ class TRDataService:
             # $encargos = abs($valores[88] + $valores[94]["0"]);
             valores_94 = valores_calculados.get(94, {})
             if isinstance(valores_94, dict):
-                valores_94_0 = valores_94.get('0', 0)
+                valores_94_0 = safe_float_convert(valores_94.get('0', 0))
             else:
                 valores_94_0 = 0
-            encargos = abs((valores_calculados.get(88) or 0) + valores_94_0)
+            valores_88 = safe_float_convert(valores_calculados.get(88) or 0)
+            encargos = abs(valores_88 + valores_94_0)
             
             # $vparcela = $valores[20];
             vparcela = valores_calculados.get(20, 0)

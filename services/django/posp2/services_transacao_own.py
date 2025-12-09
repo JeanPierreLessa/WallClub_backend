@@ -773,10 +773,11 @@ class TRDataOwnService:
         # === CÁLCULO TARIFAS/ENCARGOS SEGUINDO PHP ===
         valores_94 = valores_calculados.get(94, {})
         if isinstance(valores_94, dict):
-            valores_94_0 = valores_94.get('0', 0)
+            valores_94_0 = float(valores_94.get('0', 0))
         else:
             valores_94_0 = 0
-        encargos = abs((valores_calculados.get(88) or 0) + valores_94_0)
+        valores_88 = float(valores_calculados.get(88) or 0)
+        encargos = abs(valores_88 + valores_94_0)
         
         # vparcela
         vparcela = valores_calculados.get(20, 0)
