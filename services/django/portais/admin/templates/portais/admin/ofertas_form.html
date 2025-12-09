@@ -99,7 +99,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="vigencia_inicio" class="form-label">
                                 Início da Vigência *
                             </label>
@@ -111,7 +111,7 @@
                                    required>
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="vigencia_fim" class="form-label">
                                 Fim da Vigência *
                             </label>
@@ -122,24 +122,54 @@
                                    value="{{ vigencia_fim_formatted|default:'' }}"
                                    required>
                         </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="data_agendamento_disparo" class="form-label">
+                                Data/Hora do Disparo *
+                            </label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="data_agendamento_disparo" 
+                                   name="data_agendamento_disparo" 
+                                   value="{{ data_agendamento_disparo_formatted|default:'' }}"
+                                   required>
+                            <small class="form-text text-muted">Push será enviado automaticamente nesta data/hora</small>
+                        </div>
                     </div>
 
-                    {% if not oferta %}
-                    <div class="mb-3">
-                        <label for="canal_id" class="form-label">
-                            Canal *
-                        </label>
-                        <select class="form-select" id="canal_id" name="canal_id" required>
-                            <option value="">Selecione o canal</option>
-                            {% for canal in canais %}
-                            <option value="{{ canal.id }}">
-                                {{ canal.nome }} {% if canal.marca %}({{ canal.marca }}){% endif %}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <small class="form-text text-muted">Selecione o canal para esta oferta</small>
+                    <div class="row">
+                        {% if not oferta %}
+                        <div class="col-md-6 mb-3">
+                            <label for="canal_id" class="form-label">
+                                Canal *
+                            </label>
+                            <select class="form-select" id="canal_id" name="canal_id" required>
+                                <option value="">Selecione o canal</option>
+                                {% for canal in canais %}
+                                <option value="{{ canal.id }}">
+                                    {{ canal.nome }} {% if canal.marca %}({{ canal.marca }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Selecione o canal para esta oferta</small>
+                        </div>
+                        {% endif %}
+
+                        <div class="col-md-6 mb-3">
+                            <label for="loja_id" class="form-label">
+                                Loja Dona da Oferta *
+                            </label>
+                            <select class="form-select" id="loja_id" name="loja_id" required>
+                                <option value="">Selecione a loja...</option>
+                                {% for loja in lojas %}
+                                <option value="{{ loja.id }}" {% if oferta and oferta.loja_id == loja.id %}selected{% endif %}>
+                                    {{ loja.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Esta será a loja proprietária da oferta</small>
+                        </div>
                     </div>
-                    {% endif %}
                 </div>
 
                 <div class="form-section mt-3">

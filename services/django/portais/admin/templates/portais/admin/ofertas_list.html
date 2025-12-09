@@ -39,11 +39,13 @@
                                 <th style="width: 60px;">ID</th>
                                 <th>Título</th>
                                 <th>Canal</th>
+                                <th>Loja</th>
                                 <th>Vigência</th>
+                                <th>Disparo Agendado</th>
+                                <th>Status Disparo</th>
                                 <th>Segmentação</th>
-                                <th>Disparos</th>
                                 <th>Status</th>
-                                <th style="width: 180px;">Ações</th>
+                                <th style="width: 150px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -61,6 +63,9 @@
                                     <span class="badge bg-info">Canal {{ item.oferta.canal_id }}</span>
                                 </td>
                                 <td class="align-middle">
+                                    <small>Loja {{ item.oferta.loja_id|default:"-" }}</small>
+                                </td>
+                                <td class="align-middle">
                                     <small>
                                         <i class="fas fa-calendar-alt me-1"></i>
                                         {% if item.oferta.vigencia_inicio_formatted %}
@@ -71,31 +76,31 @@
                                         {% endif %}
                                     </small>
                                 </td>
+                                <td class="align-middle text-center">
+                                    {% if item.oferta.data_agendamento_disparo %}
+                                    <small>
+                                        <i class="fas fa-clock"></i> {{ item.oferta.data_agendamento_disparo|slice:":10" }}<br>{{ item.oferta.data_agendamento_disparo|slice:"11:16" }}
+                                    </small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle text-center">
+                                    {% if item.oferta.disparada %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> Disparada</span>
+                                    {% else %}
+                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> Agendada</span>
+                                    {% endif %}
+                                </td>
                                 <td class="align-middle">
                                     {% if item.oferta.tipo_segmentacao == 'todos_canal' %}
                                         <span class="badge bg-primary">
-                                            <i class="fas fa-users me-1"></i>Todos do Canal
+                                            <i class="fas fa-users me-1"></i>Todos
                                         </span>
                                     {% else %}
                                         <span class="badge bg-warning">
                                             <i class="fas fa-user-friends me-1"></i>Grupo {{ item.oferta.grupo_id }}
                                         </span>
-                                    {% endif %}
-                                </td>
-                                <td class="align-middle text-center">
-                                    {% if item.total_disparos > 0 %}
-                                        <a href="{% url 'portais_admin:ofertas_historico' item.oferta.id %}" 
-                                           class="badge bg-info" style="text-decoration: none;">
-                                            <i class="fas fa-history me-1"></i>{{ item.total_disparos }}
-                                        </a>
-                                        {% if item.ultimo_disparo %}
-                                        <br>
-                                        <small class="text-muted">
-                                            {{ item.ultimo_disparo.data_disparo|date:"d/m H:i" }}
-                                        </small>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td class="align-middle">

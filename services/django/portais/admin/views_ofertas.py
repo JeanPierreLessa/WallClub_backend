@@ -70,6 +70,10 @@ def ofertas_create(request):
         response = ofertas_api.listar_grupos()
         grupos = response.get('grupos', []) if response.get('sucesso') else []
         
+        # Buscar lojas
+        from wallclub_core.estr_organizacional.loja import Loja
+        lojas = Loja.listar_lojas_ativas()
+        
         # Converter para objetos
         class GrupoObj:
             def __init__(self, data):
@@ -80,7 +84,8 @@ def ofertas_create(request):
         
         context = {
             'canais': canais,
-            'grupos': grupos
+            'grupos': grupos,
+            'lojas': lojas
         }
         return render(request, 'portais/admin/ofertas_form.html', context)
     
@@ -113,22 +118,29 @@ def ofertas_create(request):
             
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')
+            data_agendamento_disparo_str = request.POST.get('data_agendamento_disparo')
             canal_id = int(request.POST.get('canal_id'))
+            loja_id = request.POST.get('loja_id')
             tipo_segmentacao = request.POST.get('tipo_segmentacao', 'todos_canal')
             grupo_id = request.POST.get('grupo_id')
             ativo = request.POST.get('ativo') == 'on'
             
             # Validações básicas
-            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str or not canal_id:
+            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str or not data_agendamento_disparo_str or not canal_id or not loja_id:
                 messages.error(request, 'Preencha todos os campos obrigatórios')
                 return redirect('portais_admin:ofertas_create')
             
             # Converter datas
             vigencia_inicio = datetime.strptime(vigencia_inicio_str, '%Y-%m-%dT%H:%M')
             vigencia_fim = datetime.strptime(vigencia_fim_str, '%Y-%m-%dT%H:%M')
+            data_agendamento_disparo = datetime.strptime(data_agendamento_disparo_str, '%Y-%m-%dT%H:%M')
             
             if vigencia_fim <= vigencia_inicio:
                 messages.error(request, 'Data fim deve ser posterior à data início')
+                return redirect('portais_admin:ofertas_create')
+            
+            if data_agendamento_disparo < vigencia_inicio:
+                messages.error(request, 'Data de disparo deve ser igual ou posterior ao início da vigência')
                 return redirect('portais_admin:ofertas_create')
             
             # Validar segmentação
@@ -146,7 +158,9 @@ def ofertas_create(request):
                 'imagem_url': imagem_url,
                 'vigencia_inicio': vigencia_inicio.isoformat(),
                 'vigencia_fim': vigencia_fim.isoformat(),
+                'data_agendamento_disparo': data_agendamento_disparo.isoformat(),
                 'canal_id': canal_id,
+                'loja_id': int(loja_id),
                 'tipo_segmentacao': tipo_segmentacao,
                 'grupo_id': int(grupo_id) if grupo_id else None,
                 'usuario_criador_id': usuario_id,
@@ -229,10 +243,18 @@ def ofertas_edit(request, oferta_id):
         if oferta.vigencia_fim:
             vigencia_fim_formatted = oferta.vigencia_fim[:16]
         
+        data_agendamento_disparo_formatted = None
+        if hasattr(oferta, 'data_agendamento_disparo') and oferta.data_agendamento_disparo:
+            data_agendamento_disparo_formatted = oferta.data_agendamento_disparo[:16]
+        
         if request.method == 'GET':
             # Buscar grupos via API
             grupos_response = ofertas_api.listar_grupos()
             grupos = grupos_response.get('grupos', []) if grupos_response.get('sucesso') else []
+            
+            # Buscar lojas
+            from wallclub_core.estr_organizacional.loja import Loja
+            lojas = Loja.listar_lojas_ativas()
             
             class GrupoObj:
                 def __init__(self, data):
@@ -244,8 +266,10 @@ def ofertas_edit(request, oferta_id):
             context = {
                 'oferta': oferta,
                 'grupos': grupos,
+                'lojas': lojas,
                 'vigencia_inicio_formatted': vigencia_inicio_formatted,
-                'vigencia_fim_formatted': vigencia_fim_formatted
+                'vigencia_fim_formatted': vigencia_fim_formatted,
+                'data_agendamento_disparo_formatted': data_agendamento_disparo_formatted
             }
             return render(request, 'portais/admin/ofertas_form.html', context)
         
@@ -277,21 +301,28 @@ def ofertas_edit(request, oferta_id):
             
             vigencia_inicio_str = request.POST.get('vigencia_inicio')
             vigencia_fim_str = request.POST.get('vigencia_fim')
+            data_agendamento_disparo_str = request.POST.get('data_agendamento_disparo')
+            loja_id = request.POST.get('loja_id')
             tipo_segmentacao = request.POST.get('tipo_segmentacao', 'todos_canal')
             grupo_id = request.POST.get('grupo_id')
             ativo = request.POST.get('ativo') == 'on'
             
             # Validações
-            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str:
+            if not titulo or not texto_push or not vigencia_inicio_str or not vigencia_fim_str or not data_agendamento_disparo_str or not loja_id:
                 messages.error(request, 'Preencha todos os campos obrigatórios')
                 return redirect('portais_admin:ofertas_edit', oferta_id=oferta_id)
             
             # Converter datas
             vigencia_inicio = datetime.strptime(vigencia_inicio_str, '%Y-%m-%dT%H:%M')
             vigencia_fim = datetime.strptime(vigencia_fim_str, '%Y-%m-%dT%H:%M')
+            data_agendamento_disparo = datetime.strptime(data_agendamento_disparo_str, '%Y-%m-%dT%H:%M')
             
             if vigencia_fim <= vigencia_inicio:
                 messages.error(request, 'Data fim deve ser posterior à data início')
+                return redirect('portais_admin:ofertas_edit', oferta_id=oferta_id)
+            
+            if data_agendamento_disparo < vigencia_inicio:
+                messages.error(request, 'Data de disparo deve ser igual ou posterior ao início da vigência')
                 return redirect('portais_admin:ofertas_edit', oferta_id=oferta_id)
             
             if tipo_segmentacao == 'grupo_customizado' and not grupo_id:
@@ -306,6 +337,8 @@ def ofertas_edit(request, oferta_id):
                 'imagem_url': imagem_url,
                 'vigencia_inicio': vigencia_inicio.isoformat(),
                 'vigencia_fim': vigencia_fim.isoformat(),
+                'data_agendamento_disparo': data_agendamento_disparo.isoformat(),
+                'loja_id': int(loja_id),
                 'tipo_segmentacao': tipo_segmentacao,
                 'grupo_id': int(grupo_id) if grupo_id else None,
                 'ativo': ativo

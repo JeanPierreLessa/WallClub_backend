@@ -525,6 +525,7 @@ docker-compose logs -f riskengine
 - Firebase: `{"tipo": "oferta", "oferta_id": "X"}`
 - APN: fallback produção→sandbox
 - Templates dinâmicos (BD)
+- **Disparo automático agendado** (Celery task a cada 5 min)
 
 **APIs:**
 - `/ofertas/lista_ofertas/` - Com segmentação
@@ -532,7 +533,7 @@ docker-compose logs -f riskengine
 
 **Portais:**
 - Admin: CRUD + grupos + disparo
-- Lojista: CRUD filtrado por canal
+- Lojista: CRUD filtrado por canal + agendamento automático
 
 ### 3. Autorização Uso Saldo (Wall Cashback)
 
@@ -3076,13 +3077,15 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
 
 ### Status Atual (08/12/2025)
 
-**Ofertas:** ✅ Implementado
+**Ofertas:** ✅ Em produção
 - 5 tabelas criadas (ofertas, grupos, disparos, envios)
-- Portal Lojista com menu ativo
+- Portal Lojista com CRUD completo
 - Escopo: loja específica ou grupo econômico
 - Segmentação: todos do canal ou grupo customizado
 - Push notifications via Firebase/APN
 - Histórico de disparos com métricas
+- **Disparo automático agendado** (Celery task a cada 5 min)
+- Campos: `data_agendamento_disparo`, `disparada`
 
 **Cashback:** ✅ Em produção
 - Sistema centralizado (Wall + Loja)
@@ -3093,11 +3096,6 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
 - Compras informativas (tipo COMPRA_CARTAO)
 
 ### Pendências
-
-**Ofertas:**
-- Testes em produção
-- Validação de disparos em massa
-- Métricas de conversão
 
 **Conta Digital:**
 - Integrar compras informativas no POS Pinbank

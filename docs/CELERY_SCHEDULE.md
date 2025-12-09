@@ -51,6 +51,18 @@ Documento atualizado em: 2025-12-09
 - **Expira em:** 1 hora
 - **O que faz:** Reseta `gasto_mes_atual` das regras de cashback de loja que possuem orçamento mensal
 
+### 🎁 Ofertas
+
+#### 7. `processar-ofertas-agendadas`
+- **Task:** `apps.ofertas.processar_ofertas_agendadas`
+- **Agendamento:** A cada 5 minutos
+- **Expira em:** 5 minutos
+- **O que faz:** Processa ofertas com disparo automático agendado
+  - Busca ofertas com `data_agendamento_disparo <= agora`, `disparada=False`, `ativo=True`
+  - Dispara push notification automaticamente
+  - Marca oferta como `disparada=True`
+  - Cria registros em `oferta_disparos` e `oferta_envios`
+
 ---
 
 ## Tasks Definidas mas NÃO Agendadas
@@ -79,8 +91,8 @@ Documento atualizado em: 2025-12-09
 
 ## Resumo
 
-- **Total de tasks agendadas:** 6
-- **Total de tasks definidas:** 10+
+- **Total de tasks agendadas:** 7
+- **Total de tasks definidas:** 11+
 - **Broker:** Redis
 - **Containers:**
   - `wallclub-celery-worker` - Executa as tasks
