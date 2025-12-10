@@ -2,7 +2,7 @@
 
 **Objetivo:** Eliminar duplicação de linhas para transações parceladas e melhorar estrutura da base de gestão.
 
-**Status:** Em Planejamento  
+**Status:** Em Planejamento
 **Data Início:** 10/12/2024
 
 ---
@@ -41,14 +41,19 @@ amount            -- Igual a originalAmount
 ### 2. Controle de Carga Paralelo
 
 **Problema:** `pinbankExtratoPOS.lido` controla processo atual  
-**Solução:** Adicionar coluna `lido_unificado` para controle paralelo
+**Solução:** Adicionar coluna `processado` para controle paralelo
 
 ```sql
-ALTER TABLE pinbankExtratoPOS ADD COLUMN lido_unificado TINYINT DEFAULT 0;
-ALTER TABLE ownExtratoTransacoes ADD COLUMN lido_unificado TINYINT DEFAULT 0;
+-- Pinbank (✅ EXECUTADO em 10/12/2024)
+ALTER TABLE pinbankExtratoPOS ADD COLUMN processado TINYINT DEFAULT 0 after Lido;
+
+-- Own (campo já existe e está em uso - não alterar)
+-- Campo processado já controla se transação foi processada para base gestão
 ```
 
 **Benefício:** Validar cargas em paralelo sem impactar processo atual.
+
+**Escopo Inicial:** Focar apenas em **Pinbank** (produção). Own será ajustado depois (não está em produção).
 
 ---
 
@@ -78,32 +83,33 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 ## 🔧 ETAPAS DE EXECUÇÃO
 
-### FASE 1: Preparação (1-2 dias)
-- [ ] 1.1. Criar coluna `lido_unificado` em `pinbankExtratoPOS`
-- [ ] 1.2. Criar coluna `lido_unificado` em `ownExtratoTransacoes`
-- [ ] 1.3. Analisar payload POS para nomenclatura correta
-- [ ] 1.4. Definir estrutura final de `base_transacoes_unificadas`
-- [ ] 1.5. Criar script SQL de criação da tabela
+### FASE 1: Preparação - Pinbank (1-2 dias)
+- [x] 1.1. Criar coluna `processado` em `pinbankExtratoPOS` ✅
+- [ ] 1.2. Analisar payload POS para nomenclatura correta
+- [ ] 1.3. Definir estrutura final de `base_transacoes_unificadas`
+- [ ] 1.4. Criar script SQL de criação da tabela
 
-### FASE 2: Implementação Cargas (3-5 dias)
+### FASE 2: Implementação Cargas - Pinbank (3-5 dias)
 - [ ] 2.1. Refatorar `services_carga_base_gestao_pos.py`
   - Agrupar por NSU (1 linha por transação)
-  - Usar `lido_unificado` para controle
-  - Popular campos novos
-- [ ] 2.2. Refatorar `services_carga_base_gestao_own.py`
+  - Usar `processado` para controle
+  - Popular campos novos (card_number, authorization_code, amount, valor_cashback)
+- [ ] 2.2. Refatorar `services_carga_checkout.py`
   - Agrupar por NSU
-  - Usar `lido_unificado` para controle
-  - Popular campos novos
-- [ ] 2.3. Refatorar `services_carga_checkout.py`
-- [ ] 2.4. Refatorar `services_carga_credenciadora.py`
+  - Usar `processado` para controle
+- [ ] 2.3. Refatorar `services_carga_credenciadora.py`
+  - Agrupar por NSU
+  - Usar `processado` para controle
 
-### FASE 3: Validação Paralela (2-3 dias)
+**Nota:** Own será implementado em fase posterior (não está em produção).
+
+### FASE 3: Validação Paralela - Pinbank (2-3 dias)
 - [ ] 3.1. Executar cargas em paralelo (base antiga + nova)
 - [ ] 3.2. Criar queries de comparação
 - [ ] 3.3. Validar totalizadores (COUNT, SUM)
 - [ ] 3.4. Validar queries críticas dos portais
 
-### FASE 4: Refatoração Portais (5-7 dias)
+### FASE 4: Refatoração Portais - Pinbank (5-7 dias)
 - [ ] 4.1. Portal Admin
   - `views_transacoes.py` - Remover `ROW_NUMBER()`
   - `views_rpr.py` - Remover `ROW_NUMBER()`
@@ -187,5 +193,5 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 ---
 
-**Última Atualização:** 10/12/2024 08:09  
+**Última Atualização:** 10/12/2024 08:09
 **Responsável:** [A definir]
