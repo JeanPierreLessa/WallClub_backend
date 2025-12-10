@@ -1,6 +1,5 @@
 ## Tarefas Pendentes
 
-- Ofertas: preparar pro lojista criar so a dele e mandar pra todos os usuarios do canal
 - Email Aclub nao esta indo com layout correto (portal lojista)
 - nao envia mensagem de baixar app no checkout
 - ⏳ App: Adicionar device_fingerprint no payload de POST /api/v1/cliente/cadastro/validar_otp/

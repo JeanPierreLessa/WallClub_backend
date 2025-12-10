@@ -102,18 +102,25 @@ class TransacaoService:
                 return {'erro': 'Cliente não encontrado'}
             
             with connection.cursor() as cursor:
+                # Migrado para base_transacoes_unificadas (1 linha por NSU)
                 query = """
-                    SELECT DISTINCT
-                        btg.data_transacao, btg.var5, td.valor_original,
-                        td.amount/100, td.totalInstallments, td.applicationName,
-                        td.brand, td.cardNumber, td.nsuPinbank, td.paymentMethod
-                    FROM wallclub.baseTransacoesGestao btg
-                    INNER JOIN wallclub.canal canal ON btg.var4 = canal.nome
-                    INNER JOIN wallclub.transactiondata td ON td.nsuPinbank = btg.var9
-                    WHERE btg.var7 = %s AND canal.id = %s
-                      AND btg.data_transacao >= %s
-                      AND btg.data_transacao < CONCAT(%s, ' 23:59:59')
-                    ORDER BY btg.data_transacao DESC
+                    SELECT
+                        btu.data_transacao,
+                        btu.var5,
+                        btu.var11,
+                        btu.amount/100,
+                        btu.var13,
+                        btu.var3,
+                        btu.var12,
+                        btu.card_number,
+                        btu.var9,
+                        btu.var2
+                    FROM wallclub.base_transacoes_unificadas btu
+                    INNER JOIN wallclub.canal canal ON btu.var4 = canal.nome
+                    WHERE btu.var7 = %s AND canal.id = %s
+                      AND btu.data_transacao >= %s
+                      AND btu.data_transacao < CONCAT(%s, ' 23:59:59')
+                    ORDER BY btu.data_transacao DESC
                 """
                 
                 cursor.execute(query, [cpf_cliente, canal_id, dt_inicio, dt_fim])
@@ -190,25 +197,19 @@ class TransacaoService:
                 return {'sucesso': False, 'mensagem': 'Cliente não encontrado'}
             
             with connection.cursor() as cursor:
+                # Migrado para base_transacoes_unificadas (1 linha por NSU)
                 query = """
-                    SELECT cli.cpf, cli.nome, td.valor_original, td.datahora,
-                           CASE WHEN td.totalInstallments = 0 THEN 1 ELSE td.totalInstallments END,
-                           td.authorizationCode, td.nsuAcquirer, td.terminal,
-                           CASE WHEN td.brand = 'PIX' THEN 'PIX'
-                                WHEN td.paymentMethod = 'CREDIT_ONE_INSTALLMENT' THEN 'A VISTA'
-                                WHEN td.paymentMethod = 'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST' THEN 'PARCELADO SEM JUROS'
-                                WHEN td.paymentMethod = 'CREDIT_IN_INSTALLMENTS_WITH_INTEREST' THEN 'PARCELADO COM JUROS'
-                                WHEN td.paymentMethod = 'DEBIT' THEN 'DEBITO' END,
-                           loja.cnpj, loja.razao_social, btg.var16, btg.var20, btg.var26,
-                           btg.var88, btg.var94, td.valor_cashback
-                    FROM wallclub.transactiondata td, wallclub.baseTransacoesGestao btg,
-                         wallclub.loja loja, wallclub.cliente cli
-                    WHERE td.nsuPinbank = CAST(btg.var9 AS CHAR)
-                      AND cli.id = %s
-                      AND cli.cpf = td.cpf
-                      AND CAST(btg.var6 AS UNSIGNED) = loja.id
-                      AND td.nsuPinbank = %s
-                      AND td.valor_original > 0
+                    SELECT cli.cpf, cli.nome, btu.var11, btu.var0,
+                           CASE WHEN btu.var13 = 0 THEN 1 ELSE btu.var13 END,
+                           btu.authorization_code, btu.var10, btu.var8,
+                           CASE WHEN btu.var12 = 'PIX' THEN 'PIX' ELSE btu.var8 END,
+                           loja.cnpj, loja.razao_social, btu.var16, btu.var20, btu.var26,
+                           btu.var88, btu.var94, btu.valor_cashback
+                    FROM wallclub.base_transacoes_unificadas btu
+                    INNER JOIN wallclub.loja loja ON CAST(btu.var6 AS UNSIGNED) = loja.id
+                    INNER JOIN wallclub.cliente cli ON cli.id = %s AND cli.cpf = btu.var7
+                    WHERE btu.var9 = %s
+                      AND btu.var11 > 0
                 """
                 
                 cursor.execute(query, [cliente_id, nsu_pinbank])

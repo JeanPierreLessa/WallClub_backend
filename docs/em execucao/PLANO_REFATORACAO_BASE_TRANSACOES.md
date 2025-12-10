@@ -226,12 +226,21 @@ valor_centavos BIGINT              -- amount (em centavos)
    - **Pendente:** Implementar lógica real de busca de parâmetros vigentes na data da transação
 
 #### ⚠️ Pendente
-- Implementar lógica de parâmetros históricos dentro de `busca_plano_historico()`
-- Testar carga completa (sem limite)
+- Testar carga completa (sem limite) - POS e Credenciadora
 - Validar dados entre base antiga e nova
 - Refatorar services_carga_checkout.py
+- Migrar dados históricos de baseTransacoesGestao para base_transacoes_unificadas
+
+#### 📌 Observações Importantes
+- **Parâmetros históricos:** Sistema já busca parâmetros vigentes na data da transação via `get_configuracao_ativa()`. Método `busca_plano_historico()` foi removido (desnecessário).
+- **Logs:** Padronizados para `parametros_wallclub` e `comum.integracoes`
+- **Celery:** Task `carga_base_unificada` configurada para rodar a cada 30 minutos
+- **Comandos:**
+  - `carga_base_unificada_pos` - POS
+  - `carga_base_unificada_credenciadora` - Credenciadora
+  - `carga_base_unificada` - Executa ambos em sequência
 
 ---
 
-**Última Atualização:** 10/12/2024 13:54
+**Última Atualização:** 10/12/2024 15:36
 **Responsável:** [A definir]
