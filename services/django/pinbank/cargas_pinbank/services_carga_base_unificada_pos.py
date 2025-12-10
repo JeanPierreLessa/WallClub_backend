@@ -283,13 +283,19 @@ class CargaBaseUnificadaPOSService:
                     else:
                         campos[campo_nome] = value
 
-        # Processar data_transacao
-        if 'DataTransacao' in linha and linha['DataTransacao']:
+        # Processar data_transacao a partir de var0 (data) e var1 (hora)
+        if 0 in valores and 1 in valores:
             try:
-                if isinstance(linha['DataTransacao'], str):
-                    campos['data_transacao'] = datetime.strptime(linha['DataTransacao'], '%Y-%m-%d %H:%M:%S')
-                else:
-                    campos['data_transacao'] = linha['DataTransacao']
+                data_str = valores[0]  # var0 = data no formato dd/mm/yyyy
+                hora_str = valores[1]  # var1 = hora no formato HH:MM:SS
+                
+                if data_str and hora_str:
+                    # Converter data de dd/mm/yyyy para yyyy-mm-dd
+                    data_parts = data_str.split('/')
+                    if len(data_parts) == 3:
+                        data_formatada = f"{data_parts[2]}-{data_parts[1]}-{data_parts[0]}"
+                        datetime_str = f"{data_formatada} {hora_str}"
+                        campos['data_transacao'] = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
             except:
                 campos['data_transacao'] = None
 

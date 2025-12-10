@@ -38,6 +38,7 @@ class PinbankExtratoPOS(models.Model):
     NumeroCartao = models.CharField(max_length=256, null=True, blank=True)
     DataCancelamento = models.CharField(max_length=256, null=True, blank=True)
     Submerchant = models.CharField(max_length=256, null=True, blank=True)
+    processado = models.BooleanField(default=False, null=True, blank=True)
 
     class Meta:
         db_table = 'pinbankExtratoPOS'
