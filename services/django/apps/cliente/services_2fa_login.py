@@ -422,7 +422,7 @@ class ClienteAuth2FAService:
         auth_token: str,
         codigo_otp: str,
         device_fingerprint: str,
-        marcar_confiavel: bool = False,
+        marcar_confiavel: bool = True,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
         nome_dispositivo: Optional[str] = None
