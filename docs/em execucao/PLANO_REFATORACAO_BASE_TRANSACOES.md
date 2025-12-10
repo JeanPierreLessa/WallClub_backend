@@ -85,21 +85,24 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 ### FASE 1: Preparação - Pinbank (1-2 dias)
 - [x] 1.1. Criar coluna `processado` em `pinbankExtratoPOS` ✅
-- [ ] 1.2. Analisar payload POS para nomenclatura correta
-- [ ] 1.3. Definir estrutura final de `base_transacoes_unificadas`
-- [ ] 1.4. Criar script SQL de criação da tabela
+- [x] 1.2. Analisar payload POS para nomenclatura correta ✅
+- [x] 1.3. Definir estrutura final de `base_transacoes_unificadas` ✅
+- [x] 1.4. Criar script SQL de criação da tabela ✅
 
 ### FASE 2: Implementação Cargas - Pinbank (3-5 dias)
-- [ ] 2.1. Refatorar `services_carga_base_gestao_pos.py`
+- [x] 2.1. Criar `services_carga_base_unificada_pos.py` ✅
   - Agrupar por NSU (1 linha por transação)
   - Usar `processado` para controle
   - Popular campos novos (card_number, authorization_code, amount, valor_cashback)
+  - Converter strings vazias em NULL
+  - Popular `data_transacao` a partir de var0 + var1
 - [ ] 2.2. Refatorar `services_carga_checkout.py`
   - Agrupar por NSU
   - Usar `processado` para controle
-- [ ] 2.3. Refatorar `services_carga_credenciadora.py`
+- [x] 2.3. Criar `services_carga_base_unificada_credenciadora.py` ✅
   - Agrupar por NSU
   - Usar `processado` para controle
+  - Filtro DataTransacao >= '2025-10-01'
 
 **Nota:** Own será implementado em fase posterior (não está em produção).
 
@@ -193,5 +196,42 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 ---
 
-**Última Atualização:** 10/12/2024 08:09
+## 📝 CHANGELOG
+
+### 10/12/2024 - Implementação Inicial
+
+#### ✅ Concluído
+1. **Estrutura da tabela `base_transacoes_unificadas`**
+   - Criada com todos os campos var0-var130
+   - Campos adicionais: card_number, authorization_code, amount, valor_cashback
+   - Índices: var9 (NSU), data_transacao, tipo_operacao
+   - Alterado var13 de DECIMAL(8,2) para INT (número de parcelas)
+
+2. **Services de carga criados**
+   - `services_carga_base_unificada_pos.py` - POS/transactiondata
+   - `services_carga_base_unificada_credenciadora.py` - Credenciadora
+   - Management commands criados para ambos
+
+3. **Melhorias implementadas**
+   - Conversão de strings vazias em NULL
+   - População automática de `data_transacao` (var0 + var1)
+   - Filtro de transações >= 01/10/2025
+   - Processamento em lotes de 100 registros
+   - Marca todas as parcelas do NSU como processadas (processado=1)
+
+4. **Parâmetros históricos (em andamento)**
+   - Criado `busca_plano_historico()` no ParametrosService
+   - CalculadoraBaseGestao atualizada para usar busca_plano_historico
+   - CalculadoraBaseCredenciadora atualizada para usar busca_plano_historico
+   - **Pendente:** Implementar lógica real de busca de parâmetros vigentes na data da transação
+
+#### ⚠️ Pendente
+- Implementar lógica de parâmetros históricos dentro de `busca_plano_historico()`
+- Testar carga completa (sem limite)
+- Validar dados entre base antiga e nova
+- Refatorar services_carga_checkout.py
+
+---
+
+**Última Atualização:** 10/12/2024 13:54
 **Responsável:** [A definir]

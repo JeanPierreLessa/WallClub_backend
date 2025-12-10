@@ -79,14 +79,11 @@ class CalculadoraBaseCredenciadora:
             if data_ref is None:
                 raise ValueError(f"Erro ao converter DataTransacao para timestamp: {dados_linha['DataTransacao']}")
             
-            # Buscar plano usando data histórica
-            data_transacao = dt.fromtimestamp(data_ref)
-            id_plano = self.parametros_service.busca_plano_historico(
+            id_plano = self.parametros_service.busca_plano(
                 dados_linha['TipoCompra'],
                 dados_linha['NumeroTotalParcelas'],
                 dados_linha['Bandeira'],
-                wall,
-                data_transacao
+                wall
             )
 
             # Estabelecer valores básicos

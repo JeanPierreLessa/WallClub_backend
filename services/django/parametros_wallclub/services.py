@@ -148,26 +148,6 @@ class ParametrosService:
             return 0
 
     @staticmethod
-    def busca_plano_historico(forma: str, parcelas: int, bandeira: str, wall: str = 'S', data_referencia: Optional[datetime] = None) -> int:
-        """
-        Busca o ID do plano baseado nos parâmetros da transação (mesmo que busca_plano)
-        Criado para uso futuro com parâmetros históricos, mas por enquanto funciona igual ao busca_plano
-
-        Args:
-            forma: Tipo da transação (PIX, DEBITO, CREDITO, A VISTA, PARCELADO)
-            parcelas: Número de parcelas
-            bandeira: Bandeira do cartão ou PIX
-            wall: Tipo de cliente ('S' para Wall, 'N' para Sem Wall)
-            data_referencia: Data da transação (para buscar parâmetros históricos - não usado ainda)
-
-        Returns:
-            ID consolidado do plano ou 0 se não encontrado
-        """
-        # Por enquanto, apenas chama busca_plano (comportamento idêntico)
-        # No futuro, este método será expandido para buscar parâmetros históricos
-        return ParametrosService.busca_plano(forma, parcelas, bandeira, wall)
-
-    @staticmethod
     def get_all_configuracoes_count() -> int:
         """
         Retorna o total de configurações na base para debug
