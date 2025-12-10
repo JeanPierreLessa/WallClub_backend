@@ -266,7 +266,22 @@ class CargaBaseUnificadaPOSService:
                 elif key == 'canal_id':
                     continue  # Não precisa
                 else:
-                    campos[f'var{key}'] = value
+                    campo_nome = f'var{key}'
+                    # Extrair valor correto se for um dicionário (arrays do PHP)
+                    if isinstance(value, dict):
+                        # Mapear chave "0" para campo principal (prioridade)
+                        if "0" in value:
+                            campos[campo_nome] = value["0"]
+                        else:
+                            campos[campo_nome] = None
+                        
+                        # Mapear chaves adicionais para campos específicos
+                        if "A" in value:
+                            campos[f'{campo_nome}_A'] = value["A"]
+                        if "B" in value:
+                            campos[f'{campo_nome}_B'] = value["B"]
+                    else:
+                        campos[campo_nome] = value
 
         # Processar data_transacao
         if 'DataTransacao' in linha and linha['DataTransacao']:
