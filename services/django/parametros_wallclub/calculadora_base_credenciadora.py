@@ -73,17 +73,21 @@ class CalculadoraBaseCredenciadora:
                 info_canal = dados_linha['info_canal']
             else:
                 info_canal = self.pinbank_service.pega_info_canal(nsu_operacao)
-            id_plano = self.parametros_service.busca_plano(
-                dados_linha['TipoCompra'],
-                dados_linha['NumeroTotalParcelas'],
-                dados_linha['Bandeira'],
-                wall
-            )
 
             # Data de referência dos cálculos
             data_ref = self.parametros_service.converter_para_timestamp(dados_linha['DataTransacao'])
             if data_ref is None:
                 raise ValueError(f"Erro ao converter DataTransacao para timestamp: {dados_linha['DataTransacao']}")
+            
+            # Buscar plano usando data histórica
+            data_transacao = dt.fromtimestamp(data_ref)
+            id_plano = self.parametros_service.busca_plano_historico(
+                dados_linha['TipoCompra'],
+                dados_linha['NumeroTotalParcelas'],
+                dados_linha['Bandeira'],
+                wall,
+                data_transacao
+            )
 
             # Estabelecer valores básicos
             valores['id_fila_extrato'] = dados_linha['id']  # ID da fila de extrato
