@@ -140,11 +140,14 @@ class CargaBaseUnificadaPOSService:
                             linha = dict(zip(colunas, row_lote))
 
                             try:
+                                print(f"[DEBUG] Processando NSU: {linha.get('NsuOperacao')}")
                                 # Calcular valores primários
                                 valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
+                                print(f"[DEBUG] Valores calculados com sucesso")
 
                                 # Inserir na base unificada
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
+                                print(f"[DEBUG] Inserção retornou: {sucesso}")
 
                                 if sucesso:
                                     # Marcar TODAS as parcelas do NSU como processadas
@@ -160,8 +163,10 @@ class CargaBaseUnificadaPOSService:
                             except Exception as e:
                                 import traceback
                                 erro_detalhado = traceback.format_exc()
+                                print(f"[DEBUG] ERRO: {str(e)}")
+                                print(f"[DEBUG] Traceback: {erro_detalhado}")
                                 registrar_log('pinbank.cargas_pinbank',
-                                            f"Erro crítico (Base Unificada): NSU={linha['NsuOperacao']}, Erro: {str(e)}",
+                                            f"Erro crítico (Base Unificada): NSU={linha.get('NsuOperacao')}, Erro: {str(e)}",
                                             nivel='ERROR')
                                 registrar_log('pinbank.cargas_pinbank', f"Traceback: {erro_detalhado}", nivel='ERROR')
 
