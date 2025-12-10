@@ -507,42 +507,8 @@ class ClienteAuth2FAService:
             mensagem_device = ''
 
             if marcar_confiavel:
-                # Verificar limite de dispositivos (cliente: máximo 5)
-                dispositivos = DeviceManagementService.listar_dispositivos(
-                    user_id=cliente_id,
-                    tipo_usuario='cliente'
-                )
-
-                # Verificar se o dispositivo já existe (comparar fingerprint COMPLETO)
-                # CRÍTICO: Não comparar apenas primeiros 16 chars (pode gerar falso negativo)
-                dispositivo_existente = None
-                for d in dispositivos:
-                    # Buscar fingerprint completo no banco
-                    from wallclub_core.seguranca.models import DispositivoConfiavel
-                    device_completo = DispositivoConfiavel.objects.filter(
-                        id=d['id'],
-                        device_fingerprint=device_fingerprint,
-                        ativo=True
-                    ).first()
-                    
-                    if device_completo:
-                        dispositivo_existente = d
-                        registrar_log('apps.cliente',
-                            f"✅ Dispositivo já existe (fingerprint completo): {device_fingerprint[:8]}...", nivel='DEBUG')
-                        break
-
-                # Se já existe, pode renovar (não conta no limite)
-                if not dispositivo_existente and len(dispositivos) >= 5:
-                    # Cliente já tem 5 dispositivos e este é um novo: não permitir
-                    registrar_log('apps.cliente',
-                        f"Tentativa de adicionar 6º dispositivo bloqueada: cliente={cliente_id}")
-                    return {
-                        'sucesso': False,
-                        'mensagem': 'Você já possui 5 dispositivos cadastrados. Remova um deles antes de adicionar outro.',
-                        'codigo': 'LIMITE_DISPOSITIVOS'
-                    }
-
                 # Registrar dispositivo como confiável
+                # O DeviceManagementService já faz a verificação de limite e renovação
                 dados_dispositivo = {
                     'device_fingerprint': device_fingerprint,
                     'user_agent': user_agent or ''

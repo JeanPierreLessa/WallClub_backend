@@ -17,7 +17,7 @@ class DeviceManagementService:
 
     # Limites de dispositivos por tipo de usuário
     LIMITES_DISPOSITIVOS = {
-        'cliente': 2,      # Até 2 dispositivos por cliente
+        'cliente': 5,      # Até 5 dispositivos por cliente
         'vendedor': 2,     # Até 2 dispositivos por vendedor
         'lojista': 2,      # Até 2 dispositivos por lojista
         'admin': None      # Sem limite para admin
