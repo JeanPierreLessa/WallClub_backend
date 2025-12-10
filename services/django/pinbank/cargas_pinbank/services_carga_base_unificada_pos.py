@@ -185,15 +185,20 @@ class CargaBaseUnificadaPOSService:
                         linha = dict(zip(colunas, row_lote))
 
                         try:
+                            print(f"[DEBUG] Último lote - Processando NSU: {linha.get('NsuOperacao')}")
                             valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
+                            print(f"[DEBUG] Último lote - Valores calculados")
                             sucesso = self._inserir_valores_base_unificada(valores, linha)
+                            print(f"[DEBUG] Último lote - Inserção retornou: {sucesso}")
 
                             if sucesso:
                                 PinbankExtratoPOS.objects.filter(
                                     NsuOperacao=linha['NsuOperacao']
                                 ).update(processado=1)
                                 registros_processados += 1
+                                print(f"[DEBUG] Último lote - Registro processado com sucesso")
                             else:
+                                print(f"[DEBUG] Último lote - Inserção falhou")
                                 registrar_log('pinbank.cargas_pinbank',
                                             f"Valores não foram inseridos para NSU={linha['NsuOperacao']}",
                                             nivel='ERROR')
@@ -201,8 +206,10 @@ class CargaBaseUnificadaPOSService:
                         except Exception as e:
                             import traceback
                             erro_detalhado = traceback.format_exc()
+                            print(f"[DEBUG] Último lote - ERRO: {str(e)}")
+                            print(f"[DEBUG] Último lote - Traceback: {erro_detalhado}")
                             registrar_log('pinbank.cargas_pinbank',
-                                        f"Erro crítico (Base Unificada): NSU={linha['NsuOperacao']}, Erro: {str(e)}",
+                                        f"Erro crítico (Base Unificada): NSU={linha.get('NsuOperacao')}, Erro: {str(e)}",
                                         nivel='ERROR')
                             registrar_log('pinbank.cargas_pinbank', f"Traceback: {erro_detalhado}", nivel='ERROR')
 
