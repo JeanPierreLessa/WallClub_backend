@@ -207,7 +207,7 @@ class TransacaoService:
                 query = """
                     SELECT cli.cpf, cli.nome, btu.var11, btu.var0,
                            CASE WHEN btu.var13 = 0 THEN 1 ELSE btu.var13 END,
-                           btu.authorization_code, btu.var10, btu.var8,
+                           btu.authorization_code, btu.var10, btu.var2,
                            CASE WHEN btu.var12 = 'PIX' THEN 'PIX' ELSE btu.var8 END,
                            loja.cnpj, loja.razao_social, btu.var16, btu.var20, btu.var26,
                            btu.var88, btu.var94, btu.valor_cashback
