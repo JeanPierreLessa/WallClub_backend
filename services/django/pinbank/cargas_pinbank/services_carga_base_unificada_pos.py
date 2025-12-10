@@ -28,10 +28,14 @@ class CargaBaseUnificadaPOSService:
         Processa registros com processado = 0 e data >= 2025-10-01
         Agrupa por NSU (1 linha por transação)
         """
+        print(f"[DEBUG] Iniciando carga de valores primários - Base Unificada")
         registrar_log('pinbank.cargas_pinbank', "Iniciando carga de valores primários - Base Unificada")
 
         limit_clause = f"LIMIT {limite}" if limite else ""
         nsu_clause = f"AND pep.NsuOperacao = '{nsu}'" if nsu else ""
+        
+        print(f"[DEBUG] Executando query com limite={limite}, nsu={nsu}")
+        registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}")
 
         with connection.cursor() as cursor:
             # Query simplificada - pega apenas 1 registro por NSU (menor id)
@@ -103,8 +107,14 @@ class CargaBaseUnificadaPOSService:
                 {limit_clause}
             """)
 
+            print(f"[DEBUG] Query executada com sucesso")
+            registrar_log('pinbank.cargas_pinbank', "Query executada com sucesso")
+            
             colunas = [desc[0] for desc in cursor.description]
             registros_processados = 0
+            
+            print(f"[DEBUG] Iniciando processamento de registros em lotes de 100")
+            registrar_log('pinbank.cargas_pinbank', f"Iniciando processamento de registros em lotes de 100")
 
             # Processar em lotes de 100 registros
             BATCH_SIZE = 100
@@ -115,8 +125,10 @@ class CargaBaseUnificadaPOSService:
             while True:
                 row = cursor.fetchone()
                 if row is None:
+                    print(f"[DEBUG] Fim do cursor - nenhum registro encontrado")
                     break
 
+                print(f"[DEBUG] Registro encontrado: {row[0] if row else 'None'}")
                 lote_atual.append(row)
 
                 # Quando completar um lote de 100, processar
