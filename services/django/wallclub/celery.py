@@ -53,6 +53,15 @@ app.conf.beat_schedule = {
         }
     },
 
+    # Carga Base Unificada (POS + Credenciadora) - A cada 30 minutos
+    'carga-base-unificada': {
+        'task': 'pinbank.carga_base_unificada',
+        'schedule': crontab(minute='*/30'),  # A cada 30 minutos
+        'options': {
+            'expires': 1800,  # Expira em 30 minutos
+        }
+    },
+
     # ============================================
     # CONTA DIGITAL - AUTORIZAÇÕES
     # ============================================

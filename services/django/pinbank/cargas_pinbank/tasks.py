@@ -125,3 +125,19 @@ def migrar_financeiro_pagamentos_task(self, limite=1000):
     except Exception as e:
         logger.error(f"[{datetime.now()}] Erro na migração financeiro → pagamentos_efetuados: {str(e)}")
         raise
+
+
+@shared_task(bind=True, name='pinbank.carga_base_unificada')
+def carga_base_unificada_task(self):
+    """
+    Task para executar carga completa da Base Unificada (POS + Credenciadora)
+    Processa transações de outubro/2025 em diante
+    """
+    try:
+        logger.info(f"[{datetime.now()}] Iniciando carga Base Unificada (POS + Credenciadora)")
+        call_command('carga_base_unificada')
+        logger.info(f"[{datetime.now()}] Carga Base Unificada concluída com sucesso")
+        return {'status': 'success'}
+    except Exception as e:
+        logger.error(f"[{datetime.now()}] Erro na carga Base Unificada: {str(e)}")
+        raise

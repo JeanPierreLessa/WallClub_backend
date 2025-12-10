@@ -11,7 +11,7 @@ class APIInternaService:
     """
     Service para comunicação entre containers via API HTTP interna
     """
-    
+
     # Mapeamento de contextos para URLs base
     CONTAINER_URLS = {
         'apis': 'http://wallclub-apis:8007',
@@ -19,7 +19,7 @@ class APIInternaService:
         'portais': 'http://wallclub-portais:8005',
         'riskengine': 'http://wallclub-riskengine:8008',
     }
-    
+
     @classmethod
     def chamar_api_interna(
         cls,
@@ -31,14 +31,14 @@ class APIInternaService:
     ) -> Dict[str, Any]:
         """
         Chama API interna de outro container
-        
+
         Args:
             metodo: GET, POST, PUT, DELETE
             endpoint: Caminho do endpoint (ex: /api/internal/cliente/consultar/)
             payload: Dados a enviar (para POST/PUT)
             contexto: Container de destino (apis, pos, portais, riskengine)
             timeout: Timeout em segundos
-        
+
         Returns:
             Dict com resposta da API
         """
@@ -55,25 +55,25 @@ class APIInternaService:
                     'sucesso': False,
                     'mensagem': f'Contexto inválido: {contexto}'
                 }
-            
+
             # Montar URL completa
             url = f"{base_url}{endpoint}"
-            
+
             # Headers
             headers = {
                 'Content-Type': 'application/json',
                 'Host': 'wcapi.wallclub.com.br',  # Usar domínio público no header Host
             }
-            
+
             # APIs internas não usam OAuth (isolamento de rede Docker)
             # Token OAuth removido - não necessário para comunicação interna
-            
+
             # Fazer requisição
             registrar_log(
-                'wallclub_core.api_interna',
+                'comum.integracoes',
                 f'Chamando API interna: {metodo} {url}'
             )
-            
+
             if metodo.upper() == 'GET':
                 response = requests.get(url, headers=headers, params=payload, timeout=timeout)
             elif metodo.upper() == 'POST':
@@ -87,7 +87,7 @@ class APIInternaService:
                     'sucesso': False,
                     'mensagem': f'Método HTTP inválido: {metodo}'
                 }
-            
+
             # Processar resposta
             if response.status_code >= 200 and response.status_code < 300:
                 try:
@@ -119,10 +119,10 @@ class APIInternaService:
                         'status_code': response.status_code,
                         'error': response.text
                     }
-                    
+
         except requests.exceptions.Timeout:
             registrar_log(
-                'wallclub_core.api_interna',
+                'comum.integracoes',
                 f'Timeout ao chamar API: {url}',
                 nivel='ERROR'
             )
@@ -132,7 +132,7 @@ class APIInternaService:
             }
         except requests.exceptions.ConnectionError as e:
             registrar_log(
-                'wallclub_core.api_interna',
+                'comum.integracoes',
                 f'Erro de conexão ao chamar API: {url} - {str(e)}',
                 nivel='ERROR'
             )
@@ -142,7 +142,7 @@ class APIInternaService:
             }
         except Exception as e:
             registrar_log(
-                'wallclub_core.api_interna',
+                'comum.integracoes',
                 f'Erro ao chamar API interna: {str(e)}',
                 nivel='ERROR'
             )
@@ -150,4 +150,4 @@ class APIInternaService:
                 'sucesso': False,
                 'mensagem': f'Erro ao chamar API: {str(e)}'
             }
-    
+

@@ -40,14 +40,14 @@ class CalculadoraBaseCredenciadora:
         """
         Calcula os valores primários baseados nos dados da linha.
         Replica a lógica do PHP pinbank_cria_base_gestao.php
-        
+
         Args:
             dados_linha: Dict com dados da transação
             tabela: Identificador da origem (default: 'credenciadora')
         """
         from datetime import datetime as dt, timedelta
         try:
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Iniciando cálculo para NSU: {dados_linha.get('NsuOperacao', 'N/A')}")
+            registrar_log('parametros_wallclub', f"Iniciando cálculo para NSU: {dados_linha.get('NsuOperacao', 'N/A')}")
             valores = {}
 
             # Validar se a operação é Club (Wall S) ou Normal (Wall N)
@@ -78,7 +78,7 @@ class CalculadoraBaseCredenciadora:
             data_ref = self.parametros_service.converter_para_timestamp(dados_linha['DataTransacao'])
             if data_ref is None:
                 raise ValueError(f"Erro ao converter DataTransacao para timestamp: {dados_linha['DataTransacao']}")
-            
+
             id_plano = self.parametros_service.busca_plano(
                 dados_linha['TipoCompra'],
                 dados_linha['NumeroTotalParcelas'],
@@ -718,7 +718,7 @@ class CalculadoraBaseCredenciadora:
                 if registro_existente and registro_existente.var45:
                     # Preservar data existente
                     valores[45] = registro_existente.var45
-                    registrar_log('parametros_wallclub.calculadora_base_gestao',
+                    registrar_log('parametros_wallclub',
                                  f"var45 preservada para NSU {nsu_operacao}: {valores[45]}",
                                  nivel='DEBUG')
                 else:
@@ -726,14 +726,14 @@ class CalculadoraBaseCredenciadora:
                     if descricao_status_pag.startswith('Pago'):
                         from datetime import datetime
                         valores[45] = datetime.now().strftime('%d/%m/%Y')
-                        registrar_log('parametros_wallclub.calculadora_base_gestao',
+                        registrar_log('parametros_wallclub',
                                      f"var45 calculada para NSU {nsu_operacao} (Pago): {valores[45]}",
                                      nivel='DEBUG')
                     else:
                         valores[45] = ''
             except Exception as e:
                 # Se houver erro na busca, calcular normalmente
-                registrar_log('parametros_wallclub.calculadora_base_gestao',
+                registrar_log('parametros_wallclub',
                              f"Erro ao buscar var45 para NSU {nsu_operacao}: {str(e)}", nivel='ERROR')
                 if descricao_status_pag.startswith('Pago'):
                     from datetime import datetime
@@ -1104,14 +1104,14 @@ class CalculadoraBaseCredenciadora:
             # Adicionar ID da fila de extrato para mapeamento
             valores['id_fila_extrato'] = dados_linha['id']
 
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Cálculo concluído para NSU: {dados_linha.get('NsuOperacao', 'N/A')} - {len(valores)} variáveis calculadas")
+            registrar_log('parametros_wallclub', f"Cálculo concluído para NSU: {dados_linha.get('NsuOperacao', 'N/A')} - {len(valores)} variáveis calculadas")
             return valores
 
         except Exception as e:
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Erro no cálculo para NSU {dados_linha.get('NsuOperacao', 'N/A')}: {str(e)}", nivel='ERROR')
+            registrar_log('parametros_wallclub', f"Erro no cálculo para NSU {dados_linha.get('NsuOperacao', 'N/A')}: {str(e)}", nivel='ERROR')
             import traceback
             tb_str = traceback.format_exc()
-            registrar_log('parametros_wallclub.calculadora_base_gestao', f"Erro ao calcular valores primários: {str(e)}\nTraceback completo:\n{tb_str}", nivel='ERROR')
+            registrar_log('parametros_wallclub', f"Erro ao calcular valores primários: {str(e)}\nTraceback completo:\n{tb_str}", nivel='ERROR')
 
             # Log das variáveis que são None no momento do erro
             none_vars = []
@@ -1120,7 +1120,7 @@ class CalculadoraBaseCredenciadora:
                     none_vars.append(f"valores[{key}]")
 
             if none_vars:
-                registrar_log('parametros_wallclub.calculadora_base_gestao', f"Variáveis None no momento do erro: {', '.join(none_vars)}", nivel='ERROR')
+                registrar_log('parametros_wallclub', f"Variáveis None no momento do erro: {', '.join(none_vars)}", nivel='ERROR')
 
             raise
 
