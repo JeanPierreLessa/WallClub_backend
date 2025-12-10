@@ -225,16 +225,24 @@ class CargaBaseUnificadaPOSService:
         Popula campos novos: card_number, authorization_code, amount, valor_cashback
         """
         try:
+            print(f"[DEBUG] _inserir_valores_base_unificada - Preparando campos")
             # Preparar campos para inserção
             campos = self._preparar_campos_insercao(valores, linha)
+            print(f"[DEBUG] _inserir_valores_base_unificada - Campos preparados: {len(campos)} campos")
 
             # Inserir via SQL direto
+            print(f"[DEBUG] _inserir_valores_base_unificada - Executando INSERT")
             with connection.cursor() as cursor:
                 self._inserir_registro_sql(cursor, campos)
-
+            
+            print(f"[DEBUG] _inserir_valores_base_unificada - INSERT executado com sucesso")
             return True
 
         except Exception as e:
+            import traceback
+            erro_detalhado = traceback.format_exc()
+            print(f"[DEBUG] _inserir_valores_base_unificada - ERRO: {str(e)}")
+            print(f"[DEBUG] _inserir_valores_base_unificada - Traceback: {erro_detalhado}")
             registrar_log('pinbank.cargas_pinbank',
                         f"Erro ao inserir na base unificada: {str(e)}",
                         nivel='ERROR')
