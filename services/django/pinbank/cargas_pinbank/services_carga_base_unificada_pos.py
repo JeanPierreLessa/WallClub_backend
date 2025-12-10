@@ -177,6 +177,7 @@ class CargaBaseUnificadaPOSService:
 
             # Processar último lote se houver registros restantes
             if lote_atual:
+                print(f"[DEBUG] Processando último lote: {len(lote_atual)} registros")
                 registrar_log('pinbank.cargas_pinbank', f"Processando último lote unificado: {len(lote_atual)} registros")
 
                 with transaction.atomic():
