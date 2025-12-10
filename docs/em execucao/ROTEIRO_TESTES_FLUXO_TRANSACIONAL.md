@@ -1,9 +1,9 @@
 # ROTEIRO DE TESTES - FLUXO TRANSACIONAL COMPLETO
 
-**Versão:** 1.0
-**Data:** 07/12/2025
+**Versão:** 1.1
+**Data:** 09/12/2025
 **Objetivo:** Validar integração completa de Cupom + Cashback + Conta Digital
-**Status:** 🔄 Pronto para execução
+**Status:** ✅ Sistema de Cupom implementado (POS + Checkout Web)
 
 ---
 
@@ -49,10 +49,11 @@ TRANSAÇÃO
 
 | Sistema | Responsabilidade | Status |
 |---------|------------------|--------|
-| **Cupom** | Validar e aplicar desconto | ✅ Implementado (POS Own) |
+| **Cupom** | Validar e aplicar desconto | ✅ Implementado (POS + Checkout Web) |
 | **Cashback** | Calcular e conceder (Wall + Loja) | ✅ Implementado (POS) |
 | **Conta Digital** | Registrar movimentações | ✅ Implementado |
 | **Autorização POS** | Uso de saldo da conta | ✅ Implementado |
+| **Slip POS** | Cálculo correto com amount | ✅ Corrigido (09/12/2025) |
 
 ---
 

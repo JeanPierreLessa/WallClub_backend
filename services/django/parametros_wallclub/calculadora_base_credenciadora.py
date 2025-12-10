@@ -36,10 +36,14 @@ class CalculadoraBaseCredenciadora:
             return value.quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
         return Decimal(str(value)).quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
 
-    def calcular_valores_primarios(self, dados_linha):
+    def calcular_valores_primarios(self, dados_linha, tabela: str = 'credenciadora'):
         """
         Calcula os valores primários baseados nos dados da linha.
         Replica a lógica do PHP pinbank_cria_base_gestao.php
+        
+        Args:
+            dados_linha: Dict com dados da transação
+            tabela: Identificador da origem (default: 'credenciadora')
         """
         from datetime import datetime as dt, timedelta
         try:

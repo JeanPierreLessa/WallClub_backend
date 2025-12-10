@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.5  
-**Data:** 08/12/2025  
+**Versão:** 4.6  
+**Data:** 09/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Transactiondata_pos unificada + Sistema Cashback corrigido + Compras Informativas implementadas
+**Mudanças:** Sistema Cupom implementado (POS + Checkout Web) + Slip POS corrigido (cálculo com amount)
 
 ---
 

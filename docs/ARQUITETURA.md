@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.6  
-**Data:** 08/12/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + Transactiondata_pos unificada em produção
+**Versão:** 5.7  
+**Data:** 09/12/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + Transactiondata_pos unificada + Sistema Cupom (POS + Checkout Web)
 
 ---
 

@@ -128,7 +128,7 @@ class CargaCredenciadoraService:
                                 linha['info_canal'] = self.pinbank_service.pega_info_canal_por_id(linha.get('canal_id'))
                                 
                                 # Calcular valores primários
-                                valores = self.calculadora.calcular_valores_primarios(linha)
+                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
 
                                 # Inserir na base de gestão
                                 sucesso = self._inserir_valores_base_gestao(valores, linha.get('clienteId'))
