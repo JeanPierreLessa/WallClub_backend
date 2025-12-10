@@ -91,6 +91,7 @@ class CargaBaseUnificadaCredenciadoraService:
                 WHERE    pep.codigo_cliente = cecp.codigo_cliente
                          and l.id = cecp.cliente_id
                          and pep.processado = 0
+                         and pep.DataTransacao >= '2025-10-01'
                          and pep.NsuOperacao not in ( select nsuPinbank from transactiondata)
                          and pep.NsuOperacaoLoja not in ( select nsu from checkout_transactions where nsu is not null )
                          and serialnumber not in ( select terminal from terminais )
@@ -102,6 +103,7 @@ class CargaBaseUnificadaCredenciadoraService:
                              WHERE pep2.codigo_cliente = cecp2.codigo_cliente
                              AND l2.id = cecp2.cliente_id
                              AND pep2.processado = 0
+                             AND pep2.DataTransacao >= '2025-10-01'
                              AND pep2.NsuOperacao NOT IN (SELECT nsuPinbank FROM transactiondata)
                              AND pep2.NsuOperacaoLoja NOT IN (SELECT nsu FROM checkout_transactions WHERE nsu IS NOT NULL)
                              AND pep2.serialnumber NOT IN (SELECT terminal FROM terminais)
