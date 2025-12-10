@@ -32,7 +32,7 @@ class CargaBaseUnificadaPOSService:
 
         limit_clause = f"LIMIT {limite}" if limite else ""
         nsu_clause = f"AND pep.NsuOperacao = '{nsu}'" if nsu else ""
-        
+
         registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}")
 
         with connection.cursor() as cursor:
@@ -92,12 +92,12 @@ class CargaBaseUnificadaPOSService:
                 INNER JOIN wallclub.transactiondata t ON pep.NsuOperacao = t.nsuPinbank
                 LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsuPinbank
                 WHERE    pep.processado = 0
-                         AND pep.DataTransacao >= '2025-10-01'
+                         AND pep.DataTransacao >= '2025-01-01'
                          AND pep.id IN (
                              SELECT MIN(pep2.id)
                              FROM wallclub.pinbankExtratoPOS pep2
                              WHERE pep2.processado = 0
-                             AND pep2.DataTransacao >= '2025-10-01'
+                             AND pep2.DataTransacao >= '2025-01-01'
                              GROUP BY pep2.NsuOperacao
                          )
                          {nsu_clause}
@@ -106,10 +106,10 @@ class CargaBaseUnificadaPOSService:
             """)
 
             registrar_log('pinbank.cargas_pinbank', "Query executada com sucesso")
-            
+
             colunas = [desc[0] for desc in cursor.description]
             registros_processados = 0
-            
+
             registrar_log('pinbank.cargas_pinbank', f"Iniciando processamento de registros em lotes de 100")
 
             # Processar em lotes de 100 registros
@@ -210,7 +210,7 @@ class CargaBaseUnificadaPOSService:
             # Inserir via SQL direto
             with connection.cursor() as cursor:
                 self._inserir_registro_sql(cursor, campos)
-            
+
             return True
 
         except Exception as e:
@@ -244,24 +244,28 @@ class CargaBaseUnificadaPOSService:
                     if isinstance(value, dict):
                         # Mapear chave "0" para campo principal (prioridade)
                         if "0" in value:
-                            campos[campo_nome] = value["0"]
+                            val = value["0"]
+                            campos[campo_nome] = None if (isinstance(val, str) and val.strip() == '') else val
                         else:
                             campos[campo_nome] = None
-                        
+
                         # Mapear chaves adicionais para campos específicos
                         if "A" in value:
-                            campos[f'{campo_nome}_A'] = value["A"]
+                            val_a = value["A"]
+                            campos[f'{campo_nome}_A'] = None if (isinstance(val_a, str) and val_a.strip() == '') else val_a
                         if "B" in value:
-                            campos[f'{campo_nome}_B'] = value["B"]
+                            val_b = value["B"]
+                            campos[f'{campo_nome}_B'] = None if (isinstance(val_b, str) and val_b.strip() == '') else val_b
                     else:
-                        campos[campo_nome] = value
+                        # Converter string vazia em None
+                        campos[campo_nome] = None if (isinstance(value, str) and value.strip() == '') else value
 
         # Processar data_transacao a partir de var0 (data) e var1 (hora)
         if 0 in valores and 1 in valores:
             try:
                 data_str = valores[0]  # var0 = data no formato dd/mm/yyyy
                 hora_str = valores[1]  # var1 = hora no formato HH:MM:SS
-                
+
                 if data_str and hora_str:
                     # Converter data de dd/mm/yyyy para yyyy-mm-dd
                     data_parts = data_str.split('/')
