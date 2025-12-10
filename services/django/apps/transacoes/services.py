@@ -114,7 +114,13 @@ class TransacaoService:
                         btu.var12,
                         btu.card_number,
                         btu.var9,
-                        btu.var2
+                        CASE 
+                            WHEN btu.var8 = 'A VISTA' THEN 'CREDIT_ONE_INSTALLMENT'
+                            WHEN btu.var8 = 'DEBITO' THEN 'DEBIT'
+                            WHEN btu.var8 = 'PARCELADO SEM JUROS' THEN 'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST'
+                            WHEN btu.var8 = 'PARCELADO COM JUROS' THEN 'CREDIT_IN_INSTALLMENTS_WITH_INTEREST'
+                            ELSE btu.var2
+                        END
                     FROM wallclub.base_transacoes_unificadas btu
                     INNER JOIN wallclub.canal canal ON btu.var4 = canal.nome
                     WHERE btu.var7 = %s AND canal.id = %s
@@ -223,14 +229,14 @@ class TransacaoService:
                  forma, cnpj, razao_social, valores16, valores20, valores26, valores88,
                  valores94, valor_cashback) = resultado
                 
-                # Converter decimais
-                valores11 = valores11 or Decimal('0.00')
-                valores16 = valores16 or Decimal('0.00')
-                valores20 = valores20 or Decimal('0.00')
-                valores26 = valores26 or Decimal('0.00')
-                valores88 = valores88 or Decimal('0.00')
-                valores94 = valores94 or Decimal('0.00')
-                valor_cashback = valor_cashback or Decimal('0.00')
+                # Converter decimais (garantir que são Decimal, não string)
+                valores11 = Decimal(str(valores11)) if valores11 else Decimal('0.00')
+                valores16 = Decimal(str(valores16)) if valores16 else Decimal('0.00')
+                valores20 = Decimal(str(valores20)) if valores20 else Decimal('0.00')
+                valores26 = Decimal(str(valores26)) if valores26 else Decimal('0.00')
+                valores88 = Decimal(str(valores88)) if valores88 else Decimal('0.00')
+                valores94 = Decimal(str(valores94)) if valores94 else Decimal('0.00')
+                valor_cashback = Decimal(str(valor_cashback)) if valor_cashback else Decimal('0.00')
                 
                 # Formatar data
                 if isinstance(datahora_raw, str):
