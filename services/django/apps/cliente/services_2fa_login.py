@@ -530,6 +530,11 @@ class ClienteAuth2FAService:
                     registrar_log('apps.cliente',
                         f"Erro ao registrar dispositivo: {mensagem_device}",
                         nivel='ERROR')
+                    return {
+                        'sucesso': False,
+                        'mensagem': mensagem_device or 'Não foi possível registrar o dispositivo',
+                        'codigo': 'ERRO_DISPOSITIVO'
+                    }
 
             # Notificar novo dispositivo (se for novo e confiável)
             if marcar_confiavel and criado:
