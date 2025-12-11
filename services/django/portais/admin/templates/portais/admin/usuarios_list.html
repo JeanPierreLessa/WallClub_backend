@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (confirm(`${icone} Tem certeza que deseja ${acao} ${userName}?`)) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '{% url "portais_admin:usuarios_list" %}';
+                form.action = '{% url "portais_admin:usuarios_list" %}?t=' + Date.now();
                 
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                 form.innerHTML = `

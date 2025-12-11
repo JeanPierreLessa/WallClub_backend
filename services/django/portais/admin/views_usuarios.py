@@ -84,10 +84,6 @@ def usuarios_list(request):
         usuario_logado=usuario_logado
     )
     
-    # Forçar refresh dos objetos do banco para evitar cache
-    usuarios_ids = [u.id for u in usuarios]
-    usuarios = list(PortalUsuario.objects.filter(id__in=usuarios_ids).order_by('nome'))
-    
     registrar_log('portais.admin', f'Total de usuários antes do filtro: {len(usuarios)}')
     
     # Aplicar filtros de canal, grupo e loja
