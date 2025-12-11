@@ -525,6 +525,70 @@ def ajax_pesquisar_cpf(request):
 
 
 # ============================================================================
+# RESET DE SENHA
+# ============================================================================
+
+def reset_senha_view(request, token):
+    """View para reset de senha do vendedor com token"""
+    from portais.controle_acesso.models import PortalUsuario
+    from datetime import datetime
+    
+    if request.method == 'POST':
+        try:
+            usuario = PortalUsuario.objects.get(
+                token_reset_senha=token,
+                reset_senha_expira__gt=datetime.now()
+            )
+        except PortalUsuario.DoesNotExist:
+            messages.error(request, 'Token inválido ou expirado.')
+            return redirect('vendas:login')
+        
+        nova_senha = request.POST.get('nova_senha')
+        confirmar_senha = request.POST.get('confirmar_senha')
+        
+        if nova_senha != confirmar_senha:
+            messages.error(request, 'Nova senha e confirmação não coincidem.')
+        else:
+            # Validar complexidade da nova senha
+            from wallclub_core.utilitarios.senha_validator import validar_complexidade_senha
+            senha_valida, mensagem_erro = validar_complexidade_senha(nova_senha)
+            if not senha_valida:
+                messages.error(request, mensagem_erro)
+            else:
+                # Atualizar senha
+                usuario.set_password(nova_senha)
+                usuario.senha_temporaria = False
+                usuario.token_reset_senha = None
+                usuario.reset_senha_expira = None
+                usuario.save()
+                
+                registrar_log('portais.vendas', f'RESET_SENHA - Concluído - Usuário: {usuario.email}')
+                messages.success(request, 'Senha alterada com sucesso! Você já pode fazer login.')
+                return redirect('vendas:login')
+        
+        context = {
+            'usuario': usuario,
+            'token': token
+        }
+        return render(request, 'vendas/reset_senha.html', context)
+    
+    # GET
+    try:
+        usuario = PortalUsuario.objects.get(
+            token_reset_senha=token,
+            reset_senha_expira__gt=datetime.now()
+        )
+    except PortalUsuario.DoesNotExist:
+        messages.error(request, 'Token inválido ou expirado.')
+        return redirect('vendas:login')
+    
+    context = {
+        'usuario': usuario,
+        'token': token
+    }
+    return render(request, 'vendas/reset_senha.html', context)
+
+
 # PRIMEIRO ACESSO
 # ============================================================================
 

@@ -13,6 +13,7 @@ urlpatterns = [
     path('', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('primeiro_acesso/<str:token>/', views.primeiro_acesso_view, name='primeiro_acesso'),
+    path('reset_senha/<str:token>/', views.reset_senha_view, name='reset_senha'),
     
     # Dashboard
     path('home/', views.dashboard, name='dashboard'),
