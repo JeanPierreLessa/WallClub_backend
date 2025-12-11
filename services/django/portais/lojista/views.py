@@ -56,8 +56,7 @@ class LojistaLoginView(View):
             # Primeiro tentar encontrar usuário ativo
             usuario = PortalUsuario.objects.get(
                 email=email,
-                ativo=True,
-                email_verificado=True
+                ativo=True
             )
             
             # Verificar se pode acessar portal lojista
