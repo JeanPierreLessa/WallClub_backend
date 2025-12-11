@@ -154,11 +154,11 @@
                                             <i class="fas fa-key"></i>
                                         </button>
                                         {% if u.ativo %}
-                                        <button type="button" class="btn btn-sm btn-danger" data-action="toggle-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" data-user-ativo="true" title="Desativar Usuário">
+                                        <button type="button" class="btn btn-sm btn-success" data-action="toggle-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" data-user-ativo="true" title="Usuário Ativo (clique para desativar)">
                                             <i class="fas fa-toggle-on"></i>
                                         </button>
                                         {% else %}
-                                        <button type="button" class="btn btn-sm btn-success" data-action="toggle-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" data-user-ativo="false" title="Ativar Usuário">
+                                        <button type="button" class="btn btn-sm btn-danger" data-action="toggle-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" data-user-ativo="false" title="Usuário Inativo (clique para ativar)">
                                             <i class="fas fa-toggle-off"></i>
                                         </button>
                                         {% endif %}
