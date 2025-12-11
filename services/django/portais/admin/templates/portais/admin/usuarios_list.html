@@ -131,17 +131,17 @@
                                     </div>
                                 </td>
                                 <td class="align-middle">
-                                    {% if u.is_usuario_valido %}
+                                    {% if not u.ativo %}
+                                        <span class="badge bg-danger" style="font-size: 0.7rem;">
+                                            <i class="fas fa-times-circle me-1"></i>Inativo
+                                        </span>
+                                    {% elif u.is_usuario_valido %}
                                         <span class="badge bg-success" style="font-size: 0.7rem;">
                                             <i class="fas fa-check-circle me-1"></i>Validado
                                         </span>
                                     {% elif u.senha_temporaria %}
                                         <span class="badge bg-warning" style="font-size: 0.7rem;">
                                             <i class="fas fa-clock me-1"></i>Pendente
-                                        </span>
-                                    {% elif not u.ativo %}
-                                        <span class="badge bg-danger" style="font-size: 0.7rem;">
-                                            <i class="fas fa-times-circle me-1"></i>Inativo
                                         </span>
                                     {% else %}
                                         <span class="badge bg-secondary" style="font-size: 0.7rem;">

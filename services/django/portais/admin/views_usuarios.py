@@ -46,7 +46,7 @@ def usuarios_list(request):
                 usuario = PortalUsuario.objects.get(id=usuario_id)
                 novo_status = not usuario.ativo
                 usuario.ativo = novo_status
-                usuario.save()
+                usuario.save(update_fields=['ativo'])
                 
                 acao_texto = 'ativado' if novo_status else 'desativado'
                 messages.success(request, f'Usuário {usuario.nome} foi {acao_texto} com sucesso.')
@@ -83,6 +83,10 @@ def usuarios_list(request):
     usuarios = UsuarioService.buscar_usuarios(
         usuario_logado=usuario_logado
     )
+    
+    # Forçar refresh dos objetos do banco para evitar cache
+    usuarios_ids = [u.id for u in usuarios]
+    usuarios = list(PortalUsuario.objects.filter(id__in=usuarios_ids).order_by('nome'))
     
     registrar_log('portais.admin', f'Total de usuários antes do filtro: {len(usuarios)}')
     
