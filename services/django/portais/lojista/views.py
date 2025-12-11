@@ -546,6 +546,73 @@ class LojistaPerfilView(View):
         return self.get(request)
 
 
+class LojistaResetSenhaView(View):
+    """View para reset de senha do usuário lojista com token"""
+    template_name = 'portais/lojista/reset_senha.html'
+    
+    def get(self, request, token, marca=None):
+        try:
+            usuario = PortalUsuario.objects.get(
+                token_reset_senha=token,
+                reset_senha_expira__gt=datetime.now()
+            )
+        except PortalUsuario.DoesNotExist:
+            messages.error(request, 'Token inválido ou expirado.')
+            return redirect('lojista:login')
+        
+        context = {
+            'usuario': usuario,
+            'token': token,
+            'marca': marca
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, token, marca=None):
+        try:
+            usuario = PortalUsuario.objects.get(
+                token_reset_senha=token,
+                reset_senha_expira__gt=datetime.now()
+            )
+        except PortalUsuario.DoesNotExist:
+            messages.error(request, 'Token inválido ou expirado.')
+            return redirect('lojista:login')
+        
+        nova_senha = request.POST.get('nova_senha')
+        confirmar_senha = request.POST.get('confirmar_senha')
+        
+        if nova_senha != confirmar_senha:
+            messages.error(request, 'Nova senha e confirmação não coincidem.')
+        else:
+            # Validar complexidade da nova senha
+            from wallclub_core.utilitarios.senha_validator import validar_complexidade_senha
+            senha_valida, mensagem_erro = validar_complexidade_senha(nova_senha)
+            if not senha_valida:
+                messages.error(request, mensagem_erro)
+            else:
+                # Atualizar senha
+                usuario.set_password(nova_senha)
+                usuario.senha_temporaria = False
+                usuario.token_reset_senha = None
+                usuario.reset_senha_expira = None
+                usuario.save()
+                
+                registrar_log('portais.lojista', f'RESET_SENHA - Concluído - Usuário: {usuario.email}')
+                messages.success(request, 'Senha alterada com sucesso! Você já pode fazer login.')
+                
+                # Redirecionar para portal lojista com marca se disponível
+                if marca:
+                    return redirect(f'/portal_lojista/{marca}/')
+                else:
+                    return redirect('lojista:login')
+        
+        context = {
+            'usuario': usuario,
+            'token': token,
+            'marca': marca
+        }
+        return render(request, self.template_name, context)
+
+
 class LojistaPrimeiroAcessoView(View):
     """View para primeiro acesso do usuário lojista com token"""
     template_name = 'portais/lojista/primeiro_acesso.html'

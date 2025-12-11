@@ -190,11 +190,11 @@ class EmailService:
             
             # URL para reset de senha baseada no portal - obrigatório via settings
             if portal_destino == 'lojista':
-                link_reset = f"{settings.PORTAL_LOJISTA_URL}/reset-senha/{token}/"
+                link_reset = f"{settings.PORTAL_LOJISTA_URL}/reset_senha/{token}/"
             elif portal_destino == 'vendas':
-                link_reset = f"{settings.PORTAL_VENDAS_URL}/reset-senha/{token}/"
+                link_reset = f"{settings.PORTAL_VENDAS_URL}/reset_senha/{token}/"
             else:
-                link_reset = f"{settings.BASE_URL}/reset-senha/{token}/"
+                link_reset = f"{settings.BASE_URL}/reset_senha/{token}/"
             
             # Obter contexto do canal baseado na hierarquia de loja
             contexto_canal = EmailService._obter_contexto_canal(usuario)

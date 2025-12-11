@@ -44,6 +44,7 @@ urlpatterns = [
     path('', views.LojistaLoginView.as_view(), name='login'),
     path('logout/', views.LojistaLogoutView.as_view(), name='logout'),
     path('primeiro_acesso/<str:token>/', views.LojistaPrimeiroAcessoView.as_view(), name='primeiro_acesso'),
+    path('reset_senha/<str:token>/', views.LojistaResetSenhaView.as_view(), name='reset_senha'),
     
     # Dashboard e Home
     path('home/', views.LojistaHomeView.as_view(), name='home'),
