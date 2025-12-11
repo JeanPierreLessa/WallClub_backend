@@ -789,7 +789,7 @@ class UsuarioService:
 
             # Enviar email de primeiro acesso
             email_enviado, mensagem_email = EmailService.enviar_email_primeiro_acesso(
-                usuario, senha_temp_string, token_primeiro_acesso, canal_id_email, portal_destino
+                usuario, senha_temp_string, token_primeiro_acesso, canal_id_email
             )
 
             registrar_log('portais.controle_acesso', f"Usuário criado: {email} por {usuario_criador.email}")
@@ -1112,7 +1112,7 @@ class UsuarioService:
             return {'sucesso': False, 'mensagem': f'Erro: {str(e)}'}
 
     @staticmethod
-    def resetar_senha_usuario(usuario_id: int, portal_destino: str = 'admin') -> Dict[str, Any]:
+    def resetar_senha_usuario(usuario_id: int) -> Dict[str, Any]:
         """Reseta senha do usuário e envia email com link"""
         import secrets
         import string
@@ -1132,11 +1132,10 @@ class UsuarioService:
             usuario.reset_senha_expira = datetime.now() + timedelta(hours=24)
             usuario.save()
             
-            # Enviar email
+            # Enviar email (portal determinado automaticamente)
             sucesso, mensagem = EmailService.enviar_email_reset_senha(
                 usuario=usuario,
-                token=token_reset,
-                portal_destino=portal_destino
+                token=token_reset
             )
             
             if sucesso:

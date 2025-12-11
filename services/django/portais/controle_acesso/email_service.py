@@ -108,22 +108,21 @@ class EmailService:
             }
     
     @staticmethod
-    def enviar_email_primeiro_acesso(usuario, senha_temporaria, token, canal_id=None, portal_destino=None):
+    def enviar_email_primeiro_acesso(usuario, senha_temporaria, token, canal_id=None):
         """
         Envia email com link para primeiro acesso e senha temporária.
         Usa o EmailService centralizado do wallclub_core.
+        Determina automaticamente o portal baseado nas permissões do usuário.
         
         Args:
             usuario: PortalUsuario
             senha_temporaria: Senha temporária gerada
             token: Token de primeiro acesso
             canal_id: ID do canal (opcional, usa hierarquia de loja se não fornecido)
-            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
-            # Determinar portal prioritário se não fornecido
-            if not portal_destino:
-                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            # Determinar portal prioritário automaticamente
+            portal_destino = EmailService._determinar_portal_prioritario(usuario)
             
             # Determinar URL baseada no portal de destino - obrigatório via settings
             if portal_destino == 'lojista':
@@ -175,20 +174,19 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_reset_senha(usuario, token, portal_destino=None):
+    def enviar_email_reset_senha(usuario, token):
         """
         Envia email para reset de senha.
         Usa o EmailService centralizado do wallclub_core.
+        Determina automaticamente o portal baseado nas permissões do usuário.
         
         Args:
             usuario: PortalUsuario
             token: Token de reset de senha
-            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
-            # Determinar portal prioritário se não fornecido
-            if not portal_destino:
-                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            # Determinar portal prioritário automaticamente
+            portal_destino = EmailService._determinar_portal_prioritario(usuario)
             
             # URL para reset de senha baseada no portal - obrigatório via settings
             if portal_destino == 'lojista':
@@ -240,21 +238,20 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_token_troca_senha(usuario, token, validade_minutos=30, portal_destino=None):
+    def enviar_email_token_troca_senha(usuario, token, validade_minutos=30):
         """
         Envia email com token para confirmação de troca de senha.
         Usado no fluxo de 2 etapas dos portais.
+        Determina automaticamente o portal baseado nas permissões do usuário.
         
         Args:
             usuario: PortalUsuario
             token: Token de confirmação
             validade_minutos: Validade do token em minutos
-            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
-            # Determinar portal prioritário se não fornecido
-            if not portal_destino:
-                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            # Determinar portal prioritário automaticamente
+            portal_destino = EmailService._determinar_portal_prioritario(usuario)
             
             # Obter contexto do canal baseado na hierarquia de loja
             contexto_canal = EmailService._obter_contexto_canal(usuario)
@@ -298,19 +295,18 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_senha_alterada(usuario, portal_destino=None):
+    def enviar_email_senha_alterada(usuario):
         """
         Envia email de confirmação após alteração de senha.
         Usa o EmailService centralizado do wallclub_core.
+        Determina automaticamente o portal baseado nas permissões do usuário.
         
         Args:
             usuario: PortalUsuario
-            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
-            # Determinar portal prioritário se não fornecido
-            if not portal_destino:
-                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            # Determinar portal prioritário automaticamente
+            portal_destino = EmailService._determinar_portal_prioritario(usuario)
             
             # Obter contexto do canal baseado na hierarquia de loja
             contexto_canal = EmailService._obter_contexto_canal(usuario)
