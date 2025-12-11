@@ -26,8 +26,7 @@ def usuarios_list(request):
         if acao == 'resetar_senha' and usuario_id:
             try:
                 resultado = UsuarioService.resetar_senha_usuario(
-                    usuario_id=usuario_id,
-                    portal_destino='admin'
+                    usuario_id=usuario_id
                 )
                 
                 if resultado['sucesso']:
