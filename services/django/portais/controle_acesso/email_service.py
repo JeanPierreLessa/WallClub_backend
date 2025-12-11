@@ -12,12 +12,72 @@ class EmailService:
     """
     
     @staticmethod
+    def _determinar_portal_prioritario(usuario):
+        """
+        Determina qual portal usar baseado na prioridade:
+        1. Lojista (se tiver acesso)
+        2. Vendas (se tiver acesso)
+        3. Admin (fallback)
+        
+        Args:
+            usuario: PortalUsuario
+            
+        Returns:
+            str: 'lojista', 'vendas' ou 'admin'
+        """
+        # Verificar acesso ao lojista (prioridade 1)
+        if ControleAcessoService.usuario_tem_acesso_portal(usuario, 'lojista'):
+            return 'lojista'
+        
+        # Verificar acesso ao vendas (prioridade 2)
+        if ControleAcessoService.usuario_tem_acesso_portal(usuario, 'vendas'):
+            return 'vendas'
+        
+        # Fallback: admin (prioridade 3)
+        return 'admin'
+    
+    @staticmethod
+    def _obter_canal_hierarquia_loja(usuario):
+        """
+        Obtém o canal baseado na hierarquia de loja do usuário.
+        Se usuário tem vínculo com loja, busca o canal da hierarquia.
+        Caso contrário, retorna canal padrão (1 - WallClub).
+        
+        Args:
+            usuario: PortalUsuario
+            
+        Returns:
+            int: ID do canal (padrão: 1)
+        """
+        from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
+        
+        # Buscar vínculo com loja
+        lojas_ids = ControleAcessoService.obter_lojas_usuario(usuario)
+        
+        if lojas_ids:
+            # Pegar primeira loja e buscar hierarquia
+            loja_id = lojas_ids[0]
+            try:
+                hierarquia = HierarquiaOrganizacionalService.get_loja_hierarquia_completa(loja_id)
+                if hierarquia and 'canal' in hierarquia:
+                    return hierarquia['canal']['id']
+            except:
+                pass
+        
+        # Fallback: canal padrão WallClub
+        return 1
+    
+    @staticmethod
     def _obter_contexto_canal(usuario, canal_id_override=None):
         """Obtém informações do canal do usuário para templates de email"""
         from django.conf import settings
         
-        # Usar canal_id fornecido ou buscar do usuário
-        canal_id = canal_id_override or ControleAcessoService.obter_canal_principal_usuario(usuario)
+        # Usar canal_id fornecido ou buscar da hierarquia de loja
+        if canal_id_override:
+            canal_id = canal_id_override
+        else:
+            canal_id = EmailService._obter_canal_hierarquia_loja(usuario)
+        
         try:
             from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
             canal = HierarquiaOrganizacionalService.get_canal(canal_id)
@@ -41,12 +101,23 @@ class EmailService:
             }
     
     @staticmethod
-    def enviar_email_primeiro_acesso(usuario, senha_temporaria, token, canal_id=None, portal_destino='admin'):
+    def enviar_email_primeiro_acesso(usuario, senha_temporaria, token, canal_id=None, portal_destino=None):
         """
         Envia email com link para primeiro acesso e senha temporária.
         Usa o EmailService centralizado do wallclub_core.
+        
+        Args:
+            usuario: PortalUsuario
+            senha_temporaria: Senha temporária gerada
+            token: Token de primeiro acesso
+            canal_id: ID do canal (opcional, usa hierarquia de loja se não fornecido)
+            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
+            # Determinar portal prioritário se não fornecido
+            if not portal_destino:
+                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            
             # Determinar URL baseada no portal de destino - obrigatório via settings
             if portal_destino == 'lojista':
                 link_primeiro_acesso = f"{settings.PORTAL_LOJISTA_URL}/primeiro_acesso/{token}/"
@@ -55,7 +126,7 @@ class EmailService:
             else:
                 link_primeiro_acesso = f"{settings.BASE_URL}/primeiro_acesso/{token}/"
             
-            # Contexto para o template (forçar canal_id se fornecido)
+            # Contexto para o template (usa hierarquia de loja se canal_id não fornecido)
             contexto_canal = EmailService._obter_contexto_canal(usuario, canal_id)
             context = {
                 'usuario': usuario,
@@ -97,19 +168,30 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_reset_senha(usuario, token, portal_destino='admin'):
+    def enviar_email_reset_senha(usuario, token, portal_destino=None):
         """
         Envia email para reset de senha.
         Usa o EmailService centralizado do wallclub_core.
+        
+        Args:
+            usuario: PortalUsuario
+            token: Token de reset de senha
+            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
+            # Determinar portal prioritário se não fornecido
+            if not portal_destino:
+                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            
             # URL para reset de senha baseada no portal - obrigatório via settings
             if portal_destino == 'lojista':
                 link_reset = f"{settings.PORTAL_LOJISTA_URL}/reset-senha/{token}/"
+            elif portal_destino == 'vendas':
+                link_reset = f"{settings.PORTAL_VENDAS_URL}/reset-senha/{token}/"
             else:
                 link_reset = f"{settings.BASE_URL}/reset-senha/{token}/"
             
-            # Obter contexto do canal para o assunto
+            # Obter contexto do canal baseado na hierarquia de loja
             contexto_canal = EmailService._obter_contexto_canal(usuario)
             
             context = {
@@ -123,6 +205,9 @@ class EmailService:
             if portal_destino == 'lojista':
                 template_html = 'emails/lojista/reset_senha.html'
                 assunto = f'{contexto_canal["canal_nome"]} - Reset de Senha - Portal Lojista'
+            elif portal_destino == 'vendas':
+                template_html = 'emails/vendas/reset_senha.html'
+                assunto = f'{contexto_canal["canal_nome"]} - Reset de Senha - Portal Vendas'
             else:
                 template_html = 'emails/admin/reset_senha.html'
                 assunto = f'{contexto_canal["canal_nome"]} - Reset de Senha - Portal Admin'
@@ -148,13 +233,23 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_token_troca_senha(usuario, token, validade_minutos=30, portal_destino='lojista'):
+    def enviar_email_token_troca_senha(usuario, token, validade_minutos=30, portal_destino=None):
         """
         Envia email com token para confirmação de troca de senha.
         Usado no fluxo de 2 etapas dos portais.
+        
+        Args:
+            usuario: PortalUsuario
+            token: Token de confirmação
+            validade_minutos: Validade do token em minutos
+            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
-            # Obter contexto do canal para o assunto
+            # Determinar portal prioritário se não fornecido
+            if not portal_destino:
+                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            
+            # Obter contexto do canal baseado na hierarquia de loja
             contexto_canal = EmailService._obter_contexto_canal(usuario)
             
             context = {
@@ -196,13 +291,21 @@ class EmailService:
             return False, f"Erro ao enviar email: {str(e)}"
     
     @staticmethod
-    def enviar_email_senha_alterada(usuario, portal_destino='admin'):
+    def enviar_email_senha_alterada(usuario, portal_destino=None):
         """
         Envia email de confirmação após alteração de senha.
         Usa o EmailService centralizado do wallclub_core.
+        
+        Args:
+            usuario: PortalUsuario
+            portal_destino: Portal de destino (opcional, determina automaticamente se não fornecido)
         """
         try:
-            # Obter contexto do canal para o assunto
+            # Determinar portal prioritário se não fornecido
+            if not portal_destino:
+                portal_destino = EmailService._determinar_portal_prioritario(usuario)
+            
+            # Obter contexto do canal baseado na hierarquia de loja
             contexto_canal = EmailService._obter_contexto_canal(usuario)
             
             context = {
