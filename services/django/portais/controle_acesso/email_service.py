@@ -26,14 +26,21 @@ class EmailService:
             str: 'lojista', 'vendas' ou 'admin'
         """
         # Verificar acesso ao lojista (prioridade 1)
-        if ControleAcessoService.usuario_tem_acesso_portal(usuario, 'lojista'):
+        tem_lojista = ControleAcessoService.usuario_tem_acesso_portal(usuario, 'lojista')
+        registrar_log('portais.controle_acesso', f"Usuario {usuario.id} - tem_lojista: {tem_lojista}")
+        if tem_lojista:
+            registrar_log('portais.controle_acesso', f"Usuario {usuario.id} - portal determinado: lojista")
             return 'lojista'
         
         # Verificar acesso ao vendas (prioridade 2)
-        if ControleAcessoService.usuario_tem_acesso_portal(usuario, 'vendas'):
+        tem_vendas = ControleAcessoService.usuario_tem_acesso_portal(usuario, 'vendas')
+        registrar_log('portais.controle_acesso', f"Usuario {usuario.id} - tem_vendas: {tem_vendas}")
+        if tem_vendas:
+            registrar_log('portais.controle_acesso', f"Usuario {usuario.id} - portal determinado: vendas")
             return 'vendas'
         
         # Fallback: admin (prioridade 3)
+        registrar_log('portais.controle_acesso', f"Usuario {usuario.id} - portal determinado: admin (fallback)")
         return 'admin'
     
     @staticmethod
