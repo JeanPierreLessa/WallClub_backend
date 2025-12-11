@@ -969,7 +969,7 @@ class UsuarioService:
 
     @staticmethod
     def remover_usuario(usuario_id: int, usuario_logado_id: int) -> Dict[str, Any]:
-        """Remove usuário (não permite auto-remoção)"""
+        """Inativa usuário (não permite auto-remoção)"""
         from wallclub_core.utilitarios.log_control import registrar_log
 
         try:
@@ -977,9 +977,12 @@ class UsuarioService:
                 return {'sucesso': False, 'mensagem': 'Não pode remover seu próprio usuário'}
 
             usuario = PortalUsuario.objects.get(id=usuario_id)
-            usuario.delete()
+            
+            # Inativar em vez de deletar (evita problemas com FK)
+            usuario.ativo = False
+            usuario.save()
 
-            registrar_log('portais.controle_acesso', f"Usuário removido: ID={usuario_id}")
+            registrar_log('portais.controle_acesso', f"Usuário inativado: ID={usuario_id}")
             return {'sucesso': True, 'mensagem': 'Usuário removido!'}
 
         except PortalUsuario.DoesNotExist:
