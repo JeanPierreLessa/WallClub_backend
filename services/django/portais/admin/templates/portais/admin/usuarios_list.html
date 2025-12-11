@@ -157,9 +157,15 @@
                                         <button type="button" class="btn btn-sm btn-warning" data-action="reset-senha" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" title="Reset Senha">
                                             <i class="fas fa-key"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-danger" data-action="remover-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" title="Remover">
-                                            <i class="fas fa-trash"></i>
+                                        {% if u.ativo %}
+                                        <button type="button" class="btn btn-sm btn-danger" data-action="toggle-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" data-user-ativo="true" title="Desativar Usuário">
+                                            <i class="fas fa-toggle-on"></i>
                                         </button>
+                                        {% else %}
+                                        <button type="button" class="btn btn-sm btn-success" data-action="toggle-usuario" data-user-id="{{ u.id }}" data-user-name="{{ u.nome|escapejs }}" data-user-ativo="false" title="Ativar Usuário">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
@@ -384,14 +390,31 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('formGerenciarPortais').submit();
     });
     
-    // Remover usuário
-    document.querySelectorAll('[data-action="remover-usuario"]').forEach(button => {
-        button.addEventListener('click', function() {
+    // Ativar/Desativar usuário
+    document.querySelectorAll('[data-action="toggle-usuario"]').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
             const userId = this.getAttribute('data-user-id');
             const userName = this.getAttribute('data-user-name');
+            const isAtivo = this.getAttribute('data-user-ativo') === 'true';
             
-            if (confirm(`🗑️ Tem certeza que deseja remover ${userName}?\n\nEsta ação não pode ser desfeita!`)) {
-                window.location.href = `/usuarios/${userId}/deletar/`;
+            const acao = isAtivo ? 'desativar' : 'ativar';
+            const icone = isAtivo ? '🔴' : '🟢';
+            
+            if (confirm(`${icone} Tem certeza que deseja ${acao} ${userName}?`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{% url "portais_admin:usuarios_list" %}';
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                form.innerHTML = `
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="acao" value="toggle_usuario">
+                    <input type="hidden" name="usuario_id" value="${userId}">
+                `;
+                
+                document.body.appendChild(form);
+                form.submit();
             }
         });
     });

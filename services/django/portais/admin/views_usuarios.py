@@ -18,7 +18,7 @@ def usuarios_list(request):
     usuario_logado = request.portal_usuario
     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
 
-    # Tratar ações POST (resetar senha, remover usuário, etc)
+    # Tratar ações POST (resetar senha, ativar/desativar usuário, etc)
     if request.method == 'POST':
         acao = request.POST.get('acao')
         usuario_id = request.POST.get('usuario_id')
@@ -38,6 +38,25 @@ def usuarios_list(request):
             except Exception as e:
                 messages.error(request, f'Erro ao resetar senha: {str(e)}')
                 registrar_log('portais.admin', f'Erro ao resetar senha: {str(e)}', nivel='ERROR')
+            
+            return redirect('portais_admin:usuarios_list')
+        
+        elif acao == 'toggle_usuario' and usuario_id:
+            try:
+                usuario = PortalUsuario.objects.get(id=usuario_id)
+                novo_status = not usuario.ativo
+                usuario.ativo = novo_status
+                usuario.save()
+                
+                acao_texto = 'ativado' if novo_status else 'desativado'
+                messages.success(request, f'Usuário {usuario.nome} foi {acao_texto} com sucesso.')
+                registrar_log('portais.admin', f'Usuário ID {usuario_id} ({usuario.nome}) {acao_texto} por {usuario_logado.email}')
+            except PortalUsuario.DoesNotExist:
+                messages.error(request, 'Usuário não encontrado.')
+                registrar_log('portais.admin', f'Erro ao ativar/desativar: Usuário ID {usuario_id} não encontrado', nivel='ERROR')
+            except Exception as e:
+                messages.error(request, f'Erro ao alterar status do usuário: {str(e)}')
+                registrar_log('portais.admin', f'Erro ao ativar/desativar usuário: {str(e)}', nivel='ERROR')
             
             return redirect('portais_admin:usuarios_list')
         
