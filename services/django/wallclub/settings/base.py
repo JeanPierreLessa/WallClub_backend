@@ -468,7 +468,7 @@ CELERY_WORKER_TASK_LOG_FORMAT = '[%(asctime)s: %(levelname)s/%(processName)s][%(
 # =====================================================
 
 # Período de retenção (dias de carência antes de liberar)
-CASHBACK_PERIODO_RETENCAO_DIAS = int(os.environ.get('CASHBACK_PERIODO_RETENCAO_DIAS', 30))
+CASHBACK_PERIODO_RETENCAO_DIAS = int(os.environ.get('CASHBACK_PERIODO_RETENCAO_DIAS', 1))
 
 # Período de expiração (dias até expirar após liberação, 0 = não expira)
 CASHBACK_PERIODO_EXPIRACAO_DIAS = int(os.environ.get('CASHBACK_PERIODO_EXPIRACAO_DIAS', 90))

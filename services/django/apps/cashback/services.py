@@ -50,12 +50,19 @@ class CashbackService:
             parametro = ParametrosWall.objects.get(id=parametro_wall_id)
             nome_plano = f'Plano {parametro.id_plano}' if parametro.id_plano else 'Padrão'
             
-            # Calcular datas
+            # Calcular datas baseado no período de retenção
             agora = timezone.now()
-            data_liberacao = agora + timedelta(days=periodo_retencao_dias)
-            data_expiracao = None
-            if periodo_expiracao_dias > 0:
-                data_expiracao = data_liberacao + timedelta(days=periodo_expiracao_dias)
+            
+            # Se tem período de retenção, começa RETIDO (sem datas)
+            # Se não tem retenção, já começa LIBERADO (com datas)
+            if periodo_retencao_dias > 0:
+                status_inicial = 'RETIDO'
+                data_liberacao = None
+                data_expiracao = None
+            else:
+                status_inicial = 'LIBERADO'
+                data_liberacao = agora
+                data_expiracao = agora + timedelta(days=periodo_expiracao_dias) if periodo_expiracao_dias > 0 else None
             
             # Creditar na conta digital
             movimentacao = ContaDigitalService.creditar(
@@ -79,7 +86,7 @@ class CashbackService:
                 transacao_id=transacao_id,
                 valor_transacao=valor_transacao,
                 valor_cashback=valor_cashback,
-                status='RETIDO' if periodo_retencao_dias > 0 else 'LIBERADO',
+                status=status_inicial,
                 liberado_em=data_liberacao,
                 expira_em=data_expiracao,
                 movimentacao_id=movimentacao.id
@@ -200,12 +207,19 @@ class CashbackService:
         with transaction.atomic():
             regra = RegraCashbackLoja.objects.get(id=regra_loja_id)
             
-            # Calcular datas
+            # Calcular datas baseado no período de retenção
             agora = timezone.now()
-            data_liberacao = agora + timedelta(days=periodo_retencao_dias)
-            data_expiracao = None
-            if periodo_expiracao_dias > 0:
-                data_expiracao = data_liberacao + timedelta(days=periodo_expiracao_dias)
+            
+            # Se tem período de retenção, começa RETIDO (sem datas)
+            # Se não tem retenção, já começa LIBERADO (com datas)
+            if periodo_retencao_dias > 0:
+                status_inicial = 'RETIDO'
+                data_liberacao = None
+                data_expiracao = None
+            else:
+                status_inicial = 'LIBERADO'
+                data_liberacao = agora
+                data_expiracao = agora + timedelta(days=periodo_expiracao_dias) if periodo_expiracao_dias > 0 else None
             
             # Creditar na conta digital
             movimentacao = ContaDigitalService.creditar(
@@ -229,7 +243,7 @@ class CashbackService:
                 transacao_id=transacao_id,
                 valor_transacao=valor_transacao,
                 valor_cashback=valor_cashback,
-                status='RETIDO' if periodo_retencao_dias > 0 else 'LIBERADO',
+                status=status_inicial,
                 liberado_em=data_liberacao,
                 expira_em=data_expiracao,
                 movimentacao_id=movimentacao.id
@@ -349,14 +363,23 @@ class CashbackService:
             conta.cashback_disponivel += cashback.valor_cashback
             conta.save()
             
-            # Atualizar status
+            # Atualizar status e datas
+            from django.conf import settings
+            from django.utils import timezone
+            from datetime import timedelta
+            
+            agora = timezone.now()
+            periodo_expiracao = settings.CASHBACK_PERIODO_EXPIRACAO_DIAS
+            
             cashback.status = 'LIBERADO'
+            cashback.liberado_em = agora
+            cashback.expira_em = agora + timedelta(days=periodo_expiracao) if periodo_expiracao > 0 else None
             cashback.save()
             
             registrar_log(
                 'apps.cashback',
                 f'Cashback liberado - ID: {cashback_uso_id}, Cliente: {cashback.cliente_id}, '
-                f'Valor: {cashback.valor_cashback}'
+                f'Valor: {cashback.valor_cashback}, Expira em: {cashback.expira_em}'
             )
     
     @staticmethod

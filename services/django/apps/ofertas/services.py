@@ -457,7 +457,8 @@ class OfertaService:
             
             # Atualizar campos permitidos
             campos_permitidos = ['titulo', 'texto_push', 'descricao', 'imagem_url', 
-                               'vigencia_inicio', 'vigencia_fim', 'ativo']
+                               'vigencia_inicio', 'vigencia_fim', 'data_agendamento_disparo', 
+                               'loja_id', 'tipo_segmentacao', 'grupo_id', 'ativo']
             
             for campo, valor in dados.items():
                 if campo in campos_permitidos and valor is not None:

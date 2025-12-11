@@ -13,12 +13,18 @@ def liberar_cashback_retido():
     from apps.cashback.models import CashbackUso
     from apps.cashback.services import CashbackService
     
-    agora = timezone.now()
+    from django.conf import settings
+    from datetime import timedelta
     
-    # Buscar cashback retido pronto para liberar
+    agora = timezone.now()
+    periodo_retencao = settings.CASHBACK_PERIODO_RETENCAO_DIAS
+    data_limite = agora - timedelta(days=periodo_retencao)
+    
+    # Buscar cashback retido que já completou o período de retenção
+    # Critério: aplicado_em + periodo_retencao <= agora
     cashbacks = CashbackUso.objects.filter(
         status='RETIDO',
-        liberado_em__lte=agora
+        aplicado_em__lte=data_limite
     )
     
     total = cashbacks.count()

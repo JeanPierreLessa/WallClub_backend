@@ -292,6 +292,10 @@ def atualizar_oferta(request):
             dados_update['vigencia_fim'] = datetime.fromisoformat(
                 dados_update['vigencia_fim'].replace('Z', '+00:00')
             )
+        if 'data_agendamento_disparo' in dados_update:
+            dados_update['data_agendamento_disparo'] = datetime.fromisoformat(
+                dados_update['data_agendamento_disparo'].replace('Z', '+00:00')
+            )
         
         from .services import OfertaService
         

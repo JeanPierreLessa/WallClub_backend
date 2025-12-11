@@ -225,6 +225,9 @@ def ofertas_edit(request, oferta_id):
         if oferta.data_agendamento_disparo:
             data_agendamento_disparo_formatted = oferta.data_agendamento_disparo.strftime('%Y-%m-%dT%H:%M')
         
+        # Debug: garantir que loja_id está presente
+        registrar_log('portais.admin', f'DEBUG Editar Oferta {oferta_id}: loja_id={oferta.loja_id}, canal_id={oferta.canal_id}')
+        
         if request.method == 'GET':
             # Buscar grupos via API
             grupos_response = ofertas_api.listar_grupos()

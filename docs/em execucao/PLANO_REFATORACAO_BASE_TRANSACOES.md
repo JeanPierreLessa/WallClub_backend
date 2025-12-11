@@ -121,9 +121,10 @@ valor_centavos BIGINT              -- amount (em centavos)
   - `views_vendas.py` - Remover `ROW_NUMBER()` (6 queries)
   - `views_cancelamentos.py` - Remover `ROW_NUMBER()` (3 queries)
   - `services_recebimentos.py` - Simplificar GROUP BY
-- [ ] 4.3. APIs Mobile
-  - `apps/transacoes/services.py` - Remover JOINs
-  - Usar campos da base unificada
+- [x] 4.3. APIs Mobile ✅
+  - `apps/transacoes/services.py` - Migrado para base_transacoes_unificadas
+  - Removidos JOINs com transactiondata e baseTransacoesGestao
+  - Mapeamento correto: var2=terminal, var8=forma_pagamento, var12=bandeira
 
 ### FASE 5: Migração Gradual (2-3 dias)
 - [ ] 5.1. Feature flag para alternar entre bases
@@ -225,11 +226,33 @@ valor_centavos BIGINT              -- amount (em centavos)
    - CalculadoraBaseCredenciadora atualizada para usar busca_plano_historico
    - **Pendente:** Implementar lógica real de busca de parâmetros vigentes na data da transação
 
+5. **APIs Mobile - apps/transacoes/services.py** ✅
+   - Migrado `consultar_extrato()` para base_transacoes_unificadas
+   - Migrado `gerar_comprovante()` para base_transacoes_unificadas
+   - Removidos JOINs com transactiondata e baseTransacoesGestao
+   - Mapeamento de campos: var2=terminal, var8=forma_pagamento, var12=bandeira
+   - CASE para converter var8 (PT) para paymentMethod (EN) no extrato
+   - Tratamento correto de PIX (identificado por var12='PIX')
+   - Conversão explícita de valores para Decimal (fix erro operação string)
+
 #### ⚠️ Pendente
 - Testar carga completa (sem limite) - POS e Credenciadora
 - Validar dados entre base antiga e nova
 - Refatorar services_carga_checkout.py
 - Migrar dados históricos de baseTransacoesGestao para base_transacoes_unificadas
+- Refatorar portais Admin e Lojista
+- **BUG: Transações com encargos (sem desconto)** - App e slip de impressão POS estão mostrando valores errados. Precisa corrigir lógica de cálculo/exibição quando há encargos ao invés de desconto.
+
+#### 🐛 Bugs Corrigidos (10/12/2024 17:00)
+1. **2FA - Renovação de dispositivo**
+   - Fix: Default `marcar_confiavel=False` → `True` em `validar_2fa_login()`
+   - Fix: Removida verificação duplicada de limite de dispositivos
+   - Fix: Adicionado return quando falha ao registrar dispositivo (bloqueio de login)
+   - Fix: Limite de dispositivos aumentado de 2 para 5 por cliente
+
+2. **apps/transacoes - Mapeamento de campos**
+   - Fix: terminal mapeado corretamente (var8 → var2)
+   - Fix: Conversão explícita para Decimal (evita erro "unsupported operand type(s) for -: 'decimal.Decimal' and 'str'")
 
 #### 📌 Observações Importantes
 - **Parâmetros históricos:** Sistema já busca parâmetros vigentes na data da transação via `get_configuracao_ativa()`. Método `busca_plano_historico()` foi removido (desnecessário).
@@ -242,5 +265,5 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 ---
 
-**Última Atualização:** 10/12/2024 15:36
-**Responsável:** [A definir]
+**Última Atualização:** 10/12/2024 17:11
+**Responsável:** Jean Lessa
