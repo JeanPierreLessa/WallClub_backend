@@ -33,8 +33,8 @@ class FirebaseService:
         self.initialized = False
         self._initialize_firebase()
 
-    def _get_firebase_config_path(self):
-        """Busca o caminho do arquivo de configuração Firebase para o canal"""
+    def _get_firebase_credentials(self):
+        """Busca as credenciais Firebase para o canal"""
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -47,60 +47,53 @@ class FirebaseService:
                     registrar_log('comum.integracoes', f'Configuração Firebase não encontrada para canal {self.canal_id}')
                     return None
                 
-                # Tentar múltiplos caminhos (Docker vs local vs package instalado)
-                import wallclub_core
+                json_firebase_filename = result[0]
                 
-                # Caminho 1: Diretório do package instalado
-                package_dir = os.path.dirname(wallclub_core.__file__)
-                firebase_dir_1 = os.path.join(package_dir, 'integracoes', 'firebase_configs')
+                # Buscar arquivo em /app/firebase_configs/ (copiado via Dockerfile)
+                config_path = f'/app/firebase_configs/{json_firebase_filename}'
                 
-                # Caminho 2: Source code copiado no Docker (/core/wallclub_core)
-                firebase_dir_2 = '/core/wallclub_core/integracoes/firebase_configs'
+                if os.path.exists(config_path):
+                    registrar_log('comum.integracoes', f'✅ Arquivo Firebase encontrado: {config_path}')
+                    return config_path
                 
-                # Caminho 3: Diretório absoluto no Docker (/app/services/core/wallclub_core)
-                firebase_dir_3 = '/app/services/core/wallclub_core/integracoes/firebase_configs'
-                
-                # Tentar cada caminho
-                for firebase_dir in [firebase_dir_1, firebase_dir_2, firebase_dir_3]:
-                    config_path = os.path.join(firebase_dir, result[0])
-                    if os.path.exists(config_path):
-                        registrar_log('comum.integracoes', f'✅ Arquivo Firebase encontrado: {config_path}')
-                        return config_path
-                
-                # Se nenhum caminho funcionou
-                registrar_log('comum.integracoes', f'❌ Arquivo Firebase não encontrado em nenhum caminho. Tentados: {firebase_dir_1}, {firebase_dir_2}, {firebase_dir_3}', nivel='ERROR')
+                registrar_log('comum.integracoes', f'❌ Arquivo Firebase não encontrado: {config_path}', nivel='ERROR')
                 return None
                 
         except Exception as e:
-            registrar_log('comum.integracoes', f'Erro ao buscar configuração Firebase: {str(e)}', nivel='ERROR')
+            registrar_log('comum.integracoes', f'Erro ao buscar credenciais Firebase: {str(e)}', nivel='ERROR')
             return None
 
     def _initialize_firebase(self):
         """Inicializa o Firebase Admin SDK com as credenciais do canal"""
         try:
-            config_path = self._get_firebase_config_path()
-            if not config_path:
+            firebase_config = self._get_firebase_credentials()
+            if not firebase_config:
                 registrar_log('comum.integracoes', f'Não foi possível inicializar Firebase para canal {self.canal_id}')
                 return False
             
-            cred = credentials.Certificate(config_path)
+            # Aceita dict (JSON do banco) ou string (caminho do arquivo)
+            if isinstance(firebase_config, dict):
+                cred = credentials.Certificate(firebase_config)
+            else:
+                cred = credentials.Certificate(firebase_config)
+            
             self.app = initialize_app(cred, name=f'canal_{self.canal_id}')
             self.initialized = True
             
-            registrar_log('comum.integracoes', f'Firebase inicializado para canal {self.canal_id}')
+            registrar_log('comum.integracoes', f'✅ Firebase inicializado para canal {self.canal_id}')
             return True
         except ValueError as e:
             if 'already exists' in str(e):
                 import firebase_admin
                 self.app = firebase_admin.get_app(f'canal_{self.canal_id}')
                 self.initialized = True
-                registrar_log('comum.integracoes', f'Firebase já inicializado para canal {self.canal_id}')
+                registrar_log('comum.integracoes', f'✅ Firebase já inicializado para canal {self.canal_id}')
                 return True
             else:
-                registrar_log('comum.integracoes', f'Erro ao inicializar Firebase: {str(e)}', nivel='ERROR')
+                registrar_log('comum.integracoes', f'❌ Erro ao inicializar Firebase: {str(e)}', nivel='ERROR')
                 return False
         except Exception as e:
-            registrar_log('comum.integracoes', f'Erro ao inicializar Firebase: {str(e)}', nivel='ERROR')
+            registrar_log('comum.integracoes', f'❌ Erro ao inicializar Firebase: {str(e)}', nivel='ERROR')
             return False
 
     def get_token_by_cpf(self, cpf):
