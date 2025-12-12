@@ -34,11 +34,11 @@ class FirebaseService:
         self._initialize_firebase()
 
     def _get_firebase_credentials(self):
-        """Busca as credenciais Firebase para o canal (do banco ou arquivo local)"""
+        """Busca as credenciais Firebase para o canal"""
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "SELECT firebase_credentials_json, json_firebase FROM canal WHERE id = %s",
+                    "SELECT firebase_credentials_json FROM canal WHERE id = %s",
                     [self.canal_id]
                 )
                 result = cursor.fetchone()
@@ -48,9 +48,7 @@ class FirebaseService:
                     return None
                 
                 firebase_credentials_json = result[0]
-                json_firebase_filename = result[1]
                 
-                # Opção 1: Credenciais JSON do banco (produção)
                 if firebase_credentials_json:
                     try:
                         credentials_dict = json.loads(firebase_credentials_json)
@@ -58,16 +56,6 @@ class FirebaseService:
                         return credentials_dict
                     except json.JSONDecodeError as e:
                         registrar_log('comum.integracoes', f'Erro ao decodificar JSON do banco: {str(e)}', nivel='ERROR')
-                
-                # Opção 2: Arquivo local (desenvolvimento)
-                if json_firebase_filename:
-                    import wallclub_core
-                    package_dir = os.path.dirname(wallclub_core.__file__)
-                    config_path = os.path.join(package_dir, 'integracoes', 'firebase_configs', json_firebase_filename)
-                    
-                    if os.path.exists(config_path):
-                        registrar_log('comum.integracoes', f'✅ Arquivo Firebase encontrado (dev): {config_path}')
-                        return config_path
                 
                 registrar_log('comum.integracoes', f'❌ Nenhuma credencial Firebase disponível para canal {self.canal_id}', nivel='ERROR')
                 return None
