@@ -47,18 +47,31 @@ class FirebaseService:
                     registrar_log('comum.integracoes', f'Configuração Firebase não encontrada para canal {self.canal_id}')
                     return None
                 
-                # Diretório base dos arquivos de configuração Firebase
-                # No monorepo: wallclub_core está em /app/services/core/wallclub_core
+                # Tentar múltiplos caminhos (Docker vs local vs package instalado)
                 import wallclub_core
+                
+                # Caminho 1: Diretório do package instalado
+                package_dir = os.path.dirname(wallclub_core.__file__)
+                firebase_dir_1 = os.path.join(package_dir, 'integracoes', 'firebase_configs')
+                
+                # Caminho 2: Source code no Docker (/app/services/core/wallclub_core)
                 core_path = os.path.dirname(os.path.dirname(wallclub_core.__file__))
-                firebase_dir = os.path.join(core_path, 'wallclub_core', 'integracoes', 'firebase_configs')
-                config_path = os.path.join(firebase_dir, result[0])
+                firebase_dir_2 = os.path.join(core_path, 'wallclub_core', 'integracoes', 'firebase_configs')
                 
-                if not os.path.exists(config_path):
-                    registrar_log('comum.integracoes', f'Arquivo Firebase não encontrado: {config_path}')
-                    return None
+                # Caminho 3: Diretório absoluto no Docker
+                firebase_dir_3 = '/app/services/core/wallclub_core/integracoes/firebase_configs'
                 
-                return config_path
+                # Tentar cada caminho
+                for firebase_dir in [firebase_dir_1, firebase_dir_2, firebase_dir_3]:
+                    config_path = os.path.join(firebase_dir, result[0])
+                    if os.path.exists(config_path):
+                        registrar_log('comum.integracoes', f'Arquivo Firebase encontrado: {config_path}')
+                        return config_path
+                
+                # Se nenhum caminho funcionou
+                registrar_log('comum.integracoes', f'Arquivo Firebase não encontrado em nenhum caminho. Tentados: {firebase_dir_1}, {firebase_dir_2}, {firebase_dir_3}', nivel='ERROR')
+                return None
+                
         except Exception as e:
             registrar_log('comum.integracoes', f'Erro ao buscar configuração Firebase: {str(e)}', nivel='ERROR')
             return None
