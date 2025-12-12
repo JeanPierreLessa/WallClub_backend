@@ -54,22 +54,21 @@ class FirebaseService:
                 package_dir = os.path.dirname(wallclub_core.__file__)
                 firebase_dir_1 = os.path.join(package_dir, 'integracoes', 'firebase_configs')
                 
-                # Caminho 2: Source code no Docker (/app/services/core/wallclub_core)
-                core_path = os.path.dirname(os.path.dirname(wallclub_core.__file__))
-                firebase_dir_2 = os.path.join(core_path, 'wallclub_core', 'integracoes', 'firebase_configs')
+                # Caminho 2: Source code copiado no Docker (/core/wallclub_core)
+                firebase_dir_2 = '/core/wallclub_core/integracoes/firebase_configs'
                 
-                # Caminho 3: Diretório absoluto no Docker
+                # Caminho 3: Diretório absoluto no Docker (/app/services/core/wallclub_core)
                 firebase_dir_3 = '/app/services/core/wallclub_core/integracoes/firebase_configs'
                 
                 # Tentar cada caminho
                 for firebase_dir in [firebase_dir_1, firebase_dir_2, firebase_dir_3]:
                     config_path = os.path.join(firebase_dir, result[0])
                     if os.path.exists(config_path):
-                        registrar_log('comum.integracoes', f'Arquivo Firebase encontrado: {config_path}')
+                        registrar_log('comum.integracoes', f'✅ Arquivo Firebase encontrado: {config_path}')
                         return config_path
                 
                 # Se nenhum caminho funcionou
-                registrar_log('comum.integracoes', f'Arquivo Firebase não encontrado em nenhum caminho. Tentados: {firebase_dir_1}, {firebase_dir_2}, {firebase_dir_3}', nivel='ERROR')
+                registrar_log('comum.integracoes', f'❌ Arquivo Firebase não encontrado em nenhum caminho. Tentados: {firebase_dir_1}, {firebase_dir_2}, {firebase_dir_3}', nivel='ERROR')
                 return None
                 
         except Exception as e:
