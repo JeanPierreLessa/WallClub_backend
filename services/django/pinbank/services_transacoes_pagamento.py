@@ -42,13 +42,13 @@ class TransacoesPinbankService:
                 raise ValueError(f"Loja {id_loja} não encontrada")
 
             # Validar se loja tem credenciais Pinbank configuradas
-            if not all([loja.pinbank_CodigoCanal, loja.pinbank_CodigoCliente, loja.pinbank_KeyValueLoja]):
+            if not all([loja.pinbank_codigo_loja, loja.pinbank_codigo_cliente, loja.pinbank_keyloja]):
                 raise ValueError(f"Loja {id_loja} não possui credenciais Pinbank configuradas")
 
             return {
-                'codigo_canal': loja.pinbank_CodigoCanal,
-                'codigo_cliente': loja.pinbank_CodigoCliente,
-                'key_loja': loja.pinbank_KeyValueLoja
+                'codigo_canal': loja.pinbank_codigo_loja,
+                'codigo_cliente': loja.pinbank_codigo_cliente,
+                'key_loja': loja.pinbank_keyloja
             }
         except Loja.DoesNotExist:
             raise ValueError(f"Loja {id_loja} não encontrada")

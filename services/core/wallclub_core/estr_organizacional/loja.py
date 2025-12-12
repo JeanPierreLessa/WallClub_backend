@@ -26,6 +26,12 @@ class Loja(models.Model):
     conta = models.CharField(max_length=256, null=True, blank=True)
     pix = models.CharField(max_length=256, null=True, blank=True)
     GrupoEconomicoId = models.PositiveIntegerField(null=True, blank=True)
+    
+    # Credenciais Pinbank
+    pinbank_codigo_loja = models.IntegerField(null=True, blank=True)
+    pinbank_codigo_cliente = models.IntegerField(null=True, blank=True)
+    pinbank_keyloja = models.CharField(max_length=256, null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
