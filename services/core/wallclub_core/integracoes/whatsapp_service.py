@@ -25,10 +25,22 @@ class WhatsAppService:
         """
         try:
             from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
+            from wallclub_core.estr_organizacional.canal import Canal
+            
+            registrar_log('comum.integracoes', f"Buscando canal {canal_id}...")
+            
+            # Tentar buscar direto pelo modelo
+            try:
+                canal_direto = Canal.objects.get(id=canal_id)
+                registrar_log('comum.integracoes', f"Canal encontrado direto: {canal_direto.nome}, facebook_url={canal_direto.facebook_url}")
+            except Canal.DoesNotExist:
+                registrar_log('comum.integracoes', f"Canal {canal_id} não existe na tabela canal", nivel='ERROR')
+            except Exception as e:
+                registrar_log('comum.integracoes', f"Erro ao buscar canal direto: {str(e)}", nivel='ERROR')
             
             canal = HierarquiaOrganizacionalService.get_canal(canal_id)
             if not canal:
-                registrar_log('comum.integracoes', f"Canal {canal_id} não encontrado", nivel='WARNING')
+                registrar_log('comum.integracoes', f"Canal {canal_id} não encontrado via service", nivel='WARNING')
                 return None
             
             if not canal.facebook_url or not canal.facebook_token:
