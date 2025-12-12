@@ -34,29 +34,42 @@ class FirebaseService:
         self._initialize_firebase()
 
     def _get_firebase_credentials(self):
-        """Busca as credenciais Firebase para o canal"""
+        """Busca as credenciais Firebase para o canal (do banco ou arquivo local)"""
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "SELECT json_firebase FROM canal WHERE id = %s AND json_firebase IS NOT NULL",
+                    "SELECT firebase_credentials_json, json_firebase FROM canal WHERE id = %s",
                     [self.canal_id]
                 )
                 result = cursor.fetchone()
                 
                 if not result:
-                    registrar_log('comum.integracoes', f'Configuração Firebase não encontrada para canal {self.canal_id}')
+                    registrar_log('comum.integracoes', f'Canal {self.canal_id} não encontrado')
                     return None
                 
-                json_firebase_filename = result[0]
+                firebase_credentials_json = result[0]
+                json_firebase_filename = result[1]
                 
-                # Buscar arquivo em /app/firebase_configs/ (copiado via Dockerfile)
-                config_path = f'/app/firebase_configs/{json_firebase_filename}'
+                # Opção 1: Credenciais JSON do banco (produção)
+                if firebase_credentials_json:
+                    try:
+                        credentials_dict = json.loads(firebase_credentials_json)
+                        registrar_log('comum.integracoes', f'✅ Credenciais Firebase carregadas do banco para canal {self.canal_id}')
+                        return credentials_dict
+                    except json.JSONDecodeError as e:
+                        registrar_log('comum.integracoes', f'Erro ao decodificar JSON do banco: {str(e)}', nivel='ERROR')
                 
-                if os.path.exists(config_path):
-                    registrar_log('comum.integracoes', f'✅ Arquivo Firebase encontrado: {config_path}')
-                    return config_path
+                # Opção 2: Arquivo local (desenvolvimento)
+                if json_firebase_filename:
+                    import wallclub_core
+                    package_dir = os.path.dirname(wallclub_core.__file__)
+                    config_path = os.path.join(package_dir, 'integracoes', 'firebase_configs', json_firebase_filename)
+                    
+                    if os.path.exists(config_path):
+                        registrar_log('comum.integracoes', f'✅ Arquivo Firebase encontrado (dev): {config_path}')
+                        return config_path
                 
-                registrar_log('comum.integracoes', f'❌ Arquivo Firebase não encontrado: {config_path}', nivel='ERROR')
+                registrar_log('comum.integracoes', f'❌ Nenhuma credencial Firebase disponível para canal {self.canal_id}', nivel='ERROR')
                 return None
                 
         except Exception as e:

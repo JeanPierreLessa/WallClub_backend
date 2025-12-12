@@ -32,9 +32,6 @@ RUN pip uninstall -y wallclub_core && pip install --no-cache-dir /core
 # Copiar código Django
 COPY services/django /app
 
-# Copiar arquivos Firebase (credenciais)
-COPY services/core/wallclub_core/integracoes/firebase_configs /app/firebase_configs
-
 # Criar diretórios necessários e usuário não-root
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     adduser --disabled-password --gecos '' appuser && \

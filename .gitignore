@@ -68,6 +68,10 @@ node_modules/
 # Credenciais e Secrets
 *firebase*adminsdk*.json
 *service-account*.json
+*apn_cert.pem
+*apn_key.pem
+*.p12
+*.cer
 WS/
 services/*/docs/backups/
 services/*/docs/executado/

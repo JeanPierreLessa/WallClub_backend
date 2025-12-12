@@ -33,44 +33,50 @@ class APNService:
         self.key_path = None
         self._initialize_apn()
 
-    def _get_apn_config_path(self):
-        """Busca o caminho dos certificados APN para o canal"""
+    def _get_apn_credentials(self):
+        """Busca os certificados APN para o canal (do banco ou arquivo local)"""
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT apn_cert_path, apn_key_path
-                    FROM canal
-                    WHERE id = %s AND apn_cert_path IS NOT NULL AND apn_key_path IS NOT NULL
-                    """,
+                    "SELECT apn_cert_pem, apn_key_pem FROM canal WHERE id = %s",
                     [self.canal_id]
                 )
                 result = cursor.fetchone()
 
                 if not result:
-                    registrar_log('comum.integracoes', f'Configuração APN não encontrada para canal {self.canal_id}', nivel='WARNING')
+                    registrar_log('comum.integracoes', f'Canal {self.canal_id} não encontrado', nivel='WARNING')
                     return None, None
 
-                # No monorepo: wallclub_core está em /app/services/core/wallclub_core
-                import wallclub_core
-                core_path = os.path.dirname(os.path.dirname(wallclub_core.__file__))
-                apn_dir = os.path.join(core_path, 'wallclub_core', 'integracoes', 'apn_configs')
-                cert_path = os.path.join(apn_dir, result[0])
-                key_path = os.path.join(apn_dir, result[1])
+                apn_cert_pem = result[0]
+                apn_key_pem = result[1]
 
-                if not os.path.exists(cert_path) or not os.path.exists(key_path):
-                    registrar_log('comum.integracoes', f'Certificados APN não encontrados: {cert_path}, {key_path}', nivel='WARNING')
-                    return None, None
+                # Opção 1: Certificados do banco (produção)
+                if apn_cert_pem and apn_key_pem:
+                    import tempfile
+                    # Criar arquivos temporários com os certificados
+                    cert_file = tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False)
+                    key_file = tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False)
+                    
+                    cert_file.write(apn_cert_pem)
+                    key_file.write(apn_key_pem)
+                    
+                    cert_file.close()
+                    key_file.close()
+                    
+                    registrar_log('comum.integracoes', f'✅ Certificados APN carregados do banco para canal {self.canal_id}')
+                    return cert_file.name, key_file.name
 
-                return cert_path, key_path
+                registrar_log('comum.integracoes', f'❌ Nenhum certificado APN disponível para canal {self.canal_id}', nivel='WARNING')
+                return None, None
+                
         except Exception as e:
-            registrar_log('comum.integracoes', f'Erro ao buscar configuração APN: {str(e)}', nivel='ERROR')
+            registrar_log('comum.integracoes', f'Erro ao buscar certificados APN: {str(e)}', nivel='ERROR')
             return None, None
 
     def _initialize_apn(self):
         """Inicializa o APN com os certificados do canal"""
         try:
-            cert_path, key_path = self._get_apn_config_path()
+            cert_path, key_path = self._get_apn_credentials()
             if not cert_path or not key_path:
                 registrar_log('comum.integracoes', f'Não foi possível inicializar APN para canal {self.canal_id}', nivel='WARNING')
                 return False
@@ -79,10 +85,10 @@ class APNService:
             self.key_path = key_path
             self.initialized = True
 
-            registrar_log('comum.integracoes', f'APN inicializado para canal {self.canal_id}', nivel='INFO')
+            registrar_log('comum.integracoes', f'✅ APN inicializado para canal {self.canal_id}')
             return True
         except Exception as e:
-            registrar_log('comum.integracoes', f'Erro ao inicializar APN: {str(e)}', nivel='ERROR')
+            registrar_log('comum.integracoes', f'❌ Erro ao inicializar APN: {str(e)}', nivel='ERROR')
             return False
 
     def get_token_by_cpf(self, cpf):
