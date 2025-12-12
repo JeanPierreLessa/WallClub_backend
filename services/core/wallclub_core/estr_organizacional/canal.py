@@ -20,8 +20,10 @@ class Canal(models.Model):
     canal = models.CharField(max_length=256, null=True, blank=True)
     codigo_cliente = models.CharField(max_length=256, null=True, blank=True)
     marca = models.CharField(max_length=10, null=True, blank=True)
-    json_firebase = models.CharField(max_length=100, null=True, blank=True)
-    bundle_id = models.CharField(max_length=100, null=True, blank=True)  # Bundle ID para APN
+    bundle_id = models.CharField(max_length=100, null=True, blank=True)
+    firebase_credentials_json = models.TextField(null=True, blank=True)
+    apn_cert_pem = models.TextField(null=True, blank=True)
+    apn_key_pem = models.TextField(null=True, blank=True)
     facebook_url = models.CharField(max_length=100, null=True, blank=True)
     facebook_token = models.CharField(max_length=256, null=True, blank=True)
     logo_pos = models.CharField(max_length=30, null=True, blank=True)

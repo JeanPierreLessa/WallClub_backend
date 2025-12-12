@@ -10,65 +10,53 @@ from wallclub_core.utilitarios.log_control import registrar_log
 
 class WhatsAppService:
     """Serviço para envio de mensagens via WhatsApp Business API"""
-    
+
     @staticmethod
     def obter_configuracao_whatsapp(canal_id):
         """
         Obtém configuração do WhatsApp baseado no canal_id.
         Busca facebook_url e facebook_token da tabela canal.
-        
+
         Args:
             canal_id (int): ID do canal
-            
+
         Returns:
             dict: Configurações do WhatsApp (URL, token) ou None se não encontrado
         """
         try:
             from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
-            from wallclub_core.estr_organizacional.canal import Canal
-            
-            registrar_log('comum.integracoes', f"Buscando canal {canal_id}...")
-            
-            # Tentar buscar direto pelo modelo
-            try:
-                canal_direto = Canal.objects.get(id=canal_id)
-                registrar_log('comum.integracoes', f"Canal encontrado direto: {canal_direto.nome}, facebook_url={canal_direto.facebook_url}")
-            except Canal.DoesNotExist:
-                registrar_log('comum.integracoes', f"Canal {canal_id} não existe na tabela canal", nivel='ERROR')
-            except Exception as e:
-                registrar_log('comum.integracoes', f"Erro ao buscar canal direto: {str(e)}", nivel='ERROR')
-            
+
             canal = HierarquiaOrganizacionalService.get_canal(canal_id)
             if not canal:
-                registrar_log('comum.integracoes', f"Canal {canal_id} não encontrado via service", nivel='WARNING')
+                registrar_log('comum.integracoes', f"Canal {canal_id} não encontrado", nivel='WARNING')
                 return None
-            
+
             if not canal.facebook_url or not canal.facebook_token:
                 registrar_log('comum.integracoes', f"Configurações WhatsApp incompletas para canal {canal_id}", nivel='WARNING')
                 return None
-            
+
             return {
                 'url': canal.facebook_url.strip() if canal.facebook_url else None,
                 'token': canal.facebook_token.strip() if canal.facebook_token else None,
                 'template_senha': 'envio_senha2',  # Template padrão hardcoded
                 'template_language': 'pt_BR'       # Idioma padrão hardcoded
             }
-            
+
         except Exception as e:
             registrar_log('comum.integracoes', f"Erro ao buscar configurações WhatsApp: {str(e)}", nivel='ERROR')
             return None
-    
+
     @staticmethod
     def construir_template_whatsapp(template_name, language_code, parametros_body=None, parametros_button=None):
         """
         Constrói estrutura de template WhatsApp de forma dinâmica.
-        
+
         Args:
             template_name (str): Nome do template
             language_code (str): Código do idioma (ex: 'pt_BR')
             parametros_body (list): Lista de parâmetros para o corpo da mensagem
             parametros_button (list): Lista de parâmetros para botões
-            
+
         Returns:
             dict: Estrutura do template formatada para WhatsApp API
         """
@@ -78,10 +66,10 @@ class WhatsAppService:
                 "code": language_code
             }
         }
-        
+
         # Adicionar componentes se houver parâmetros
         components = []
-        
+
         # Componente body (corpo da mensagem)
         if parametros_body:
             body_params = []
@@ -95,12 +83,12 @@ class WhatsAppService:
                         "type": "text",
                         "text": str(param)
                     })
-            
+
             components.append({
                 "type": "body",
                 "parameters": body_params
             })
-        
+
         # Componente button (botões)
         if parametros_button:
             for i, param in enumerate(parametros_button):
@@ -115,18 +103,18 @@ class WhatsAppService:
                         }
                     ]
                 })
-        
+
         # Adicionar componentes ao template se existirem
         if components:
             template["components"] = components
-            
+
         return template
 
     @staticmethod
     def envia_whatsapp(numero_telefone, canal_id, nome_template, idioma_template='pt_BR', parametros_corpo=None, parametros_botao=None):
         """
         Envia mensagem via WhatsApp usando template dinâmico.
-        
+
         Args:
             numero_telefone (str): Número do telefone/celular (apenas números)
             canal_id (int): ID do canal
@@ -134,7 +122,7 @@ class WhatsAppService:
             idioma_template (str): Código do idioma (ex: 'pt_BR')
             parametros_corpo (list): Lista de parâmetros para o corpo da mensagem (conforme template)
             parametros_botao (list): Lista de parâmetros para botões (conforme template)
-            
+
         Returns:
             bool: True se enviado com sucesso, False caso contrário
         """
@@ -144,13 +132,13 @@ class WhatsAppService:
             if not config:
                 registrar_log('comum.integracoes', f"Configuração WhatsApp não encontrada para canal {canal_id}", nivel='ERROR')
                 return False
-            
+
             # Limpar número do telefone (apenas números)
             telefone_limpo = ''.join(filter(str.isdigit, numero_telefone))
             if len(telefone_limpo) < 10:
                 registrar_log('comum.integracoes', f"Número de telefone inválido: {numero_telefone}", nivel='WARNING')
                 return False
-            
+
             # Construir template dinâmico usando parâmetros de entrada
             template = WhatsAppService.construir_template_whatsapp(
                 template_name=nome_template,
@@ -158,7 +146,7 @@ class WhatsAppService:
                 parametros_body=parametros_corpo,    # Parâmetros dinâmicos para o corpo
                 parametros_button=parametros_botao   # Parâmetros dinâmicos para botões
             )
-            
+
             # Preparar payload para WhatsApp API
             payload = {
                 "messaging_product": "whatsapp",
@@ -166,17 +154,17 @@ class WhatsAppService:
                 "type": "template",
                 "template": template
             }
-            
+
             # Headers da requisição
             headers = {
                 'Authorization': f'Bearer {config["token"]}',
                 'Content-Type': 'application/json'
             }
-            
+
             # Log do payload completo para diagnóstico
             registrar_log('comum.integracoes', f"[DEBUG] WhatsApp Payload: {json.dumps(payload, ensure_ascii=False)}", nivel='DEBUG')
             registrar_log('comum.integracoes', f"[DEBUG] WhatsApp URL: {config['url']}", nivel='DEBUG')
-            
+
             # Fazer requisição para WhatsApp API
             response = requests.post(
                 config['url'],
@@ -184,7 +172,7 @@ class WhatsAppService:
                 headers=headers,
                 timeout=30
             )
-            
+
             if response.status_code == 200:
                 registrar_log('comum.integracoes', f"WhatsApp enviado com sucesso para {telefone_limpo}", nivel='INFO')
                 registrar_log('comum.integracoes', f"[DEBUG] WhatsApp Response: {response.text}", nivel='DEBUG')
@@ -192,11 +180,11 @@ class WhatsAppService:
             else:
                 registrar_log('comum.integracoes', f"Erro ao enviar WhatsApp - Status: {response.status_code} - Response: {response.text}", nivel='ERROR')
                 return False
-                
+
         except requests.RequestException as e:
             registrar_log('comum.integracoes', f"Erro de conexão ao enviar WhatsApp: {str(e)}", nivel='ERROR')
             return False
         except Exception as e:
             registrar_log('comum.integracoes', f"Erro inesperado ao enviar WhatsApp: {str(e)}", nivel='ERROR')
             return False
-    
+
