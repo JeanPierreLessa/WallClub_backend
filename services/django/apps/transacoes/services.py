@@ -163,8 +163,18 @@ class TransacaoService:
                     else:
                         descricao = f"{estab}\\n\\n{data}\\n\\n{band}{forma}{card}{status}"
                     
+                    # Formatar data no padrão YYYY-MM-DD HH:MM:SS
+                    if isinstance(data, str):
+                        try:
+                            dt = datetime.strptime(data, '%Y-%m-%d %H:%M:%S')
+                            data_formatada = dt.strftime('%Y-%m-%d %H:%M:%S')
+                        except:
+                            data_formatada = str(data)
+                    else:
+                        data_formatada = data.strftime('%Y-%m-%d %H:%M:%S') if data else ""
+                    
                     extrato.append({
-                        'data': str(data),
+                        'data': data_formatada,
                         'estabelecimento': str(estab),
                         'valor_original': valoro or Decimal('0.00'),
                         'valor_decimal': valord or Decimal('0.00'),

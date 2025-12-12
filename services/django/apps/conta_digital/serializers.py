@@ -62,6 +62,7 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Ajusta sinal do valor: positivo para crédito, negativo para débito"""
         from decimal import Decimal
+        from datetime import datetime
         data = super().to_representation(instance)
         
         # Converter valor de string para Decimal antes de aplicar abs()
@@ -73,6 +74,20 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
         else:
             # Crédito mantém positivo
             data['valor'] = str(abs(valor))
+        
+        # Formatar datas no padrão YYYY-MM-DD HH:MM:SS
+        for field in ['data_movimentacao', 'processada_em', 'created_at']:
+            if data.get(field):
+                if isinstance(data[field], str):
+                    # Já é string, tentar parsear e reformatar
+                    try:
+                        dt = datetime.fromisoformat(data[field].replace('Z', '+00:00'))
+                        data[field] = dt.strftime('%Y-%m-%d %H:%M:%S')
+                    except:
+                        pass
+                else:
+                    # É datetime object
+                    data[field] = data[field].strftime('%Y-%m-%d %H:%M:%S')
         
         return data
 
