@@ -226,12 +226,20 @@ class FirebaseService:
                 token=token,
             )
             
-            registrar_log('comum.integracoes', f'🔔 [FIREBASE PUSH] Enviando: cliente={cliente_id}, tipo={tipo_push}, template={id_template}')
+            # Log completo do payload antes de enviar
+            payload_completo = {
+                'data': data_dict,
+                'token': f'{token[:20]}...{token[-20:]}',  # Token parcial por segurança
+                'cliente_id': cliente_id,
+                'template': id_template,
+                'tipo_push': tipo_push
+            }
+            registrar_log('comum.integracoes', f'🔔 [FIREBASE PUSH] Payload completo: {json.dumps(payload_completo, indent=2, ensure_ascii=False)}')
             
             # Enviar via Firebase
             response = messaging.send(message, app=self.app)
             
-            registrar_log('comum.integracoes', f'✅ Push Firebase enviado: {response}')
+            registrar_log('comum.integracoes', f'✅ Push Firebase enviado com sucesso. Response: {response}')
             return {'sucesso': True, 'mensagem': 'Push enviado com sucesso'}
             
         except Exception as e:
