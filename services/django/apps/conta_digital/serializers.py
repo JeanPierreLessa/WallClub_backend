@@ -62,7 +62,7 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Ajusta sinal do valor: positivo para crédito, negativo para débito"""
         from decimal import Decimal
-        from datetime import datetime
+        from datetime import datetime, timedelta
         data = super().to_representation(instance)
         
         # Converter valor de string para Decimal antes de aplicar abs()
@@ -89,13 +89,77 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
                     # É datetime object
                     data[field] = data[field].strftime('%Y-%m-%d %H:%M:%S')
         
+        # Adicionar informações de cashback se disponível no contexto
+        cashback_info = self.context.get('cashback_info', {})
+        if instance.id in cashback_info:
+            cu = cashback_info[instance.id]
+            
+            # Calcular data de desbloqueio prevista (30 dias após aplicação)
+            data_aplicacao = cu['aplicado_em']
+            if isinstance(data_aplicacao, str):
+                data_aplicacao = datetime.fromisoformat(data_aplicacao.replace('Z', '+00:00'))
+            
+            data_desbloqueio = data_aplicacao + timedelta(days=30)
+            
+            # Calcular dias para desbloqueio
+            dias_para_desbloqueio = (data_desbloqueio - datetime.now()).days
+            if dias_para_desbloqueio < 0:
+                dias_para_desbloqueio = 0
+            
+            # Calcular data de expiração (90 dias após liberação)
+            data_expiracao = data_desbloqueio + timedelta(days=90)
+            
+            data['cashback'] = {
+                'tipo_origem': cu['tipo_origem'],
+                'status': cu['status'],
+                'bloqueado': cu['status'] == 'RETIDO',
+                'data_aplicacao': data_aplicacao.strftime('%Y-%m-%d %H:%M:%S'),
+                'data_desbloqueio_prevista': data_desbloqueio.strftime('%Y-%m-%d %H:%M:%S'),
+                'data_expiracao': data_expiracao.strftime('%Y-%m-%d %H:%M:%S'),
+                'dias_para_desbloqueio': dias_para_desbloqueio
+            }
+        
+        return data
+
+
+class ResumoCashbackSerializer(serializers.Serializer):
+    """Serializer para resumo de cashback"""
+    total_retido = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_disponivel = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_geral = serializers.DecimalField(max_digits=15, decimal_places=2)
+    proxima_liberacao = serializers.DateTimeField(allow_null=True)
+    
+    def to_representation(self, instance):
+        from datetime import datetime
+        data = super().to_representation(instance)
+        
+        # Formatar data de próxima liberação
+        if data.get('proxima_liberacao'):
+            if isinstance(data['proxima_liberacao'], str):
+                try:
+                    dt = datetime.fromisoformat(data['proxima_liberacao'].replace('Z', '+00:00'))
+                    data['proxima_liberacao'] = dt.strftime('%Y-%m-%d %H:%M:%S')
+                except:
+                    pass
+            else:
+                data['proxima_liberacao'] = data['proxima_liberacao'].strftime('%Y-%m-%d %H:%M:%S')
+        
         return data
 
 
 class ExtratoSerializer(serializers.Serializer):
     """Serializer para resposta de extrato"""
     saldo_atual = serializers.DecimalField(max_digits=15, decimal_places=2)
+    cashback_disponivel = serializers.DecimalField(max_digits=15, decimal_places=2)
+    cashback_bloqueado = serializers.DecimalField(max_digits=15, decimal_places=2)
     movimentacoes = MovimentacaoSerializer(many=True)
+    resumo_cashback = ResumoCashbackSerializer()
+    
+    def to_representation(self, instance):
+        # Passar cashback_info para o contexto das movimentações
+        cashback_info = instance.get('cashback_info', {})
+        self.fields['movimentacoes'].context['cashback_info'] = cashback_info
+        return super().to_representation(instance)
 
 
 class CreditarSerializer(serializers.Serializer):

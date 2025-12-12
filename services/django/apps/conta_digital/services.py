@@ -277,7 +277,7 @@ class ContaDigitalService:
     def obter_extrato(cliente_id, canal_id, data_inicio=None, data_fim=None, 
                      tipo_movimentacao=None, limite=50):
         """
-        Obtém extrato de movimentações da conta digital.
+        Obtém extrato de movimentações da conta digital com informações de cashback.
         """
         try:
             registrar_log('apps.conta_digital', f'📊 Solicitação extrato: cliente={cliente_id}, canal={canal_id}, data_inicio={data_inicio}, data_fim={data_fim}, tipo={tipo_movimentacao}, limite={limite}')
@@ -312,11 +312,49 @@ class ContaDigitalService:
             total_movimentacoes = movimentacoes.count()
             
             registrar_log('apps.conta_digital', f'📋 Movimentações encontradas: {total_movimentacoes} registros')
+            
+            # Buscar informações de cashback para movimentações de cashback
+            from apps.cashback.models import CashbackUso
+            from django.db import connection
+            
+            movimentacoes_list = list(movimentacoes)
+            movimentacoes_ids = [m.id for m in movimentacoes_list]
+            
+            # Buscar cashback_uso relacionados às movimentações
+            cashback_info = {}
+            if movimentacoes_ids:
+                cashback_usos = CashbackUso.objects.filter(
+                    movimentacao_id__in=movimentacoes_ids
+                ).values(
+                    'movimentacao_id', 'tipo_origem', 'status', 
+                    'aplicado_em', 'liberado_em', 'expira_em'
+                )
+                
+                for cu in cashback_usos:
+                    cashback_info[cu['movimentacao_id']] = cu
+            
+            # Buscar próxima liberação de cashback
+            retencoes = CashbackRetencao.objects.filter(
+                conta_digital=conta,
+                status='RETIDO'
+            ).order_by('data_liberacao_prevista').first()
+            
+            proxima_liberacao = retencoes.data_liberacao_prevista if retencoes else None
+            
             registrar_log('apps.conta_digital', f'✅ Extrato gerado: {total_movimentacoes} movimentações, saldo_atual={conta.saldo_atual}')
             
             return {
                 'saldo_atual': conta.saldo_atual,
-                'movimentacoes': list(movimentacoes)  # Retorna objetos do modelo
+                'cashback_disponivel': conta.cashback_disponivel,
+                'cashback_bloqueado': conta.cashback_bloqueado,
+                'movimentacoes': movimentacoes_list,
+                'cashback_info': cashback_info,
+                'resumo_cashback': {
+                    'total_retido': conta.cashback_bloqueado,
+                    'total_disponivel': conta.cashback_disponivel,
+                    'total_geral': conta.cashback_bloqueado + conta.cashback_disponivel,
+                    'proxima_liberacao': proxima_liberacao
+                }
             }
             
         except Exception as e:
