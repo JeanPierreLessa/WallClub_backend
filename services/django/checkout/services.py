@@ -478,9 +478,12 @@ class CheckoutService:
             }
 
             registrar_log('checkout', f"Processando pagamento cliente {cliente_id} - R$ {valor}")
+            registrar_log('checkout', f"Payload Pinbank: {payload_transacao}")
 
             # Processar via Pinbank
             resultado = pinbank_service.efetuar_transacao_cartao_tokenizado(payload_transacao)
+            
+            registrar_log('checkout', f"Resultado Pinbank: sucesso={resultado.get('sucesso')}, mensagem={resultado.get('mensagem')}")
 
             # Determinar status
             if resultado.get('sucesso'):
@@ -539,7 +542,9 @@ class CheckoutService:
         except CheckoutCartaoTokenizado.DoesNotExist:
             raise ValidationError('Cartão não encontrado ou inválido')
         except Exception as e:
-            registrar_log('checkout', f"Erro ao processar pagamento: {str(e)}", nivel='ERROR')
+            import traceback
+            erro_completo = traceback.format_exc()
+            registrar_log('checkout', f"Erro ao processar pagamento: {str(e)}\n{erro_completo}", nivel='ERROR')
             
             # Salvar transação com erro para auditoria
             try:
@@ -548,16 +553,16 @@ class CheckoutService:
                     cliente_id=cliente_id,
                     cartao_tokenizado_id=cartao_id,
                     origem='CHECKOUT',
-                    loja_id=cliente.loja_id if 'cliente' in locals() else None,
+                    loja_id=cliente.loja_id if cliente else None,
                     valor_transacao_original=valor_transacao_original or valor,
                     valor_transacao_final=valor_transacao_final or valor,
                     status='NEGADA',
-                    forma_pagamento=f"{bandeira_cartao}_{parcelas}x" if 'bandeira_cartao' in locals() else 'DESCONHECIDA',
+                    forma_pagamento=f"{bandeira_cartao}_{parcelas}x",
                     parcelas=parcelas,
                     pedido_origem_loja=pedido_origem_loja,
                     cod_item_origem_loja=cod_item_origem_loja,
                     vendedor_id=portais_usuarios_id,
-                    erro_pinbank=f"Erro interno ao processar transação: {str(e)}",
+                    erro_pinbank=f"Erro interno: {str(e)}",
                     processed_at=datetime.now()
                 )
             except Exception as save_error:
