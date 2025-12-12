@@ -404,7 +404,7 @@ class CheckoutService:
     @transaction.atomic
     def processar_pagamento_cartao_tokenizado(
         cliente_id: int,
-        cartao_id: int,
+        cartao_id: str,
         valor: Decimal,
         parcelas: int,
         bandeira: str,
@@ -418,35 +418,39 @@ class CheckoutService:
         valor_transacao_final: Decimal = None
     ) -> Dict[str, Any]:
         """
-        Processa pagamento usando cartão tokenizado
-
+        Processa pagamento com cartão tokenizado.
+        
         Args:
-            cliente_id: ID do cliente
+            cliente_id: ID do cliente checkout
             cartao_id: ID do cartão tokenizado
             valor: Valor da transação
-            parcelas: Número de parcelas
-            bandeira: Bandeira do cartão
-            descricao: Descrição da compra
-            ip_address: IP do cliente
-            user_agent: User agent
-            pedido_origem_loja: ID do pedido no sistema da loja
-
+            parcelas: Quantidade de parcelas
+            bandeira: Bandeira do cartão (VISA, MASTERCARD, etc)
+            descricao: Descrição da transação
+            ip_address: IP do comprador
+            user_agent: User agent do comprador
+            pedido_origem_loja: Número do pedido na loja
+            cod_item_origem_loja: Código do item na loja
+            portais_usuarios_id: ID do vendedor (se origem portal)
+            valor_transacao_original: Valor original sem desconto/juros
+            valor_transacao_final: Valor final com desconto/juros aplicados
+            
         Returns:
-            Dict com sucesso, nsu, codigo_autorizacao, mensagem
+            Dict com sucesso, transacao_id, nsu, codigo_autorizacao, status, mensagem
         """
-        from pinbank.services_transacoes_pagamento import TransacoesPinbankService
-
+        # Variáveis para captura de erro
+        cliente = None
+        cartao = None
+        bandeira_cartao = bandeira or 'MASTERCARD'
+        
         try:
-            cliente = CheckoutCliente.objects.get(id=cliente_id)
-            cartao = CheckoutCartaoTokenizado.objects.get(id=cartao_id, cliente=cliente, valido=True)
-
-            # Validar valor
-            if valor <= 0:
-                raise ValidationError('Valor deve ser maior que zero')
-
-            # Buscar bandeira do cartão tokenizado (ignora parâmetro bandeira)
-            bandeira_cartao = cartao.bandeira
-
+            # Buscar cliente e cartão
+            cliente = CheckoutCliente.objects.get(id=cliente_id, ativo=True)
+            cartao = CheckoutCartaoTokenizado.objects.get(id=cartao_id, cliente=cliente, ativo=True)
+            
+            # Determinar bandeira do cartão
+            bandeira_cartao = bandeira or cartao.bandeira or 'MASTERCARD'
+            
             # Preparar dados da transação
             pinbank_service = TransacoesPinbankService(loja_id=cliente.loja_id)
 
@@ -535,6 +539,29 @@ class CheckoutService:
             raise ValidationError('Cartão não encontrado ou inválido')
         except Exception as e:
             registrar_log('checkout', f"Erro ao processar pagamento: {str(e)}", nivel='ERROR')
+            
+            # Salvar transação com erro para auditoria
+            try:
+                from datetime import datetime
+                CheckoutTransaction.objects.create(
+                    cliente_id=cliente_id,
+                    cartao_tokenizado_id=cartao_id,
+                    origem='CHECKOUT',
+                    loja_id=cliente.loja_id if 'cliente' in locals() else None,
+                    valor_transacao_original=valor_transacao_original or valor,
+                    valor_transacao_final=valor_transacao_final or valor,
+                    status='NEGADA',
+                    forma_pagamento=f"{bandeira_cartao}_{parcelas}x" if 'bandeira_cartao' in locals() else 'DESCONHECIDA',
+                    parcelas=parcelas,
+                    pedido_origem_loja=pedido_origem_loja,
+                    cod_item_origem_loja=cod_item_origem_loja,
+                    vendedor_id=portais_usuarios_id,
+                    erro_pinbank=f"Erro interno ao processar transação: {str(e)}",
+                    processed_at=datetime.now()
+                )
+            except Exception as save_error:
+                registrar_log('checkout', f"Erro ao salvar transação com erro: {str(save_error)}", nivel='ERROR')
+            
             raise
 
     @staticmethod
