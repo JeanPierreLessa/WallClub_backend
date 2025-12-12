@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from wallclub_core.utilitarios.log_control import registrar_log
 from .models import CheckoutCliente, CheckoutCartaoTokenizado, CheckoutTransaction
+from pinbank.services import TransacoesPinbankService
 
 
 class ClienteService:
