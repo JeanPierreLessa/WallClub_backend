@@ -446,7 +446,7 @@ class CheckoutService:
         try:
             # Buscar cliente e cartão
             cliente = CheckoutCliente.objects.get(id=cliente_id, ativo=True)
-            cartao = CheckoutCartaoTokenizado.objects.get(id=cartao_id, cliente=cliente, ativo=True)
+            cartao = CheckoutCartaoTokenizado.objects.get(id=cartao_id, cliente=cliente, valido=True)
             
             # Determinar bandeira do cartão
             bandeira_cartao = bandeira or cartao.bandeira or 'MASTERCARD'
