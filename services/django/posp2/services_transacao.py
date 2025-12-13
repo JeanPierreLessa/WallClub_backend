@@ -835,16 +835,6 @@ class TRDataService:
             # vparcela e cálculos de tarifas/encargos conforme PHP
             parcelas = int(valores_calculados.get(13, 1))
             
-            # correção feita em 13/12/2025 - Problema quando é encargo e nao desconto
-            # Calcular parte1 seguindo PHP (linha 710 trdata.php)
-            # $parte1 = abs($valores[13] * $vparcela - $valores[11]);
-            if parcelas >= 1 and vparcela:
-                valor_original = safe_float_convert(valores_calculados.get(11, 0))
-                vparcela_float = safe_float_convert(vparcela)
-                parte1 = abs(parcelas * vparcela_float - valor_original)
-            else:
-                parte1 = abs(desconto)
-
             # === CORREÇÃO TARIFAS/ENCARGOS SEGUINDO PHP ===
             registrar_log('posp2', f'VALORES PHP PARA CÁLCULO:')
             registrar_log('posp2', f'valores[13] (parcelas) = {valores_calculados.get(13)}')
@@ -868,6 +858,16 @@ class TRDataService:
             # Para débito e PIX, se vparcela for nulo ou zero, usar parte0 / parcelas
             if vparcela is None or vparcela == 0:
                 vparcela = parte0 / parcelas if parcelas > 0 else parte0
+            
+            # correção feita em 13/12/2025 - Problema quando é encargo e nao desconto
+            # Calcular parte1 seguindo PHP (linha 710 trdata.php)
+            # $parte1 = abs($valores[13] * $vparcela - $valores[11]);
+            if parcelas >= 1 and vparcela:
+                valor_original = safe_float_convert(valores_calculados.get(11, 0))
+                vparcela_float = safe_float_convert(vparcela)
+                parte1 = abs(parcelas * vparcela_float - valor_original)
+            else:
+                parte1 = abs(desconto)
 
             # $tarifas = abs($valores[13] * $vparcela - $valores[16]) - $encargos;
             valor_liquido = safe_float_convert(valores_calculados.get(16, 0))
