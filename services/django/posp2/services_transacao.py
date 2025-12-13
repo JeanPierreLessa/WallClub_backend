@@ -832,6 +832,9 @@ class TRDataService:
                     parte0 = valor_original
                     registrar_log('posp2', f'💰 [FALLBACK] Usando valor original: {parte0}')
 
+            # vparcela e cálculos de tarifas/encargos conforme PHP
+            parcelas = int(valores_calculados.get(13, 1))
+            
             # correção feita em 13/12/2025 - Problema quando é encargo e nao desconto
             # Calcular parte1 seguindo PHP (linha 710 trdata.php)
             # $parte1 = abs($valores[13] * $vparcela - $valores[11]);
@@ -841,9 +844,6 @@ class TRDataService:
                 parte1 = abs(parcelas * vparcela_float - valor_original)
             else:
                 parte1 = abs(desconto)
-
-            # vparcela e cálculos de tarifas/encargos conforme PHP
-            parcelas = int(valores_calculados.get(13, 1))
 
             # === CORREÇÃO TARIFAS/ENCARGOS SEGUINDO PHP ===
             registrar_log('posp2', f'VALORES PHP PARA CÁLCULO:')
