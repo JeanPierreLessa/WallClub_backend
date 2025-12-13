@@ -673,16 +673,15 @@ class TRDataPosService:
                 elif forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]:
                     array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj,
                                                   data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
-                    # Verificar se é encargo ou desconto usando $desconto (PHP linha 516, 544, 575)
-                    if desconto < 0:
-                        # PHP linha 575: if ($desconto * 1 < 0) -> encargo
-                        # Usa "Encargos pagos a operadora de cartão:" (linha 596)
+                    # Verificar se é encargo ou desconto usando valores[14] (PHP)
+                    valores_14 = safe_float_convert(valores_calculados.get(14, 0))
+                    if valores_14 < 0:
+                        # É ENCARGO (valores[14] negativo)
                         label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
                         label_vdesconto = f"Valor total pago com encargos:\nR$ {formatar_valor_monetario(vdesconto_final)}"
                         label_encargos = f"Encargos pagos a operadora de cartão: R$ {formatar_valor_monetario(encargos)}"
                     else:
-                        # PHP linha 516, 544: if ($desconto * 1 >= 0) -> desconto positivo
-                        # Usa "Encargos financeiros:" (linha 532, 563)
+                        # É DESCONTO (valores[14] positivo ou zero)
                         label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
                         label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
                         label_encargos = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"

@@ -802,15 +802,13 @@ class TRDataService:
                     return float(value)
                 except (ValueError, TypeError):
                     return 0.0
-
             # Lógica condicional do PHP: PIX usa valores[15], outros usam valores[18]
             pixcartao = self.TIPO_COMPRA_MAP.get(dados.get('paymentMethod', ''), '')
             if pixcartao == 'PIX':
                 pixcartao_tipo = "PIX"
-            else:
-                pixcartao_tipo = "CARTÃO"
-
-            # Implementar lógica exata do PHP dados_impressao
+            # Lógica condicional do PHP
+            pixcartao_tipo = "PIX" if dados.get('brand') == 'PIX' else "CARTÃO"
+            
             if valores_calculados.get(12) == "PIX" or pixcartao_tipo == "PIX":
                 desconto = safe_float_convert(valores_calculados.get(15, 0))
             else:
@@ -965,45 +963,21 @@ class TRDataService:
                     array.update(array_update)
                     registrar_log('posp2', f'Array PIX/DEBITO criado com {len(array)} campos')
 
-                elif (forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]) and desconto >= 0:
+                elif (forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]):
                     array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj,
                                                   data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
-                    # PHP linha 516, 544: if ($desconto * 1 >= 0) -> desconto positivo
-                    # Usa "Encargos financeiros:" (linha 532, 563)
-                    label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
-                    label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
-                    label_encargos = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
-
-                    array_update = {
-                        "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
-                        "desconto": label_desconto,
-                        "vdesconto": label_vdesconto,
-                    }
-
-                    # Adicionar saldo usado se existir
-                    if saldo_cashback_usado > 0:
-                        array_update["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
-
-                    # Adicionar cashback concedido se existir
-                    if cashback_concedido > 0:
-                        array_update["cashback_concedido"] = f"Cashback concedido: R$ {formatar_valor_monetario(cashback_concedido)}"
-
-                    array_update.update({
-                        "pagoavista": f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valores_calculados.get(16, 0))}",
-                        "vparcela": f"R$ {formatar_valor_monetario(vparcela_ajustado)}",
-                        "tarifas": f"Tarifas CLUB: R$ {formatar_valor_monetario(tarifas)}",
-                        "encargos": label_encargos
-                    })
-                    array.update(array_update)
-
-                elif (forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]) and desconto < 0:
-                    array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj,
-                                                  data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
-                    # PHP linha 575: if ($desconto * 1 < 0) -> encargo
-                    # Usa "Encargos pagos a operadora de cartão:" (linha 596)
-                    label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
-                    label_vdesconto = f"Valor total pago com encargos:\nR$ {formatar_valor_monetario(vdesconto_final)}"
-                    label_encargos = f"Encargos pagos a operadora de cartão: R$ {formatar_valor_monetario(encargos)}"
+                    # Verificar se é encargo ou desconto usando valores[14] (PHP)
+                    valores_14 = safe_float_convert(valores_calculados.get(14, 0))
+                    if valores_14 < 0:
+                        # É ENCARGO (valores[14] negativo)
+                        label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
+                        label_vdesconto = f"Valor total pago com encargos:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                        label_encargos = f"Encargos pagos a operadora de cartão: R$ {formatar_valor_monetario(encargos)}"
+                    else:
+                        # É DESCONTO (valores[14] positivo ou zero)
+                        label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
+                        label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                        label_encargos = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
 
                     array_update = {
                         "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
