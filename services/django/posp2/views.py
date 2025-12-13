@@ -246,10 +246,40 @@ def processar_dados_transacao_own(request):
 @require_oauth_posp2
 @handle_api_errors
 @validate_required_params('cpf', 'terminal', 'valor_compra')
+def consultar_saldo_cashback(request):
+    """
+    Consulta APENAS saldo de cashback do cliente sem validar senha.
+    Calcula o valor máximo permitido para uso baseado no valor da compra.
+    """
+    data = json.loads(request.body)
+    cpf = data.get('cpf')
+    terminal = data.get('terminal')
+    valor_compra = data.get('valor_compra')
+    
+    # Converter e validar valor_compra
+    valor_compra = Decimal(str(valor_compra)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    if valor_compra <= 0:
+        return JsonResponse({
+            'sucesso': False,
+            'mensagem': 'valor_compra deve ser maior que zero'
+        })
+    
+    service = SaldoService()
+    resultado = service.consultar_saldo_cashback(cpf, terminal, valor_compra)
+    
+    return JsonResponse(resultado)
+
+
+@require_oauth_posp2
+@handle_api_errors
+@validate_required_params('cpf', 'terminal', 'valor_compra')
 def consultar_saldo(request):
     """
     Consulta saldo do cliente sem validar senha.
     Calcula o valor máximo permitido para uso baseado no valor da compra.
+    
+    ⚠️ DEPRECATED: Remover após deploy da versão 2.5.0 do POS
+    ⚠️ Usar consultar_saldo_cashback para cashback
     """
     data = json.loads(request.body)
     cpf = data.get('cpf')

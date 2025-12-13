@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 09/12/2025
+**Última Atualização:** 13/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -18,7 +18,10 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
   - ✅ Sistema de Cupom: Validação e aplicação de descontos
-  - ✅ Slip: Cálculo corrigido usando `amount` (valor real cobrado)
+  - ✅ Slip: Correções completas (13/12/2025)
+    - Valor da parcela: recalcula valores[19] após arredondar valores[20]
+    - Labels: usa valores[14] para decidir encargo vs desconto
+    - Separação: tarifas Wall vs encargos operadora
 - ✅ **wallclub-apis** (Mobile + Checkout Web)
   - ✅ Checkout: Domínio dedicado checkout.wallclub.com.br
   - ✅ Checkout: Sistema de Cupom integrado (validação interna)

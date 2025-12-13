@@ -24,7 +24,8 @@ urlpatterns = [
     path('trdata_own/', views.processar_dados_transacao_own, name='trdata_own'),
     
     # Uso de Saldo no POS
-    path('consultar_saldo/', views.consultar_saldo, name='consultar_saldo'),
+    path('consultar_saldo_cashback/', views.consultar_saldo_cashback, name='consultar_saldo_cashback'),
+    path('consultar_saldo/', views.consultar_saldo, name='consultar_saldo'),  # DEPRECATED: remover após POS 2.5.0
     path('solicitar_autorizacao_saldo/', views.solicitar_autorizacao_saldo, name='solicitar_autorizacao_saldo'),
     path('verificar_autorizacao/', views.verificar_autorizacao, name='verificar_autorizacao'),
     path('debitar_saldo_transacao/', views.debitar_saldo_transacao, name='debitar_saldo_transacao'),
