@@ -62,6 +62,8 @@ def consultar_saldo(request):
             saldo_info = ContaDigitalService.obter_saldo(cliente.id, canal_id)
             saldo_disponivel = saldo_info['saldo_disponivel']
             saldo_bloqueado = saldo_info['saldo_bloqueado']
+            cashback_disponivel = saldo_info.get('cashback_disponivel', 0)
+            cashback_bloqueado = saldo_info.get('cashback_bloqueado', 0)
         except Exception:
             # Cliente sem conta digital
             return JsonResponse({
@@ -69,17 +71,21 @@ def consultar_saldo(request):
                 'tem_saldo': False,
                 'saldo_disponivel': '0.00',
                 'saldo_bloqueado': '0.00',
+                'cashback_disponivel': '0.00',
+                'cashback_bloqueado': '0.00',
                 'valor_maximo_permitido': '0.00'
             })
 
         registrar_log('apps.conta_digital',
-                     f"Consulta saldo - CPF: {cpf[:3]}***, Disponível: R$ {saldo_disponivel}")
+                     f"Consulta saldo - CPF: {cpf[:3]}***, Conta: R$ {saldo_disponivel}, Cashback: R$ {cashback_disponivel}")
 
         return JsonResponse({
             'sucesso': True,
-            'tem_saldo': saldo_disponivel > 0,
+            'tem_saldo': saldo_disponivel > 0 or cashback_disponivel > 0,
             'saldo_disponivel': str(saldo_disponivel),
             'saldo_bloqueado': str(saldo_bloqueado),
+            'cashback_disponivel': str(cashback_disponivel),
+            'cashback_bloqueado': str(cashback_bloqueado),
             'valor_maximo_permitido': str(saldo_disponivel)
         })
 
