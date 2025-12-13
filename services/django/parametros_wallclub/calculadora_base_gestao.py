@@ -232,8 +232,8 @@ class CalculadoraBaseGestao:
                 # Calcular valor da parcela sem arredondar primeiro
                 valor_parcela_exato = valores[19] / valores[13]
                 valores[20] = self._format_decimal(valor_parcela_exato, 2)
-                # Manter var19 original para evitar duplo arredondamento
-                # valores[19] = self._format_decimal(valores[20] * valores[13], 2)
+                # Recalcular var19 baseado na parcela arredondada para garantir consistência
+                valores[19] = self._format_decimal(valores[20] * valores[13], 2)
             
             # Variável 23 - Valor PIX
             valores[23] = self._format_decimal(valores[16], 2)
