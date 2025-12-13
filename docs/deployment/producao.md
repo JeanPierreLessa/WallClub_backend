@@ -30,7 +30,7 @@
 
 ## SSH
 ```bash
-# Servidor antigo
+# Servidor antigonesse
 ssh -i /Users/jeanlessa/wall_projects/aws/webserver-dev.pem ubuntu@10.0.1.46
 
 # Servidor novo (atual)
