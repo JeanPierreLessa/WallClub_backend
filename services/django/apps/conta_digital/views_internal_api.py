@@ -327,6 +327,9 @@ def calcular_maximo(request):
         try:
             saldo_info = ContaDigitalService.obter_saldo(cliente.id, canal_id)
             saldo_disponivel = saldo_info['saldo_disponivel']
+            cashback_disponivel = saldo_info.get('cashback_disponivel', 0)
+            # Usar soma de saldo + cashback para cálculo
+            saldo_total_disponivel = saldo_disponivel + cashback_disponivel
         except Exception:
             return JsonResponse({
                 'sucesso': True,
@@ -339,7 +342,7 @@ def calcular_maximo(request):
 
         resultado = CashbackService.calcular_valor_utilizacao_maximo(
             valor_compra=valor_transacao,
-            saldo_disponivel=saldo_disponivel,
+            saldo_disponivel=saldo_total_disponivel,
             loja_id=loja_id,
             processo_venda='POS'
         )
