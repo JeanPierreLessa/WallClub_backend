@@ -220,7 +220,7 @@ class TransacaoService:
                            btu.authorization_code, btu.var10, btu.var2,
                            CASE WHEN btu.var12 = 'PIX' THEN 'PIX' ELSE btu.var8 END,
                            loja.cnpj, loja.razao_social, btu.var16, btu.var20, btu.var26,
-                           btu.var88, btu.var94, btu.valor_cashback
+                           btu.var88, btu.var94, btu.valor_cashback, btu.var14
                     FROM wallclub.base_transacoes_unificadas btu
                     INNER JOIN wallclub.loja loja ON CAST(btu.var6 AS UNSIGNED) = loja.id
                     INNER JOIN wallclub.cliente cli ON cli.id = %s AND cli.cpf = btu.var7
@@ -237,7 +237,7 @@ class TransacaoService:
                 # Extrair dados
                 (cpf, nome, valores11, datahora_raw, valores13, autwall, nopwall, terminal,
                  forma, cnpj, razao_social, valores16, valores20, valores26, valores88,
-                 valores94, valor_cashback) = resultado
+                 valores94, valor_cashback, valores14) = resultado
                 
                 # Converter decimais (garantir que são Decimal, não string)
                 valores11 = Decimal(str(valores11)) if valores11 else Decimal('0.00')
@@ -247,6 +247,7 @@ class TransacaoService:
                 valores88 = Decimal(str(valores88)) if valores88 else Decimal('0.00')
                 valores94 = Decimal(str(valores94)) if valores94 else Decimal('0.00')
                 valor_cashback = Decimal(str(valor_cashback)) if valor_cashback else Decimal('0.00')
+                valores14 = Decimal(str(valores14)) if valores14 else Decimal('0.00')
                 
                 # Formatar data
                 if isinstance(datahora_raw, str):
@@ -262,8 +263,7 @@ class TransacaoService:
                 wall = 's' if len(cpf) > 0 else 'n'
                 pixcartao = "PIX" if forma == "PIX" else "CARTÃO"
                 
-                # Cálculos (bug do PHP original mantido: desconto sempre 0)
-                desconto = Decimal('0.00')
+                # Cálculos usando var14 para decidir encargo vs desconto
                 encargos = abs(valores88 + valores94)
                 
                 if valores13 >= 1:
@@ -275,24 +275,24 @@ class TransacaoService:
                     vparcela = Decimal('0.00')
                     tarifas = Decimal('0.00')
                     parte0 = valores26
-                    parte1 = desconto
+                    parte1 = Decimal('0.00')
                 
                 valor_pago_cliente = parte0 - valor_cashback
                 
                 # CET
                 cet = ""
-                if forma == "PARCELADO COM JUROS" and desconto < 0:
+                if forma == "PARCELADO COM JUROS" and valores14 < 0:
                     cet_valor = calcular_cet(vparcela, valores11, valores13)
                     if cet_valor:
                         cet = f"CET (Custo Efetivo Total) %am: {cet_valor}"
                 
-                # Montar comprovante
+                # Montar comprovante usando valores14 para decidir
                 if wall == 's':
                     if forma in ["PIX", "DEBITO"]:
                         array_comprovante = {
                             "cpf": cpf, "nome": nome, "estabelecimento": razao_social,
                             "cnpj": cnpj, "voriginal": f"R$ {valores11:.2f}",
-                            "desconto": f"Desconto CLUB: R$ {desconto:.2f}",
+                            "desconto": f"Desconto CLUB: R$ {parte1:.2f}",
                             "vdesconto": f"R$ {valores26:.2f}",
                             "pagoavista": f"R$ {valores16:.2f}",
                             "data": datahora, "forma": forma, "parcelas": valores13,
@@ -302,7 +302,8 @@ class TransacaoService:
                             "valor_cashback": f"R$ {valor_cashback:.2f}",
                             "valor_pago_cliente": f"R$ {valor_pago_cliente:.2f}"
                         }
-                    elif desconto >= 0:
+                    elif valores14 >= 0:
+                        # DESCONTO (valores14 >= 0)
                         array_comprovante = {
                             "cpf": cpf, "nome": nome, "estabelecimento": razao_social,
                             "cnpj": cnpj, "voriginal": f"R$ {valores11:.2f}",
@@ -312,13 +313,14 @@ class TransacaoService:
                             "data": datahora, "forma": forma, "parcelas": valores13,
                             "vparcela": f"R$ {vparcela:.2f}",
                             "tarifas": f"Tarifas CLUB: R$ {tarifas:.2f}",
-                            "encargos": f"R$ {encargos:.2f}",
+                            "encargos": f"Encargos operadora: R$ {encargos:.2f}",
                             "nopwall": nopwall, "autwall": autwall, "terminal": terminal,
                             "nsu": nsu_pinbank, "cet": cet,
                             "valor_cashback": f"R$ {valor_cashback:.2f}",
                             "valor_pago_cliente": f"R$ {valor_pago_cliente:.2f}"
                         }
                     else:
+                        # ENCARGO (valores14 < 0)
                         array_comprovante = {
                             "cpf": cpf, "nome": nome, "estabelecimento": razao_social,
                             "cnpj": cnpj, "voriginal": f"R$ {valores11:.2f}",
