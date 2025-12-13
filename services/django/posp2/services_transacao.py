@@ -869,10 +869,10 @@ class TRDataService:
             else:
                 parte1 = abs(desconto)
 
-            # $tarifas = abs($valores[13] * $vparcela - $valores[16]) - $encargos;
+            # Calcular tarifas (PHP linha 439): $tarifas = abs($valores[13] * $vparcela - $valores[16]) - $encargos;
             valor_liquido = safe_float_convert(valores_calculados.get(16, 0))
             vparcela_float = safe_float_convert(vparcela)
-            tarifas = round(abs(valores_calculados.get(13, 1) * vparcela_float - valor_liquido) - encargos, 2)
+            tarifas = round(abs(parcelas * vparcela_float - valor_liquido) - encargos, 2)
 
             registrar_log('posp2', f'=== CÁLCULO PHP REPLICADO ===')
             registrar_log('posp2', f'encargos = abs({valores_calculados.get(88, 0)} + {valores_94_0}) = {encargos}')
@@ -968,16 +968,11 @@ class TRDataService:
                 elif (forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]) and desconto >= 0:
                     array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj,
                                                   data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
-                    # Verificar se é encargo ou desconto usando valores[14]
-                    valores_14 = safe_float_convert(valores_calculados.get(14, 0))
-                    if valores_14 < 0:
-                        # É ENCARGO
-                        label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
-                        label_vdesconto = f"Valor total pago com encargos:\nR$ {formatar_valor_monetario(vdesconto_final)}"
-                    else:
-                        # É DESCONTO
-                        label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
-                        label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                    # PHP linha 516, 544: if ($desconto * 1 >= 0) -> desconto positivo
+                    # Usa "Encargos financeiros:" (linha 532, 563)
+                    label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
+                    label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                    label_encargos = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
 
                     array_update = {
                         "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
@@ -994,29 +989,21 @@ class TRDataService:
                         array_update["cashback_concedido"] = f"Cashback concedido: R$ {formatar_valor_monetario(cashback_concedido)}"
 
                     array_update.update({
-                        "vdesconto": f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}",
                         "pagoavista": f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valores_calculados.get(16, 0))}",
                         "vparcela": f"R$ {formatar_valor_monetario(vparcela_ajustado)}",
                         "tarifas": f"Tarifas CLUB: R$ {formatar_valor_monetario(tarifas)}",
-                        "encargos": f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
+                        "encargos": label_encargos
                     })
                     array.update(array_update)
 
                 elif (forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]) and desconto < 0:
                     array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj,
                                                   data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
-                    # Verificar se é encargo ou desconto usando valores[14]
-                    valores_14 = safe_float_convert(valores_calculados.get(14, 0))
-                    if valores_14 < 0:
-                        # É ENCARGO
-                        label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
-                        label_vdesconto = f"Valor total pago com encargos:\nR$ {formatar_valor_monetario(vdesconto_final)}"
-                        label_encargos = f"Encargos pagos a operadora de cartão: R$ {formatar_valor_monetario(encargos)}"
-                    else:
-                        # É DESCONTO
-                        label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
-                        label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
-                        label_encargos = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
+                    # PHP linha 575: if ($desconto * 1 < 0) -> encargo
+                    # Usa "Encargos pagos a operadora de cartão:" (linha 596)
+                    label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
+                    label_vdesconto = f"Valor total pago com encargos:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                    label_encargos = f"Encargos pagos a operadora de cartão: R$ {formatar_valor_monetario(encargos)}"
 
                     array_update = {
                         "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",

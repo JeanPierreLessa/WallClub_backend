@@ -251,15 +251,48 @@ class TRDataPosService:
                 dados, transaction_id, loja_id, canal_id
             )
 
-            # 7. Calcular valores via CalculadoraBaseGestao (COMUM)
-            # TODO: Implementar quando necessário
+            # 7. Calcular valores via CalculadoraBaseGestao e gerar slip
+            tipo_compra = self.TIPO_COMPRA_MAP.get(dados['paymentMethod'], dados['paymentMethod'])
+            
+            dados_linha = {
+                'id': transaction_id,
+                'DataTransacao': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'SerialNumber': dados['terminal'],
+                'idTerminal': dados['terminal'],
+                'cpf': dados['cpf'],
+                'TipoCompra': tipo_compra,
+                'NsuOperacao': dados['nsu_gateway'],
+                'nsuAcquirer': dados['nsuAcquirer'],
+                'valor_original': dados['valor_original'],
+                'ValorBruto': dados['valor_original'],
+                'ValorBrutoParcela': dados['valor_original'],
+                'Bandeira': dados['brand'],
+                'NumeroTotalParcelas': dados['totalInstallments'],
+                'ValorTaxaAdm': 0,
+                'ValorTaxaMes': 0,
+                'ValorSplit': 0,
+                'DescricaoStatus': 'Processado',
+                'DescricaoStatusPagamento': 'Pendente',
+                'IdStatusPagamento': 1,
+                'DataCancelamento': None,
+                'DataFuturaPagamento': None
+            }
+
+            calculadora = CalculadoraBaseGestao()
+            valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata_pos')
+            registrar_log('posp2', f'✅ Valores calculados: {len(valores_calculados)} campos')
+
+            # 8. Gerar slip de impressão
+            loja_info = {'id': loja_id, 'loja_id': loja_id, 'canal_id': canal_id}
+            slip = self._gerar_slip_impressao(dados, valores_calculados, loja_info)
 
             registrar_log('posp2', 'Processamento concluído com sucesso')
 
             return {
                 'sucesso': True,
                 'mensagem': 'Dados processados com sucesso',
-                'transaction_id': transaction_id
+                'transaction_id': transaction_id,
+                **slip  # Incluir dados do slip no response
             }
 
         except Exception as e:
@@ -453,3 +486,253 @@ class TRDataPosService:
             valor_limpo = valor_limpo.replace(',', '.')
 
         return Decimal(valor_limpo).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    def _criar_array_base(self, dados: Dict, valores_calculados: Dict, cpf: str, nome: str,
+                         cnpj: str, data_formatada: str, hora: str, forma: str,
+                         nopwall: str, autwall: str, terminal: str, nsu: str, cet: str) -> Dict:
+        """Cria array base comum para todas as respostas"""
+        def mascarar_cpf(cpf_str):
+            if not cpf_str:
+                return cpf_str
+            cpf_numeros = ''.join(filter(str.isdigit, cpf_str))
+            if len(cpf_numeros) < 11:
+                return cpf_str
+            return f"*******{cpf_numeros[-3:]}"
+
+        array_base = {
+            "cpf": mascarar_cpf(cpf) if cpf else "",
+            "nome": nome,
+            "estabelecimento": valores_calculados.get(5, ''),
+            "cnpj": cnpj,
+            "data": f"{data_formatada} {hora}",
+            "forma": forma,
+            "parcelas": valores_calculados.get(13, 1),
+            "nopwall": nopwall,
+            "autwall": autwall,
+            "terminal": terminal,
+            "nsu": nsu
+        }
+
+        if cet and cet.strip() and not cet.endswith(': -'):
+            array_base["cet"] = cet
+
+        return array_base
+
+    def _gerar_slip_impressao(self, dados: Dict, valores_calculados: Dict, loja_info: Dict) -> Dict:
+        """Gera JSON de resposta formatado para impressão do slip"""
+        try:
+            # Dados básicos
+            cpf = dados.get('cpf', '')
+            nome = ''
+            
+            if cpf:
+                try:
+                    from wallclub_core.integracoes.api_interna_service import APIInternaService
+                    canal_id = loja_info['canal_id']
+                    response = APIInternaService.chamar_api_interna(
+                        metodo='POST',
+                        endpoint='/api/internal/cliente/obter_dados_cliente/',
+                        payload={'cpf': cpf, 'canal_id': canal_id},
+                        contexto='apis'
+                    )
+                    dados_cliente = response.get('dados') if response.get('sucesso') else None
+                    if dados_cliente and dados_cliente.get('nome'):
+                        nome = dados_cliente['nome']
+                except Exception as e:
+                    registrar_log('posp2', f'Erro ao buscar nome do cliente: {str(e)}')
+
+            wall = 's' if cpf and len(cpf.strip()) > 0 else 'n'
+            forma = self.TIPO_COMPRA_MAP.get(dados.get('paymentMethod', ''), dados.get('paymentMethod', ''))
+            
+            # Função auxiliar para converter valores
+            def safe_float_convert(value):
+                if not value:
+                    return 0.0
+                if isinstance(value, str):
+                    value = value.replace('R$', '').replace(' ', '').strip()
+                    if ',' in value and '.' not in value:
+                        value = value.replace(',', '.')
+                    elif ',' in value and '.' in value:
+                        if value.rfind(',') > value.rfind('.'):
+                            value = value.replace('.', '').replace(',', '.')
+                        else:
+                            value = value.replace(',', '')
+                try:
+                    return float(value)
+                except (ValueError, TypeError):
+                    return 0.0
+
+            def formatar_valor_monetario(valor):
+                if valor is None:
+                    return "0.00"
+                try:
+                    return f"{float(valor):.2f}"
+                except (ValueError, TypeError):
+                    return "0.00"
+
+            valor_original_display = dados.get('valor_original', valores_calculados.get(11, 0))
+            terminal = dados.get('terminal', '')
+            nsu = dados.get('nsu_gateway', '')
+            nopwall = dados.get('nsuAcquirer', '')
+            autwall = dados.get('authorizationCode', '')
+            cnpj = loja_info.get('cnpj', '')
+
+            # Lógica condicional do PHP
+            pixcartao_tipo = "PIX" if dados.get('brand') == 'PIX' else "CARTÃO"
+            
+            if valores_calculados.get(12) == "PIX" or pixcartao_tipo == "PIX":
+                desconto = safe_float_convert(valores_calculados.get(15, 0))
+            else:
+                desconto = safe_float_convert(valores_calculados.get(18, 0))
+            
+            parte0 = safe_float_convert(valores_calculados.get(26, 0))
+            if not parte0 or parte0 == 0:
+                amount_centavos = dados.get('amount', 0)
+                if amount_centavos:
+                    parte0 = safe_float_convert(amount_centavos) / 100
+                else:
+                    parte0 = safe_float_convert(valores_calculados.get(11, 0))
+
+            # vparcela e cálculos de tarifas/encargos conforme PHP
+            parcelas = int(valores_calculados.get(13, 1))
+            
+            # Calcular encargos (PHP linha 432): $encargos = abs($valores[88] + $valores[94]["0"]);
+            valores_94 = valores_calculados.get(94, {})
+            if isinstance(valores_94, dict):
+                valores_94_0 = safe_float_convert(valores_94.get('0', 0))
+            else:
+                valores_94_0 = 0
+            valores_88 = safe_float_convert(valores_calculados.get(88) or 0)
+            encargos = abs(valores_88 + valores_94_0)
+
+            vparcela = valores_calculados.get(20, 0)
+            if vparcela is None or vparcela == 0:
+                vparcela = parte0 / parcelas if parcelas > 0 else parte0
+            
+            # correção feita em 13/12/2025 - Problema quando é encargo e nao desconto
+            # Calcular parte1 seguindo PHP (linha 445): $parte1 = abs($valores[13] * $vparcela - $valores[11]);
+            if parcelas >= 1 and vparcela:
+                valor_original = safe_float_convert(valores_calculados.get(11, 0))
+                vparcela_float = safe_float_convert(vparcela)
+                parte1 = abs(parcelas * vparcela_float - valor_original)
+            else:
+                parte1 = abs(desconto)
+
+            # Calcular tarifas (PHP linha 439): $tarifas = abs($valores[13] * $vparcela - $valores[16]) - $encargos;
+            valor_liquido = safe_float_convert(valores_calculados.get(16, 0))
+            vparcela_float = safe_float_convert(vparcela)
+            tarifas = round(abs(parcelas * vparcela_float - valor_liquido) - encargos, 2)
+
+            saldo_cashback_usado = 0.0
+            cashback_concedido = safe_float_convert(dados.get('cashback_concedido', 0))
+            
+            vdesconto_final = parte0 - saldo_cashback_usado
+            vparcela_ajustado = vdesconto_final / parcelas if parcelas > 0 else vdesconto_final
+
+            # Data e hora
+            agora = datetime.now()
+            data_formatada = valores_calculados.get(0, agora.strftime('%Y-%m-%d'))
+            hora = agora.strftime('%H:%M:%S')
+            
+            # CET para parcelado
+            cet = ""
+            if parcelas > 1:
+                from parametros_wallclub.calculadora_base_gestao import calcular_cet
+                valor_original_cet = float(valores_calculados.get(11, 0))
+                cetn = calcular_cet(vparcela, valor_original_cet, parcelas)
+                if cetn is None or cetn == "":
+                    cet = "CET (Custo Efetivo Total) %am: -"
+                else:
+                    cet = f"CET (Custo Efetivo Total) %am: {cetn}"
+
+            # Lógica condicional do PHP
+            if wall == 's':
+                if forma in ["PIX", "DEBITO"]:
+                    array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj, 
+                                                  data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
+                    array_update = {
+                        "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
+                        "desconto": f"Valor do desconto CLUB: R$ {formatar_valor_monetario(desconto)}",
+                    }
+
+                    if saldo_cashback_usado > 0:
+                        array_update["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
+
+                    if cashback_concedido > 0:
+                        array_update["cashback_concedido"] = f"Cashback concedido: R$ {formatar_valor_monetario(cashback_concedido)}"
+
+                    array_update.update({
+                        "vdesconto": f"Valor total pago:\nR$ {formatar_valor_monetario(vdesconto_final)}",
+                        "pagoavista": f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valores_calculados.get(16, 0))}",
+                        "vparcela": f"R$ {formatar_valor_monetario(vparcela_ajustado)}",
+                        "tarifas": "Tarifas CLUB: -- ",
+                        "encargos": ""
+                    })
+                    array.update(array_update)
+
+                elif forma in ["PARCELADO SEM JUROS", "A VISTA", "PARCELADO COM JUROS"]:
+                    array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj,
+                                                  data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
+                    # Verificar se é encargo ou desconto usando $desconto (PHP linha 516, 544, 575)
+                    if desconto < 0:
+                        # PHP linha 575: if ($desconto * 1 < 0) -> encargo
+                        # Usa "Encargos pagos a operadora de cartão:" (linha 596)
+                        label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
+                        label_vdesconto = f"Valor total pago com encargos:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                        label_encargos = f"Encargos pagos a operadora de cartão: R$ {formatar_valor_monetario(encargos)}"
+                    else:
+                        # PHP linha 516, 544: if ($desconto * 1 >= 0) -> desconto positivo
+                        # Usa "Encargos financeiros:" (linha 532, 563)
+                        label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
+                        label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
+                        label_encargos = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
+                    
+                    array_update = {
+                        "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
+                        "desconto": label_desconto,
+                        "vdesconto": label_vdesconto,
+                    }
+
+                    if saldo_cashback_usado > 0:
+                        array_update["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
+
+                    if cashback_concedido > 0:
+                        array_update["cashback_concedido"] = f"Cashback concedido: R$ {formatar_valor_monetario(cashback_concedido)}"
+
+                    array_update.update({
+                        "pagoavista": f"Valor pago à loja à vista: R$ {formatar_valor_monetario(valores_calculados.get(16, 0))}",
+                        "vparcela": f"R$ {formatar_valor_monetario(vparcela_ajustado)}",
+                        "tarifas": f"Tarifas CLUB: R$ {formatar_valor_monetario(tarifas)}",
+                        "encargos": label_encargos
+                    })
+                    array.update(array_update)
+
+            else:  # SEM WALL CLUB
+                array = self._criar_array_base(dados, valores_calculados, "", "", cnpj,
+                                              data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
+
+                valor_transacao = valores_calculados.get(11, valor_original_display)
+
+                if forma == "DEBITO":
+                    array["parcelas"] = 0
+
+                pagoavista_text = "Valor pago à loja a vista" if forma in ["PIX", "DEBITO"] else "Valor pago à loja"
+                valor_parcela_individual = valores_calculados.get(20, valor_transacao)
+
+                array.update({
+                    "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
+                    "desconto": "",
+                    "vdesconto": f"Valor total pago:\nR$ {formatar_valor_monetario(valor_transacao)}",
+                    "pagoavista": f"{pagoavista_text}: R$ {formatar_valor_monetario(valor_transacao)}",
+                    "vparcela": f"R$ {formatar_valor_monetario(valor_parcela_individual)}",
+                    "tarifas": "Tarifas CLUB: --",
+                    "encargos": ""
+                })
+
+            return array
+
+        except Exception as e:
+            registrar_log('posp2', f'Erro ao gerar slip: {e}', nivel='ERROR')
+            import traceback
+            registrar_log('posp2', f'Traceback: {traceback.format_exc()}', nivel='ERROR')
+            return {}
