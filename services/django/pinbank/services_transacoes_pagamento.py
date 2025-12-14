@@ -273,8 +273,9 @@ class TransacoesPinbankService:
                 if not dados.get(campo):
                     raise ValueError(f"Campo obrigatório '{campo}' não fornecido")
 
-            # Obter credenciais dinâmicas
-            credenciais = self._obter_credenciais_loja()
+            # Obter credenciais dinâmicas usando loja_id dos dados
+            loja_id = dados.get('loja_id')
+            credenciais = self._obter_credenciais_loja(loja_id=loja_id)
 
             # Converter data de validade para formato YYYYMM
             data_validade = _converter_data_validade(dados.get('data_validade'))
@@ -1134,8 +1135,9 @@ class TransacoesPinbankService:
                 if not dados.get(campo):
                     raise ValueError(f"Campo obrigatório '{campo}' não fornecido")
 
-            # Obter credenciais dinâmicas
-            credenciais = self._obter_credenciais_loja()
+            # Obter credenciais dinâmicas usando loja_id dos dados
+            loja_id = dados.get('loja_id')
+            credenciais = self._obter_credenciais_loja(loja_id=loja_id)
 
             # Determinar FormaPagamento baseado em parcelas
             qtd_parcelas = dados.get('quantidade_parcelas', 1)
