@@ -251,6 +251,7 @@ class LinkPagamentoService:
             forma_pagamento_codigo = TIPO_COMPRA_MAP.get(session.tipo_pagamento, '1')
             
             dados_transacao = {
+                'loja_id': token_obj.loja_id,  # ID da loja do checkout
                 'nome_impresso': session.nome.upper(),
                 'data_validade': session.data_validade,
                 'numero_cartao': numero_cartao,
