@@ -756,12 +756,22 @@ class CheckoutSecurityService:
         
         try:
             # Buscar telefone diretamente (join com cliente via FK)
-            # Isso garante que pegamos o telefone correto mesmo se houver múltiplos clientes com mesmo CPF
-            telefone_obj = CheckoutClienteTelefone.objects.select_related('cliente').get(
+            # Filtrar por loja_id para evitar duplicatas quando mesmo CPF está em lojas diferentes
+            query = CheckoutClienteTelefone.objects.select_related('cliente').filter(
                 cliente__cpf=cpf_limpo,
                 telefone=telefone_limpo,
                 ativo__in=[-1, 1]  # Aceita pendente (-1) ou ativo (1)
             )
+            
+            # Se loja_id fornecido, filtrar por ela
+            if loja_id:
+                query = query.filter(cliente__loja_id=loja_id)
+            
+            # Pegar o mais recente se houver múltiplos
+            telefone_obj = query.order_by('-criado_em').first()
+            
+            if not telefone_obj:
+                raise CheckoutClienteTelefone.DoesNotExist
             
             registrar_log(
                 'checkout.2fa',

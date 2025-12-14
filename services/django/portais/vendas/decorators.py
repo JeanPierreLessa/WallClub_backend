@@ -84,10 +84,11 @@ def vendedor_pode_acessar_loja(view_func):
         if not vendedor:
             return HttpResponseForbidden('Vendedor não identificado')
         
-        # Buscar lojas vinculadas ao vendedor
+        # Buscar lojas vinculadas ao vendedor no portal vendas
         from portais.controle_acesso.models import PortalUsuarioAcesso
         tem_acesso = PortalUsuarioAcesso.objects.filter(
             usuario=vendedor,
+            portal='vendas',  # Filtrar apenas lojas do portal vendas
             entidade_tipo='loja',
             entidade_id=loja_id,
             ativo=True

@@ -88,17 +88,18 @@ class CheckoutVendasService:
     @staticmethod
     def obter_lojas_vendedor(vendedor_id: int) -> List[Any]:
         """
-        Busca lojas vinculadas ao vendedor.
+        Busca lojas vinculadas ao vendedor no portal de vendas.
 
         Args:
             vendedor_id: ID do vendedor (PortalUsuario)
 
         Returns:
-            Lista de lojas acessíveis
+            Lista de lojas acessíveis no portal vendas
         """
         try:
             acessos_loja = PortalUsuarioAcesso.objects.filter(
                 usuario_id=vendedor_id,
+                portal='vendas',  # Filtrar apenas lojas do portal vendas
                 entidade_tipo='loja',
                 ativo=True
             )
@@ -123,9 +124,12 @@ class CheckoutVendasService:
             # Lazy import
             CheckoutTransaction = apps.get_model('checkout', 'CheckoutTransaction')
 
-            # Obter lojas que o vendedor tem acesso
+            # Obter lojas que o vendedor tem acesso no portal vendas
             acessos = PortalUsuarioAcesso.objects.filter(
-                usuario_id=vendedor_id, entidade_tipo='loja', ativo=True
+                usuario_id=vendedor_id,
+                portal='vendas',  # Filtrar apenas lojas do portal vendas
+                entidade_tipo='loja',
+                ativo=True
             )
             lojas_ids = [acesso.entidade_id for acesso in acessos]
 
@@ -305,7 +309,10 @@ class CheckoutVendasService:
             from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
 
             lojas_ids = list(PortalUsuarioAcesso.objects.filter(
-                usuario_id=vendedor_id, entidade_tipo='loja', ativo=True
+                usuario_id=vendedor_id,
+                portal='vendas',  # Filtrar apenas lojas do portal vendas
+                entidade_tipo='loja',
+                ativo=True
             ).values_list('entidade_id', flat=True))
 
             registrar_log('portais.vendas', f"Vendedor {vendedor_id} tem acesso às lojas: {lojas_ids}")
@@ -362,7 +369,10 @@ class CheckoutVendasService:
             CheckoutTransaction = apps.get_model('checkout', 'CheckoutTransaction')
 
             acessos = PortalUsuarioAcesso.objects.filter(
-                usuario_id=vendedor_id, entidade_tipo='loja', ativo=True
+                usuario_id=vendedor_id,
+                portal='vendas',  # Filtrar apenas lojas do portal vendas
+                entidade_tipo='loja',
+                ativo=True
             )
             lojas_ids = [acesso.entidade_id for acesso in acessos]
 
