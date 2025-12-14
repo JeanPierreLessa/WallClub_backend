@@ -6,13 +6,14 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 13/12/2025
+**Última Atualização:** 14/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
   - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
   - ✅ Portal Vendas: Sistema de primeiro acesso implementado
+  - ✅ Portal Vendas: Filtro por portal corrigido (14/12/2025)
   - ✅ Portal Lojista: Sistema de Ofertas ativo (menu visível)
   - ✅ Portal Lojista: Sistema de Cashback Loja (CRUD completo)
   - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
@@ -27,6 +28,10 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Checkout: Sistema de Cupom integrado (validação interna)
   - ✅ POSP2 V2: Simulação com cashback Wall + Loja integrado
   - ✅ Checkout 2FA: Integração com Risk Engine completa
+  - ✅ Correções 14/12/2025:
+    - Fix: validar-otp com múltiplos clientes (filtro por loja_id)
+    - Fix: loja_id passado para PinbankService (2 métodos)
+    - Fix: Portal Vendas filtra apenas lojas do portal (5 queries)
 - ✅ **wallclub-riskengine** (Antifraude + MaxMind)
 - ✅ **wallclub-redis** (Cache + Broker)
 - ✅ **wallclub-celery-worker** (Unificado - acesso a todos os apps)

@@ -42,6 +42,11 @@ def politica_privacidade_view(request):
     return render(request, 'portais/corporativo/politica_privacidade.html')
 
 
+def politica_exclusao_view(request):
+    """Página de Política de Exclusão de Conta"""
+    return render(request, 'portais/corporativo/politica_exclusao.html')
+
+
 def termos_uso_view(request):
     """Página de Termos de Uso Geral"""
     return render(request, 'portais/corporativo/termos_uso.html')
