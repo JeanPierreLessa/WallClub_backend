@@ -72,14 +72,21 @@ class RecebimentoService:
         
         where_sql = ' AND '.join(where_clauses)
         
-        # Query otimizada com GROUP BY
+        # Query otimizada com GROUP BY - evita duplicatas por NSU
         sql = f"""
         SELECT 
             var45 as data_recebimento,
-            COUNT(*) as quantidade,
-            SUM(CAST(COALESCE(var44, 0) AS DECIMAL(10,2))) as valor_total
-        FROM baseTransacoesGestao
-        WHERE {where_sql}
+            COUNT(DISTINCT var9) as quantidade,
+            SUM(DISTINCT_VALUES.valor_recebimento) as valor_total
+        FROM (
+            SELECT 
+                var45,
+                var9,
+                MIN(CAST(COALESCE(var44, 0) AS DECIMAL(10,2))) as valor_recebimento
+            FROM baseTransacoesGestao
+            WHERE {where_sql}
+            GROUP BY var45, var9
+        ) AS DISTINCT_VALUES
         GROUP BY var45
         ORDER BY STR_TO_DATE(var45, '%d/%m/%Y') DESC
         LIMIT 1000
@@ -194,7 +201,7 @@ class RecebimentoService:
         Returns:
             list: Lista de transações da data
         """
-        from django.apps import apps
+        from django.db import connection
         
         # Tentar formatos de data
         data_obj = None
@@ -211,33 +218,61 @@ class RecebimentoService:
         # Formatar data conforme está no banco (DD/MM/YYYY)
         data_formatada = data_obj.strftime('%d/%m/%Y')
         
-        # Lazy import do modelo
-        BaseTransacoesGestao = apps.get_model('gestao_financeira', 'BaseTransacoesGestao')
-        
-        # Buscar transações
-        filtros = Q(var6__in=lojas_ids) & Q(var45=data_formatada)
+        # Montar WHERE clause
+        lojas_str = ','.join(map(str, lojas_ids))
+        where_clauses = [
+            f"var6 IN ({lojas_str})",
+            f"var45 = '{data_formatada}'"
+        ]
         
         # Filtro TEF - se não incluir TEF, excluir transações Credenciadora
         if not incluir_tef:
-            filtros &= ~Q(tipo_operacao='Credenciadora')
+            where_clauses.append("tipo_operacao != 'Credenciadora'")
         
-        transacoes = BaseTransacoesGestao.objects.filter(filtros).order_by('var9', '-data_transacao')
+        where_sql = ' AND '.join(where_clauses)
+        
+        # Query com GROUP BY para evitar duplicatas por NSU
+        sql = f"""
+        SELECT 
+            var9 as nsu,
+            var6 as loja_id,
+            MIN(var19) as valor_transacao,
+            MIN(var44) as valor_recebimento,
+            MIN(data_transacao) as data_transacao,
+            MIN(var45) as data_recebimento,
+            MIN(var12) as bandeira,
+            MIN(var13) as parcelas,
+            MIN(var8) as plano,
+            MIN(var40) as tx_antecipacao,
+            MIN(var41) as custo_antecipacao
+        FROM baseTransacoesGestao
+        WHERE {where_sql}
+        GROUP BY var9, var6
+        ORDER BY var9 DESC
+        """
         
         results = []
-        for transacao in transacoes:
-            results.append({
-                'nsu': transacao.var9,
-                'loja_id': int(transacao.var6) if transacao.var6 else None,
-                'valor_transacao': transacao.var19,
-                'valor_recebimento': transacao.var44,  # var44 é o valor correto
-                'data_transacao': transacao.data_transacao,
-                'data_recebimento': transacao.var45,
-                'bandeira': transacao.var12,
-                'parcelas': transacao.var13,
-                'plano': transacao.var8,
-                'tx_antecipacao': transacao.var40,  # Taxa de antecipação
-                'custo_antecipacao': transacao.var41,  # Custo de antecipação
-            })
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            
+            for row in rows:
+                nsu, loja_id, valor_transacao, valor_recebimento, data_transacao, \
+                data_recebimento, bandeira, parcelas, plano, tx_antecipacao, custo_antecipacao = row
+                
+                results.append({
+                    'nsu': nsu,
+                    'loja_id': int(loja_id) if loja_id else None,
+                    'valor_transacao': valor_transacao,
+                    'valor_recebimento': valor_recebimento,
+                    'data_transacao': data_transacao,
+                    'data_recebimento': data_recebimento,
+                    'bandeira': bandeira,
+                    'parcelas': parcelas,
+                    'plano': plano,
+                    'tx_antecipacao': tx_antecipacao,
+                    'custo_antecipacao': custo_antecipacao,
+                })
         
         registrar_log(
             'portais.lojista',
