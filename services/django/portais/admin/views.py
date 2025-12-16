@@ -69,13 +69,63 @@ def logout_view(request):
     messages.info(request, 'Logout realizado com sucesso.')
     return redirect('portais_admin:login')
 
+def _obter_estatisticas_dashboard(usuario):
+    """Obtém estatísticas do dashboard filtradas pelos vínculos do usuário"""
+    from portais.controle_acesso.services import ControleAcessoService
+    from wallclub_core.estr_organizacional.canal import Canal
+    
+    # Aplicar filtros baseados nos vínculos do usuário
+    canais_usuario = ControleAcessoService.obter_canais_usuario(usuario)
+    
+    # Se tem vínculos específicos, aplicar filtro por canal via var4
+    if canais_usuario:
+        valores_var4 = []
+        for canal_id in canais_usuario:
+            canal_nome = Canal.get_canal_nome(canal_id)
+            if canal_nome and canal_nome != f"Canal {canal_id}":
+                valores_var4.append(f"'{canal_nome}'")
+        
+        if valores_var4:
+            filtro_canal = f" AND var4 IN ({','.join(valores_var4)})"
+        else:
+            filtro_canal = ""
+    else:
+        filtro_canal = ""
+    
+    # Query consolidada - usando base_transacoes_unificadas
+    query_consolidada = f"""
+        SELECT 
+            COUNT(CASE WHEN data_transacao >= CURDATE() THEN 1 END) as transacoes_hoje,
+            SUM(CASE WHEN data_transacao >= CURDATE() THEN CAST(var19 AS DECIMAL(10,2)) ELSE 0 END) as valor_hoje,
+            COUNT(CASE WHEN YEAR(data_transacao) = YEAR(CURDATE()) AND MONTH(data_transacao) = MONTH(CURDATE()) THEN 1 END) as transacoes_mes,
+            SUM(CASE WHEN YEAR(data_transacao) = YEAR(CURDATE()) AND MONTH(data_transacao) = MONTH(CURDATE()) THEN CAST(var19 AS DECIMAL(10,2)) ELSE 0 END) as valor_mes
+        FROM base_transacoes_unificadas
+        WHERE var19 IS NOT NULL
+        AND var68 = 'TRANS. APROVADO'
+        {filtro_canal}
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query_consolidada)
+        resultado = cursor.fetchone()
+        transacoes_hoje = resultado[0] or 0
+        valor_hoje = resultado[1] or 0
+        transacoes_mes = resultado[2] or 0
+        valor_mes = resultado[3] or 0
+    
+    return {
+        'transacoes_hoje': transacoes_hoje,
+        'valor_hoje': valor_hoje,
+        'transacoes_mes': transacoes_mes,
+        'valor_mes': valor_mes,
+    }
+
 @require_admin_access
 def dashboard(request):
     """Dashboard principal do portal administrativo"""
     from django.db import connection
     from datetime import date
     from portais.controle_acesso.services import ControleAcessoService
-    from portais.controle_acesso.filtros import FiltrosAcessoService
 
     usuario = request.portal_usuario
 
@@ -87,7 +137,7 @@ def dashboard(request):
     eh_admin_canal = 'canal' in resumo_permissoes.get('vinculos', {})
 
     # Obter estatísticas filtradas baseadas nos vínculos do usuário
-    estatisticas = FiltrosAcessoService.obter_estatisticas_filtradas(usuario)
+    estatisticas = _obter_estatisticas_dashboard(usuario)
     transacoes_hoje = estatisticas['transacoes_hoje']
     valor_hoje = estatisticas['valor_hoje']
     transacoes_mes = estatisticas['transacoes_mes']

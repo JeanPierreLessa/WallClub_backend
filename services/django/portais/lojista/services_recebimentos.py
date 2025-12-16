@@ -45,50 +45,43 @@ class RecebimentoService:
         
         recebimentos_por_data = {}
         
-        # Montar WHERE clause
+        # Montar WHERE clause para base_transacoes_unificadas
         lojas_str = ','.join(map(str, lojas_ids))
-        where_clauses = [f"var6 IN ({lojas_str})", "var45 IS NOT NULL", "var45 != ''"]
+        where_clauses = [f"loja_id IN ({lojas_str})", "data_recebimento IS NOT NULL", "data_recebimento != ''"]
         
         if nsu:
-            where_clauses.append(f"var9 LIKE '%{nsu}%'")
+            where_clauses.append(f"nsu LIKE '%{nsu}%'")
         
         # Filtro TEF - se não incluir TEF, filtrar apenas transações não-Credenciadora
         if not incluir_tef:
             where_clauses.append("tipo_operacao != 'Credenciadora'")
         
         # Adicionar filtros de data direto no SQL
-        # Como var45 está em formato DD/MM/YYYY, precisamos converter
+        # Como data_recebimento está em formato DD/MM/YYYY, precisamos converter
         if data_inicio:
             # Converter YYYY-MM-DD para DD/MM/YYYY
             data_ini_obj = datetime.strptime(data_inicio, '%Y-%m-%d')
             data_ini_br = data_ini_obj.strftime('%d/%m/%Y')
-            where_clauses.append(f"STR_TO_DATE(var45, '%d/%m/%Y') >= STR_TO_DATE('{data_ini_br}', '%d/%m/%Y')")
+            where_clauses.append(f"STR_TO_DATE(data_recebimento, '%d/%m/%Y') >= STR_TO_DATE('{data_ini_br}', '%d/%m/%Y')")
         
         if data_fim:
             # Converter YYYY-MM-DD para DD/MM/YYYY
             data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d')
             data_fim_br = data_fim_obj.strftime('%d/%m/%Y')
-            where_clauses.append(f"STR_TO_DATE(var45, '%d/%m/%Y') <= STR_TO_DATE('{data_fim_br}', '%d/%m/%Y')")
+            where_clauses.append(f"STR_TO_DATE(data_recebimento, '%d/%m/%Y') <= STR_TO_DATE('{data_fim_br}', '%d/%m/%Y')")
         
         where_sql = ' AND '.join(where_clauses)
         
-        # Query otimizada com GROUP BY - evita duplicatas por NSU
+        # Query otimizada com base_transacoes_unificadas (1 linha por NSU)
         sql = f"""
         SELECT 
-            var45 as data_recebimento,
-            COUNT(DISTINCT var9) as quantidade,
-            SUM(DISTINCT_VALUES.valor_recebimento) as valor_total
-        FROM (
-            SELECT 
-                var45,
-                var9,
-                MIN(CAST(COALESCE(var44, 0) AS DECIMAL(10,2))) as valor_recebimento
-            FROM baseTransacoesGestao
-            WHERE {where_sql}
-            GROUP BY var45, var9
-        ) AS DISTINCT_VALUES
-        GROUP BY var45
-        ORDER BY STR_TO_DATE(var45, '%d/%m/%Y') DESC
+            data_recebimento,
+            COUNT(*) as quantidade,
+            SUM(CAST(COALESCE(valor_recebimento, 0) AS DECIMAL(10,2))) as valor_total
+        FROM base_transacoes_unificadas
+        WHERE {where_sql}
+        GROUP BY data_recebimento
+        ORDER BY STR_TO_DATE(data_recebimento, '%d/%m/%Y') DESC
         LIMIT 1000
         """
         
@@ -218,11 +211,11 @@ class RecebimentoService:
         # Formatar data conforme está no banco (DD/MM/YYYY)
         data_formatada = data_obj.strftime('%d/%m/%Y')
         
-        # Montar WHERE clause
+        # Montar WHERE clause para base_transacoes_unificadas
         lojas_str = ','.join(map(str, lojas_ids))
         where_clauses = [
-            f"var6 IN ({lojas_str})",
-            f"var45 = '{data_formatada}'"
+            f"loja_id IN ({lojas_str})",
+            f"data_recebimento = '{data_formatada}'"
         ]
         
         # Filtro TEF - se não incluir TEF, excluir transações Credenciadora
@@ -231,24 +224,23 @@ class RecebimentoService:
         
         where_sql = ' AND '.join(where_clauses)
         
-        # Query com GROUP BY para evitar duplicatas por NSU
+        # Query direta na base_transacoes_unificadas (já tem 1 linha por NSU)
         sql = f"""
         SELECT 
-            var9 as nsu,
-            var6 as loja_id,
-            MIN(var19) as valor_transacao,
-            MIN(var44) as valor_recebimento,
-            MIN(data_transacao) as data_transacao,
-            MIN(var45) as data_recebimento,
-            MIN(var12) as bandeira,
-            MIN(var13) as parcelas,
-            MIN(var8) as plano,
-            MIN(var40) as tx_antecipacao,
-            MIN(var41) as custo_antecipacao
-        FROM baseTransacoesGestao
+            nsu,
+            loja_id,
+            valor_transacao,
+            valor_recebimento,
+            data_transacao,
+            data_recebimento,
+            bandeira,
+            parcelas,
+            plano,
+            tx_antecipacao,
+            custo_antecipacao
+        FROM base_transacoes_unificadas
         WHERE {where_sql}
-        GROUP BY var9, var6
-        ORDER BY var9 DESC
+        ORDER BY nsu DESC
         """
         
         results = []

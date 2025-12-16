@@ -106,11 +106,12 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 **Nota:** Own será implementado em fase posterior (não está em produção).
 
-### FASE 3: Validação Paralela - Pinbank (2-3 dias)
-- [ ] 3.1. Executar cargas em paralelo (base antiga + nova)
-- [ ] 3.2. Criar queries de comparação
-- [ ] 3.3. Validar totalizadores (COUNT, SUM)
-- [ ] 3.4. Validar queries críticas dos portais
+### FASE 3: Validação Paralela - Pinbank (2-3 dias) ✅ CONCLUÍDO
+- [x] 3.1. Executar cargas em paralelo (base antiga + nova) ✅
+- [x] 3.2. Criar queries de comparação ✅
+- [x] 3.3. Validar totalizadores (COUNT, SUM) ✅
+- [x] 3.4. Validar queries críticas dos portais ✅
+- [x] 3.5. Validação completa desde 01/01/2024 - Todas as 130 variáveis OK ✅
 
 ### FASE 4: Refatoração Portais - Pinbank (5-7 dias)
 - [ ] 4.1. Portal Admin
@@ -236,12 +237,15 @@ valor_centavos BIGINT              -- amount (em centavos)
    - Conversão explícita de valores para Decimal (fix erro operação string)
 
 #### ⚠️ Pendente
-- Testar carga completa (sem limite) - POS e Credenciadora
-- Validar dados entre base antiga e nova
 - Refatorar services_carga_checkout.py
-- Migrar dados históricos de baseTransacoesGestao para base_transacoes_unificadas
-- Refatorar portais Admin e Lojista
+- Migrar dados históricos de baseTransacoesGestao para base_transacoes_unificadas (se necessário)
 - **BUG: Transações com encargos (sem desconto)** - App e slip de impressão POS estão mostrando valores errados. Precisa corrigir lógica de cálculo/exibição quando há encargos ao invés de desconto.
+
+#### ✅ Validação Concluída (16/12/2024)
+- Carga completa testada - POS e Credenciadora funcionando
+- Validação de dados entre base antiga e nova - 100% OK
+- Comparação de todas as 130 variáveis desde 01/01/2024 - Sem divergências
+- Query de validação criada em `QUERIES_VALIDACAO_BASE_UNIFICADA.sql`
 
 #### 🐛 Bugs Corrigidos (10/12/2024 17:00)
 1. **2FA - Renovação de dispositivo**
@@ -265,5 +269,24 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 ---
 
-**Última Atualização:** 10/12/2024 17:11
+**Última Atualização:** 16/12/2024 20:00
 **Responsável:** Jean Lessa
+
+---
+
+## 🚀 INÍCIO FASE 4: REFATORAÇÃO PORTAIS (16/12/2024)
+
+**Status:** Em Andamento
+**Objetivo:** Migrar todos os portais de `baseTransacoesGestao` para `base_transacoes_unificadas`
+
+### Arquivos a Refatorar (Ordem de Prioridade)
+
+#### Portal Admin
+1. `portais/admin/views_transacoes.py` - Queries com ROW_NUMBER()
+2. `portais/admin/views_rpr.py` - Queries com ROW_NUMBER()
+3. `portais/admin/services_rpr.py` - Simplificar queries
+
+#### Portal Lojista
+1. `portais/lojista/views_vendas.py` - 6 queries com ROW_NUMBER()
+2. `portais/lojista/views_cancelamentos.py` - 3 queries com ROW_NUMBER()
+3. `portais/lojista/services_recebimentos.py` - Simplificar GROUP BY
