@@ -100,7 +100,7 @@ def _obter_estatisticas_dashboard(usuario):
             COUNT(CASE WHEN YEAR(data_transacao) = YEAR(CURDATE()) AND MONTH(data_transacao) = MONTH(CURDATE()) THEN 1 END) as transacoes_mes,
             SUM(CASE WHEN YEAR(data_transacao) = YEAR(CURDATE()) AND MONTH(data_transacao) = MONTH(CURDATE()) THEN CAST(var26 AS DECIMAL(10,2)) ELSE 0 END) as valor_mes
         FROM base_transacoes_unificadas
-        AND var68 = 'TRANS. APROVADO'
+        WHERE var68 = 'TRANS. APROVADO'
         {filtro_canal}
     """
 
