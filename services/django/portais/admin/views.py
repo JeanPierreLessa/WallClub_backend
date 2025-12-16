@@ -73,10 +73,10 @@ def _obter_estatisticas_dashboard(usuario):
     """Obtém estatísticas do dashboard filtradas pelos vínculos do usuário"""
     from portais.controle_acesso.services import ControleAcessoService
     from wallclub_core.estr_organizacional.canal import Canal
-    
+
     # Aplicar filtros baseados nos vínculos do usuário
     canais_usuario = ControleAcessoService.obter_canais_usuario(usuario)
-    
+
     # Se tem vínculos específicos, aplicar filtro por canal via var4
     if canais_usuario:
         valores_var4 = []
@@ -84,27 +84,26 @@ def _obter_estatisticas_dashboard(usuario):
             canal_nome = Canal.get_canal_nome(canal_id)
             if canal_nome and canal_nome != f"Canal {canal_id}":
                 valores_var4.append(f"'{canal_nome}'")
-        
+
         if valores_var4:
             filtro_canal = f" AND var4 IN ({','.join(valores_var4)})"
         else:
             filtro_canal = ""
     else:
         filtro_canal = ""
-    
+
     # Query consolidada - usando base_transacoes_unificadas
     query_consolidada = f"""
-        SELECT 
+        SELECT
             COUNT(CASE WHEN data_transacao >= CURDATE() THEN 1 END) as transacoes_hoje,
-            SUM(CASE WHEN data_transacao >= CURDATE() THEN CAST(var19 AS DECIMAL(10,2)) ELSE 0 END) as valor_hoje,
+            SUM(CASE WHEN data_transacao >= CURDATE() THEN CAST(var26 AS DECIMAL(10,2)) ELSE 0 END) as valor_hoje,
             COUNT(CASE WHEN YEAR(data_transacao) = YEAR(CURDATE()) AND MONTH(data_transacao) = MONTH(CURDATE()) THEN 1 END) as transacoes_mes,
-            SUM(CASE WHEN YEAR(data_transacao) = YEAR(CURDATE()) AND MONTH(data_transacao) = MONTH(CURDATE()) THEN CAST(var19 AS DECIMAL(10,2)) ELSE 0 END) as valor_mes
+            SUM(CASE WHEN YEAR(data_transacao) = YEAR(CURDATE()) AND MONTH(data_transacao) = MONTH(CURDATE()) THEN CAST(var26 AS DECIMAL(10,2)) ELSE 0 END) as valor_mes
         FROM base_transacoes_unificadas
-        WHERE var19 IS NOT NULL
         AND var68 = 'TRANS. APROVADO'
         {filtro_canal}
     """
-    
+
     with connection.cursor() as cursor:
         cursor.execute(query_consolidada)
         resultado = cursor.fetchone()
@@ -112,7 +111,7 @@ def _obter_estatisticas_dashboard(usuario):
         valor_hoje = resultado[1] or 0
         transacoes_mes = resultado[2] or 0
         valor_mes = resultado[3] or 0
-    
+
     return {
         'transacoes_hoje': transacoes_hoje,
         'valor_hoje': valor_hoje,
@@ -411,7 +410,7 @@ def ajax_lojas(request):
 
     usuario_logado = request.portal_usuario
     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
-    
+
     # Parâmetros de filtro
     canal_id = request.GET.get('canal_id')
     grupo_id = request.GET.get('grupo_id')
@@ -477,7 +476,7 @@ def ajax_grupos_economicos(request):
 
     usuario_logado = AutenticacaoService.obter_usuario_sessao(request)
     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
-    
+
     # Parâmetro de filtro
     canal_id = request.GET.get('canal_id')
 
