@@ -92,11 +92,11 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
 
                 # Filtro de loja
                 if len(lojas_para_consulta) == 1:
-                    where_conditions.append("btg.var6 = %s")
+                    where_conditions.append("btu.var6 = %s")
                     params.append(lojas_para_consulta[0])
                 else:
                     placeholders = ','.join(['%s'] * len(lojas_para_consulta))
-                    where_conditions.append(f"btg.var6 IN ({placeholders})")
+                    where_conditions.append(f"btu.var6 IN ({placeholders})")
                     params.extend(lojas_para_consulta)
 
                 # Filtros de data - converter formato se necessário
@@ -104,42 +104,40 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     try:
                         # Se data vem no formato YYYY-MM-DD, usar diretamente
                         if '-' in data_inicio and len(data_inicio) == 10:
-                            where_conditions.append("btg.data_transacao >= %s")
+                            where_conditions.append("btu.data_transacao >= %s")
                             params.append(f"{data_inicio} 00:00:00")
                         else:
-                            # Converter DD/MM/YYYY para YYYY-MM-DD
+                            # Se data vem no formato DD/MM/YYYY, converter
                             data_obj = datetime.strptime(data_inicio, '%d/%m/%Y')
-                            data_formatada = data_obj.strftime('%Y-%m-%d')
-                            where_conditions.append("btg.data_transacao >= %s")
-                            params.append(f"{data_formatada} 00:00:00")
+                            where_conditions.append("btu.data_transacao >= %s")
+                            params.append(f"{data_obj.strftime('%Y-%m-%d')} 00:00:00")
                     except ValueError:
-                        where_conditions.append("btg.data_transacao >= %s")
+                        where_conditions.append("btu.data_transacao >= %s")
                         params.append(f"{data_inicio} 00:00:00")
 
                 if data_fim:
                     try:
                         # Se data vem no formato YYYY-MM-DD, usar diretamente
                         if '-' in data_fim and len(data_fim) == 10:
-                            where_conditions.append("btg.data_transacao <= %s")
+                            where_conditions.append("btu.data_transacao <= %s")
                             params.append(f"{data_fim} 23:59:59")
                         else:
-                            # Converter DD/MM/YYYY para YYYY-MM-DD
+                            # Se data vem no formato DD/MM/YYYY, converter
                             data_obj = datetime.strptime(data_fim, '%d/%m/%Y')
-                            data_formatada = data_obj.strftime('%Y-%m-%d')
-                            where_conditions.append("btg.data_transacao <= %s")
-                            params.append(f"{data_formatada} 23:59:59")
+                            where_conditions.append("btu.data_transacao <= %s")
+                            params.append(f"{data_obj.strftime('%Y-%m-%d')} 23:59:59")
                     except ValueError:
-                        where_conditions.append("btg.data_transacao <= %s")
+                        where_conditions.append("btu.data_transacao <= %s")
                         params.append(f"{data_fim} 23:59:59")
 
                 # Filtro de NSU
                 if nsu:
-                    where_conditions.append("pep.NsuOperacao LIKE %s")
+                    where_conditions.append("btu.var9 LIKE %s")
                     params.append(f"%{nsu}%")
 
                 # Filtro TEF - se não incluir TEF, filtrar apenas transações não-Credenciadora
                 if not incluir_tef:
-                    where_conditions.append("btg.tipo_operacao != 'Credenciadora'")
+                    where_conditions.append("btu.tipo_operacao != 'Credenciadora'")
 
                 # Montar WHERE clause
                 where_clause = " AND ".join(where_conditions)
