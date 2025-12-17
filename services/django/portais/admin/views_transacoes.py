@@ -211,6 +211,8 @@ def base_transacoes_gestao(request):
 @require_secao_permitida('gestao_admin')
 def exportar_transacoes_excel(request):
     """Exportar transações para Excel usando SQL direto"""
+    import threading
+    
     try:
         # Aplicar os mesmos filtros da view principal
         filtros = {
@@ -249,70 +251,40 @@ def exportar_transacoes_excel(request):
         with connection.cursor() as cursor:
             cursor.execute(sql_count, params)
             total_registros = cursor.fetchone()[0]
+        
         LIMITE_DIRETO = 5000
 
         registrar_log('portais.admin', f"TRANSACOES - Export Excel - {total_registros} registros - Limite: {LIMITE_DIRETO}")
 
         if total_registros > LIMITE_DIRETO:
-            # Muitos registros - processar direto via SQL
-            registrar_log('portais.admin', f"TRANSACOES - Grande volume Excel - {total_registros} > {LIMITE_DIRETO}")
-            
-            # Buscar dados via SQL
-            sql_dados = f"SELECT * FROM base_transacoes_unificadas WHERE {where_clause} ORDER BY data_transacao DESC"
-            
-            with connection.cursor() as cursor:
-                cursor.execute(sql_dados, params)
-                columns = [col[0] for col in cursor.description]
-                rows = cursor.fetchall()
-            
-            dados = []
-            for row in rows:
-                transacao = dict(zip(columns, row))
-                item = {}
-                
-                if 'tipo_operacao' in transacao:
-                    item['tipo_operacao'] = transacao['tipo_operacao']
+            # Processar em background
+            thread = threading.Thread(
+                target=_processar_export_grande_admin,
+                args=(request, where_clause, params, total_registros)
+            )
+            thread.start()
 
-                for i in range(131):
-                    campo = f'var{i}'
-                    if campo in transacao:
-                        item[campo] = transacao[campo]
-
-                    campo_a = f'var{i}_A'
-                    if campo_a in transacao:
-                        item[campo_a] = transacao[campo_a]
-
-                    campo_b = f'var{i}_B'
-                    if campo_b in transacao:
-                        item[campo_b] = transacao[campo_b]
-
-                dados.append(item)
-            
-            cabecalhos = obter_mapeamento_colunas_completo()
-            colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
-            nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            titulo = "Transacoes Gestao"
-            
-            registrar_log('portais.admin', f"TRANSACOES - Excel concluído - {len(dados)} registros")
-            
-            return exportar_excel(nome_arquivo, dados, cabecalhos, titulo, colunas_monetarias)
+            return JsonResponse({
+                'success': True,
+                'message': f'Export iniciado em background. Arquivo CSV com {total_registros:,} registros será enviado por email.'
+            })
 
         # Log para poucos registros
         registrar_log('portais.admin', f"TRANSACOES - Direto Excel - {total_registros} <= {LIMITE_DIRETO}")
 
         # Buscar dados via SQL
         sql_dados = f"SELECT * FROM base_transacoes_unificadas WHERE {where_clause} ORDER BY data_transacao DESC"
-        
+
         dados = []
         with connection.cursor() as cursor:
             cursor.execute(sql_dados, params)
             columns = [col[0] for col in cursor.description]
             rows = cursor.fetchall()
-            
+
             for row in rows:
                 transacao = dict(zip(columns, row))
                 item = {}
-                
+
                 # Adicionar tipo_operacao como primeira coluna
                 if 'tipo_operacao' in transacao:
                     item['tipo_operacao'] = transacao['tipo_operacao']
@@ -354,6 +326,97 @@ def exportar_transacoes_excel(request):
             'message': f'Erro ao processar export: {str(e)}',
             'error': True
         }, status=500)
+
+
+def _processar_export_grande_admin(request, where_clause, params, total_registros):
+    """Processar export grande em background com envio por email"""
+    try:
+        from wallclub_core.integracoes.email_service import EmailService
+        import tempfile
+        import os
+
+        registrar_log('portais.admin', f"EXPORT GRANDE - Iniciando processamento de {total_registros} registros")
+
+        # Criar arquivo temporário
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as temp_file:
+            temp_path = temp_file.name
+
+            # Cabeçalho CSV - todas as variáveis
+            cabecalhos = obter_mapeamento_colunas_completo()
+            colunas = ['tipo_operacao'] + list(cabecalhos.keys())
+            temp_file.write(';'.join(colunas) + '\n')
+
+            # Processar em lotes de 1000
+            lote_size = 1000
+            total_lotes = (total_registros + lote_size - 1) // lote_size
+
+            for lote in range(total_lotes):
+                offset = lote * lote_size
+                registrar_log('portais.admin', f"EXPORT GRANDE - Processando lote {lote + 1}/{total_lotes}")
+
+                sql_lote = f"""
+                    SELECT *
+                    FROM base_transacoes_unificadas
+                    WHERE {where_clause}
+                    ORDER BY data_transacao DESC
+                    LIMIT {lote_size} OFFSET {offset}
+                """
+
+                with connection.cursor() as cursor:
+                    cursor.execute(sql_lote, params)
+                    columns = [col[0] for col in cursor.description]
+                    transacoes_lote = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+                for transacao in transacoes_lote:
+                    # Montar linha CSV
+                    linha = []
+                    linha.append(str(transacao.get('tipo_operacao', '')))
+                    
+                    for col in cabecalhos.keys():
+                        valor = transacao.get(col, '')
+                        if valor is None:
+                            valor = ''
+                        elif isinstance(valor, (int, float)):
+                            valor = str(valor).replace('.', ',')
+                        else:
+                            valor = str(valor)
+                        linha.append(valor)
+                    
+                    temp_file.write(';'.join(linha) + '\n')
+
+        # Enviar por email
+        usuario_email = request.session.get('admin_usuario_email', '')
+        if usuario_email:
+            nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+            # Ler arquivo para anexo
+            with open(temp_path, 'rb') as arquivo:
+                conteudo_csv = arquivo.read()
+
+            # Enviar usando EmailService
+            resultado = EmailService.enviar_email(
+                destinatarios=[usuario_email],
+                assunto=f'Export de Transações - {total_registros:,} registros',
+                mensagem_texto=f'Segue em anexo o arquivo CSV com {total_registros:,} registros de transações.\n\nArquivo gerado em: {datetime.now().strftime("%d/%m/%Y às %H:%M:%S")}',
+                anexos=[{
+                    'nome': nome_arquivo,
+                    'conteudo': conteudo_csv,
+                    'tipo': 'text/csv'
+                }],
+                fail_silently=True
+            )
+
+            if resultado['sucesso']:
+                registrar_log('portais.admin', f"EXPORT GRANDE - Email enviado para {usuario_email}")
+            else:
+                registrar_log('portais.admin', f"EXPORT GRANDE - Erro ao enviar email: {resultado['mensagem']}", nivel='ERROR')
+
+        # Limpar arquivo temporário
+        os.unlink(temp_path)
+        registrar_log('portais.admin', f"EXPORT GRANDE - Concluído com sucesso")
+
+    except Exception as e:
+        registrar_log('portais.admin', f"ERRO EXPORT GRANDE: {str(e)}", nivel='ERROR')
 
 @require_secao_permitida('gestao_admin')
 def exportar_transacoes_csv(request):
@@ -397,7 +460,7 @@ def exportar_transacoes_csv(request):
     with connection.cursor() as cursor:
         cursor.execute(sql_count, params)
         total_registros = cursor.fetchone()[0]
-    
+
     LIMITE_DIRETO = 5000
 
     registrar_log('portais.admin', f"TRANSACOES - Export CSV - {total_registros} registros - Limite: {LIMITE_DIRETO}")
@@ -412,17 +475,17 @@ def exportar_transacoes_csv(request):
 
     # Buscar dados via SQL
     sql_dados = f"SELECT * FROM base_transacoes_unificadas WHERE {where_clause} ORDER BY data_transacao DESC"
-    
+
     dados = []
     with connection.cursor() as cursor:
         cursor.execute(sql_dados, params)
         columns = [col[0] for col in cursor.description]
         rows = cursor.fetchall()
-        
+
         for row in rows:
             transacao = dict(zip(columns, row))
             item = {}
-            
+
             # Adicionar tipo_operacao como primeira coluna
             if 'tipo_operacao' in transacao:
                 item['tipo_operacao'] = transacao['tipo_operacao']
