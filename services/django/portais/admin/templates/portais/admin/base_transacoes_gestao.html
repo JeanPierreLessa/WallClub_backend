@@ -247,12 +247,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(data => {
                     console.log('Data recebida:', data);
-                    if (data && data.status === 'processando') {
+                    if (data && data.success) {
                         // Mostrar mensagem de processamento em background
-                        alert(`Export iniciado!\n\n${data.message}\n\nEmail: ${data.email}`);
-                    } else if (data && data.status === 'erro') {
+                        alert(`✅ ${data.message}`);
+                    } else if (data && data.error) {
                         // Mostrar mensagem de erro
-                        alert(`Erro no export:\n\n${data.message}`);
+                        alert(`❌ Erro: ${data.error || data.message}`);
                     }
                 })
                 .catch(error => {

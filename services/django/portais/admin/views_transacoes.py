@@ -384,8 +384,31 @@ def _processar_export_grande_admin(request, where_clause, params, total_registro
                     
                     temp_file.write(';'.join(linha) + '\n')
 
-        # Enviar por email
-        usuario_email = request.session.get('admin_usuario_email', '')
+        # Enviar por email - buscar do PortalUsuario
+        from portais.controle_acesso.models import PortalUsuario
+        
+        # Debug: verificar chaves disponíveis na sessão
+        registrar_log('portais.admin', f"EXPORT GRANDE - Chaves sessão: {list(request.session.keys())}")
+        
+        usuario_id = request.session.get('usuario_id')
+        usuario_email = ''
+        
+        if usuario_id:
+            try:
+                usuario = PortalUsuario.objects.get(id=usuario_id)
+                usuario_email = usuario.email
+                registrar_log('portais.admin', f"EXPORT GRANDE - Email encontrado: {usuario_email}")
+            except PortalUsuario.DoesNotExist:
+                registrar_log('portais.admin', f"EXPORT GRANDE - Usuário não encontrado: {usuario_id}", nivel='ERROR')
+        else:
+            registrar_log('portais.admin', f"EXPORT GRANDE - usuario_id não encontrado na sessão", nivel='ERROR')
+        
+        if not usuario_email:
+            registrar_log('portais.admin', f"EXPORT GRANDE - ERRO: Email não encontrado. Arquivo gerado mas não enviado.", nivel='ERROR')
+            # Limpar arquivo temporário
+            os.unlink(temp_path)
+            return
+        
         if usuario_email:
             nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
