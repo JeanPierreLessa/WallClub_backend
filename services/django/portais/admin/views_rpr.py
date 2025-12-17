@@ -331,12 +331,8 @@ def relatorio_producao_receita(request):
             SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0 
                      THEN CAST(var116_A AS DECIMAL(15,2)) 
                      ELSE 0 END) as resultado_financeiro
-        FROM (
-            SELECT *,
-                   ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-            FROM baseTransacoesGestao
-            WHERE {where_clause}
-        ) t WHERE rn = 1
+        FROM base_transacoes_unificadas
+        WHERE {where_clause}
     """
     
     registrar_log('portais.admin', f"RPR - Relatório gerado - Filtros: {filtros}")
@@ -423,13 +419,8 @@ def relatorio_producao_receita(request):
             SELECT 
                 var4 as canal_nome,
                 SUM(CAST(var26 AS DECIMAL(15,2))) as volume_canal
-            FROM (
-                SELECT var4, var26,
-                       ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                FROM baseTransacoesGestao
-                WHERE {where_clause}
-            ) t 
-            WHERE rn = 1 AND var4 IS NOT NULL
+            FROM base_transacoes_unificadas
+            WHERE {where_clause} AND var4 IS NOT NULL
             GROUP BY var4
         """
         
@@ -682,7 +673,7 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 SUM(CAST(var113_A AS DECIMAL(10,2))) as soma_var113_A,
                 SUM(CAST(var116_A AS DECIMAL(10,2))) as soma_var116_A,
                 SUM(CAST(var118_A AS DECIMAL(10,2))) as soma_var118_A
-            FROM baseTransacoesGestao
+            FROM base_transacoes_unificadas
             WHERE {where_clause}
         """
         

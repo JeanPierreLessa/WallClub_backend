@@ -368,11 +368,8 @@ class RPRService:
                 SUM(CAST(var109_A AS DECIMAL(15,2))) as impostos,
                 SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0 
                          THEN CAST(var116_A AS DECIMAL(15,2)) ELSE 0 END) as resultado
-            FROM (
-                SELECT *, ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                FROM baseTransacoesGestao
-                WHERE {where_clause}
-            ) t WHERE rn = 1
+            FROM base_transacoes_unificadas
+            WHERE {where_clause}
         """
         
         with connection.cursor() as cursor:
@@ -416,7 +413,7 @@ class RPRService:
         else:
             # Usuário admin_total - todos os canais
             sql = """
-                SELECT DISTINCT var4 FROM baseTransacoesGestao 
+                SELECT DISTINCT var4 FROM base_transacoes_unificadas 
                 WHERE var68 = 'TRANS. APROVADO' AND var4 IS NOT NULL AND var4 != ''
                 ORDER BY var4
             """
@@ -494,8 +491,8 @@ class RPRService:
         
         # Query para contar total (contar NSUs distintos)
         count_sql = f"""
-            SELECT COUNT(DISTINCT var9)
-            FROM baseTransacoesGestao
+            SELECT COUNT(*)
+            FROM base_transacoes_unificadas
             WHERE {where_clause}
         """
         
@@ -507,11 +504,9 @@ class RPRService:
         # Query paginada
         offset = (page - 1) * per_page
         sql = f"""
-            SELECT * FROM (
-                SELECT *, ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                FROM baseTransacoesGestao
-                WHERE {where_clause}
-            ) t WHERE rn = 1
+            SELECT *
+            FROM base_transacoes_unificadas
+            WHERE {where_clause}
             ORDER BY id DESC
             LIMIT %s OFFSET %s
         """
