@@ -297,7 +297,21 @@ valor_centavos BIGINT              -- amount (em centavos)
   - Removidas subqueries de `Max(id)` nos exports
   - Tela: https://admin.wallclub.com.br/base_transacoes_gestao/
 
-#### 3. Correção Procedures de Carga (21:30)
+#### 3. Portal Admin - RPR (Relatório Pagamentos/Recebimentos) (21:50)
+- [x] `portais/admin/views_rpr.py` ✅
+  - 3 queries refatoradas
+  - Removido `ROW_NUMBER() OVER (PARTITION BY var9)`
+  - Substituído `baseTransacoesGestao` por `base_transacoes_unificadas`
+  
+- [x] `portais/admin/services_rpr.py` ✅
+  - 4 queries refatoradas
+  - Removido `ROW_NUMBER() OVER (PARTITION BY var9)`
+  - Simplificado `COUNT(DISTINCT var9)` → `COUNT(*)`
+  - Substituído `baseTransacoesGestao` por `base_transacoes_unificadas`
+
+**Portal Admin 100% migrado para base_transacoes_unificadas** ✅
+
+#### 4. Correção Procedures de Carga (21:30)
 - [x] `services_carga_base_unificada_pos.py` (Wallet) ✅
   - Adicionada verificação de NSU duplicado antes de inserir
   - Evita reprocessamento gerar duplicatas
@@ -306,16 +320,12 @@ valor_centavos BIGINT              -- amount (em centavos)
   - Adicionada verificação de NSU duplicado antes de inserir
   - Evita reprocessamento gerar duplicatas
 
-#### 4. Banco de Dados (21:45)
+#### 5. Banco de Dados (21:45)
 - [x] Adicionada chave única: `uk_nsu_tipo (var9, tipo_operacao)` ✅
   - Garante 1 linha por NSU + tipo_operacao
   - Duplicatas existentes limpas manualmente
 
 ### Arquivos a Refatorar (Ordem de Prioridade)
-
-#### Portal Admin
-1. `portais/admin/views_rpr.py` - Queries com ROW_NUMBER()
-2. `portais/admin/services_rpr.py` - Simplificar queries
 
 #### Portal Lojista
 1. `portais/lojista/views_vendas.py` - 6 queries com ROW_NUMBER()
