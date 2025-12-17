@@ -134,7 +134,7 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
                         var45,
                         var68 as status,
                         var121 as status_pgto
-                    FROM base_transacoes_unificadas
+                    FROM baseTransacoesGestao
                     WHERE {where_clause}
                     ORDER BY data_transacao DESC
                     LIMIT 1000
@@ -175,7 +175,7 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
                 # Calcular total diretamente no SQL
                 sql_total = f"""
                     SELECT SUM(CAST(var19 AS DECIMAL(15,2))) as total_cancelado
-                    FROM base_transacoes_unificadas
+                    FROM baseTransacoesGestao
                     WHERE {where_clause}
                 """
                 
@@ -347,8 +347,7 @@ class LojistaCancelamentosExportView(View):
             from wallclub_core.database.queries import TransacoesQueries
             # Query já está sendo construída via SQL raw abaixo
             from gestao_financeira.models import BaseTransacoesGestao
-            from gestao_financeira.models import BaseTransacoesUnificadas
-            vendas_queryset = BaseTransacoesUnificadas.objects.filter(
+            vendas_queryset = BaseTransacoesGestao.objects.filter(
                 var68__contains='CANCELAD'
             ).order_by('-data_transacao')
             

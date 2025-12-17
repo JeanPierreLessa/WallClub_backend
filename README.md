@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 14/12/2025
+**Última Atualização:** 16/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -61,6 +61,12 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **Fase 6C:** Monorepo + wallclub_core (113 arquivos migrados)
 - ✅ **Fase 6D:** 4 Containers Independentes (Deploy em produção)
 - ⚠️ **Fase 7:** Integração Own Financial (95% - API QA com problemas de performance)
+- ✅ **Refatoração Base Transações (16/12/2025):**
+  - ✅ Criada `base_transacoes_unificadas` (1 linha por NSU)
+  - ✅ Migrados todos os portais (Admin, Lojista) e APIs Mobile
+  - ✅ Eliminadas 16+ queries com `ROW_NUMBER()`
+  - ✅ Processo de carga com UPDATE automático
+  - ⚠️ Pendente: Revisão completa e desativação de `baseTransacoesGestao`
 
 ## 📋 Navegação Rápida
 

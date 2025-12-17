@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.7  
-**Data:** 14/12/2025  
+**Versão:** 4.8  
+**Data:** 16/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Correções Checkout 2FA (filtro loja_id) + Portal Vendas (filtro por portal) + PinbankService (loja_id obrigatório)
+**Mudanças:** Refatoração Base Transações - Migração completa para `base_transacoes_unificadas` (16/12/2025)
 
 ---
 

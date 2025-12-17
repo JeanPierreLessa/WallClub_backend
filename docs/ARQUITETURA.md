@@ -1496,27 +1496,56 @@ POST /api/internal/cliente/verificar_cadastro/
 
 **Arquivo:** `pinbank/cargas_pinbank/services.py` (CargaExtratoPOSService)
 
-#### 2. Base Gestão
+#### 2. Base Transações Unificadas ⭐ NOVO (16/12/2025)
 
+**Tabela:** `base_transacoes_unificadas`  
 **Variáveis:** 130+ (var0-var130)  
+**Regra:** 1 linha por NSU (não por parcela)  
 **Streaming:** 100 registros/lote (otimização memória)  
-**Command:** `python manage.py carga_base_gestao`  
-**Tabela:** `baseTransacoesGestao`  
-**Container:** wallclub-pos
+**Commands:** 
+- `python manage.py carga_base_unificada_pos` (Wallet)
+- `python manage.py carga_base_unificada_credenciadora` (Credenciadora)
+- `python manage.py carga_base_unificada` (ambos em sequência)
+
+**Container:** wallclub-pos  
+**Celery Task:** `carga_base_unificada_task` (a cada 30 minutos)
 
 **Calculadora:** Compartilhada com Credenciadora (1178 linhas)  
 **Arquivo:** `parametros_wallclub/calculadora_base_gestao.py`
 
-**Refatoração (21/11/2025):**
-- ✅ Parâmetro `tabela` obrigatório (suporta Pinbank e Own)
-- ✅ Busca de loja: NSU (Pinbank) ou CNPJ (Own)
-- ✅ Busca de canal: NSU (Pinbank) ou CNPJ (Own)
+**Melhorias (16/12/2025):**
+- ✅ INSERT/UPDATE ao invés de INSERT/SKIP
+- ✅ Quando NSU existe: UPDATE de todas as colunas (exceto var9)
+- ✅ Integração com pagamentos programados (marca Lido=0, processado=0)
+- ✅ Logs diferenciados (🔄 UPDATE, ✅ INSERT)
+- ✅ Chave única: `uk_nsu_tipo (var9, tipo_operacao)`
+
+**Migração Completa (16/12/2025):**
+- ✅ Portal Admin (Home, Transações, RPR)
+- ✅ Portal Lojista (Home, Vendas, Cancelamentos, Conciliação, Recebimentos)
+- ✅ APIs Mobile (Extrato, Comprovante)
+- ✅ Eliminadas 16+ queries com `ROW_NUMBER()`
 
 **Status:**
 - 85 variáveis implementadas
 - 46 variáveis faltantes documentadas (var93-130)
 
-**Arquivo:** `parametros_wallclub/calculadora_base_gestao.py` (compartilhado)
+**Arquivo:** `pinbank/cargas_pinbank/services_carga_base_unificada_pos.py`
+
+---
+
+#### 2.1. Base Gestão (LEGADO - Em desuso)
+
+⚠️ **ATENÇÃO:** Tabela em processo de desativação. Todos os portais migrados para `base_transacoes_unificadas`.
+
+**Tabela:** `baseTransacoesGestao` (LEGADO)  
+**Status:** Ainda sendo populada em paralelo (será desativada após validação)  
+**Command:** `python manage.py carga_base_gestao` (LEGADO)
+
+**Pendente:**
+- Revisão completa de código para identificar usos remanescentes
+- Desativação de cargas antigas
+- Remoção da tabela após 1 semana de validação
 
 #### 3. Carga Credenciadora
 

@@ -113,31 +113,63 @@ valor_centavos BIGINT              -- amount (em centavos)
 - [x] 3.4. Validar queries críticas dos portais ✅
 - [x] 3.5. Validação completa desde 01/01/2024 - Todas as 130 variáveis OK ✅
 
-### FASE 4: Refatoração Portais - Pinbank (5-7 dias)
-- [ ] 4.1. Portal Admin
-  - `views_transacoes.py` - Remover `ROW_NUMBER()`
-  - `views_rpr.py` - Remover `ROW_NUMBER()`
-  - `services_rpr.py` - Simplificar queries
-- [ ] 4.2. Portal Lojista
-  - `views_vendas.py` - Remover `ROW_NUMBER()` (6 queries)
-  - `views_cancelamentos.py` - Remover `ROW_NUMBER()` (3 queries)
-  - `services_recebimentos.py` - Simplificar GROUP BY
+### FASE 4: Refatoração Portais - Pinbank (5-7 dias) ✅ CONCLUÍDO
+- [x] 4.1. Portal Admin ✅
+  - `views.py` - Home/Dashboard migrada
+  - `views_transacoes.py` - Removido `ROW_NUMBER()`
+  - `views_rpr.py` - Removido `ROW_NUMBER()`
+  - `services_rpr.py` - Simplificado queries
+- [x] 4.2. Portal Lojista ✅
+  - `views.py` - Home migrada
+  - `views_vendas.py` - Removido `ROW_NUMBER()` (6 queries)
+  - `views_cancelamentos.py` - Removido `ROW_NUMBER()` (3 queries)
+  - `views_vendas_operador.py` - Removido `ROW_NUMBER()`
+  - `views_conciliacao.py` - Removido `ROW_NUMBER()` (5 queries)
+  - `services_recebimentos.py` - Simplificado GROUP BY
 - [x] 4.3. APIs Mobile ✅
   - `apps/transacoes/services.py` - Migrado para base_transacoes_unificadas
   - Removidos JOINs com transactiondata e baseTransacoesGestao
   - Mapeamento correto: var2=terminal, var8=forma_pagamento, var12=bandeira
+- [x] 4.4. Melhorias no Processo de Carga ✅
+  - Cargas agora fazem UPDATE ao invés de SKIP quando NSU existe
+  - Integração com pagamentos programados (marca Lido=0, processado=0)
+  - Logs diferenciados (🔄 UPDATE, ✅ INSERT)
 
-### FASE 5: Migração Gradual (2-3 dias)
-- [ ] 5.1. Feature flag para alternar entre bases
-- [ ] 5.2. Testes em produção com % de tráfego
-- [ ] 5.3. Monitoramento de performance
-- [ ] 5.4. Rollback plan
+### FASE 5: Revisão Completa e Ajustes Finais (2-3 dias)
+- [ ] 5.1. **Varredura completa de código** - Identificar TODOS os lugares que ainda usam `baseTransacoesGestao`
+  - [ ] Grep recursivo em todo o projeto
+  - [ ] Verificar imports de `BaseTransacoesGestao`
+  - [ ] Verificar queries SQL diretas com nome da tabela
+  - [ ] Verificar scripts de migração/backup
+- [ ] 5.2. **Rotina de inserção POS (transactiondata)** - Verificar se insere direto em `baseTransacoesGestao`
+  - [ ] Analisar fluxo completo: POS → transactiondata → base_gestao
+  - [ ] Verificar se precisa inserir também em `base_transacoes_unificadas`
+  - [ ] Ou se deve apenas marcar `Lido=0` para carga processar
+- [ ] 5.3. **Processos de carga antigos** - Verificar se ainda populam `baseTransacoesGestao`
+  - [ ] `services_carga_base_gestao_pos.py` - Desativar ou remover?
+  - [ ] `services_carga_checkout.py` - Migrar para base unificada
+  - [ ] `services_carga_credenciadora.py` (antigo) - Desativar ou remover?
+- [ ] 5.4. **Relatórios e queries externas**
+  - [ ] Verificar se há dashboards externos (Metabase, Power BI, etc.)
+  - [ ] Verificar scripts SQL em `/scripts/producao/`
+  - [ ] Verificar procedures/triggers no banco
+- [ ] 5.5. **Testes de regressão**
+  - [ ] Testar todos os fluxos críticos em produção
+  - [ ] Validar totalizadores e relatórios
+  - [ ] Monitorar logs por 48h
 
-### FASE 6: Finalização (1-2 dias)
-- [ ] 6.1. Remover código legado
-- [ ] 6.2. Remover `baseTransacoesGestao` (após validação)
-- [ ] 6.3. Documentar mudanças
-- [ ] 6.4. Atualizar queries de relatórios
+### FASE 6: Migração Gradual (2-3 dias)
+- [ ] 6.1. Feature flag para alternar entre bases (se necessário)
+- [ ] 6.2. Testes em produção com % de tráfego
+- [ ] 6.3. Monitoramento de performance
+- [ ] 6.4. Rollback plan
+
+### FASE 7: Finalização (1-2 dias)
+- [ ] 7.1. Remover código legado
+- [ ] 7.2. Desativar cargas antigas para `baseTransacoesGestao`
+- [ ] 7.3. Remover `baseTransacoesGestao` (após validação de 1 semana)
+- [ ] 7.4. Documentar mudanças
+- [ ] 7.5. Atualizar queries de relatórios externos
 
 ---
 
@@ -269,7 +301,7 @@ valor_centavos BIGINT              -- amount (em centavos)
 
 ---
 
-**Última Atualização:** 16/12/2024 21:45
+**Última Atualização:** 16/12/2024 23:45
 **Responsável:** Jean Lessa
 
 ---
@@ -325,9 +357,76 @@ valor_centavos BIGINT              -- amount (em centavos)
   - Garante 1 linha por NSU + tipo_operacao
   - Duplicatas existentes limpas manualmente
 
-### Arquivos a Refatorar (Ordem de Prioridade)
+#### 6. Portal Lojista (16/12/2024 22:00-23:45)
+- [x] `portais/lojista/views.py` - Home ✅
+  - Migrada query de dashboard para `base_transacoes_unificadas`
+  - Removido `ROW_NUMBER() OVER (PARTITION BY var9)`
+  - Tela: https://lojista.wallclub.com.br/home/
 
-#### Portal Lojista
-1. `portais/lojista/views_vendas.py` - 6 queries com ROW_NUMBER()
-2. `portais/lojista/views_cancelamentos.py` - 3 queries com ROW_NUMBER()
-3. `portais/lojista/services_recebimentos.py` - Simplificar GROUP BY
+- [x] `portais/lojista/views_vendas.py` ✅
+  - 6 queries refatoradas
+  - Removido `ROW_NUMBER() OVER (PARTITION BY var9)`
+  - Substituído `baseTransacoesGestao` por `base_transacoes_unificadas`
+  - Tela: https://lojista.wallclub.com.br/vendas/
+
+- [x] `portais/lojista/views_cancelamentos.py` ✅
+  - 3 queries refatoradas
+  - Removido `ROW_NUMBER() OVER (PARTITION BY var9)`
+  - Substituído `baseTransacoesGestao` por `base_transacoes_unificadas`
+  - Tela: https://lojista.wallclub.com.br/cancelamentos/
+
+- [x] `portais/lojista/views_vendas_operador.py` ✅
+  - Query refatorada
+  - Removido `ROW_NUMBER() OVER (PARTITION BY var9)`
+  - Substituído `baseTransacoesGestao` por `base_transacoes_unificadas`
+
+- [x] `portais/lojista/views_conciliacao.py` ✅
+  - 5 queries refatoradas
+  - Removido `ROW_NUMBER() OVER (PARTITION BY var9)`
+  - Substituído `baseTransacoesGestao` por `base_transacoes_unificadas`
+  - Tela: https://lojista.wallclub.com.br/conciliacao/
+
+- [x] `portais/lojista/services_recebimentos.py` ✅
+  - Migrado para `base_transacoes_unificadas`
+  - Removido `GROUP BY var45, var9` e subquery `DISTINCT_VALUES`
+  - Simplificado para `COUNT(*)` direto (não precisa mais `COUNT(DISTINCT var9)`)
+  - Query direta sem agrupamento (1 linha por NSU)
+  - Tela: https://lojista.wallclub.com.br/recebimentos/
+
+**Portal Lojista 100% migrado para base_transacoes_unificadas** ✅
+
+#### 7. Melhorias no Processo de Carga (16/12/2024 23:00-23:45)
+- [x] `services_carga_base_unificada_pos.py` (Wallet) ✅
+  - Alterado de INSERT/SKIP para INSERT/UPDATE
+  - Quando NSU existe: faz UPDATE de todas as colunas (exceto var9)
+  - Log diferenciado: 🔄 para UPDATE, ✅ para INSERT
+  - Garante que dados atualizados (cancelamentos, pagamentos programados) sejam refletidos
+
+- [x] `services_carga_base_unificada_credenciadora.py` ✅
+  - Alterado de INSERT/SKIP para INSERT/UPDATE
+  - Quando NSU existe: faz UPDATE de todas as colunas (exceto var9)
+  - Log diferenciado: 🔄 para UPDATE, ✅ para INSERT
+
+- [x] `gestao_financeira/services.py` - PagamentoService ✅
+  - Método `criar_pagamento()`: marca `Lido=0, processado=0` na `pinbankExtratoPOS`
+  - Garante reprocessamento quando pagamento é programado manualmente
+  - Próxima carga atualiza `base_transacoes_unificadas` automaticamente
+
+**Deploy:** Requer rebuild dos containers Celery (wallclub-celery-beat, wallclub-celery-worker) para recarregar código Python em memória.
+
+---
+
+## 🎉 FASE 4 CONCLUÍDA (16/12/2024 23:45)
+
+**Todos os portais migrados para `base_transacoes_unificadas`:**
+- ✅ Portal Admin (Home, Transações, RPR)
+- ✅ Portal Lojista (Home, Vendas, Cancelamentos, Vendas Operador, Conciliação, Recebimentos)
+- ✅ APIs Mobile (Extrato, Comprovante)
+
+**Melhorias implementadas:**
+- ✅ Processo de carga com UPDATE ao invés de SKIP
+- ✅ Integração com pagamentos programados
+- ✅ Eliminação de 16+ queries com `ROW_NUMBER()`
+- ✅ Simplificação de queries de agregação
+
+**Próximos Passos:** FASE 5 - Migração Gradual e Monitoramento

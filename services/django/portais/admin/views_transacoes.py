@@ -213,7 +213,7 @@ def exportar_transacoes_excel(request):
     """Exportar transações para Excel usando SQL direto"""
     try:
         # Import do modelo
-        from gestao_financeira.models import BaseTransacoesUnificadas
+        from gestao_financeira.models import BaseTransacoesGestao
 
         # Aplicar os mesmos filtros da view principal
         filtros = {
@@ -225,7 +225,7 @@ def exportar_transacoes_excel(request):
         }
 
         # Construir queryset (mesmo código da view principal)
-        queryset = BaseTransacoesUnificadas.objects.filter(var68='TRANS. APROVADO')
+        queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
 
         if filtros['data_inicial']:
             data_inicial_dt = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').replace(hour=0, minute=0, second=0)
@@ -315,7 +315,7 @@ def exportar_transacoes_excel(request):
 def exportar_transacoes_csv(request):
     """Exportar transações para CSV com proteção contra timeout"""
     # Import do modelo
-    from gestao_financeira.models import BaseTransacoesUnificadas
+    from gestao_financeira.models import BaseTransacoesGestao
 
     # Aplicar os mesmos filtros da view principal
     filtros = {
@@ -327,7 +327,7 @@ def exportar_transacoes_csv(request):
     }
 
     # Construir queryset (mesmo código da view principal)
-    queryset = BaseTransacoesUnificadas.objects.filter(var68='TRANS. APROVADO')
+    queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
 
     if filtros['data_inicial']:
         data_inicial_dt = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').replace(hour=0, minute=0, second=0)
