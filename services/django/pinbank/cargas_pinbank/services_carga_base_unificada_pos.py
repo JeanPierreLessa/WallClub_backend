@@ -288,7 +288,22 @@ class CargaBaseUnificadaPOSService:
         return campos
 
     def _inserir_registro_sql(self, cursor, campos: Dict[str, Any]):
-        """Insere novo registro usando SQL direto"""
+        """Insere novo registro usando SQL direto (apenas se NSU não existir)"""
+        nsu = campos.get('var9')
+        
+        # Verificar se NSU já existe na base unificada
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM wallclub.base_transacoes_unificadas 
+            WHERE var9 = %s AND tipo_operacao = 'Wallet'
+        """, [nsu])
+        
+        existe = cursor.fetchone()[0] > 0
+        
+        if existe:
+            registrar_log('pinbank.cargas_pinbank', f"⚠️ NSU {nsu} já existe na base unificada - pulando inserção")
+            return
+        
         # Verificar estrutura da tabela
         cursor.execute("DESCRIBE wallclub.base_transacoes_unificadas")
         colunas_tabela = [row[0] for row in cursor.fetchall()]
@@ -304,4 +319,4 @@ class CargaBaseUnificadaPOSService:
         sql = f"INSERT INTO wallclub.base_transacoes_unificadas ({colunas}) VALUES ({placeholders})"
 
         cursor.execute(sql, valores)
-        registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada - NSU: {campos.get('var9')}")
+        registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada - NSU: {nsu}")

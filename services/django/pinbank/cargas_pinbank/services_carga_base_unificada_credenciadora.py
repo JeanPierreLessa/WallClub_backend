@@ -317,7 +317,22 @@ class CargaBaseUnificadaCredenciadoraService:
         return campos
 
     def _inserir_registro_sql(self, cursor, campos: Dict[str, Any]):
-        """Insere novo registro usando SQL direto"""
+        """Insere novo registro usando SQL direto (apenas se NSU não existir)"""
+        nsu = campos.get('var9')
+        
+        # Verificar se NSU já existe na base unificada
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM base_transacoes_unificadas 
+            WHERE var9 = %s AND tipo_operacao = 'Credenciadora'
+        """, [nsu])
+        
+        existe = cursor.fetchone()[0] > 0
+        
+        if existe:
+            registrar_log('pinbank.cargas_pinbank', f"⚠️ NSU {nsu} já existe na base unificada (Credenciadora) - pulando inserção")
+            return
+        
         # Filtrar apenas campos válidos
         campos_validos = {k: v for k, v in campos.items() if k not in ['id']}
 
@@ -343,3 +358,4 @@ class CargaBaseUnificadaCredenciadoraService:
                 valores_finais.append(valor)
 
         cursor.execute(sql, valores_finais)
+        registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada (Credenciadora) - NSU: {nsu}")
