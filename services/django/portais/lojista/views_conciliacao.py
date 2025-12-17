@@ -21,33 +21,33 @@ from wallclub_core.utilitarios.log_control import registrar_log
 
 class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
     """View para página de conciliação do lojista"""
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not request.session.get('lojista_authenticated'):
             return redirect('lojista:login')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get(self, request):
         """Renderizar página de conciliação"""
         # Obter lojas acessíveis usando serviço centralizado
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
             lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
         except PortalUsuario.DoesNotExist:
             lojas_acessiveis = []
-        
+
         context = {
             'current_page': 'conciliacao',
             'lojas_acessiveis': lojas_acessiveis,
             'mostrar_filtro_loja': len(lojas_acessiveis) > 1
         }
-        
+
         return render(request, 'portais/lojista/conciliacao.html', context)
-    
+
     def post(self, request):
         """Processar consulta de conciliação via AJAX"""
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -58,11 +58,11 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 loja_selecionada = request.POST.get('loja')
                 nsu = request.POST.get('nsu', '').strip()
                 incluir_tef = request.POST.get('incluir_tef') == 'on'
-                
+
                 # Validar acesso às lojas usando serviço centralizado
                 from portais.controle_acesso.models import PortalUsuario
                 from portais.controle_acesso.filtros import FiltrosAcessoService
-                
+
                 usuario_id = request.session.get('lojista_usuario_id')
                 try:
                     usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -70,7 +70,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     loja_ids_acesso = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
                 except PortalUsuario.DoesNotExist:
                     loja_ids_acesso = []
-                
+
                 # Determinar quais lojas consultar
                 # Lógica simplificada - permitir acesso a todas as lojas disponíveis
                 # if tipo_usuario in ['vendedor', 'lojista']:
@@ -82,14 +82,14 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                         lojas_para_consulta = [int(loja_selecionada)]
                     else:
                         lojas_para_consulta = loja_ids_acesso
-                
+
                 if not lojas_para_consulta:
                     return JsonResponse({'error': 'Acesso negado'}, status=403)
-                
+
                 # Construir query com JOIN
                 where_conditions = []
                 params = []
-                
+
                 # Filtro de loja
                 if len(lojas_para_consulta) == 1:
                     where_conditions.append("btg.var6 = %s")
@@ -98,7 +98,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     placeholders = ','.join(['%s'] * len(lojas_para_consulta))
                     where_conditions.append(f"btg.var6 IN ({placeholders})")
                     params.extend(lojas_para_consulta)
-                
+
                 # Filtros de data - converter formato se necessário
                 if data_inicio:
                     try:
@@ -115,7 +115,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     except ValueError:
                         where_conditions.append("btg.data_transacao >= %s")
                         params.append(f"{data_inicio} 00:00:00")
-                
+
                 if data_fim:
                     try:
                         # Se data vem no formato YYYY-MM-DD, usar diretamente
@@ -131,92 +131,87 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     except ValueError:
                         where_conditions.append("btg.data_transacao <= %s")
                         params.append(f"{data_fim} 23:59:59")
-                
+
                 # Filtro de NSU
                 if nsu:
                     where_conditions.append("pep.NsuOperacao LIKE %s")
                     params.append(f"%{nsu}%")
-                
+
                 # Filtro TEF - se não incluir TEF, filtrar apenas transações não-Credenciadora
                 if not incluir_tef:
                     where_conditions.append("btg.tipo_operacao != 'Credenciadora'")
-                
+
                 # Montar WHERE clause
                 where_clause = " AND ".join(where_conditions)
-                
+
                 # Paginação
                 pagina = int(request.POST.get('pagina', 1))
                 por_pagina = 200
                 offset = (pagina - 1) * por_pagina
-                
+
                 # Contar total de registros primeiro
                 sql_count = f"""
-                SELECT COUNT(*) FROM (
-                    SELECT 1
-                    FROM base_transacoes_unificadas btg
-                    INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
-                    WHERE {where_clause}
-                ) total
+                SELECT COUNT(*)
+                FROM base_transacoes_unificadas btu
+                WHERE {where_clause}
                 """
-                
+
                 with connection.cursor() as cursor:
                     cursor.execute(sql_count, params)
                     total_registros = cursor.fetchone()[0]
-                
+
                 total_paginas = (total_registros + por_pagina - 1) // por_pagina
-                
-                # Query completa com JOIN e deduplicação
+
+                # Query sem JOIN - dados direto da base unificada
                 sql = f"""
-                SELECT 
-                    DATE_FORMAT(t.data_transacao, '%%d/%%m/%%Y')       AS `Data`,
-                    t.var43                                            AS `Dt_credito`,
-                    t.var45                                            AS `Dt_pagto`,
-                    CASE 
-                        WHEN TRIM(t.var70) = '0001-01-01T00:00:00' OR t.var70 IS NULL OR TRIM(t.var70) = ''
+                SELECT
+                    DATE_FORMAT(btu.data_transacao, '%%d/%%m/%%Y')     AS `Data`,
+                    btu.var43                                          AS `Dt_credito`,
+                    btu.var45                                          AS `Dt_pagto`,
+                    CASE
+                        WHEN TRIM(btu.var70) = '0001-01-01T00:00:00' OR btu.var70 IS NULL OR TRIM(btu.var70) = ''
                             THEN NULL
-                        ELSE DATE_FORMAT(STR_TO_DATE(LEFT(t.var70, 10), '%%Y-%%m-%%d'), '%%d/%%m/%%Y')
+                        ELSE DATE_FORMAT(STR_TO_DATE(LEFT(btu.var70, 10), '%%Y-%%m-%%d'), '%%d/%%m/%%Y')
                     END                                                AS `Dt_cancelamento`,
-                    t.var5                                             AS `Filial`,
-                    CAST(t.var6 AS UNSIGNED)                           AS `Cod_Estab`,
-                    t.var2                                             AS `Terminal`,
-                    t.NsuOperacao                                      AS `NSU`,
-                    t.CodAutorizAdquirente                             AS `Autorizacao`,
-                    CAST(t.NumeroParcela AS SIGNED)                    AS `Parcela`,
-                    CAST(t.var13 AS SIGNED)                            AS `Prazo_Total`,
-                    CAST(t.var19 AS DECIMAL(10,2))                     AS `Vl_Bruto`,
-                    CAST(t.var37 AS DECIMAL(10,2))                     AS `Tx_Adm_R`,
-                    CAST(t.var42 AS DECIMAL(10,2))                     AS `Vl_Liq`,
-                    CASE 
-                        WHEN TRIM(t.var70) = '0001-01-01T00:00:00' OR t.var70 IS NULL OR TRIM(t.var70) = ''
+                    btu.var5                                           AS `Filial`,
+                    CAST(btu.var6 AS UNSIGNED)                         AS `Cod_Estab`,
+                    btu.var2                                           AS `Terminal`,
+                    btu.var9                                           AS `NSU`,
+                    btu.authorization_code                             AS `Autorizacao`,
+                    CAST(btu.var13 AS SIGNED)                          AS `Prazo_Total`,
+                    CAST(btu.var19 AS DECIMAL(10,2))                   AS `Vl_Bruto`,
+                    CAST(btu.var37 AS DECIMAL(10,2))                   AS `Tx_Adm_R`,
+                    CAST(btu.var42 AS DECIMAL(10,2))                   AS `Vl_Liq`,
+                    CASE
+                        WHEN TRIM(btu.var70) = '0001-01-01T00:00:00' OR btu.var70 IS NULL OR TRIM(btu.var70) = ''
                              THEN 0
-                        ELSE CAST(t.ValorBruto AS DECIMAL(10,2))
-                    END                                                AS `Vl_Canc`, 
-                    CAST(t.var36 AS DECIMAL(10,2))*100                 AS `Tx_Adm_Perc`,
-                    CAST(t.var44 AS DECIMAL(10,2))                     AS `Vl_Liq_Pago`,
-                    CAST(t.var40 AS DECIMAL(10,2))*100                 AS `Tx_Antec_Per`,
-                    CAST(t.var41 AS DECIMAL(10,2))                     AS `Custo_Antec`,
-                    CAST(t.var39 AS DECIMAL(10,2))*100                 AS `Tx_Antec_AM`,
-                    t.var121                                           AS `Status_Pagto`,
-                    t.var8                                             AS `Plano`,
-                    t.var12                                            AS `Bandeira`,
-                    t.var68                                            AS `Status_Trans`,
-                    t.var10                                            AS `NOP`
-                FROM base_transacoes_unificadas btg
-                INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
+                        ELSE CAST(btu.var19 AS DECIMAL(10,2))
+                    END                                                AS `Vl_Canc`,
+                    CAST(btu.var36 AS DECIMAL(10,2))*100               AS `Tx_Adm_Perc`,
+                    CAST(btu.var44 AS DECIMAL(10,2))                   AS `Vl_Liq_Pago`,
+                    CAST(btu.var40 AS DECIMAL(10,2))*100               AS `Tx_Antec_Per`,
+                    CAST(btu.var41 AS DECIMAL(10,2))                   AS `Custo_Antec`,
+                    CAST(btu.var39 AS DECIMAL(10,2))*100               AS `Tx_Antec_AM`,
+                    btu.var121                                         AS `Status_Pagto`,
+                    btu.var8                                           AS `Plano`,
+                    btu.var12                                          AS `Bandeira`,
+                    btu.var68                                          AS `Status_Trans`,
+                    btu.var10                                          AS `NOP`
+                FROM base_transacoes_unificadas btu
                 WHERE {where_clause}
-                ORDER BY btg.data_transacao DESC
+                ORDER BY btu.data_transacao DESC
                 LIMIT {por_pagina} OFFSET {offset}
                 """
-                
+
                 # Executar query
                 with connection.cursor() as cursor:
                     cursor.execute(sql, params)
                     columns = [col[0] for col in cursor.description]
                     results = []
-                    
+
                     for row in cursor.fetchall():
                         row_dict = dict(zip(columns, row))
-                        
+
                         # Datas já vem formatadas do SQL
                         # Apenas copiar para campos _formatada para compatibilidade com template
                         for campo in ['Data', 'Dt_credito', 'Dt_pagto', 'Dt_cancelamento']:
@@ -226,12 +221,12 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                                 row_dict[f'{campo}_formatada'] = '-'
                             else:
                                 row_dict[f'{campo}_formatada'] = valor
-                        
+
                         results.append(row_dict)
-                
+
                 # Renderizar HTML
                 html = self._render_conciliacao_html(results, pagina, total_paginas, total_registros)
-                
+
                 return JsonResponse({
                     'success': True,
                     'html': html,
@@ -239,19 +234,19 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     'pagina': pagina,
                     'total_paginas': total_paginas
                 })
-                    
+
             except Exception as e:
                 registrar_log('portais.lojista', f"CONCILIACAO - Erro na consulta: {e}", nivel='ERROR')
                 return JsonResponse({'error': f'Erro na consulta: {e}'}, status=500)
-        
+
         # Se não for AJAX, redirecionar para GET
         return redirect('lojista:conciliacao')
-    
+
     def _render_conciliacao_html(self, conciliacoes, pagina, total_paginas, total_registros):
         """Renderizar HTML da conciliação"""
         if not conciliacoes:
             return '<div class="alert alert-info mt-3">Nenhum registro encontrado com os filtros informados.</div>'
-        
+
         # Tabela de conciliação com cabeçalho fixo
         html = '''
         <div class="conciliacao-container">
@@ -294,7 +289,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 <table class="table table-striped table-bordered table-hover mb-0">
                     <tbody>
         '''
-        
+
         for conciliacao in conciliacoes:
             # Função helper para converter valores numéricos com segurança
             def safe_float(valor, default=0):
@@ -304,7 +299,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     return float(valor)
                 except (ValueError, TypeError):
                     return default
-            
+
             html += f'''
             <tr>
                 <td style="width: 90px;">{conciliacao.get("Data_formatada", "-")}</td>
@@ -334,70 +329,70 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 <td style="width: 80px;">{conciliacao.get("NOP", "-")}</td>
             </tr>
             '''
-        
+
         html += '</tbody></table></div>'
-        
+
         # Paginação
         html += '<div class="d-flex justify-content-between align-items-center mt-3 px-3">'
         html += f'<div class="text-muted">Mostrando {len(conciliacoes)} de {total_registros} registros (Página {pagina} de {total_paginas})</div>'
         html += '<nav><ul class="pagination mb-0">'
-        
+
         # Botão Anterior
         if pagina > 1:
             html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{pagina-1}">Anterior</a></li>'
         else:
             html += '<li class="page-item disabled"><span class="page-link">Anterior</span></li>'
-        
+
         # Páginas
         inicio = max(1, pagina - 2)
         fim = min(total_paginas, pagina + 2)
-        
+
         if inicio > 1:
             html += '<li class="page-item"><a class="page-link" href="#" data-pagina="1">1</a></li>'
             if inicio > 2:
                 html += '<li class="page-item disabled"><span class="page-link">...</span></li>'
-        
+
         for p in range(inicio, fim + 1):
             if p == pagina:
                 html += f'<li class="page-item active"><span class="page-link">{p}</span></li>'
             else:
                 html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{p}">{p}</a></li>'
-        
+
         if fim < total_paginas:
             if fim < total_paginas - 1:
                 html += '<li class="page-item disabled"><span class="page-link">...</span></li>'
             html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{total_paginas}">{total_paginas}</a></li>'
-        
+
         # Botão Próximo
         if pagina < total_paginas:
             html += f'<li class="page-item"><a class="page-link" href="#" data-pagina="{pagina+1}">Próximo</a></li>'
         else:
             html += '<li class="page-item disabled"><span class="page-link">Próximo</span></li>'
-        
+
         html += '</ul></nav></div></div>'
-        
+
         return html
 
 
 class LojistaConciliacaoExportView(View):
     """View para exportação de dados de conciliação"""
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not request.session.get('lojista_authenticated'):
             return redirect('lojista:login')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def post(self, request):
         from wallclub_core.utilitarios.export_utils import exportar_excel, exportar_csv, exportar_pdf
         from django.db import connection
         from django.http import JsonResponse
         from datetime import datetime
-        
+
         try:
             # Obter lojas acessíveis usando serviço centralizado
             from portais.controle_acesso.models import PortalUsuario
             from portais.controle_acesso.filtros import FiltrosAcessoService
-            
+
             usuario_id = request.session.get('lojista_usuario_id')
             try:
                 usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -405,197 +400,194 @@ class LojistaConciliacaoExportView(View):
                 loja_ids = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
             except PortalUsuario.DoesNotExist:
                 loja_ids = []
-            
+
             # Determinar quais lojas consultar
             # Lógica simplificada - usar todas as lojas disponíveis
             lojas_para_consulta = loja_ids
-            
+
             if not lojas_para_consulta:
                 return JsonResponse({'error': 'Acesso negado'}, status=403)
-            
+
             # Capturar parâmetros
             data_inicio = request.POST.get('data_inicio')
             data_fim = request.POST.get('data_fim')
             nsu = request.POST.get('nsu', '').strip()
             loja_selecionada = request.POST.get('loja', 'todas')
             formato = request.POST.get('export_format', 'excel')
-            
+
             # Determinar lojas para a query
             if loja_selecionada != 'todas' and int(loja_selecionada) in lojas_para_consulta:
                 lojas_query = [int(loja_selecionada)]
             else:
                 lojas_query = lojas_para_consulta
-            
+
             # Capturar parâmetros (incluindo incluir_tef)
             incluir_tef = request.POST.get('incluir_tef') == 'on'
-            
+
             # Construir WHERE conditions
             where_conditions = []
             params = []
-            
+
             # Filtro de loja
-            where_conditions.append("btg.var6 IN %s")
+            where_conditions.append("btu.var6 IN %s")
             params.append(tuple(lojas_query))
-            
+
             # Filtro TEF - usar mesma lógica da view principal
             if not incluir_tef:
-                where_conditions.append("btg.tipo_operacao != 'Credenciadora'")
-            
+                where_conditions.append("btu.tipo_operacao != 'Credenciadora'")
+
             # Verificar total de registros primeiro
             sql_count = """
-            SELECT COUNT(DISTINCT btg.id)
-            FROM base_transacoes_unificadas btg
-            INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
+            SELECT COUNT(*)
+            FROM base_transacoes_unificadas btu
             """
-            
+
             # Parâmetros apenas para o count (sem formatos de data)
             params_count = params.copy()
-            
+
             # Aplicar filtros de data ao count
             where_conditions_count = where_conditions.copy()
             if data_inicio:
                 try:
                     if '-' in data_inicio and len(data_inicio) == 10:
-                        where_conditions_count.append("btg.data_transacao >= %s")
+                        where_conditions_count.append("btu.data_transacao >= %s")
                         params_count.append(f"{data_inicio} 00:00:00")
                     else:
                         data_obj = datetime.strptime(data_inicio, '%d/%m/%Y')
-                        where_conditions_count.append("btg.data_transacao >= %s")
+                        where_conditions_count.append("btu.data_transacao >= %s")
                         params_count.append(f"{data_obj.strftime('%Y-%m-%d')} 00:00:00")
                 except ValueError:
-                    where_conditions_count.append("btg.data_transacao >= %s")
+                    where_conditions_count.append("btu.data_transacao >= %s")
                     params_count.append(f"{data_inicio} 00:00:00")
-            
+
             if data_fim:
                 try:
                     if '-' in data_fim and len(data_fim) == 10:
-                        where_conditions_count.append("btg.data_transacao <= %s")
+                        where_conditions_count.append("btu.data_transacao <= %s")
                         params_count.append(f"{data_fim} 23:59:59")
                     else:
                         data_obj = datetime.strptime(data_fim, '%d/%m/%Y')
-                        where_conditions_count.append("btg.data_transacao <= %s")
+                        where_conditions_count.append("btu.data_transacao <= %s")
                         params_count.append(f"{data_obj.strftime('%Y-%m-%d')} 23:59:59")
                 except ValueError:
-                    where_conditions_count.append("btg.data_transacao <= %s")
+                    where_conditions_count.append("btu.data_transacao <= %s")
                     params_count.append(f"{data_fim} 23:59:59")
-            
+
             if nsu:
-                where_conditions_count.append("pep.NsuOperacao LIKE %s")
+                where_conditions_count.append("btu.var9 LIKE %s")
                 params_count.append(f'%{nsu}%')
-            
+
             # Executar count
             if where_conditions_count:
                 sql_count += f" WHERE {' AND '.join(where_conditions_count)}"
-            
+
             with connection.cursor() as cursor:
                 cursor.execute(sql_count, params_count)
                 total_registros = cursor.fetchone()[0]
-            
+
             registrar_log('portais.lojista', f"CONCILIACAO - Export {formato} - Total registros: {total_registros}")
-            
+
             # Se mais de 5000 registros, processar em background e enviar por email
             if total_registros > 5000:
                 return self._processar_export_grande(request, where_conditions, params, total_registros, formato, lojas_query, data_inicio, data_fim, nsu, incluir_tef)
-            
-            # Construir SQL (usar mesma estrutura da view principal)
+
+            # Construir SQL sem JOIN
             sql = """
             SELECT DISTINCT
-                btg.data_transacao                           AS `Data`,
-                STR_TO_DATE(btg.var43, '%%d/%%m/%%Y')       AS `Dt_credito`,
-                STR_TO_DATE(btg.var45, '%%d/%%m/%%Y')       AS `Dt_pagto`,
-                CASE 
-                    WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
+                DATE_FORMAT(btu.data_transacao, '%%d/%%m/%%Y')   AS `Data`,
+                STR_TO_DATE(btu.var43, '%%d/%%m/%%Y')       AS `Dt_credito`,
+                STR_TO_DATE(btu.var45, '%%d/%%m/%%Y')       AS `Dt_pagto`,
+                CASE
+                    WHEN TRIM(btu.var70) = '0001-01-01T00:00:00' OR btu.var70 IS NULL OR TRIM(btu.var70) = ''
                         THEN NULL
-                    ELSE STR_TO_DATE(LEFT(btg.var70, 10), '%%Y-%%m-%%d')
-                END                                          AS `Dt_cancelamento`,
-                btg.var5                                     AS `Filial`,
-                CAST(btg.var6 AS DECIMAL(3,0))              AS `Cod_Estab`,
-                btg.var2                                     AS `Terminal`,
-                pep.NsuOperacao                              AS `NSU`,
-                pep.CodAutorizAdquirente                     AS `Autorizacao`,
-                CAST(pep.NumeroParcela AS SIGNED)            AS `Parcela`,
-                CAST(btg.var13 AS SIGNED)                    AS `Prazo_Total`,
-                CAST(btg.var19 AS DECIMAL(10,2))             AS `Vl_Bruto`,
-                CAST(btg.var37 AS DECIMAL(10,2))             AS `Tx_Adm_R`,
-                CAST(btg.var42 AS DECIMAL(10,2))             AS `Vl_Liq`,
-                CASE 
-                    WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
+                    ELSE STR_TO_DATE(LEFT(btu.var70, 10), '%%Y-%%m-%%d')
+                END                                              AS `Dt_cancelamento`,
+                btu.var5                                         AS `Filial`,
+                CAST(btu.var6 AS UNSIGNED)                       AS `Cod_Estab`,
+                btu.var2                                         AS `Terminal`,
+                btu.var9                                         AS `NSU`,
+                btu.authorization_code                           AS `Autorizacao`,
+                CAST(btu.var13 AS SIGNED)                        AS `Prazo_Total`,
+                CAST(btu.var19 AS DECIMAL(10,2))             AS `Vl_Bruto`,
+                CAST(btu.var37 AS DECIMAL(10,2))             AS `Tx_Adm_R`,
+                CAST(btu.var42 AS DECIMAL(10,2))             AS `Vl_Liq`,
+                CASE
+                    WHEN TRIM(btu.var70) = '0001-01-01T00:00:00' OR btu.var70 IS NULL OR TRIM(btu.var70) = ''
                          THEN 0
-                    ELSE CAST(pep.ValorBruto AS DECIMAL(10,2))
-                END                                          AS `Vl_Canc`, 
-                CAST(btg.var36 AS DECIMAL(10,2))*100         AS `Tx_Adm_Perc`,
-                CAST(btg.var44 AS DECIMAL(10,2))             AS `Vl_Liq_Pago`,
-                CAST(btg.var40 AS DECIMAL(10,2))*100         AS `Tx_Antec_Per`,
-                CAST(btg.var41 AS DECIMAL(10,2))             AS `Custo_Antec`,
-                CAST(btg.var39 AS DECIMAL(10,2))*100         AS `Tx_Antec_AM`,
-                btg.var121                                   AS `Status_Pagto`,
-                btg.var8                                     AS `Plano`,
-                btg.var12                                    AS `Bandeira`,
-                btg.var68                                    AS `Status_Trans`,
-                btg.var10                                    AS `NOP`
-            FROM base_transacoes_unificadas btg
-            INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
+                    ELSE CAST(btu.var19 AS DECIMAL(10,2))
+                END                                          AS `Vl_Canc`,
+                CAST(btu.var36 AS DECIMAL(10,2))*100         AS `Tx_Adm_Perc`,
+                CAST(btu.var44 AS DECIMAL(10,2))             AS `Vl_Liq_Pago`,
+                CAST(btu.var40 AS DECIMAL(10,2))*100         AS `Tx_Antec_Per`,
+                CAST(btu.var41 AS DECIMAL(10,2))             AS `Custo_Antec`,
+                CAST(btu.var39 AS DECIMAL(10,2))*100         AS `Tx_Antec_AM`,
+                btu.var121                                   AS `Status_Pagto`,
+                btu.var8                                     AS `Plano`,
+                btu.var12                                    AS `Bandeira`,
+                btu.var68                                    AS `Status_Trans`,
+                btu.var10                                    AS `NOP`
+            FROM base_transacoes_unificadas btu
             """
-            
+
             # Aplicar filtros de data - usar mesma lógica da view principal
             if data_inicio:
                 try:
                     # Se data vem no formato YYYY-MM-DD, usar diretamente
                     if '-' in data_inicio and len(data_inicio) == 10:
-                        where_conditions.append("btg.data_transacao >= %s")
+                        where_conditions.append("btu.data_transacao >= %s")
                         params.append(f"{data_inicio} 00:00:00")
                     else:
-                        # Converter DD/MM/YYYY para YYYY-MM-DD
+                        # Se data vem no formato DD/MM/YYYY, converter
                         data_obj = datetime.strptime(data_inicio, '%d/%m/%Y')
                         data_formatada = data_obj.strftime('%Y-%m-%d')
-                        where_conditions.append("btg.data_transacao >= %s")
+                        where_conditions.append("btu.data_transacao >= %s")
                         params.append(f"{data_formatada} 00:00:00")
                 except ValueError:
-                    where_conditions.append("btg.data_transacao >= %s")
+                    where_conditions.append("btu.data_transacao >= %s")
                     params.append(f"{data_inicio} 00:00:00")
-            
+
             if data_fim:
                 try:
                     # Se data vem no formato YYYY-MM-DD, usar diretamente
                     if '-' in data_fim and len(data_fim) == 10:
-                        where_conditions.append("btg.data_transacao <= %s")
+                        where_conditions.append("btu.data_transacao <= %s")
                         params.append(f"{data_fim} 23:59:59")
                     else:
-                        # Converter DD/MM/YYYY para YYYY-MM-DD
+                        # Se data vem no formato DD/MM/YYYY, converter
                         data_obj = datetime.strptime(data_fim, '%d/%m/%Y')
                         data_formatada = data_obj.strftime('%Y-%m-%d')
-                        where_conditions.append("btg.data_transacao <= %s")
+                        where_conditions.append("btu.data_transacao <= %s")
                         params.append(f"{data_formatada} 23:59:59")
                 except ValueError:
-                    where_conditions.append("btg.data_transacao <= %s")
+                    where_conditions.append("btu.data_transacao <= %s")
                     params.append(f"{data_fim} 23:59:59")
-            
+
             # Filtro NSU
             if nsu:
-                where_conditions.append("pep.NsuOperacao LIKE %s")
+                where_conditions.append("btu.var9 LIKE %s")
                 params.append(f'%{nsu}%')
-            
+
             # Finalizar SQL
             if where_conditions:
                 sql += f" WHERE {' AND '.join(where_conditions)}"
-            sql += " ORDER BY btg.data_transacao DESC"
-            
+            sql += " ORDER BY btu.data_transacao DESC"
+
             # Executar query
             with connection.cursor() as cursor:
                 cursor.execute(sql, params)
                 columns = [col[0] for col in cursor.description]
                 results = []
-                
+
                 for row in cursor.fetchall():
                     row_dict = dict(zip(columns, row))
                     results.append(row_dict)
-            
+
             registrar_log('portais.lojista', f"CONCILIACAO - Exportação {formato} - {len(results)} registros")
-            
+
             # Preparar dados para exportação
             lojas_incluidas = f"Lojas: {', '.join(map(str, lojas_query))}"
             nome_arquivo = f"conciliacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            
+
             if formato == 'excel':
                 # Converter lista de colunas para dict de cabeçalhos
                 cabecalhos_dict = {col: col for col in columns}
@@ -621,26 +613,26 @@ class LojistaConciliacaoExportView(View):
                 )
             else:
                 return JsonResponse({'error': 'Formato não suportado'}, status=400)
-                
+
         except Exception as e:
             return JsonResponse({'error': f'Erro na exportação: {str(e)}'}, status=500)
-    
+
     def _processar_export_grande(self, request, where_conditions, params, total_registros, formato, lojas_query, data_inicio, data_fim, nsu, incluir_tef):
         """Processar export grande em background com envio por email"""
         import threading
-        
+
         # Processar em background
         thread = threading.Thread(
             target=self._executar_export_background,
             args=(request, where_conditions, params, total_registros, formato, lojas_query, data_inicio, data_fim, nsu, incluir_tef)
         )
         thread.start()
-        
+
         return JsonResponse({
             'success': True,
             'message': f'Export iniciado em background. Arquivo CSV com {total_registros:,} registros será enviado por email.'
         })
-    
+
     def _executar_export_background(self, request, where_conditions, params, total_registros, formato, lojas_query, data_inicio, data_fim, nsu, incluir_tef):
         """Executar export em background e enviar por email"""
         try:
@@ -649,13 +641,13 @@ class LojistaConciliacaoExportView(View):
             import tempfile
             import os
             from datetime import datetime
-            
+
             registrar_log('portais.lojista', f"CONCILIACAO - Export grande iniciado - {total_registros} registros")
-            
+
             # Criar arquivo temporário
             with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as temp_file:
                 temp_path = temp_file.name
-                
+
                 # Cabeçalho CSV
                 colunas_csv = [
                     'Data', 'Dt_credito', 'Dt_pagto', 'Dt_cancelamento', 'Filial', 'Cod_Estab',
@@ -665,99 +657,97 @@ class LojistaConciliacaoExportView(View):
                     'Plano', 'Bandeira', 'Status_Trans', 'NOP'
                 ]
                 temp_file.write(';'.join(colunas_csv) + '\n')
-                
+
                 # Processar em lotes de 1000
                 lote_size = 1000
                 total_lotes = (total_registros + lote_size - 1) // lote_size
-                
+
                 for lote in range(total_lotes):
                     offset = lote * lote_size
                     registrar_log('portais.lojista', f"CONCILIACAO - Processando lote {lote + 1}/{total_lotes}")
-                    
-                    # SQL com LIMIT e OFFSET
+
+                    # SQL com LIMIT e OFFSET - sem JOIN
                     sql_lote = """
-                    SELECT DISTINCT
-                        btg.data_transacao                           AS `Data`,
-                        STR_TO_DATE(btg.var43, '%%d/%%m/%%Y')       AS `Dt_credito`,
-                        STR_TO_DATE(btg.var45, '%%d/%%m/%%Y')       AS `Dt_pagto`,
-                        CASE 
-                            WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
+                    SELECT
+                        DATE_FORMAT(btu.data_transacao, '%%d/%%m/%%Y')   AS `Data`,
+                        STR_TO_DATE(btu.var43, '%%d/%%m/%%Y')       AS `Dt_credito`,
+                        STR_TO_DATE(btu.var45, '%%d/%%m/%%Y')       AS `Dt_pagto`,
+                        CASE
+                            WHEN TRIM(btu.var70) = '0001-01-01T00:00:00' OR btu.var70 IS NULL OR TRIM(btu.var70) = ''
                                 THEN NULL
-                            ELSE STR_TO_DATE(LEFT(btg.var70, 10), '%%Y-%%m-%%d')
-                        END                                          AS `Dt_cancelamento`,
-                        btg.var5                                     AS `Filial`,
-                        CAST(btg.var6 AS DECIMAL(3,0))              AS `Cod_Estab`,
-                        btg.var2                                     AS `Terminal`,
-                        pep.NsuOperacao                              AS `NSU`,
-                        pep.CodAutorizAdquirente                     AS `Autorizacao`,
-                        CAST(pep.NumeroParcela AS SIGNED)            AS `Parcela`,
-                        CAST(btg.var13 AS SIGNED)                    AS `Prazo_Total`,
-                        CAST(btg.var19 AS DECIMAL(10,2))             AS `Vl_Bruto`,
-                        CAST(btg.var37 AS DECIMAL(10,2))             AS `Tx_Adm_R`,
-                        CAST(btg.var42 AS DECIMAL(10,2))             AS `Vl_Liq`,
-                        CASE 
-                            WHEN TRIM(btg.var70) = '0001-01-01T00:00:00' OR btg.var70 IS NULL OR TRIM(btg.var70) = ''
+                            ELSE STR_TO_DATE(LEFT(btu.var70, 10), '%%Y-%%m-%%d')
+                        END                                              AS `Dt_cancelamento`,
+                        btu.var5                                         AS `Filial`,
+                        CAST(btu.var6 AS UNSIGNED)                       AS `Cod_Estab`,
+                        btu.var2                                         AS `Terminal`,
+                        btu.var9                                         AS `NSU`,
+                        btu.authorization_code                           AS `Autorizacao`,
+                        CAST(btu.var13 AS SIGNED)                        AS `Prazo_Total`,
+                        CAST(btu.var19 AS DECIMAL(10,2))             AS `Vl_Bruto`,
+                        CAST(btu.var37 AS DECIMAL(10,2))             AS `Tx_Adm_R`,
+                        CAST(btu.var42 AS DECIMAL(10,2))             AS `Vl_Liq`,
+                        CASE
+                            WHEN TRIM(btu.var70) = '0001-01-01T00:00:00' OR btu.var70 IS NULL OR TRIM(btu.var70) = ''
                                  THEN 0
-                            ELSE CAST(pep.ValorBruto AS DECIMAL(10,2))
-                        END                                          AS `Vl_Canc`, 
-                        CAST(btg.var36 AS DECIMAL(10,2))*100         AS `Tx_Adm_Perc`,
-                        CAST(btg.var44 AS DECIMAL(10,2))             AS `Vl_Liq_Pago`,
-                        CAST(btg.var40 AS DECIMAL(10,2))*100         AS `Tx_Antec_Per`,
-                        CAST(btg.var41 AS DECIMAL(10,2))             AS `Custo_Antec`,
-                        CAST(btg.var39 AS DECIMAL(10,2))*100         AS `Tx_Antec_AM`,
-                        btg.var121                                   AS `Status_Pagto`,
-                        btg.var8                                     AS `Plano`,
-                        btg.var12                                    AS `Bandeira`,
-                        btg.var68                                    AS `Status_Trans`,
-                        btg.var10                                    AS `NOP`
-                    FROM base_transacoes_unificadas btg
-                    INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
+                            ELSE CAST(btu.var19 AS DECIMAL(10,2))
+                        END                                          AS `Vl_Canc`,
+                        CAST(btu.var36 AS DECIMAL(10,2))*100         AS `Tx_Adm_Perc`,
+                        CAST(btu.var44 AS DECIMAL(10,2))             AS `Vl_Liq_Pago`,
+                        CAST(btu.var40 AS DECIMAL(10,2))*100         AS `Tx_Antec_Per`,
+                        CAST(btu.var41 AS DECIMAL(10,2))             AS `Custo_Antec`,
+                        CAST(btu.var39 AS DECIMAL(10,2))*100         AS `Tx_Antec_AM`,
+                        btu.var121                                   AS `Status_Pagto`,
+                        btu.var8                                     AS `Plano`,
+                        btu.var12                                    AS `Bandeira`,
+                        btu.var68                                    AS `Status_Trans`,
+                        btu.var10                                    AS `NOP`
+                    FROM base_transacoes_unificadas btu
                     """
-                    
+
                     # Montar parâmetros do lote (sem formatos de data)
                     params_lote = params.copy()
-                    
+
                     # Aplicar filtros de data
                     where_conditions_lote = where_conditions.copy()
                     if data_inicio:
                         try:
                             if '-' in data_inicio and len(data_inicio) == 10:
-                                where_conditions_lote.append("btg.data_transacao >= %s")
+                                where_conditions_lote.append("btu.data_transacao >= %s")
                                 params_lote.append(f"{data_inicio} 00:00:00")
                             else:
                                 data_obj = datetime.strptime(data_inicio, '%d/%m/%Y')
-                                where_conditions_lote.append("btg.data_transacao >= %s")
+                                where_conditions_lote.append("btu.data_transacao >= %s")
                                 params_lote.append(f"{data_obj.strftime('%Y-%m-%d')} 00:00:00")
                         except ValueError:
-                            where_conditions_lote.append("btg.data_transacao >= %s")
+                            where_conditions_lote.append("btu.data_transacao >= %s")
                             params_lote.append(f"{data_inicio} 00:00:00")
-                    
+
                     if data_fim:
                         try:
                             if '-' in data_fim and len(data_fim) == 10:
-                                where_conditions_lote.append("btg.data_transacao <= %s")
+                                where_conditions_lote.append("btu.data_transacao <= %s")
                                 params_lote.append(f"{data_fim} 23:59:59")
                             else:
                                 data_obj = datetime.strptime(data_fim, '%d/%m/%Y')
-                                where_conditions_lote.append("btg.data_transacao <= %s")
+                                where_conditions_lote.append("btu.data_transacao <= %s")
                                 params_lote.append(f"{data_obj.strftime('%Y-%m-%d')} 23:59:59")
                         except ValueError:
-                            where_conditions_lote.append("btg.data_transacao <= %s")
+                            where_conditions_lote.append("btu.data_transacao <= %s")
                             params_lote.append(f"{data_fim} 23:59:59")
-                    
+
                     if nsu:
-                        where_conditions_lote.append("pep.NsuOperacao LIKE %s")
+                        where_conditions_lote.append("btu.var9 LIKE %s")
                         params_lote.append(f'%{nsu}%')
-                    
+
                     # Finalizar SQL do lote
                     if where_conditions_lote:
                         sql_lote += f" WHERE {' AND '.join(where_conditions_lote)}"
-                    sql_lote += f" ORDER BY btg.data_transacao DESC LIMIT {lote_size} OFFSET {offset}"
-                    
+                    sql_lote += f" ORDER BY btu.data_transacao DESC LIMIT {lote_size} OFFSET {offset}"
+
                     # Executar query do lote
                     with connection.cursor() as cursor:
                         cursor.execute(sql_lote, params_lote)
-                        
+
                         for row in cursor.fetchall():
                             # Formatar valores para CSV
                             linha_csv = []
@@ -768,18 +758,18 @@ class LojistaConciliacaoExportView(View):
                                     linha_csv.append(valor.strftime('%d/%m/%Y'))
                                 else:
                                     linha_csv.append(str(valor))
-                            
+
                             temp_file.write(';'.join(linha_csv) + '\n')
-            
+
             # Enviar por email
             usuario_email = request.session.get('lojista_usuario_email', '')
             if not usuario_email:
                 registrar_log('portais.lojista', f"CONCILIACAO - ERRO: Email não encontrado na sessão", nivel='ERROR')
                 return
-            
+
             nome_arquivo = f"conciliacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             lojas_texto = f"Lojas: {', '.join(map(str, lojas_query))}"
-            
+
             # Criar email
             assunto = f"Relatório de Conciliação - {total_registros:,} registros"
             corpo = f"""
@@ -797,11 +787,11 @@ Detalhes:
 Atenciosamente,
 Sistema WallClub
             """
-            
+
             # Ler arquivo para anexo
             with open(temp_path, 'rb') as arquivo:
                 conteudo_csv = arquivo.read()
-            
+
             # Enviar usando EmailService
             resultado = EmailService.enviar_email(
                 destinatarios=[usuario_email],
@@ -814,14 +804,14 @@ Sistema WallClub
                 }],
                 fail_silently=True
             )
-            
+
             # Remover arquivo temporário
             os.unlink(temp_path)
-            
+
             if resultado['sucesso']:
                 registrar_log('portais.lojista', f"CONCILIACAO - Export grande concluído e enviado para {usuario_email}")
             else:
                 registrar_log('portais.lojista', f"CONCILIACAO - Erro ao enviar email: {resultado['mensagem']}", nivel='ERROR')
-            
+
         except Exception as e:
             registrar_log('portais.lojista', f"CONCILIACAO - ERRO no export grande: {str(e)}", nivel='ERROR')
