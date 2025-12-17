@@ -127,7 +127,7 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
                             b.var11, 
                             t.operador_pos,
                             teops.nome 
-                        FROM baseTransacoesGestao b
+                        FROM base_transacoes_unificadas b
                         INNER JOIN transactiondata t ON b.var9 = t.nsuPinbank 
                         LEFT JOIN terminais_operadores_pos tepos ON t.operador_pos = tepos.id 
                         LEFT JOIN terminais_operadores teops ON tepos.operador = teops.operador
