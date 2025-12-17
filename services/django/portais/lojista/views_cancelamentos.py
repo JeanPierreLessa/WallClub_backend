@@ -303,6 +303,7 @@ class LojistaCancelamentosExportView(View):
         data_inicial = request.POST.get('data_inicio', '')
         data_final = request.POST.get('data_fim', '')
         loja_id = request.POST.get('loja', '')
+        incluir_tef = request.POST.get('incluir_tef') == 'on'
 
         # Validar acesso às lojas usando serviço centralizado
         from portais.controle_acesso.models import PortalUsuario
@@ -366,6 +367,11 @@ class LojistaCancelamentosExportView(View):
             if data_final:
                 where_conditions.append("data_transacao <= %s")
                 params.append(f"{data_final} 23:59:59")
+            
+            # Filtro TEF - se não incluir TEF, filtrar apenas transações não-Credenciadora
+            if not incluir_tef:
+                where_conditions.append("tipo_operacao != %s")
+                params.append('Credenciadora')
             
             where_clause = " AND ".join(where_conditions)
             

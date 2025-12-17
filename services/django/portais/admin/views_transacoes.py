@@ -254,10 +254,53 @@ def exportar_transacoes_excel(request):
         registrar_log('portais.admin', f"TRANSACOES - Export Excel - {total_registros} registros - Limite: {LIMITE_DIRETO}")
 
         if total_registros > LIMITE_DIRETO:
-            # Muitos registros - processar em background e enviar por email
-            registrar_log('portais.admin', f"TRANSACOES - Background Excel - {total_registros} > {LIMITE_DIRETO}")
-            # TODO: Implementar background export com base_transacoes_unificadas
-            return JsonResponse({'error': 'Export de grandes volumes em desenvolvimento'}, status=500)
+            # Muitos registros - processar via streaming (sem limite)
+            registrar_log('portais.admin', f"TRANSACOES - Streaming Excel - {total_registros} > {LIMITE_DIRETO}")
+            
+            # Buscar dados via SQL com streaming
+            sql_dados = f"SELECT * FROM base_transacoes_unificadas WHERE {where_clause} ORDER BY data_transacao DESC"
+            
+            dados = []
+            with connection.cursor() as cursor:
+                cursor.execute(sql_dados, params)
+                columns = [col[0] for col in cursor.description]
+                
+                # Processar em lotes para não explodir memória
+                while True:
+                    rows = cursor.fetchmany(1000)
+                    if not rows:
+                        break
+                    
+                    for row in rows:
+                        transacao = dict(zip(columns, row))
+                        item = {}
+                        
+                        if 'tipo_operacao' in transacao:
+                            item['tipo_operacao'] = transacao['tipo_operacao']
+
+                        for i in range(131):
+                            campo = f'var{i}'
+                            if campo in transacao:
+                                item[campo] = transacao[campo]
+
+                            campo_a = f'var{i}_A'
+                            if campo_a in transacao:
+                                item[campo_a] = transacao[campo_a]
+
+                            campo_b = f'var{i}_B'
+                            if campo_b in transacao:
+                                item[campo_b] = transacao[campo_b]
+
+                        dados.append(item)
+            
+            cabecalhos = obter_mapeamento_colunas_completo()
+            colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
+            nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            titulo = "Transacoes Gestao"
+            
+            registrar_log('portais.admin', f"TRANSACOES - Excel streaming concluído - {len(dados)} registros")
+            
+            return exportar_excel(nome_arquivo, dados, cabecalhos, titulo, colunas_monetarias)
 
         # Log para poucos registros
         registrar_log('portais.admin', f"TRANSACOES - Direto Excel - {total_registros} <= {LIMITE_DIRETO}")
