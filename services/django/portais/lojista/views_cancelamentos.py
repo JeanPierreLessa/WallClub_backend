@@ -134,12 +134,8 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
                         var45,
                         var68 as status,
                         var121 as status_pgto
-                    FROM (
-                        SELECT *,
-                               ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                        FROM baseTransacoesGestao
-                        WHERE {where_clause}
-                    ) t WHERE rn = 1
+                    FROM base_transacoes_unificadas
+                    WHERE {where_clause}
                     ORDER BY data_transacao DESC
                     LIMIT 1000
                 """
@@ -179,12 +175,8 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
                 # Calcular total diretamente no SQL
                 sql_total = f"""
                     SELECT SUM(CAST(var19 AS DECIMAL(15,2))) as total_cancelado
-                    FROM (
-                        SELECT var19,
-                               ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                        FROM baseTransacoesGestao
-                        WHERE {where_clause}
-                    ) t WHERE rn = 1
+                    FROM base_transacoes_unificadas
+                    WHERE {where_clause}
                 """
                 
                 with connection.cursor() as cursor:
@@ -355,17 +347,10 @@ class LojistaCancelamentosExportView(View):
             from wallclub_core.database.queries import TransacoesQueries
             # Query já está sendo construída via SQL raw abaixo
             from gestao_financeira.models import BaseTransacoesGestao
-            vendas_queryset = BaseTransacoesGestao.objects.filter(filtros).extra(
-                select={'data_transacao': "STR_TO_DATE(var0, '%%d/%%m/%%Y')"},
-                where=["""
-                    NOT EXISTS (
-                        SELECT 1 FROM baseTransacoesGestao b2 
-                        WHERE b2.var9 = baseTransacoesGestao.var9 
-                        AND b2.id > baseTransacoesGestao.id
-                    )
-                """],
-                order_by=['-data_transacao']
-            )
+            from gestao_financeira.models import BaseTransacoesUnificadas
+            vendas_queryset = BaseTransacoesUnificadas.objects.filter(
+                var68__contains='CANCELAD'
+            ).order_by('-data_transacao')
             
             results = []
             for venda in vendas_queryset:

@@ -153,15 +153,9 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 sql_count = f"""
                 SELECT COUNT(*) FROM (
                     SELECT 1
-                    FROM (
-                        SELECT 
-                            btg.id,
-                            ROW_NUMBER() OVER (PARTITION BY btg.var9, pep.NumeroParcela ORDER BY btg.id DESC) as rn
-                        FROM baseTransacoesGestao btg
-                        INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
-                        WHERE {where_clause}
-                    ) t
-                    WHERE t.rn = 1
+                    FROM base_transacoes_unificadas btg
+                    INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
+                    WHERE {where_clause}
                 ) total
                 """
                 
@@ -207,20 +201,10 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     t.var12                                            AS `Bandeira`,
                     t.var68                                            AS `Status_Trans`,
                     t.var10                                            AS `NOP`
-                FROM (
-                    SELECT 
-                        btg.*,
-                        pep.NsuOperacao,
-                        pep.CodAutorizAdquirente,
-                        pep.NumeroParcela,
-                        pep.ValorBruto,
-                        ROW_NUMBER() OVER (PARTITION BY btg.var9, pep.NumeroParcela ORDER BY btg.id DESC) as rn
-                    FROM baseTransacoesGestao btg
-                    INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
-                    WHERE {where_clause}
-                ) t
-                WHERE t.rn = 1
-                ORDER BY t.data_transacao DESC
+                FROM base_transacoes_unificadas btg
+                INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
+                WHERE {where_clause}
+                ORDER BY btg.data_transacao DESC
                 LIMIT {por_pagina} OFFSET {offset}
                 """
                 
@@ -460,7 +444,7 @@ class LojistaConciliacaoExportView(View):
             # Verificar total de registros primeiro
             sql_count = """
             SELECT COUNT(DISTINCT btg.id)
-            FROM baseTransacoesGestao btg
+            FROM base_transacoes_unificadas btg
             INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
             """
             
@@ -549,7 +533,7 @@ class LojistaConciliacaoExportView(View):
                 btg.var12                                    AS `Bandeira`,
                 btg.var68                                    AS `Status_Trans`,
                 btg.var10                                    AS `NOP`
-            FROM baseTransacoesGestao btg
+            FROM base_transacoes_unificadas btg
             INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
             """
             
@@ -726,7 +710,7 @@ class LojistaConciliacaoExportView(View):
                         btg.var12                                    AS `Bandeira`,
                         btg.var68                                    AS `Status_Trans`,
                         btg.var10                                    AS `NOP`
-                    FROM baseTransacoesGestao btg
+                    FROM base_transacoes_unificadas btg
                     INNER JOIN pinbankExtratoPOS pep ON btg.idFilaExtrato = pep.id
                     """
                     
