@@ -134,7 +134,7 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
                         var45,
                         var68 as status,
                         var121 as status_pgto
-                    FROM baseTransacoesGestao
+                    FROM base_transacoes_unificadas
                     WHERE {where_clause}
                     ORDER BY data_transacao DESC
                     LIMIT 1000
@@ -175,7 +175,7 @@ class LojistaCancelamentosView(LojistaAccessMixin, LojistaDataMixin, TemplateVie
                 # Calcular total diretamente no SQL
                 sql_total = f"""
                     SELECT SUM(CAST(var19 AS DECIMAL(15,2))) as total_cancelado
-                    FROM baseTransacoesGestao
+                    FROM base_transacoes_unificadas
                     WHERE {where_clause}
                 """
                 

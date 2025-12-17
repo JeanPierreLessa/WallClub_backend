@@ -169,7 +169,7 @@ def base_transacoes_gestao(request):
     # Carregar canais e lojas usando SQL direto
     from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
     with connection.cursor() as cursor:
-        cursor.execute("SELECT DISTINCT var4 FROM base_transacoes_unificadas ORDER BY var4")
+        cursor.execute("SELECT DISTINCT var4 FROM base_transacoes_unificadas WHERE var4 IS NOT NULL AND var4 != '' ORDER BY var4")
         canais = [row[0] for row in cursor.fetchall()]
     lojas = [{'id': loja.id, 'nome': loja.razao_social} for loja in HierarquiaOrganizacionalService.listar_todas_lojas()]
 
@@ -212,9 +212,6 @@ def base_transacoes_gestao(request):
 def exportar_transacoes_excel(request):
     """Exportar transações para Excel usando SQL direto"""
     try:
-        # Import do modelo
-        from gestao_financeira.models import BaseTransacoesGestao
-
         # Aplicar os mesmos filtros da view principal
         filtros = {
             'data_inicial': request.GET.get('data_inicial', date.today().replace(day=1).strftime('%Y-%m-%d')),
@@ -224,31 +221,34 @@ def exportar_transacoes_excel(request):
             'incluir_tef': request.GET.get('incluir_tef') == '1'
         }
 
-        # Construir queryset (mesmo código da view principal)
-        queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
+        # Construir WHERE clause para SQL direto
+        where_conditions = ["var68 = 'TRANS. APROVADO'"]
+        params = []
 
         if filtros['data_inicial']:
-            data_inicial_dt = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').replace(hour=0, minute=0, second=0)
-            queryset = queryset.filter(data_transacao__gte=data_inicial_dt)
+            where_conditions.append("data_transacao >= %s")
+            params.append(f"{filtros['data_inicial']} 00:00:00")
 
         if filtros['data_final']:
-            data_final_dt = datetime.strptime(filtros['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-            queryset = queryset.filter(data_transacao__lte=data_final_dt)
-
-        # Filtro de loja - removido para admin (deve ver todas as transações)
+            where_conditions.append("data_transacao <= %s")
+            params.append(f"{filtros['data_final']} 23:59:59")
 
         if filtros['nsu_filtro']:
-            queryset = queryset.filter(var9__icontains=filtros['nsu_filtro'])
+            where_conditions.append("var9 LIKE %s")
+            params.append(f"%{filtros['nsu_filtro']}%")
 
         # Filtro tipo_operacao
         if not filtros['incluir_tef']:
-            queryset = queryset.filter(tipo_operacao='Wallet')
+            where_conditions.append("tipo_operacao = %s")
+            params.append('Wallet')
 
-        # Ordenação por data
-        queryset = queryset.order_by('-data_transacao')
+        where_clause = " AND ".join(where_conditions)
 
-        # Verificar quantidade de registros
-        total_registros = queryset.count()
+        # Contar total de registros
+        sql_count = f"SELECT COUNT(*) FROM base_transacoes_unificadas WHERE {where_clause}"
+        with connection.cursor() as cursor:
+            cursor.execute(sql_count, params)
+            total_registros = cursor.fetchone()[0]
         LIMITE_DIRETO = 5000
 
         registrar_log('portais.admin', f"TRANSACOES - Export Excel - {total_registros} registros - Limite: {LIMITE_DIRETO}")
@@ -256,36 +256,46 @@ def exportar_transacoes_excel(request):
         if total_registros > LIMITE_DIRETO:
             # Muitos registros - processar em background e enviar por email
             registrar_log('portais.admin', f"TRANSACOES - Background Excel - {total_registros} > {LIMITE_DIRETO}")
-            return _processar_export_background(request, queryset, 'excel', total_registros)
+            # TODO: Implementar background export com base_transacoes_unificadas
+            return JsonResponse({'error': 'Export de grandes volumes em desenvolvimento'}, status=500)
 
         # Log para poucos registros
         registrar_log('portais.admin', f"TRANSACOES - Direto Excel - {total_registros} <= {LIMITE_DIRETO}")
 
-        # Poucos registros - processar diretamente
+        # Buscar dados via SQL
+        sql_dados = f"SELECT * FROM base_transacoes_unificadas WHERE {where_clause} ORDER BY data_transacao DESC"
+        
         dados = []
-        for transacao in queryset:
-            item = {}
-            # Adicionar tipo_operacao como primeira coluna
-            if hasattr(transacao, 'tipo_operacao'):
-                item['tipo_operacao'] = getattr(transacao, 'tipo_operacao')
+        with connection.cursor() as cursor:
+            cursor.execute(sql_dados, params)
+            columns = [col[0] for col in cursor.description]
+            rows = cursor.fetchall()
+            
+            for row in rows:
+                transacao = dict(zip(columns, row))
+                item = {}
+                
+                # Adicionar tipo_operacao como primeira coluna
+                if 'tipo_operacao' in transacao:
+                    item['tipo_operacao'] = transacao['tipo_operacao']
 
-            # Adicionar var0 até var130 com variantes _A e _B na ordem correta
-            for i in range(131):  # var0 até var130
-                campo = f'var{i}'
-                if hasattr(transacao, campo):
-                    item[campo] = getattr(transacao, campo)
+                # Adicionar var0 até var130 com variantes _A e _B na ordem correta
+                for i in range(131):  # var0 até var130
+                    campo = f'var{i}'
+                    if campo in transacao:
+                        item[campo] = transacao[campo]
 
-                # Adicionar variante _A logo após se existir
-                campo_a = f'var{i}_A'
-                if hasattr(transacao, campo_a):
-                    item[campo_a] = getattr(transacao, campo_a)
+                    # Adicionar variante _A logo após se existir
+                    campo_a = f'var{i}_A'
+                    if campo_a in transacao:
+                        item[campo_a] = transacao[campo_a]
 
-                # Adicionar variante _B logo após se existir
-                campo_b = f'var{i}_B'
-                if hasattr(transacao, campo_b):
-                    item[campo_b] = getattr(transacao, campo_b)
+                    # Adicionar variante _B logo após se existir
+                    campo_b = f'var{i}_B'
+                    if campo_b in transacao:
+                        item[campo_b] = transacao[campo_b]
 
-            dados.append(item)
+                dados.append(item)
 
         cabecalhos = obter_mapeamento_colunas_completo()
         colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
@@ -314,9 +324,6 @@ def exportar_transacoes_excel(request):
 @require_secao_permitida('gestao_admin')
 def exportar_transacoes_csv(request):
     """Exportar transações para CSV com proteção contra timeout"""
-    # Import do modelo
-    from gestao_financeira.models import BaseTransacoesGestao
-
     # Aplicar os mesmos filtros da view principal
     filtros = {
         'data_inicial': request.GET.get('data_inicial', date.today().replace(day=1).strftime('%Y-%m-%d')),
@@ -326,31 +333,37 @@ def exportar_transacoes_csv(request):
         'incluir_tef': request.GET.get('incluir_tef') == '1'
     }
 
-    # Construir queryset (mesmo código da view principal)
-    queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
+    # Construir WHERE clause para SQL direto
+    where_conditions = ["var68 = 'TRANS. APROVADO'"]
+    params = []
 
     if filtros['data_inicial']:
-        data_inicial_dt = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').replace(hour=0, minute=0, second=0)
-        queryset = queryset.filter(data_transacao__gte=data_inicial_dt)
+        where_conditions.append("data_transacao >= %s")
+        params.append(f"{filtros['data_inicial']} 00:00:00")
 
     if filtros['data_final']:
-        data_final_dt = datetime.strptime(filtros['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-        queryset = queryset.filter(data_transacao__lte=data_final_dt)
+        where_conditions.append("data_transacao <= %s")
+        params.append(f"{filtros['data_final']} 23:59:59")
 
     # Filtro de loja - removido para admin (deve ver todas as transações)
 
     if filtros['nsu_filtro']:
-        queryset = queryset.filter(var9__icontains=filtros['nsu_filtro'])
+        where_conditions.append("var9 LIKE %s")
+        params.append(f"%{filtros['nsu_filtro']}%")
 
     # Filtro tipo_operacao
     if not filtros['incluir_tef']:
-        queryset = queryset.filter(tipo_operacao='Wallet')
+        where_conditions.append("tipo_operacao = %s")
+        params.append('Wallet')
 
-    # Ordenação por data
-    queryset = queryset.order_by('-data_transacao')
+    where_clause = " AND ".join(where_conditions)
 
-    # Verificar quantidade de registros
-    total_registros = queryset.count()
+    # Contar total de registros
+    sql_count = f"SELECT COUNT(*) FROM base_transacoes_unificadas WHERE {where_clause}"
+    with connection.cursor() as cursor:
+        cursor.execute(sql_count, params)
+        total_registros = cursor.fetchone()[0]
+    
     LIMITE_DIRETO = 5000
 
     registrar_log('portais.admin', f"TRANSACOES - Export CSV - {total_registros} registros - Limite: {LIMITE_DIRETO}")
@@ -358,40 +371,49 @@ def exportar_transacoes_csv(request):
     if total_registros > LIMITE_DIRETO:
         # Muitos registros - processar em background e enviar por email
         registrar_log('portais.admin', f"TRANSACOES - Background CSV - {total_registros} > {LIMITE_DIRETO}")
-        return _processar_export_background(request, queryset, 'csv', total_registros)
+        return JsonResponse({'error': 'Export de grandes volumes em desenvolvimento'}, status=500)
 
     # Log para poucos registros
     registrar_log('portais.admin', f"TRANSACOES - Direto CSV - {total_registros} <= {LIMITE_DIRETO}")
 
-    # Poucos registros - processar diretamente
+    # Buscar dados via SQL
+    sql_dados = f"SELECT * FROM base_transacoes_unificadas WHERE {where_clause} ORDER BY data_transacao DESC"
+    
     dados = []
-    for transacao in queryset:
-        item = {}
-        # Adicionar tipo_operacao como primeira coluna
-        if hasattr(transacao, 'tipo_operacao'):
-            item['tipo_operacao'] = getattr(transacao, 'tipo_operacao')
+    with connection.cursor() as cursor:
+        cursor.execute(sql_dados, params)
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+        
+        for row in rows:
+            transacao = dict(zip(columns, row))
+            item = {}
+            
+            # Adicionar tipo_operacao como primeira coluna
+            if 'tipo_operacao' in transacao:
+                item['tipo_operacao'] = transacao['tipo_operacao']
 
-        # Adicionar var0 até var130 com variantes _A e _B na ordem correta
-        for i in range(131):  # var0 até var130
-            campo = f'var{i}'
-            if hasattr(transacao, campo):
-                item[campo] = getattr(transacao, campo)
+            # Adicionar var0 até var130 com variantes _A e _B na ordem correta
+            for i in range(131):  # var0 até var130
+                campo = f'var{i}'
+                if campo in transacao:
+                    item[campo] = transacao[campo]
 
-            # Adicionar variante _A logo após se existir
-            campo_a = f'var{i}_A'
-            if hasattr(transacao, campo_a):
-                item[campo_a] = getattr(transacao, campo_a)
+                # Adicionar variante _A logo após se existir
+                campo_a = f'var{i}_A'
+                if campo_a in transacao:
+                    item[campo_a] = transacao[campo_a]
 
-            # Adicionar variante _B logo após se existir
-            campo_b = f'var{i}_B'
-            if hasattr(transacao, campo_b):
-                item[campo_b] = getattr(transacao, campo_b)
+                # Adicionar variante _B logo após se existir
+                campo_b = f'var{i}_B'
+                if campo_b in transacao:
+                    item[campo_b] = transacao[campo_b]
 
-        # Adicionar data_transacao se existir
-        if hasattr(transacao, 'data_transacao'):
-            item['data_transacao'] = transacao.data_transacao
+            # Adicionar data_transacao se existir
+            if 'data_transacao' in transacao:
+                item['data_transacao'] = transacao['data_transacao']
 
-        dados.append(item)
+            dados.append(item)
 
     cabecalhos = obter_mapeamento_colunas_completo()
     colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
