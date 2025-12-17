@@ -342,49 +342,79 @@ class LojistaCancelamentosExportView(View):
             filtros &= Q(data_transacao__lte=f"{data_final} 23:59:59")
         
         try:
-            # Aplicar deduplicação igual ao admin (NOT EXISTS mais eficiente)
-            # Usar SQL direto sem modelo
-            from wallclub_core.database.queries import TransacoesQueries
-            # Query já está sendo construída via SQL raw abaixo
-            from gestao_financeira.models import BaseTransacoesGestao
-            vendas_queryset = BaseTransacoesGestao.objects.filter(
-                var68__contains='CANCELAD'
-            ).order_by('-data_transacao')
+            # Construir WHERE clause (mesma lógica da view principal)
+            where_conditions = ["var68 != 'TRANS. APROVADO'"]
+            params = []
+            
+            # Filtro de lojas
+            if len(lojas_filtro) == 1:
+                where_conditions.append("var6 = %s")
+                params.append(lojas_filtro[0])
+            else:
+                placeholders = ','.join(['%s'] * len(lojas_filtro))
+                where_conditions.append(f"var6 IN ({placeholders})")
+                params.extend(lojas_filtro)
+            
+            if nsu:
+                where_conditions.append("var9 LIKE %s")
+                params.append(f"%{nsu}%")
+            
+            if data_inicial:
+                where_conditions.append("data_transacao >= %s")
+                params.append(f"{data_inicial} 00:00:00")
+            
+            if data_final:
+                where_conditions.append("data_transacao <= %s")
+                params.append(f"{data_final} 23:59:59")
+            
+            where_clause = " AND ".join(where_conditions)
+            
+            # Buscar dados via SQL direto
+            sql = f"""
+                SELECT 
+                    data_transacao, var5, var6, var8, var9, var10, var13,
+                    var19, var37, var41, var42, var43, var44, var45, var68, var121
+                FROM base_transacoes_unificadas
+                WHERE {where_clause}
+                ORDER BY data_transacao DESC
+            """
             
             results = []
-            for venda in vendas_queryset:
-                # Processar dados
-                vl_bruto = float(venda.var19 or 0)
-                vl_liq_previsto = float(venda.var42 or 0)
-                vl_liq_pago = float(venda.var44 or 0) if venda.var44 and float(venda.var44) != 0 else vl_liq_previsto
-                taxa_adm = float(venda.var37 or 0)
-                custo_antec = float(venda.var41 or 0)
-                num_parcelas = int(venda.var13 or 0)
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                rows = cursor.fetchall()
                 
-                # Data e hora formatadas
-                data_formatada = venda.data_transacao.strftime('%d/%m/%Y') if venda.data_transacao else '-'
-                hora_formatada = venda.data_transacao.strftime('%H:%M:%S') if venda.data_transacao else '-'
-                
-                # Data pagamento
-                data_pgto = venda.var45 if venda.var45 else venda.var43
-                
-                # Truncar nome da loja em 10 caracteres
-                nome_loja = (venda.var5 or '-')[:10] if venda.var5 else '-'
-                
-                row_dict = {
-                    'Loja': nome_loja,
-                    'Data': data_formatada,
-                    'Hora': hora_formatada,
-                    'Vl Bruto(R$)': vl_bruto,
-                    'Vl Liq Pago(R$)': vl_liq_pago,
-                    'Status Pgto': venda.var121 or '-',
-                    'Data Pgto': data_pgto or '-',
-                    'Plano': venda.var8 or '-',
-                    'Núm. Parcelas': num_parcelas,
-                    'NSU': venda.var9 or '-',
-                    'NOP': venda.var10 or '-'
-                }
-                results.append(row_dict)
+                for row in rows:
+                    data_transacao, var5, var6, var8, var9, var10, var13, var19, var37, var41, var42, var43, var44, var45, var68, var121 = row
+                    # Processar dados
+                    vl_bruto = float(var19 or 0)
+                    vl_liq_previsto = float(var42 or 0)
+                    vl_liq_pago = float(var44 or 0) if var44 and float(var44) != 0 else vl_liq_previsto
+                    
+                    # Data e hora formatadas
+                    data_formatada = data_transacao.strftime('%d/%m/%Y') if data_transacao else '-'
+                    hora_formatada = data_transacao.strftime('%H:%M:%S') if data_transacao else '-'
+                    
+                    # Data pagamento
+                    data_pgto = var45 if var45 else var43
+                    
+                    # Truncar nome da loja em 10 caracteres
+                    nome_loja = (var5 or '-')[:10] if var5 else '-'
+                    
+                    row_dict = {
+                        'Loja': nome_loja,
+                        'Data': data_formatada,
+                        'Hora': hora_formatada,
+                        'Vl Bruto(R$)': vl_bruto,
+                        'Vl Liq Pago(R$)': vl_liq_pago,
+                        'Status Pgto': var121 or '-',
+                        'Data Pgto': data_pgto or '-',
+                        'Plano': var8 or '-',
+                        'Núm. Parcelas': int(var13 or 0),
+                        'NSU': var9 or '-',
+                        'NOP': var10 or '-'
+                    }
+                    results.append(row_dict)
             
             # Coletar nomes únicos das lojas para o rodapé
             lojas_incluidas = list(set([item['Loja'] for item in results if item['Loja'] != '-']))
