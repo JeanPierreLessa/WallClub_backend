@@ -243,12 +243,8 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                             var8 as plano,
                             var45 as data_pgto,
                             var121 as status_pgto
-                        FROM (
-                            SELECT *,
-                                   ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                            FROM baseTransacoesGestao
-                            WHERE {where_clause}
-                        ) t WHERE rn = 1
+                        FROM base_transacoes_unificadas
+                        WHERE {where_clause}
                         ORDER BY data_transacao DESC
                         LIMIT {por_pagina} OFFSET {offset}
                     """
@@ -293,12 +289,8 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
                     SELECT
                         SUM(CAST(var19 AS DECIMAL(15,2))) as total_bruto,
                         SUM(CAST(COALESCE(NULLIF(var44, 0), var42) AS DECIMAL(15,2))) as total_pago
-                    FROM (
-                        SELECT var19, var42, var44,
-                               ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                        FROM baseTransacoesGestao
-                        WHERE {where_clause}
-                    ) t WHERE rn = 1
+                    FROM base_transacoes_unificadas
+                    WHERE {where_clause}
                 """
 
                 with connection.cursor() as cursor:
@@ -316,12 +308,9 @@ class LojistaVendasView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
 
                 # Query de contagem para paginação
                 sql_count = f"""
-                    SELECT COUNT(*) FROM (
-                        SELECT var9,
-                               ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                        FROM baseTransacoesGestao
-                        WHERE {where_clause}
-                    ) t WHERE rn = 1
+                    SELECT COUNT(*)
+                    FROM base_transacoes_unificadas
+                    WHERE {where_clause}
                 """
 
                 with connection.cursor() as cursor:
@@ -648,12 +637,9 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
 
             # Contar total de registros primeiro
             sql_count = f"""
-                SELECT COUNT(*) FROM (
-                    SELECT var9,
-                           ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                    FROM baseTransacoesGestao
-                    WHERE {where_clause}
-                ) t WHERE rn = 1
+                SELECT COUNT(*)
+                FROM base_transacoes_unificadas
+                WHERE {where_clause}
             """
 
             with connection.cursor() as cursor:
@@ -678,12 +664,9 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
 
             # Query com ROW_NUMBER para deduplicação (mesma lógica do dashboard)
             sql = f"""
-                SELECT * FROM (
-                    SELECT *,
-                           ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                    FROM baseTransacoesGestao
-                    WHERE {where_clause}
-                ) t WHERE rn = 1
+                SELECT *
+                FROM base_transacoes_unificadas
+                WHERE {where_clause}
                 ORDER BY data_transacao DESC
             """
 
@@ -798,12 +781,9 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                     registrar_log('portais.lojista', f"EXPORT GRANDE - Processando lote {lote + 1}/{total_lotes}")
 
                     sql_lote = f"""
-                        SELECT * FROM (
-                            SELECT *,
-                                   ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                            FROM baseTransacoesGestao
-                            WHERE {where_clause}
-                        ) t WHERE rn = 1
+                        SELECT *
+                        FROM base_transacoes_unificadas
+                        WHERE {where_clause}
                         ORDER BY data_transacao DESC
                         LIMIT {lote_size} OFFSET {offset}
                     """
