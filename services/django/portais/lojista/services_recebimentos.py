@@ -72,21 +72,14 @@ class RecebimentoService:
         
         where_sql = ' AND '.join(where_clauses)
         
-        # Query otimizada com GROUP BY - evita duplicatas por NSU
+        # Query otimizada - base_transacoes_unificadas já tem 1 linha por NSU
         sql = f"""
         SELECT 
             var45 as data_recebimento,
-            COUNT(DISTINCT var9) as quantidade,
-            SUM(DISTINCT_VALUES.valor_recebimento) as valor_total
-        FROM (
-            SELECT 
-                var45,
-                var9,
-                MIN(CAST(COALESCE(var44, 0) AS DECIMAL(10,2))) as valor_recebimento
-            FROM baseTransacoesGestao
-            WHERE {where_sql}
-            GROUP BY var45, var9
-        ) AS DISTINCT_VALUES
+            COUNT(*) as quantidade,
+            SUM(CAST(COALESCE(var44, 0) AS DECIMAL(10,2))) as valor_total
+        FROM base_transacoes_unificadas
+        WHERE {where_sql}
         GROUP BY var45
         ORDER BY STR_TO_DATE(var45, '%d/%m/%Y') DESC
         LIMIT 1000
@@ -231,23 +224,22 @@ class RecebimentoService:
         
         where_sql = ' AND '.join(where_clauses)
         
-        # Query com GROUP BY para evitar duplicatas por NSU
+        # Query direta - base_transacoes_unificadas já tem 1 linha por NSU
         sql = f"""
         SELECT 
             var9 as nsu,
             var6 as loja_id,
-            MIN(var19) as valor_transacao,
-            MIN(var44) as valor_recebimento,
-            MIN(data_transacao) as data_transacao,
-            MIN(var45) as data_recebimento,
-            MIN(var12) as bandeira,
-            MIN(var13) as parcelas,
-            MIN(var8) as plano,
-            MIN(var40) as tx_antecipacao,
-            MIN(var41) as custo_antecipacao
-        FROM baseTransacoesGestao
+            var19 as valor_transacao,
+            var44 as valor_recebimento,
+            data_transacao,
+            var45 as data_recebimento,
+            var12 as bandeira,
+            var13 as parcelas,
+            var8 as plano,
+            var40 as tx_antecipacao,
+            var41 as custo_antecipacao
+        FROM base_transacoes_unificadas
         WHERE {where_sql}
-        GROUP BY var9, var6
         ORDER BY var9 DESC
         """
         
