@@ -279,10 +279,19 @@ valor_centavos BIGINT              -- amount (em centavos)
 **Status:** Em Andamento
 **Objetivo:** Migrar todos os portais de `baseTransacoesGestao` para `base_transacoes_unificadas`
 
+### ✅ Concluído (16/12/2024 20:30)
+
+#### Portal Admin - Home/Dashboard
+- [x] `portais/admin/views.py` - Função `_obter_estatisticas_dashboard()` ✅
+  - Migrada de `portais/controle_acesso/filtros.py` (lugar errado)
+  - Query usando `base_transacoes_unificadas` (sem ROW_NUMBER)
+  - Removida função antiga `obter_estatisticas_filtradas()` de filtros.py
+  - Ajustado para usar var26 (valor líquido) ao invés de var19
+
 ### Arquivos a Refatorar (Ordem de Prioridade)
 
 #### Portal Admin
-1. `portais/admin/views_transacoes.py` - Queries com ROW_NUMBER()
+1. `portais/admin/views_transacoes.py` - Queries com ROW_NUMBER() (https://admin.wallclub.com.br/base_transacoes_gestao/)
 2. `portais/admin/views_rpr.py` - Queries com ROW_NUMBER()
 3. `portais/admin/services_rpr.py` - Simplificar queries
 

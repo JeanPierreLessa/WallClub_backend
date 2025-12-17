@@ -104,23 +104,19 @@ def base_transacoes_gestao(request):
     per_page = 50
     offset = (page_number - 1) * per_page
 
-    # Query SQL com ROW_NUMBER e paginação
+    # Query SQL sem ROW_NUMBER (base_transacoes_unificadas já tem 1 linha por NSU)
     sql_dados = f"""
-        SELECT * FROM (
-            SELECT *,
-                   ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-            FROM baseTransacoesGestao
-            WHERE {where_clause}
-        ) t
-        WHERE rn = 1
+        SELECT *
+        FROM base_transacoes_unificadas
+        WHERE {where_clause}
         ORDER BY data_transacao DESC
         LIMIT %s OFFSET %s
     """
 
     # Query para total
     sql_count = f"""
-        SELECT COUNT(DISTINCT var9)
-        FROM baseTransacoesGestao
+        SELECT COUNT(*)
+        FROM base_transacoes_unificadas
         WHERE {where_clause}
     """
 
@@ -173,7 +169,7 @@ def base_transacoes_gestao(request):
     # Carregar canais e lojas usando SQL direto
     from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
     with connection.cursor() as cursor:
-        cursor.execute("SELECT DISTINCT var4 FROM baseTransacoesGestao ORDER BY var4")
+        cursor.execute("SELECT DISTINCT var4 FROM base_transacoes_unificadas ORDER BY var4")
         canais = [row[0] for row in cursor.fetchall()]
     lojas = [{'id': loja.id, 'nome': loja.razao_social} for loja in HierarquiaOrganizacionalService.listar_todas_lojas()]
 
@@ -189,12 +185,8 @@ def base_transacoes_gestao(request):
         sum_fields = ', '.join([f"SUM(CAST({col} AS DECIMAL(15,2))) as {col}" for col in colunas_monetarias])
         sql_totais = f"""
             SELECT {sum_fields}
-            FROM (
-                SELECT *,
-                       ROW_NUMBER() OVER (PARTITION BY var9 ORDER BY id DESC) as rn
-                FROM baseTransacoesGestao
-                WHERE {where_clause}
-            ) t WHERE rn = 1
+            FROM base_transacoes_unificadas
+            WHERE {where_clause}
         """
 
         with connection.cursor() as cursor:
@@ -221,7 +213,7 @@ def exportar_transacoes_excel(request):
     """Exportar transações para Excel usando SQL direto"""
     try:
         # Import do modelo
-        from gestao_financeira.models import BaseTransacoesGestao
+        from gestao_financeira.models import BaseTransacoesUnificadas
 
         # Aplicar os mesmos filtros da view principal
         filtros = {
@@ -233,25 +225,15 @@ def exportar_transacoes_excel(request):
         }
 
         # Construir queryset (mesmo código da view principal)
-        queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
+        queryset = BaseTransacoesUnificadas.objects.filter(var68='TRANS. APROVADO')
 
         if filtros['data_inicial']:
-            # Converter para datetime timezone-aware
-            # Usar datetime naive
             data_inicial_dt = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').replace(hour=0, minute=0, second=0)
-            queryset = queryset.extra(
-                where=["STR_TO_DATE(var0, '%%d/%%m/%%Y') >= %s"],
-                params=[data_inicial_dt.date()]
-            )
+            queryset = queryset.filter(data_transacao__gte=data_inicial_dt)
 
         if filtros['data_final']:
-            # Converter para datetime timezone-aware
-            # Usar datetime naive
             data_final_dt = datetime.strptime(filtros['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-            queryset = queryset.extra(
-                where=["STR_TO_DATE(var0, '%%d/%%m/%%Y') <= %s"],
-                params=[data_final_dt.date()]
-            )
+            queryset = queryset.filter(data_transacao__lte=data_final_dt)
 
         # Filtro de loja - removido para admin (deve ver todas as transações)
 
@@ -263,18 +245,7 @@ def exportar_transacoes_excel(request):
             queryset = queryset.filter(tipo_operacao='Wallet')
 
         # Ordenação por data
-        queryset = queryset.extra(
-            select={'data_transacao': "STR_TO_DATE(var0, '%%d/%%m/%%Y')"},
-            order_by=['-data_transacao']
-        )
-
-        # Subquery para pegar apenas o ID mais recente de cada NSU (evita duplicatas)
-        from django.db.models import Max
-        ids_unicos = queryset.values('var9').annotate(max_id=Max('id')).values_list('max_id', flat=True)
-        queryset = BaseTransacoesGestao.objects.filter(id__in=ids_unicos).extra(
-            select={'data_transacao': "STR_TO_DATE(var0, '%%d/%%m/%%Y')"},
-            order_by=['-data_transacao']
-        )
+        queryset = queryset.order_by('-data_transacao')
 
         # Verificar quantidade de registros
         total_registros = queryset.count()
@@ -344,7 +315,7 @@ def exportar_transacoes_excel(request):
 def exportar_transacoes_csv(request):
     """Exportar transações para CSV com proteção contra timeout"""
     # Import do modelo
-    from gestao_financeira.models import BaseTransacoesGestao
+    from gestao_financeira.models import BaseTransacoesUnificadas
 
     # Aplicar os mesmos filtros da view principal
     filtros = {
@@ -356,27 +327,15 @@ def exportar_transacoes_csv(request):
     }
 
     # Construir queryset (mesmo código da view principal)
-    queryset = BaseTransacoesGestao.objects.filter(var68='TRANS. APROVADO')
+    queryset = BaseTransacoesUnificadas.objects.filter(var68='TRANS. APROVADO')
 
     if filtros['data_inicial']:
-        # Converter para datetime timezone-aware
-        data_inicial_dt = timezone.make_aware(
-            datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').replace(hour=0, minute=0, second=0)
-        )
-        queryset = queryset.extra(
-            where=["STR_TO_DATE(var0, '%%d/%%m/%%Y') >= %s"],
-            params=[data_inicial_dt.date()]
-        )
+        data_inicial_dt = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').replace(hour=0, minute=0, second=0)
+        queryset = queryset.filter(data_transacao__gte=data_inicial_dt)
 
     if filtros['data_final']:
-        # Converter para datetime timezone-aware
-        data_final_dt = timezone.make_aware(
-            datetime.strptime(filtros['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-        )
-        queryset = queryset.extra(
-            where=["STR_TO_DATE(var0, '%%d/%%m/%%Y') <= %s"],
-            params=[data_final_dt.date()]
-        )
+        data_final_dt = datetime.strptime(filtros['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+        queryset = queryset.filter(data_transacao__lte=data_final_dt)
 
     # Filtro de loja - removido para admin (deve ver todas as transações)
 
@@ -388,18 +347,7 @@ def exportar_transacoes_csv(request):
         queryset = queryset.filter(tipo_operacao='Wallet')
 
     # Ordenação por data
-    queryset = queryset.extra(
-        select={'data_transacao': "STR_TO_DATE(var0, '%%d/%%m/%%Y')"},
-        order_by=['-data_transacao']
-    )
-
-    # Subquery para pegar apenas o ID mais recente de cada NSU (evita duplicatas)
-    from django.db.models import Max
-    ids_unicos = queryset.values('var9').annotate(max_id=Max('id')).values_list('max_id', flat=True)
-    queryset = BaseTransacoesGestao.objects.filter(id__in=ids_unicos).extra(
-        select={'data_transacao': "STR_TO_DATE(var0, '%%d/%%m/%%Y')"},
-        order_by=['-data_transacao']
-    )
+    queryset = queryset.order_by('-data_transacao')
 
     # Verificar quantidade de registros
     total_registros = queryset.count()
