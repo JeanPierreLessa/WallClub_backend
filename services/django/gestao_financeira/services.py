@@ -164,11 +164,12 @@ class PagamentoService:
             # Criar pagamento
             pagamento = PagamentoEfetuado.objects.create(**dados_validados)
 
-            # Atualizar pinbankExtratoPOS.lido = 0 para reprocessar
+            # Atualizar pinbankExtratoPOS.lido = 0 e processado = 0 para reprocessar
             from pinbank.cargas_pinbank.models import PinbankExtratoPOS
             from django.utils import timezone
             linhas_afetadas = PinbankExtratoPOS.objects.filter(NsuOperacao=nsu_int).update(
                 Lido=0,
+                processado=0,
                 updated_at=timezone.now()
             )
 
@@ -178,7 +179,7 @@ class PagamentoService:
                 f'Pagamento criado - NSU: {nsu_int} - Usuário: {usuario.nome} - '
                 f'Valores: var44={dados_validados.get("var44")}, var58={dados_validados.get("var58")}, '
                 f'var111={dados_validados.get("var111")}, var112={dados_validados.get("var112")} - '
-                f'PinbankExtratoPOS.lido atualizado para 0 ({linhas_afetadas} linha(s) afetada(s))'
+                f'PinbankExtratoPOS marcado para reprocessamento: Lido=0, Processado=0 ({linhas_afetadas} linha(s) afetada(s))'
             )
 
             return pagamento

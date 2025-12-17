@@ -300,10 +300,6 @@ class CargaBaseUnificadaPOSService:
         
         existe = cursor.fetchone()[0] > 0
         
-        if existe:
-            registrar_log('pinbank.cargas_pinbank', f"⚠️ NSU {nsu} já existe na base unificada - pulando inserção")
-            return
-        
         # Verificar estrutura da tabela
         cursor.execute("DESCRIBE wallclub.base_transacoes_unificadas")
         colunas_tabela = [row[0] for row in cursor.fetchall()]
@@ -311,12 +307,21 @@ class CargaBaseUnificadaPOSService:
         # Filtrar apenas campos que existem na tabela
         campos_validos = {k: v for k, v in campos.items() if k in colunas_tabela}
 
-        # Construir INSERT
-        colunas = ', '.join([f'`{col}`' for col in campos_validos.keys()])
-        placeholders = ', '.join(['%s'] * len(campos_validos))
-        valores = list(campos_validos.values())
+        if existe:
+            # UPDATE - atualizar todas as colunas exceto var9 (chave)
+            set_clause = ', '.join([f'`{col}` = %s' for col in campos_validos.keys() if col != 'var9'])
+            valores = [v for k, v in campos_validos.items() if k != 'var9']
+            valores.append(nsu)  # WHERE var9 = %s
+            
+            sql = f"UPDATE wallclub.base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Wallet'"
+            cursor.execute(sql, valores)
+            registrar_log('pinbank.cargas_pinbank', f"🔄 Registro atualizado na base unificada - NSU: {nsu}")
+        else:
+            # INSERT
+            colunas = ', '.join([f'`{col}`' for col in campos_validos.keys()])
+            placeholders = ', '.join(['%s'] * len(campos_validos))
+            valores = list(campos_validos.values())
 
-        sql = f"INSERT INTO wallclub.base_transacoes_unificadas ({colunas}) VALUES ({placeholders})"
-
-        cursor.execute(sql, valores)
-        registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada - NSU: {nsu}")
+            sql = f"INSERT INTO wallclub.base_transacoes_unificadas ({colunas}) VALUES ({placeholders})"
+            cursor.execute(sql, valores)
+            registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada - NSU: {nsu}")

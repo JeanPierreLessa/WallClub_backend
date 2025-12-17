@@ -329,25 +329,12 @@ class CargaBaseUnificadaCredenciadoraService:
         
         existe = cursor.fetchone()[0] > 0
         
-        if existe:
-            registrar_log('pinbank.cargas_pinbank', f"⚠️ NSU {nsu} já existe na base unificada (Credenciadora) - pulando inserção")
-            return
-        
         # Filtrar apenas campos válidos
         campos_validos = {k: v for k, v in campos.items() if k not in ['id']}
 
         # Ordenar campos
         campos_ordenados = sorted(campos_validos.keys())
         valores_ordenados = [campos_validos[campo] for campo in campos_ordenados]
-
-        # Construir SQL
-        campos_sql = ', '.join(campos_ordenados)
-        placeholders = ', '.join(['%s'] * len(campos_ordenados))
-
-        sql = f"""
-            INSERT INTO base_transacoes_unificadas ({campos_sql})
-            VALUES ({placeholders})
-        """
 
         # Converter datetime para string
         valores_finais = []
@@ -357,5 +344,24 @@ class CargaBaseUnificadaCredenciadoraService:
             else:
                 valores_finais.append(valor)
 
-        cursor.execute(sql, valores_finais)
-        registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada (Credenciadora) - NSU: {nsu}")
+        if existe:
+            # UPDATE - atualizar todas as colunas exceto var9 (chave)
+            set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
+            valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
+            valores_update.append(nsu)  # WHERE var9 = %s
+            
+            sql = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
+            cursor.execute(sql, valores_update)
+            registrar_log('pinbank.cargas_pinbank', f"🔄 Registro atualizado na base unificada (Credenciadora) - NSU: {nsu}")
+        else:
+            # INSERT
+            campos_sql = ', '.join(campos_ordenados)
+            placeholders = ', '.join(['%s'] * len(campos_ordenados))
+
+            sql = f"""
+                INSERT INTO base_transacoes_unificadas ({campos_sql})
+                VALUES ({placeholders})
+            """
+
+            cursor.execute(sql, valores_finais)
+            registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada (Credenciadora) - NSU: {nsu}")
