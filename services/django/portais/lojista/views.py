@@ -182,10 +182,10 @@ class LojistaHomeView(TemplateView):
         where_clause = ""
         if loja_id:
             # Filtro por loja específica (já validado acesso acima)
-            where_clause = f"AND btg.var6 = '{loja_id}'"
+            where_clause = f"AND var6 = '{loja_id}'"
         elif not is_admin and lojas_ids:
             # Para não-admin: filtrar por lojas acessíveis
-            where_clause = f"AND btg.var6 IN ({','.join(map(str, lojas_ids))})"
+            where_clause = f"AND var6 IN ({','.join(map(str, lojas_ids))})"
         # Para admin sem filtro específico: sem WHERE clause = todas as lojas
 
         # Buscar estatísticas consolidadas em uma única query
