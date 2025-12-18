@@ -212,9 +212,10 @@ class CargaExtratoPOSService:
                         campos_alterados[campo] = novo_valor
                         campos_mudaram = True
 
-                # Se algum campo mudou, setar Lido = 0 para reprocessamento
+                # Se algum campo mudou, setar Lido = 0 e processado = 0 para reprocessamento
                 if campos_mudaram:
                     campos_alterados['Lido'] = 0
+                    campos_alterados['processado'] = 0
 
                     # Log detalhado do NSU sendo atualizado
                     nsu = dados.get('NsuOperacao')
