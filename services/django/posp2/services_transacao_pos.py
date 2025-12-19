@@ -723,6 +723,7 @@ class TRDataPosService:
                                                   data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
                     # Verificar se é encargo ou desconto usando valores[14] (PHP)
                     valores_14 = safe_float_convert(valores_calculados.get(14, 0))
+                    registrar_log('posp2', f'🔍 [DECISÃO] valores[14]={valores_14}, parte1={parte1}')
                     if valores_14 < 0:
                         # É ENCARGO (valores[14] negativo)
                         label_desconto = f"Valor total dos encargos: R$ {formatar_valor_monetario(parte1)}"
