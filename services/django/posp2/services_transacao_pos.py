@@ -226,8 +226,8 @@ class TRDataPosService:
                     'mensagem': 'Campos obrigatórios ausentes'
                 }
 
-            # 2. Buscar loja_id, canal_id e nomes
-            loja_id, canal_id, nome_canal, razao_social = self._buscar_loja_canal(dados['terminal'])
+            # 2. Buscar loja_id, canal_id, nomes e cnpj
+            loja_id, canal_id, nome_canal, razao_social, cnpj = self._buscar_loja_canal(dados['terminal'])
             if not loja_id:
                 return {
                     'sucesso': False,
@@ -287,7 +287,7 @@ class TRDataPosService:
             }
 
             # 7. Calcular valores (passar info_loja e info_canal já resolvidos)
-            loja_info = {'id': loja_id, 'loja_id': loja_id, 'loja': razao_social, 'canal_id': canal_id}
+            loja_info = {'id': loja_id, 'loja_id': loja_id, 'loja': razao_social, 'cnpj': cnpj, 'canal_id': canal_id}
             canal_info = {'id': canal_id, 'canal_id': canal_id, 'canal': nome_canal}
             calculadora = CalculadoraBaseGestao()
             valores_calculados = calculadora.calcular_valores_primarios(
@@ -324,10 +324,10 @@ class TRDataPosService:
     # ========================================
 
     def _buscar_loja_canal(self, terminal: str) -> tuple:
-        """Busca loja_id, canal_id e nome_canal pelo terminal"""
+        """Busca loja_id, canal_id, nome_canal, razao_social e cnpj pelo terminal"""
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT l.id, l.canal_id, c.nome, l.razao_social
+                SELECT l.id, l.canal_id, c.nome, l.razao_social, l.cnpj
                 FROM terminais t
                 INNER JOIN loja l ON t.loja_id = l.id
                 INNER JOIN canal c ON l.canal_id = c.id
@@ -336,8 +336,8 @@ class TRDataPosService:
             row = cursor.fetchone()
             if row:
                 registrar_log('posp2', f'Loja encontrada: loja_id={row[0]}, canal_id={row[1]}')
-                return row[0], row[1], row[2], row[3]  # loja_id, canal_id, nome_canal, razao_social
-            return None, None, None, None
+                return row[0], row[1], row[2], row[3], row[4]  # loja_id, canal_id, nome_canal, razao_social, cnpj
+            return None, None, None, None, None
 
     def _validar_cupom(self, cupom_codigo: str, cupom_valor_desconto: Decimal,
                        cpf: str, loja_id: int) -> tuple:
