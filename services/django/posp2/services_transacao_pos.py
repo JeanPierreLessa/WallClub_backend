@@ -40,18 +40,26 @@ class TRDataPosService:
         registrar_log('posp2', '========================================')
         registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} - Processamento Pinbank')
         registrar_log('posp2', '========================================')
+        registrar_log('posp2', f'📥 JSON Entrada: {dados_json}')
 
         dados_normalizados = self._parse_payload_pinbank(dados_json)
-        return self._processar_comum(dados_normalizados)
+        resultado = self._processar_comum(dados_normalizados)
+        
+        registrar_log('posp2', f'📤 JSON Saída: {json.dumps(resultado, ensure_ascii=False)}')
+        return resultado
 
     def processar_transacao_own(self, dados_json: str) -> Dict[str, Any]:
         """Endpoint /trdata_own/"""
         registrar_log('posp2', '========================================')
         registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} - Processamento Own')
         registrar_log('posp2', '========================================')
+        registrar_log('posp2', f'📥 JSON Entrada: {dados_json}')
 
         dados_normalizados = self._parse_payload_own(dados_json)
-        return self._processar_comum(dados_normalizados)
+        resultado = self._processar_comum(dados_normalizados)
+        
+        registrar_log('posp2', f'📤 JSON Saída: {json.dumps(resultado, ensure_ascii=False)}')
+        return resultado
 
     # ========================================
     # PARSERS ESPECÍFICOS
