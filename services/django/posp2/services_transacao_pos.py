@@ -278,13 +278,15 @@ class TRDataPosService:
                 'DataFuturaPagamento': None
             }
 
-            # 7. Calcular valores (passar info_loja já resolvida)
+            # 7. Calcular valores (passar info_loja e info_canal já resolvidos)
             loja_info = {'id': loja_id, 'loja_id': loja_id, 'canal_id': canal_id}
+            canal_info = {'id': canal_id, 'canal_id': canal_id}
             calculadora = CalculadoraBaseGestao()
             valores_calculados = calculadora.calcular_valores_primarios(
                 dados_linha, 
                 tabela='transactiondata_pos',
-                info_loja=loja_info
+                info_loja=loja_info,
+                info_canal=canal_info
             )
             registrar_log('posp2', f'✅ Valores calculados: {len(valores_calculados)} campos')
 

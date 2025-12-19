@@ -126,10 +126,20 @@ Durante a migração, 3 tabelas coexistem:
 - [ ] Migrar endpoint `/trdata_own/` para usar `TRDataPosService`
 - [ ] Atualizar portais para consultar `transactiondata_pos`
 
-### Longo Prazo
+### Longo Prazo - Limpeza de Código
 - [ ] Deprecar `TRDataService` (Pinbank legado)
 - [ ] Deprecar `TRDataOwnService` (Own legado)
 - [ ] Remover tabelas `transactiondata` e `transactiondata_own`
+- [ ] **Remover métodos obsoletos do `PinbankService`:**
+  - `pega_info_loja()` - Não mais necessário (info_loja passada como parâmetro)
+  - `pega_info_canal()` - Não mais necessário (info_canal passada como parâmetro)
+  - `_buscar_loja_por_nsu()` - Usado apenas por tabelas antigas
+  - `_buscar_loja_por_cnpj()` - Usado apenas por tabelas antigas
+  - `_buscar_canal_por_nsu()` - Usado apenas por tabelas antigas
+  - `_buscar_canal_por_cnpj()` - Usado apenas por tabelas antigas
+- [ ] **Remover parâmetros opcionais da `CalculadoraBaseGestao`:**
+  - Tornar `info_loja` e `info_canal` obrigatórios
+  - Remover lógica condicional de busca via `PinbankService`
 
 ---
 

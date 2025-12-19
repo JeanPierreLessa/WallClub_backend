@@ -35,7 +35,7 @@ class CalculadoraBaseGestao:
             return value.quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
         return Decimal(str(value)).quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
     
-    def calcular_valores_primarios(self, dados_linha, tabela: str, info_loja=None):
+    def calcular_valores_primarios(self, dados_linha, tabela: str, info_loja=None, info_canal=None):
         """
         Calcula os valores primários baseados nos dados da transação.
         Replica a lógica do PHP pinbank_cria_base_gestao.php
@@ -44,6 +44,7 @@ class CalculadoraBaseGestao:
             dados_linha: Dict com dados da transação
             tabela: 'transactiondata', 'transactiondata_own' ou 'transactiondata_pos' (OBRIGATÓRIO)
             info_loja: Dict com info da loja (opcional - se None, busca via PinbankService)
+            info_canal: Dict com info do canal (opcional - se None, busca via PinbankService)
         """
         from datetime import datetime as dt, timedelta
         try:
@@ -68,11 +69,12 @@ class CalculadoraBaseGestao:
                 valores[130] = "Normal"
             
             # Capturar informações da Loja, canal e plano
-            # Se info_loja foi passada (transactiondata_pos), usa ela
+            # Se info_loja/info_canal foram passados (transactiondata_pos), usa eles
             # Senão, busca via PinbankService (tabelas antigas)
             if info_loja is None:
                 info_loja = self.pinbank_service.pega_info_loja(identificador, tabela)
-            info_canal = self.pinbank_service.pega_info_canal(identificador, tabela)
+            if info_canal is None:
+                info_canal = self.pinbank_service.pega_info_canal(identificador, tabela)
             
             # Data de referência dos cálculos
             data_ref = self.parametros_service.converter_para_timestamp(dados_linha['DataTransacao'])
