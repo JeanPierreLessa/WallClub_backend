@@ -436,6 +436,14 @@ class TRDataService:
             registrar_log('posp2', f'Passando data_transacao_dt para baseTransacoesGestao: {data_transacao_dt}')
             self._inserir_base_transacoes_gestao(dados, valores_calculados, data_transacao_dt)
 
+            # 10.5. INSERIR EM BASE_TRANSACOES_UNIFICADAS (NOVO - 19/12/2024)
+            nsu_pinbank = dados.get('nsuPinbank')
+            if nsu_pinbank:
+                registrar_log('posp2', f'Inserindo em base_transacoes_unificadas - NSU: {nsu_pinbank}')
+                self._inserir_base_transacoes_unificadas(dados, valores_calculados, data_transacao_dt, nsu_pinbank)
+            else:
+                registrar_log('posp2', '⚠️ NSU não encontrado, pulando inserção em base_transacoes_unificadas')
+
             # 12 ENVIAR NOTIFICAÇÃO PUSH PARA O APP (Firebase ou APN)
             try:
                 from wallclub_core.integracoes.notification_service import NotificationService
@@ -1297,6 +1305,92 @@ class TRDataService:
                 'sucesso': False,
                 'mensagem': f'Erro ao gravar dados na base: {e}'
             }
+
+    def _inserir_base_transacoes_unificadas(self, dados: Dict, valores_calculados: Dict, data_transacao, nsu: str):
+        """
+        Insere dados calculados na tabela base_transacoes_unificadas
+        Regra: 1 linha por NSU (não duplica parcelas)
+        """
+        try:
+            from django.db import connection
+
+            # Verificar se NSU já existe (evitar duplicação)
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM base_transacoes_unificadas 
+                    WHERE var9 = %s AND tipo_operacao = 'Wallet'
+                """, [str(nsu)])
+                existe = cursor.fetchone()[0] > 0
+
+                if existe:
+                    registrar_log('posp2', f'⚠️ NSU {nsu} já existe em base_transacoes_unificadas, pulando INSERT')
+                    return
+
+            # Preparar dados para inserção
+            dados_insert = {
+                'tipo_operacao': 'Wallet',
+                'adquirente': 'PINBANK',
+                'data_transacao': data_transacao,
+            }
+
+            # Campos varchar (string)
+            varchar_fields = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 43, 45, 57, 59, 65, 66, 68, 69, 70, 71, 96, 97, 98, 99, 100, 102, 119, 120, 121, 122, 123, 126, 129, 130}
+
+            # Mapear var0-var130
+            for i in range(131):
+                if i in valores_calculados:
+                    valor = valores_calculados[i]
+                    campo_nome = f'var{i}'
+
+                    if valor is None:
+                        dados_insert[campo_nome] = None
+                    elif isinstance(valor, dict):
+                        valor_final = valor.get('0', str(valor))
+                        if i in varchar_fields:
+                            dados_insert[campo_nome] = str(valor_final) if valor_final is not None else None
+                        else:
+                            try:
+                                dados_insert[campo_nome] = float(valor_final) if valor_final is not None else None
+                            except (ValueError, TypeError):
+                                dados_insert[campo_nome] = 0.0
+                    elif i in varchar_fields:
+                        dados_insert[campo_nome] = str(valor)
+                    else:
+                        try:
+                            dados_insert[campo_nome] = float(valor)
+                        except (ValueError, TypeError):
+                            dados_insert[campo_nome] = 0.0
+
+            # Campos extras da base_transacoes_unificadas
+            dados_insert['card_number'] = dados.get('cardNumber', '')[-4:] if dados.get('cardNumber') else None
+            dados_insert['authorization_code'] = dados.get('authorizationCode')
+            dados_insert['amount'] = dados.get('amount', 0)
+            dados_insert['valor_cashback'] = dados.get('valor_cashback', 0)
+
+            # Converter strings vazias em NULL
+            for key, value in dados_insert.items():
+                if value == '':
+                    dados_insert[key] = None
+
+            # Construir SQL INSERT
+            data_transacao_valor = dados_insert.pop('data_transacao')
+            campos = list(dados_insert.keys()) + ['data_transacao']
+            valores = list(dados_insert.values()) + [data_transacao_valor.strftime('%Y-%m-%d %H:%M:%S')]
+
+            placeholders = ', '.join(['%s'] * len(valores))
+            campos_sql = ', '.join(campos)
+
+            sql = f"INSERT INTO base_transacoes_unificadas ({campos_sql}) VALUES ({placeholders})"
+
+            with connection.cursor() as cursor:
+                cursor.execute(sql, valores)
+                base_id = cursor.lastrowid
+
+            registrar_log('posp2', f'✅ base_transacoes_unificadas inserida - ID: {base_id}, NSU: {nsu}')
+
+        except Exception as e:
+            registrar_log('posp2', f'❌ Erro ao inserir base_transacoes_unificadas: {e}', nivel='ERROR')
+            # NÃO interromper o fluxo - transação já foi gravada em transactiondata
 
     def _inserir_base_transacoes_gestao(self, dados: Dict, valores_calculados: Dict, data_transacao=None):
         """
