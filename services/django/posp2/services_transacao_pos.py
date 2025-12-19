@@ -278,12 +278,17 @@ class TRDataPosService:
                 'DataFuturaPagamento': None
             }
 
+            # 7. Calcular valores (passar info_loja já resolvida)
+            loja_info = {'id': loja_id, 'loja_id': loja_id, 'canal_id': canal_id}
             calculadora = CalculadoraBaseGestao()
-            valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata_pos')
+            valores_calculados = calculadora.calcular_valores_primarios(
+                dados_linha, 
+                tabela='transactiondata_pos',
+                info_loja=loja_info
+            )
             registrar_log('posp2', f'✅ Valores calculados: {len(valores_calculados)} campos')
 
             # 8. Gerar slip de impressão
-            loja_info = {'id': loja_id, 'loja_id': loja_id, 'canal_id': canal_id}
             slip = self._gerar_slip_impressao(dados, valores_calculados, loja_info)
 
             registrar_log('posp2', 'Processamento concluído com sucesso')
