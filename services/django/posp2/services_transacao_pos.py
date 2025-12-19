@@ -256,7 +256,7 @@ class TRDataPosService:
             
             dados_linha = {
                 'id': transaction_id,
-                'DataTransacao': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'DataTransacao': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                 'SerialNumber': dados['terminal'],
                 'idTerminal': dados['terminal'],
                 'cpf': dados['cpf'],
