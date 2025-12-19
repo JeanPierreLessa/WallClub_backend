@@ -141,10 +141,11 @@ valor_centavos BIGINT              -- amount (em centavos)
   - [ ] Verificar imports de `BaseTransacoesGestao`
   - [ ] Verificar queries SQL diretas com nome da tabela
   - [ ] Verificar scripts de migração/backup
-- [ ] 5.2. **Rotina de inserção POS (transactiondata)** - Verificar se insere direto em `baseTransacoesGestao`
-  - [ ] Analisar fluxo completo: POS → transactiondata → base_gestao
-  - [ ] Verificar se precisa inserir também em `base_transacoes_unificadas`
-  - [ ] Ou se deve apenas marcar `Lido=0` para carga processar
+- [x] 5.2. **Rotina de inserção POS (transactiondata)** - ✅ CONCLUÍDO (19/12/2024)
+  - [x] Analisar fluxo completo: POS → transactiondata → base_gestao
+  - [x] Implementado inserção em `base_transacoes_unificadas` no momento da transação
+  - [x] Método `_inserir_base_transacoes_unificadas()` criado em `services_transacao.py`
+  - [x] Carga valida/corrige valores via UPDATE quando NSU já existe
 - [ ] 5.3. **Processos de carga antigos** - Verificar se ainda populam `baseTransacoesGestao`
   - [ ] `services_carga_base_gestao_pos.py` - Desativar ou remover?
   - [ ] `services_carga_checkout.py` - Migrar para base unificada
