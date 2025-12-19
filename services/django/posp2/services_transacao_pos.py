@@ -639,11 +639,43 @@ class TRDataPosService:
             vparcela_float = safe_float_convert(vparcela)
             tarifas = round(abs(parcelas * vparcela_float - valor_liquido) - encargos, 2)
 
+            registrar_log('posp2', f'=== CÁLCULO PHP REPLICADO ===')
+            registrar_log('posp2', f'encargos = abs({valores_calculados.get(88, 0)} + {valores_94_0}) = {encargos}')
+            registrar_log('posp2', f'vparcela = {vparcela} (valores[20] direto)')
+            registrar_log('posp2', f'tarifas = abs({valores_calculados.get(13, 1)} * {vparcela} - {valor_liquido}) - {encargos} = {tarifas}')
+
+            registrar_log('posp2', f'=== RESULTADO FINAL ===')
+            registrar_log('posp2', f'vparcela = {vparcela}')
+            registrar_log('posp2', f'encargos = {encargos}')
+
+            # Buscar saldo usado de cashback via autorizacao_id
             saldo_cashback_usado = 0.0
+            autorizacao_id = dados.get('autorizacao_id', '')
+            if autorizacao_id:
+                try:
+                    from apps.conta_digital.services_autorizacao import AutorizacaoService
+                    resultado = AutorizacaoService.verificar_autorizacao(autorizacao_id)
+                    if resultado.get('sucesso') and resultado.get('status') in ['APROVADO', 'CONCLUIDA']:
+                        valor_bloqueado = resultado.get('valor_bloqueado')
+                        if valor_bloqueado:
+                            saldo_cashback_usado = float(valor_bloqueado)
+                            registrar_log('posp2', f'💸 [SALDO] Saldo cashback usado encontrado: R$ {saldo_cashback_usado:.2f}, status={resultado.get("status")}')
+                except Exception as e:
+                    registrar_log('posp2', f'❌ [SALDO] Erro ao buscar saldo usado: {str(e)}', nivel='ERROR')
+
+            # Extrair cashback_concedido dos dados
             cashback_concedido = safe_float_convert(dados.get('cashback_concedido', 0))
-            
+            registrar_log('posp2', f'💰 [CASHBACK] Cashback concedido: R$ {cashback_concedido:.2f}')
+
+            # AJUSTAR vdesconto e vparcela considerando saldo usado
+            # vdesconto = valor_original - desconto_club - saldo_usado
             vdesconto_final = parte0 - saldo_cashback_usado
+
+            # vparcela = vdesconto / parcelas
             vparcela_ajustado = vdesconto_final / parcelas if parcelas > 0 else vdesconto_final
+
+            registrar_log('posp2', f'💰 [AJUSTE SALDO] parte0={parte0:.2f}, saldo_usado={saldo_cashback_usado:.2f}, vdesconto_final={vdesconto_final:.2f}')
+            registrar_log('posp2', f'💰 [AJUSTE SALDO] vparcela original={vparcela:.2f}, vparcela_ajustado={vparcela_ajustado:.2f}, parcelas={parcelas}')
 
             # Data e hora
             agora = datetime.now()
@@ -653,7 +685,7 @@ class TRDataPosService:
             # CET para parcelado
             cet = ""
             if parcelas > 1:
-                from parametros_wallclub.calculadora_base_gestao import calcular_cet
+                from wallclub_core.utilitarios.funcoes_gerais import calcular_cet
                 valor_original_cet = float(valores_calculados.get(11, 0))
                 cetn = calcular_cet(vparcela, valor_original_cet, parcelas)
                 if cetn is None or cetn == "":
