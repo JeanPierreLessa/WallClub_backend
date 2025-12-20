@@ -288,17 +288,17 @@ class CargaBaseUnificadaPOSService:
         return campos
 
     def _inserir_registro_sql(self, cursor, campos: Dict[str, Any]):
-        """Insere novo registro usando SQL direto (apenas se NSU não existir)"""
+        """Insere ou atualiza registro - só UPDATE se status ou pagamento mudou"""
         nsu = campos.get('var9')
         
-        # Verificar se NSU já existe na base unificada
+        # Buscar var69 (status), var70 (cancelamento), var44 (valor pago) e var45 (data pagamento)
         cursor.execute("""
-            SELECT COUNT(*) 
+            SELECT var69, var70, var44, var45
             FROM wallclub.base_transacoes_unificadas 
             WHERE var9 = %s AND tipo_operacao = 'Wallet'
         """, [nsu])
         
-        existe = cursor.fetchone()[0] > 0
+        registro_atual = cursor.fetchone()
         
         # Verificar estrutura da tabela
         cursor.execute("DESCRIBE wallclub.base_transacoes_unificadas")
@@ -307,15 +307,45 @@ class CargaBaseUnificadaPOSService:
         # Filtrar apenas campos que existem na tabela
         campos_validos = {k: v for k, v in campos.items() if k in colunas_tabela}
 
-        if existe:
-            # UPDATE - atualizar todas as colunas exceto var9 (chave)
-            set_clause = ', '.join([f'`{col}` = %s' for col in campos_validos.keys() if col != 'var9'])
-            valores = [v for k, v in campos_validos.items() if k != 'var9']
-            valores.append(nsu)  # WHERE var9 = %s
+        if registro_atual:
+            var69_atual, var70_atual, var44_atual, var45_atual = registro_atual
+            var69_novo = campos.get('var69')
+            var70_novo = campos.get('var70')
+            var44_novo = campos.get('var44')
+            var45_novo = campos.get('var45')
             
-            sql = f"UPDATE wallclub.base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Wallet'"
-            cursor.execute(sql, valores)
-            registrar_log('pinbank.cargas_pinbank', f"🔄 Registro atualizado na base unificada - NSU: {nsu}")
+            # Só recalcular se:
+            # 1. Status pagamento mudou
+            # 2. Data cancelamento foi preenchida
+            # 3. Valor ou data de pagamento mudou (novo pagamento em pagamentos_efetuados)
+            status_mudou = str(var69_atual or '') != str(var69_novo or '')
+            cancelamento_novo = (not var70_atual) and var70_novo
+            pagamento_mudou = (str(var44_atual or '') != str(var44_novo or '')) or (str(var45_atual or '') != str(var45_novo or ''))
+            
+            if status_mudou or cancelamento_novo or pagamento_mudou:
+                # UPDATE completo
+                set_clause = ', '.join([f'`{col}` = %s' for col in campos_validos.keys() if col != 'var9'])
+                valores = [v for k, v in campos_validos.items() if k != 'var9']
+                valores.append(nsu)
+                
+                sql = f"UPDATE wallclub.base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Wallet'"
+                cursor.execute(sql, valores)
+                
+                # Registrar auditoria
+                import json
+                motivo = []
+                if status_mudou:
+                    motivo.append(f"status: {var69_atual} -> {var69_novo}")
+                if cancelamento_novo:
+                    motivo.append(f"cancelamento: {var70_novo}")
+                if pagamento_mudou:
+                    motivo.append(f"pagamento: var44={var44_novo}, var45={var45_novo}")
+                
+                cursor.execute("""
+                    INSERT INTO auditoria_base_unificada_mudancas 
+                    (var9, tipo_operacao, colunas_alteradas, qtd_colunas_alteradas)
+                    VALUES (%s, 'Wallet', %s, %s)
+                """, [nsu, json.dumps(motivo), 1])
         else:
             # INSERT
             colunas = ', '.join([f'`{col}`' for col in campos_validos.keys()])

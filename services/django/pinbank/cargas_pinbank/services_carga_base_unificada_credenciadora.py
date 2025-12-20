@@ -367,10 +367,9 @@ class CargaBaseUnificadaCredenciadoraService:
             else:
                 valores_finais.append(valor)
 
-        # Buscar valores atuais para comparar
-        campos_select = ', '.join(campos_ordenados)
-        cursor.execute(f"""
-            SELECT {campos_select}
+        # Buscar apenas var69 (status pagamento) e var70 (data cancelamento) para verificar se mudou
+        cursor.execute("""
+            SELECT var69, var70
             FROM base_transacoes_unificadas
             WHERE var9 = %s AND tipo_operacao = 'Credenciadora'
         """, [nsu])
@@ -378,21 +377,18 @@ class CargaBaseUnificadaCredenciadoraService:
         registro_atual = cursor.fetchone()
 
         if registro_atual:
-            # Comparar valores e identificar colunas que mudaram
-            colunas_alteradas = []
-            for i, (campo, valor_novo) in enumerate(zip(campos_ordenados, valores_finais)):
-                valor_atual = registro_atual[i]
-                # Converter para string para comparação
-                valor_atual_str = str(valor_atual) if valor_atual is not None else ''
-                valor_novo_str = str(valor_novo) if valor_novo is not None else ''
-                
-                if valor_atual_str != valor_novo_str:
-                    colunas_alteradas.append(campo)
+            var69_atual, var70_atual = registro_atual
+            var69_novo = campos.get('var69')
+            var70_novo = campos.get('var70')
             
-            if colunas_alteradas:
-                # Fazer UPDATE apenas das colunas que mudaram
-                set_clause = ', '.join([f'{campo} = %s' for campo in colunas_alteradas])
-                valores_update = [valores_finais[campos_ordenados.index(campo)] for campo in colunas_alteradas]
+            # Só recalcular se status pagamento mudou OU data cancelamento foi preenchida
+            status_mudou = str(var69_atual or '') != str(var69_novo or '')
+            cancelamento_novo = (not var70_atual) and var70_novo
+            
+            if status_mudou or cancelamento_novo:
+                # Fazer UPDATE completo
+                set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
+                valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
                 valores_update.append(nsu)
                 
                 sql_update = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
@@ -400,11 +396,17 @@ class CargaBaseUnificadaCredenciadoraService:
                 
                 # Registrar auditoria
                 import json
+                motivo = []
+                if status_mudou:
+                    motivo.append(f"status: {var69_atual} -> {var69_novo}")
+                if cancelamento_novo:
+                    motivo.append(f"cancelamento: {var70_novo}")
+                
                 cursor.execute("""
                     INSERT INTO auditoria_base_unificada_mudancas 
                     (var9, tipo_operacao, colunas_alteradas, qtd_colunas_alteradas)
                     VALUES (%s, 'Credenciadora', %s, %s)
-                """, [nsu, json.dumps(colunas_alteradas), len(colunas_alteradas)])
+                """, [nsu, json.dumps(motivo), 1])
         else:
             # INSERT
             campos_sql = ', '.join(campos_ordenados)
