@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 16/12/2025
+**Última Atualização:** 20/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -16,6 +16,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Portal Vendas: Filtro por portal corrigido (14/12/2025)
   - ✅ Portal Lojista: Sistema de Ofertas ativo (menu visível)
   - ✅ Portal Lojista: Sistema de Cashback Loja (CRUD completo)
+  - ✅ Portal Admin: Gestão de Terminais com histórico (20/12/2025)
   - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
   - ✅ Sistema de Cupom: Validação e aplicação de descontos
@@ -67,6 +68,13 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Eliminadas 16+ queries com `ROW_NUMBER()`
   - ✅ Processo de carga com UPDATE automático
   - ⚠️ Pendente: Revisão completa e desativação de `baseTransacoesGestao`
+- ✅ **Migração Terminais DATETIME (20/12/2025):**
+  - ✅ Campos `inicio`/`fim`: INT (Unix timestamp) → DATETIME
+  - ✅ View `wallclub.terminais` → Tabela real com índices
+  - ✅ Model Django atualizado com propriedades `ativo`, `inicio_date`, `fim_date`
+  - ✅ Queries SQL atualizadas (Pinbank cargas, services, portais)
+  - ✅ Portal Admin: Página de histórico (terminais inativos)
+  - ✅ Template filters compatíveis com DATETIME e timestamp
 
 ## 📋 Navegação Rápida
 

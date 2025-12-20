@@ -121,6 +121,20 @@ class CargaBaseUnificadaCredenciadoraService:
 
             registrar_log('pinbank.cargas_pinbank', f"Iniciando processamento de registros em lotes de 100")
 
+            # Cache de canais para evitar N+1 queries
+            from wallclub_core.estr_organizacional.canal import Canal
+            canais_cache = {}
+            for canal in Canal.objects.all():
+                canais_cache[canal.id] = {
+                    'id': canal.id,
+                    'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
+                    'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
+                    'key_loja': canal.keyvalue or '',
+                    'canal': canal.canal or '',
+                    'nome': canal.nome or ''
+                }
+            registrar_log('pinbank.cargas_pinbank', f"Cache de {len(canais_cache)} canais carregado")
+
             # Processar em lotes de 100 registros
             BATCH_SIZE = 100
             lote_atual = []
@@ -151,7 +165,16 @@ class CargaBaseUnificadaCredenciadoraService:
                                     'cnpj': linha.get('cnpj'),
                                     'canal_id': linha.get('canal_id')
                                 }
-                                linha['info_canal'] = self.pinbank_service.pega_info_canal_por_id(linha.get('canal_id'))
+                                # Usar cache ao invés de query
+                                canal_id = linha.get('canal_id')
+                                linha['info_canal'] = canais_cache.get(canal_id, {
+                                    'id': canal_id,
+                                    'codigo_canal': 0,
+                                    'codigo_cliente': 0,
+                                    'key_loja': '',
+                                    'canal': '',
+                                    'nome': ''
+                                })
 
                                 # Calcular valores primários
                                 valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
@@ -319,16 +342,16 @@ class CargaBaseUnificadaCredenciadoraService:
     def _inserir_registro_sql(self, cursor, campos: Dict[str, Any]):
         """Insere novo registro usando SQL direto (apenas se NSU não existir)"""
         nsu = campos.get('var9')
-        
+
         # Verificar se NSU já existe na base unificada
         cursor.execute("""
-            SELECT COUNT(*) 
-            FROM base_transacoes_unificadas 
+            SELECT COUNT(*)
+            FROM base_transacoes_unificadas
             WHERE var9 = %s AND tipo_operacao = 'Credenciadora'
         """, [nsu])
-        
+
         existe = cursor.fetchone()[0] > 0
-        
+
         # Filtrar apenas campos válidos
         campos_validos = {k: v for k, v in campos.items() if k not in ['id']}
 
@@ -349,7 +372,7 @@ class CargaBaseUnificadaCredenciadoraService:
             set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
             valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
             valores_update.append(nsu)  # WHERE var9 = %s
-            
+
             sql = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
             cursor.execute(sql, valores_update)
             registrar_log('pinbank.cargas_pinbank', f"🔄 Registro atualizado na base unificada (Credenciadora) - NSU: {nsu}")

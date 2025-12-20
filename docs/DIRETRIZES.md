@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.8  
-**Data:** 16/12/2025  
+**Versão:** 4.9  
+**Data:** 20/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Refatoração Base Transações - Migração completa para `base_transacoes_unificadas` (16/12/2025)
+**Mudanças:** Migração Terminais DATETIME - Campos `inicio`/`fim` convertidos de Unix timestamp para DATETIME (20/12/2025)
 
 ---
 
@@ -312,6 +312,12 @@ data_aware = timezone.make_aware(datetime.now())
 ```
 
 **Motivo:** MySQL backend do Django não suporta timezone-aware datetimes quando USE_TZ=False, exceto em casos específicos onde o Django gerencia internamente
+
+**Campos DATETIME (20/12/2025):**
+- ✅ Tabela `terminais`: campos `inicio`/`fim` migrados de INT (Unix timestamp) para DATETIME
+- ✅ Model `Terminal`: propriedades `ativo`, `inicio_date`, `fim_date` para compatibilidade
+- ✅ Queries SQL: removido `UNIX_TIMESTAMP()`, comparação direta com `NOW()`
+- ✅ Template filters: suportam DATETIME e Unix timestamp automaticamente
 
 **Arquivos Corrigidos (26/10/2025):**
 - posp2/models.py

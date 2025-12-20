@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.8  
-**Data:** 14/12/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + Transactiondata_pos unificada + Sistema Cupom (POS + Checkout Web) + Correções Checkout 2FA e Portal Vendas
+**Versão:** 5.9  
+**Data:** 20/12/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + Transactiondata_pos unificada + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico
 
 ---
 

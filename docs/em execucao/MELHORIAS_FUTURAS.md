@@ -1,31 +1,30 @@
 # MELHORIAS FUTURAS - WALLCLUB BACKEND
 
-**Versão:** 1.0  
-**Data:** 07/11/2025  
-**Status:** Roadmap de Melhorias Pendentes  
+**Versão:** 2.0  
+**Data:** 20/12/2025  
+**Status:** Roadmap Atualizado - Removido itens já implementados
 
 ---
 
 ## 📋 ÍNDICE
 
-1. [Segurança Avançada](#segurança-avançada)
+1. [Segurança e Compliance](#segurança-e-compliance)
 2. [Notificações e Alertas](#notificações-e-alertas)
-3. [Validações e Compliance](#validações-e-compliance)
-4. [Sistema de Recorrência](#sistema-de-recorrência)
-5. [Portal Corporativo](#portal-corporativo)
-6. [Monitoramento e Observabilidade](#monitoramento-e-observabilidade)
-7. [Testes e Qualidade](#testes-e-qualidade)
-8. [Otimizações de Performance](#otimizações-de-performance)
-9. [Refatorações Menores](#refatorações-menores)
+3. [Sistema de Recorrência](#sistema-de-recorrência)
+4. [Monitoramento e Observabilidade](#monitoramento-e-observabilidade)
+5. [Testes e Qualidade](#testes-e-qualidade)
+6. [Otimizações de Performance](#otimizações-de-performance)
 
 ---
 
-## 🔐 SEGURANÇA AVANÇADA
+## 🔐 SEGURANÇA E COMPLIANCE
 
 ### 1. 2FA Login App Móvel
 
 **Prioridade:** ALTA  
 **Tempo Estimado:** 8 horas
+
+**Contexto:** Checkout Web já tem 2FA completo. Falta implementar no app mobile.
 
 **Implementações:**
 - [ ] Gerar OTP no login (além de senha)
@@ -80,7 +79,7 @@
 
 **Arquivos:**
 - `apps/cliente/services_revalidacao_celular.py`
-- `scripts/producao/fase4/adicionar_campos_revalidacao_celular.sql`
+- `scripts/producao/adicionar_campos_revalidacao_celular.sql`
 
 ---
 
@@ -89,55 +88,21 @@
 **Prioridade:** MÉDIA  
 **Tempo Estimado:** 4 horas
 
-**Objetivo:** Validar CPF na Receita Federal via Bureau
+**Contexto:** Atualmente só validação local de dígitos verificadores.
 
 **Implementações:**
-- [ ] Integrar com `comum/integracoes/bureau_service.py`
+- [ ] Integrar com Bureau (Serasa/Boa Vista)
 - [ ] Validar CPF ativo no cadastro (app + checkout)
-- [ ] Match de nome informado com nome do CPF
+- [ ] Match de nome informado com nome do CPF (80% similaridade)
 - [ ] Bloquear cadastro se CPF irregular
 - [ ] Logs detalhados de validações
-
-**Validações:**
-- ✅ Dígitos verificadores (validação local)
-- ✅ CPF ativo na Receita Federal (Bureau)
-- ✅ Match de nome (tolerância: 80% similaridade)
-- ✅ CPF não está em blacklist interna
-- ✅ Status "REGULAR" no Bureau
 
 **Cache:**
 - Redis: `bureau:cpf:{cpf}` válido por 24h
 - Retry automático: 2 tentativas com 3s intervalo
 - Fallback: se Bureau offline, permitir + flag revisar
 
-**Configurações:**
-```python
-BUREAU_VALIDATION_ENABLED = True
-BUREAU_VALIDATION_REQUIRED = True
-BUREAU_CACHE_TIMEOUT = 86400  # 24 horas
-BUREAU_NAME_MATCH_THRESHOLD = 0.80
-```
-
----
-
-### 4. Senha Transacional Separada
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 6 horas
-
-**Objetivo:** Senha de 4-6 dígitos apenas para transações
-
-**Benefícios:**
-- Mais rápido que 2FA via SMS
-- Não depende de operadora
-- Funciona offline
-
-**Implementações:**
-- [ ] Campo `senha_transacional_hash` em Cliente
-- [ ] Endpoint criar/alterar senha transacional
-- [ ] Validação em transações >R$ 50
-- [ ] Bloqueio após 3 tentativas erradas
-- [ ] Reset via 2FA
+**Custo Estimado:** R$ 300-600/mês
 
 ---
 
@@ -195,42 +160,6 @@ BUREAU_NAME_MATCH_THRESHOLD = 0.80
 
 ---
 
-## ✅ VALIDAÇÕES E COMPLIANCE
-
-### 1. Auditoria Automática via Django Signals
-
-**Prioridade:** MÉDIA  
-**Tempo Estimado:** 4 horas
-
-**Objetivo:** Rastrear mudanças em recorrências
-
-**Implementações:**
-- [ ] Criar signals para `checkout_recorrencias_historico`
-- [ ] Rastrear: criação, pausar, reativar, cancelar, atualizar valor
-- [ ] Registrar usuário que fez a ação
-- [ ] Timestamp automático
-
----
-
-### 2. Testes End-to-End Completos
-
-**Prioridade:** ALTA  
-**Tempo Estimado:** 8 horas
-
-**Fluxos a Testar:**
-- [ ] Checkout Web (cartão novo + OTP)
-- [ ] App Móvel (login + 2FA + dispositivo confiável)
-- [ ] Login portal com IP bloqueado
-- [ ] Login portal com CPF bloqueado
-- [ ] Detector automático criando alertas
-- [ ] Rate limiting funcionando
-- [ ] Validação CPF com Bureau
-- [ ] Notificações de segurança (todos tipos)
-- [ ] Revalidação celular após 90 dias
-- [ ] Limite de 1 dispositivo por conta
-
----
-
 ## 🔄 SISTEMA DE RECORRÊNCIA
 
 ### 1. Dashboard de Métricas
@@ -273,111 +202,6 @@ BUREAU_NAME_MATCH_THRESHOLD = 0.80
 
 ---
 
-### 4. Periodicidades Adicionais
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 3 horas
-
-**Implementações:**
-- [ ] Quinzenal
-- [ ] Bimestral
-- [ ] Trimestral
-- [ ] Semestral
-
----
-
-### 5. Regras de Desconto/Acréscimo
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 4 horas
-
-**Implementações:**
-- [ ] Descontos para pagamento antecipado
-- [ ] Multa por atraso
-- [ ] Juros configuráveis
-- [ ] Promoções temporárias
-
----
-
-### 6. Exportação de Relatórios
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 3 horas
-
-**Implementações:**
-- [ ] Excel/CSV de recorrências
-- [ ] PDF de comprovantes
-- [ ] Relatório consolidado mensal
-- [ ] Envio automático por email
-
----
-
-## 🌐 PORTAL CORPORATIVO
-
-### 1. Implementar Envio de Email no Formulário
-
-**Prioridade:** MÉDIA  
-**Tempo Estimado:** 2 horas
-
-**Implementações:**
-- [ ] Salvar lead no banco de dados
-- [ ] Enviar email para atendimento
-- [ ] Email de confirmação para cliente
-- [ ] Integração com CRM (opcional)
-
----
-
-### 2. Google Analytics
-
-**Prioridade:** MÉDIA  
-**Tempo Estimado:** 2 horas
-
-**Implementações:**
-- [ ] Tracking de páginas
-- [ ] Eventos de conversão (formulário enviado, app download)
-- [ ] Funil de conversão cliente/lojista
-- [ ] Relatórios mensais
-
----
-
-### 3. Dashboard de Leads no Portal Admin
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 4 horas
-
-**Implementações:**
-- [ ] Lista de leads recebidos
-- [ ] Filtros por tipo (consumidor/lojista)
-- [ ] Status de atendimento
-- [ ] Exportação CSV
-
----
-
-### 4. Sitemap.xml
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 1 hora
-
-**Implementações:**
-- [ ] Gerar sitemap.xml
-- [ ] Submeter ao Google Search Console
-- [ ] Atualização automática
-
----
-
-### 5. Blog/Conteúdo SEO
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 8+ horas
-
-**Implementações:**
-- [ ] Sistema de blog
-- [ ] Artigos sobre benefícios
-- [ ] Casos de sucesso
-- [ ] FAQ expandido
-
----
-
 ## 📊 MONITORAMENTO E OBSERVABILIDADE
 
 ### 1. ELK Stack
@@ -399,25 +223,14 @@ BUREAU_NAME_MATCH_THRESHOLD = 0.80
 **Prioridade:** ALTA  
 **Tempo Estimado:** 12 horas
 
+**Contexto:** Atualmente só temos Flower para Celery.
+
 **Implementações:**
 - [ ] Prometheus para métricas
 - [ ] Grafana para dashboards
 - [ ] Alertmanager para alertas
 - [ ] Integração Slack/Email
-- [ ] Métricas de negócio (MRR, conversão, etc)
-
----
-
-### 3. Métricas de Recorrência
-
-**Prioridade:** MÉDIA  
-**Tempo Estimado:** 4 horas
-
-**Monitorar:**
-- Taxa de sucesso de cobranças (alerta se <80%)
-- Recorrências em HOLD (alerta se >10% do total)
-- Tempo de processamento tasks (alerta se >5 min)
-- Falhas de task (alerta qualquer exception)
+- [ ] Métricas de negócio (MRR, conversão, churn)
 
 ---
 
@@ -428,30 +241,17 @@ BUREAU_NAME_MATCH_THRESHOLD = 0.80
 **Prioridade:** ALTA  
 **Tempo Estimado:** 40 horas
 
-**Cobertura:**
-- [ ] Testes de services (cobertura 80%)
-- [ ] Testes de models
-- [ ] Testes de serializers
-- [ ] Testes de utils
-- [ ] Testes de decorators
+**Contexto:** Cobertura atual muito baixa.
+
+**Cobertura Mínima:**
+- [ ] Services críticos (80%): TransacoesService, CashbackService, Antifraude
+- [ ] Models principais
+- [ ] Serializers de APIs
+- [ ] Utils e decorators
 
 ---
 
-### 2. Testes de Integração
-
-**Prioridade:** ALTA  
-**Tempo Estimado:** 32 horas
-
-**Cobertura:**
-- [ ] Testes de fluxos completos
-- [ ] Testes de APIs
-- [ ] Testes de autenticação
-- [ ] Testes de permissões
-- [ ] Testes de comunicação entre containers
-
----
-
-### 3. Testes de Carga
+### 2. Testes de Carga
 
 **Prioridade:** MÉDIA  
 **Tempo Estimado:** 8 horas
@@ -471,11 +271,13 @@ BUREAU_NAME_MATCH_THRESHOLD = 0.80
 **Prioridade:** MÉDIA  
 **Tempo Estimado:** 6 horas
 
+**Contexto:** Redis usado apenas para Celery e sessões.
+
 **Implementações:**
-- [ ] Cache de hierarquia organizacional (1 hora)
-- [ ] Cache de parâmetros (30 min)
-- [ ] Cache de ofertas ativas (15 min)
-- [ ] Cache de saldo conta digital (5 min)
+- [ ] Cache de hierarquia organizacional (1 hora TTL)
+- [ ] Cache de parâmetros financeiros (30 min TTL)
+- [ ] Cache de ofertas ativas (15 min TTL)
+- [ ] Cache de saldo conta digital (5 min TTL)
 - [ ] Invalidação inteligente
 
 ---
@@ -485,101 +287,39 @@ BUREAU_NAME_MATCH_THRESHOLD = 0.80
 **Prioridade:** ALTA  
 **Tempo Estimado:** 4 horas
 
+**Contexto:** Nunca foi feita análise de performance de queries.
+
 **Análise:**
-- [ ] Identificar queries lentas (slow query log)
+- [ ] Ativar slow query log MySQL
+- [ ] Identificar queries >1s
 - [ ] Criar índices compostos
-- [ ] Otimizar JOINs
 - [ ] Analisar EXPLAIN de queries críticas
+- [ ] Otimizar JOINs pesados
 
 ---
 
-### 3. Paginação Otimizada
-
-**Prioridade:** MÉDIA  
-**Tempo Estimado:** 3 horas
-
-**Implementações:**
-- [ ] Cursor-based pagination em listas grandes
-- [ ] Lazy loading em templates
-- [ ] Infinite scroll onde apropriado
-
----
-
-## 🔧 REFATORAÇÕES MENORES
-
-### 1. Limpeza de Recuperações de Sessão
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 4 horas
-
-**Arquivos:**
-- [ ] `apps/oauth/views.py` - 1 ocorrência
-- [ ] `portais/admin/views.py` - 2 ocorrências
-- [ ] `portais/lojista/views.py` - 13 ocorrências
-
-**Solução:**
-- Criar métodos auxiliares:
-  - `OAuthService.validar_cliente_por_credenciais()`
-  - `UsuarioService.obter_usuario_sessao(user_id)`
-  - `UsuarioService.validar_token_senha(token)`
-
----
-
-### 2. Centralização de Templates de Email
-
-**Prioridade:** BAIXA  
-**Status:** ✅ PARCIALMENTE CONCLUÍDO
-
-**Pendências:**
-- [ ] Remover templates antigos após validação em produção
-- [ ] Criar template para notificações de transação
-- [ ] Criar template para alertas de segurança
-- [ ] Criar template para relatórios periódicos
-
----
-
-### 3. Ajuste de URLs dos Portais
-
-**Prioridade:** BAIXA  
-**Tempo Estimado:** 3 horas
-
-**Situação Atual:**
-- `admin.wallclub.local/portal_admin/`
-- `vendas.wallclub.local/portal_vendas/`
-- `lojista.wallclub.local/portal_lojista/`
-
-**Desejado:**
-- `admin.wallclub.local/`
-- `vendas.wallclub.local/`
-- `lojista.wallclub.local/`
-
-**Solução:**
-- Criar middleware para detectar subdomínio e ajustar URL_PREFIX
 
 ---
 
 ## 🎯 PRIORIZAÇÃO RECOMENDADA
 
-### Curto Prazo (1-2 meses)
-1. ✅ 2FA Login App Móvel
-2. ✅ Revalidação de Celular (90 dias)
-3. ✅ Sistema de Notificações de Segurança
-4. ✅ Testes End-to-End Completos
-5. ✅ Monitoramento (ELK Stack ou Prometheus)
+### Curto Prazo (1-2 meses) - 33 horas
+1. **Índices de Banco de Dados** (4h) - ROI imediato
+2. **2FA Login App Móvel** (8h) - Segurança crítica
+3. **Revalidação de Celular** (4h) - Compliance
+4. **Sistema de Notificações** (5h) - UX e segurança
+5. **Dashboard Métricas Recorrência** (6h) - Visibilidade negócio
+6. **Cache Agressivo** (6h) - Performance
 
-### Médio Prazo (3-6 meses)
-1. ✅ Validação CPF com Bureau
-2. ✅ Dashboard Métricas Recorrência
-3. ✅ Testes Unitários (cobertura 80%)
-4. ✅ Cache Agressivo
-5. ✅ Índices de Banco de Dados
+### Médio Prazo (3-6 meses) - 56 horas
+1. **Prometheus + Grafana** (12h) - Observabilidade
+2. **Testes Unitários** (40h) - Qualidade
+3. **Validação CPF Bureau** (4h) - Redução fraude
 
-### Longo Prazo (6+ meses)
-1. ✅ Senha Transacional Separada
-2. ✅ Webhook Sistema Externo
-3. ✅ Portal Corporativo (melhorias)
-4. ✅ Testes de Carga
-5. ✅ Refatorações Menores
+### Longo Prazo (6+ meses) - 16 horas
+1. **Testes de Carga** (8h)
+2. **Atualização Cartão Cliente** (5h)
+3. **Notificações Recorrência** (3h)
 
 ---
 
@@ -591,17 +331,18 @@ BUREAU_NAME_MATCH_THRESHOLD = 0.80
 - Não incluem code review e ajustes
 
 **Dependências:**
-- Algumas melhorias dependem de equipe mobile
-- Outras dependem de aprovação de negócio
-- Algumas requerem contratação de serviços externos
+- 2FA App Móvel: requer atualização app mobile
+- Validação CPF Bureau: contratação serviço externo
+- Prometheus/Grafana: infraestrutura adicional
 
 **Custos Adicionais:**
 - Bureau de crédito: R$ 300-600/mês
-- ELK Stack: Infraestrutura adicional
-- Prometheus/Grafana: Infraestrutura adicional
+- Prometheus/Grafana: Infraestrutura adicional (~R$ 200/mês)
+
+**Total Estimado:** 105 horas (~3 semanas)
 
 ---
 
 **Responsável:** Jean Lessa  
-**Data:** 07/11/2025  
+**Última Atualização:** 20/12/2025  
 **Próxima Revisão:** Trimestral
