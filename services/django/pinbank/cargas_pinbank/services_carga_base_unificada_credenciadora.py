@@ -368,12 +368,17 @@ class CargaBaseUnificadaCredenciadoraService:
                 valores_finais.append(valor)
 
         # Tentar UPDATE primeiro
+        import time
+        inicio = time.time()
+        
         set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
         valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
         valores_update.append(nsu)  # WHERE var9 = %s
 
         sql_update = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
         cursor.execute(sql_update, valores_update)
+        
+        tempo_update = time.time() - inicio
 
         # Se não atualizou nenhuma linha (não existe), fazer INSERT
         if cursor.rowcount == 0:
@@ -386,3 +391,6 @@ class CargaBaseUnificadaCredenciadoraService:
             """
 
             cursor.execute(sql_insert, valores_finais)
+            registrar_log('pinbank.cargas_pinbank', f"✅ INSERT NSU {nsu} em {tempo_update:.2f}s")
+        else:
+            registrar_log('pinbank.cargas_pinbank', f"🔄 UPDATE NSU {nsu} em {tempo_update:.2f}s")
