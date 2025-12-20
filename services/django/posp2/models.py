@@ -59,8 +59,10 @@ class Terminal(models.Model):
     idterminal = models.CharField(max_length=256, null=True, blank=True, verbose_name="ID Terminal")
     endereco = models.CharField(max_length=1024, null=True, blank=True, verbose_name="Endereço")
     contato = models.CharField(max_length=256, null=True, blank=True, verbose_name="Contato")
-    inicio = models.IntegerField(null=True, blank=True, verbose_name="Início (timestamp)")
-    fim = models.IntegerField(null=True, blank=True, verbose_name="Fim (timestamp)")
+    inicio = models.DateTimeField(null=True, blank=True, verbose_name="Data/Hora Início")
+    fim = models.DateTimeField(null=True, blank=True, verbose_name="Data/Hora Fim")
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
     class Meta:
         db_table = 'terminais'
@@ -71,21 +73,32 @@ class Terminal(models.Model):
     def __str__(self):
         return f"Terminal {self.idterminal} - Loja {self.loja_id}"
     
-    def set_inicio_date(self, data):
-        """Converte date para timestamp e define no campo inicio"""
+    @property
+    def ativo(self):
+        """Verifica se o terminal está ativo no momento"""
         from datetime import datetime
-        if data:
-            self.inicio = int(datetime.combine(data, datetime.min.time()).timestamp())
-        else:
-            self.inicio = 0
+        agora = datetime.now()
+        
+        if self.inicio is None:
+            return False
+        
+        if self.inicio > agora:
+            return False
+        
+        if self.fim is None:
+            return True
+        
+        return self.fim > agora
     
-    def set_fim_date(self, data):
-        """Converte date para timestamp e define no campo fim"""
-        from datetime import datetime
-        if data:
-            self.fim = int(datetime.combine(data, datetime.min.time()).timestamp())
-        else:
-            self.fim = 0
+    @property
+    def inicio_date(self):
+        """Retorna apenas a data de início (sem hora)"""
+        return self.inicio.date() if self.inicio else None
+    
+    @property
+    def fim_date(self):
+        """Retorna apenas a data de fim (sem hora)"""
+        return self.fim.date() if self.fim else None
 
 
 class TransactionData(models.Model):

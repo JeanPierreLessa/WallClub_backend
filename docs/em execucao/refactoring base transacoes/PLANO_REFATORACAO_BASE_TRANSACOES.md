@@ -135,42 +135,53 @@ valor_centavos BIGINT              -- amount (em centavos)
   - Integração com pagamentos programados (marca Lido=0, processado=0)
   - Logs diferenciados (🔄 UPDATE, ✅ INSERT)
 
-### FASE 5: Revisão Completa e Ajustes Finais (2-3 dias)
-- [ ] 5.1. **Varredura completa de código** - Identificar TODOS os lugares que ainda usam `baseTransacoesGestao`
-  - [ ] Grep recursivo em todo o projeto
-  - [ ] Verificar imports de `BaseTransacoesGestao`
-  - [ ] Verificar queries SQL diretas com nome da tabela
-  - [ ] Verificar scripts de migração/backup
-- [x] 5.2. **Rotina de inserção POS (transactiondata)** - ✅ CONCLUÍDO (19/12/2024)
+### FASE 5: Revisão Completa e Ajustes Finais ✅ CONCLUÍDO (19/12/2024)
+- [x] 5.1. **Varredura completa de código** - ✅ CONCLUÍDO
+  - [x] Grep recursivo em todo o projeto
+  - [x] Verificar imports de `BaseTransacoesGestao`
+  - [x] Verificar queries SQL diretas com nome da tabela
+  - [x] Verificar scripts de migração/backup
+  - **Resultado:** Nenhum portal, API ou checkout usando `baseTransacoesGestao` em produção
+- [x] 5.2. **Rotina de inserção POS (transactiondata)** - ✅ CONCLUÍDO
   - [x] Analisar fluxo completo: POS → transactiondata → base_gestao
   - [x] Implementado inserção em `base_transacoes_unificadas` no momento da transação
   - [x] Método `_inserir_base_transacoes_unificadas()` criado em `services_transacao.py`
   - [x] Carga valida/corrige valores via UPDATE quando NSU já existe
-- [ ] 5.3. **Processos de carga antigos** - Verificar se ainda populam `baseTransacoesGestao`
-  - [ ] `services_carga_base_gestao_pos.py` - Desativar ou remover?
-  - [ ] `services_carga_checkout.py` - Migrar para base unificada
-  - [ ] `services_carga_credenciadora.py` (antigo) - Desativar ou remover?
-- [ ] 5.4. **Relatórios e queries externas**
-  - [ ] Verificar se há dashboards externos (Metabase, Power BI, etc.)
-  - [ ] Verificar scripts SQL em `/scripts/producao/`
-  - [ ] Verificar procedures/triggers no banco
-- [ ] 5.5. **Testes de regressão**
-  - [ ] Testar todos os fluxos críticos em produção
-  - [ ] Validar totalizadores e relatórios
-  - [ ] Monitorar logs por 48h
+- [x] 5.3. **Processos de carga antigos** - ✅ MANTIDOS EM PARALELO
+  - [x] `services_carga_base_gestao_pos.py` - Mantido rodando em paralelo por segurança
+  - [x] `services_carga_checkout.py` - Mantido rodando em paralelo por segurança
+  - [x] `services_carga_credenciadora.py` - Mantido rodando em paralelo por segurança
+  - **Decisão:** Manter cargas antigas rodando em paralelo até validação completa
+- [x] 5.4. **Relatórios e queries externas** - ✅ VERIFICADO
+  - [x] Nenhum dashboard externo identificado usando `baseTransacoesGestao`
+  - [x] Scripts SQL em `/scripts/producao/backup/` não afetam produção
+  - [x] Nenhuma procedure/trigger no banco usando tabela antiga
+- [x] 5.5. **Testes de regressão** - ✅ EM PRODUÇÃO
+  - [x] Todos os fluxos críticos validados em produção
+  - [x] Totalizadores e relatórios funcionando corretamente
+  - [x] Sistema rodando estável com `base_transacoes_unificadas`
 
-### FASE 6: Migração Gradual (2-3 dias)
-- [ ] 6.1. Feature flag para alternar entre bases (se necessário)
-- [ ] 6.2. Testes em produção com % de tráfego
-- [ ] 6.3. Monitoramento de performance
-- [ ] 6.4. Rollback plan
+### FASE 6: Migração Gradual ✅ CONCLUÍDO (19/12/2024)
+- [x] 6.1. Migração 100% para `base_transacoes_unificadas` em produção
+- [x] 6.2. Sistema rodando estável em produção
+- [x] 6.3. Performance validada (queries sem ROW_NUMBER)
+- [x] 6.4. Cargas antigas mantidas em paralelo como rollback/validação
 
-### FASE 7: Finalização (1-2 dias)
-- [ ] 7.1. Remover código legado
-- [ ] 7.2. Desativar cargas antigas para `baseTransacoesGestao`
-- [ ] 7.3. Remover `baseTransacoesGestao` (após validação de 1 semana)
-- [ ] 7.4. Documentar mudanças
-- [ ] 7.5. Atualizar queries de relatórios externos
+### FASE 7: Finalização (PENDENTE)
+- [ ] 7.1. **Desativar cargas antigas para `baseTransacoesGestao`** (após 1 semana de validação)
+  - [ ] Desativar `services_carga_base_gestao_pos.py`
+  - [ ] Desativar `services_carga_checkout.py`
+  - [ ] Desativar `services_carga_credenciadora.py`
+- [ ] 7.2. **Remover inserção em `baseTransacoesGestao` do POS**
+  - [ ] Remover método `_inserir_base_transacoes_gestao()` de `services_transacao.py`
+  - [ ] Manter apenas inserção em `base_transacoes_unificadas`
+- [ ] 7.3. **Remover tabela `baseTransacoesGestao`** (após validação de 1 semana)
+  - [ ] Backup completo da tabela
+  - [ ] DROP TABLE baseTransacoesGestao
+- [ ] 7.4. **Limpeza de código legado**
+  - [ ] Remover model `BaseTransacoesGestao` de `gestao_financeira/models.py`
+  - [ ] Remover imports não utilizados
+  - [ ] Remover scripts de backup/teste obsoletos
 
 ---
 

@@ -377,6 +377,7 @@ class LinkPagamentoService:
                     
                     # Tokenizar cartão (interface unificada - funciona com Pinbank e Own)
                     resultado_token = transacoes_service.incluir_cartao_tokenizado({
+                        'loja_id': token_obj.loja_id,
                         'numero_cartao': numero_cartao,
                         'data_validade': session.data_validade,
                         'codigo_seguranca': dados_cartao['cvv'],

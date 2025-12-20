@@ -64,7 +64,7 @@ class LojistaTerminaisView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
         FROM    terminais t
         INNER JOIN loja l ON t.loja_id = l.id
         WHERE   l.id IN %s
-        ORDER BY t.inicio
+        ORDER BY t.inicio DESC
         """
         
         # Executar query

@@ -44,7 +44,7 @@ class TerminaisService:
             FROM terminais t
             LEFT JOIN loja l ON t.loja_id = l.id
             LEFT JOIN canal c ON l.canal_id = c.id
-            WHERE (t.fim IS NULL OR t.fim = 0 OR t.fim > UNIX_TIMESTAMP()) {canal_filter}
+            WHERE (t.fim IS NULL OR t.fim > NOW()) {canal_filter}
             ORDER BY t.id DESC
         """
         
@@ -105,13 +105,13 @@ class TerminaisService:
             from datetime import datetime
             
             with connection.cursor() as cursor:
-                # Terminal está ativo se: fim = 0 (null) OU fim > hoje
+                # Terminal está ativo se: fim IS NULL OU fim > agora
                 cursor.execute("""
                     SELECT id, loja_id 
                     FROM terminais 
                     WHERE terminal = %s 
-                      AND (fim = 0 OR fim > %s)
-                """, [terminal, int(datetime.now().timestamp())])
+                      AND (fim IS NULL OR fim > NOW())
+                """, [terminal])
                 
                 terminal_ativo = cursor.fetchone()
                 
@@ -133,9 +133,9 @@ class TerminaisService:
             
             # Definir datas se fornecidas
             if inicio:
-                terminal_obj.set_inicio_date(inicio)
+                terminal_obj.inicio = datetime.combine(inicio, datetime.min.time())
             if fim:
-                terminal_obj.set_fim_date(fim)
+                terminal_obj.fim = datetime.combine(fim, datetime.min.time())
             
             terminal_obj.save()
             
@@ -194,7 +194,7 @@ class TerminaisService:
                         'sucesso': False,
                         'mensagem': 'Data de início só pode ser modificada para datas futuras'
                     }
-                terminal_obj.set_inicio_date(inicio)
+                terminal_obj.inicio = datetime.combine(inicio, datetime.min.time())
             
             # Validar e atualizar data de fim
             if limpar_fim:
@@ -205,7 +205,7 @@ class TerminaisService:
                         'sucesso': False,
                         'mensagem': 'Data de fim só pode ser modificada se for nula ou futura'
                     }
-                terminal_obj.set_fim_date(fim)
+                terminal_obj.fim = datetime.combine(fim, datetime.min.time())
             
             terminal_obj.save()
             
@@ -253,8 +253,8 @@ class TerminaisService:
         try:
             Terminal = apps.get_model('posp2', 'Terminal')
             terminal_obj = Terminal.objects.get(id=terminal_id)
-            # Usar timestamp atual (agora) em vez de date.today()
-            terminal_obj.fim = int(datetime.now().timestamp())
+            # Definir data/hora de fim para agora
+            terminal_obj.fim = datetime.now()
             terminal_obj.save()
             
             registrar_log(

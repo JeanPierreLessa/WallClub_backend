@@ -66,7 +66,7 @@ class PinbankService:
                         wallclub.terminais as t,
                         wallclub.transactiondata as td
                 WHERE   td.nsuPinbank = %s
-                        AND (t.inicio <= UNIX_TIMESTAMP(CAST(td.datahora AS DATETIME(6))))
+                        AND (t.inicio <= CAST(td.datahora AS DATETIME(6)))
                         AND td.terminal = t.terminal
                         AND t.loja_id = l.id
                 ORDER BY t.id DESC LIMIT 1
@@ -163,7 +163,7 @@ class PinbankService:
                          wallclub.transactiondata as td
                 WHERE    td.nsuPinbank = %s
                          AND td.terminal= terminais.terminal
-                         AND ( terminais.inicio <=  UNIX_TIMESTAMP(DATE_ADD(td.datahora, INTERVAL 3 HOUR))  )
+                         AND ( terminais.inicio <= DATE_ADD(CAST(td.datahora AS DATETIME(6)), INTERVAL 3 HOUR) )
                          AND terminais.loja_id = loja.id
                          AND loja.canal_id = canal.id
                 ORDER BY terminais.id DESC LIMIT 1

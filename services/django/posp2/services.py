@@ -934,7 +934,7 @@ class POSP2Service:
                             AND terminais.loja_id = loja.id
                             AND loja.canal_id = canal.id
                             AND terminais.inicio <= NOW()
-                            AND (terminais.fim >= NOW() or terminais.fim is null or terminais.fim = 0)
+                            AND (terminais.fim >= NOW() OR terminais.fim IS NULL)
                     LIMIT 1
                 """, [terminal_id])
 

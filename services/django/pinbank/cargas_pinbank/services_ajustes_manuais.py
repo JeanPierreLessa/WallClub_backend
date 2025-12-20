@@ -46,8 +46,8 @@ class AjustesManuaisService:
                     FROM    wallclub.pinbankExtratoPOS p,
                             terminais t
                     WHERE   t.terminal = p.SerialNumber
-                            AND t.inicio <= UNIX_TIMESTAMP(REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' '))
-                            AND ( t.fim = 0 OR t.fim >= UNIX_TIMESTAMP(REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' ')))
+                            AND t.inicio <= REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' ')
+                            AND ( t.fim IS NULL OR t.fim >= REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' '))
                             AND NOT EXISTS ( SELECT nsupinbank FROM transactiondata WHERE nsupinbank = NsuOperacao )
                 """)
 
