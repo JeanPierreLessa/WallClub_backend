@@ -21,25 +21,37 @@ class Command(BaseCommand):
             type=str,
             help='NSU específico para processar (para debug)',
         )
+        parser.add_argument(
+            '--worker_id',
+            type=int,
+            help='ID do worker para processamento paralelo (0-9)',
+        )
 
     def handle(self, *args, **options):
         limite = options.get('limite')
         nsu = options.get('nsu')
+        worker_id = options.get('worker_id')
 
-        self.stdout.write(self.style.SUCCESS('=== Iniciando carga Base Unificada ==='))
+        if worker_id is not None:
+            self.stdout.write(self.style.SUCCESS(f'=== Worker {worker_id} iniciando ==='))
+        else:
+            self.stdout.write(self.style.SUCCESS('=== Iniciando carga Base Unificada ==='))
 
         # 1. Processar POS
         self.stdout.write(self.style.SUCCESS('\n[1/2] Processando POS...'))
         service_pos = CargaBaseUnificadaPOSService()
-        registros_pos = service_pos.carregar_valores_primarios(limite=limite, nsu=nsu)
+        registros_pos = service_pos.carregar_valores_primarios(limite=limite, nsu=nsu, worker_id=worker_id)
         self.stdout.write(self.style.SUCCESS(f'✅ POS: {registros_pos} registros processados'))
 
         # 2. Processar Credenciadora
         self.stdout.write(self.style.SUCCESS('\n[2/2] Processando Credenciadora...'))
         service_credenciadora = CargaBaseUnificadaCredenciadoraService()
-        registros_credenciadora = service_credenciadora.carregar_valores_primarios(limite=limite, nsu=nsu)
+        registros_credenciadora = service_credenciadora.carregar_valores_primarios(limite=limite, nsu=nsu, worker_id=worker_id)
         self.stdout.write(self.style.SUCCESS(f'✅ Credenciadora: {registros_credenciadora} registros processados'))
 
         # Resumo
         total = registros_pos + registros_credenciadora
-        self.stdout.write(self.style.SUCCESS(f'\n=== Carga concluída: {total} registros no total ==='))
+        if worker_id is not None:
+            self.stdout.write(self.style.SUCCESS(f'\n=== Worker {worker_id} concluído: {total} registros ==='))
+        else:
+            self.stdout.write(self.style.SUCCESS(f'\n=== Carga concluída: {total} registros no total ==='))

@@ -127,34 +127,50 @@ def migrar_financeiro_pagamentos_task(self, limite=1000):
         raise
 
 
-@shared_task(bind=True, name='pinbank.carga_base_unificada', soft_time_limit=7200, time_limit=7500)
-def carga_base_unificada_task(self):
+@shared_task(bind=True, name='pinbank.carga_base_unificada_worker', soft_time_limit=7200, time_limit=7500)
+def carga_base_unificada_worker_task(self, worker_id):
     """
-    Task para executar carga completa da Base Unificada (POS + Credenciadora)
-    Processa transações de outubro/2025 em diante
-    Limite: 1000 registros por execução
-    Timeout: 2 horas
+    Task paralela para executar carga da Base Unificada
+    Cada worker processa NSUs onde MOD(NSU, 10) = worker_id
+    
+    Args:
+        worker_id: ID do worker (0-9)
     """
     from django.core.cache import cache
     
-    lock_key = "lock:carga_base_unificada"
+    lock_key = f"lock:carga_base_unificada:{worker_id}"
     lock_timeout = 7200  # 2 horas
     
     # Tentar adquirir lock
     if cache.get(lock_key):
-        logger.warning(f"[{datetime.now()}] Carga Base Unificada já está em execução. Pulando...")
-        return {'status': 'skipped', 'reason': 'already_running'}
+        logger.warning(f"[{datetime.now()}] Worker {worker_id} já está em execução. Pulando...")
+        return {'status': 'skipped', 'reason': 'already_running', 'worker_id': worker_id}
     
     cache.set(lock_key, "locked", lock_timeout)
     
     try:
-        logger.info(f"[{datetime.now()}] Iniciando carga Base Unificada (POS + Credenciadora) - limite 1000")
-        call_command('carga_base_unificada', limite=1000)
-        logger.info(f"[{datetime.now()}] Carga Base Unificada concluída com sucesso")
-        return {'status': 'success'}
+        logger.info(f"[{datetime.now()}] Worker {worker_id} iniciando - limite 1000")
+        call_command('carga_base_unificada', limite=1000, worker_id=worker_id)
+        logger.info(f"[{datetime.now()}] Worker {worker_id} concluído com sucesso")
+        return {'status': 'success', 'worker_id': worker_id}
     except Exception as e:
-        logger.error(f"[{datetime.now()}] Erro na carga Base Unificada: {str(e)}")
+        logger.error(f"[{datetime.now()}] Erro no Worker {worker_id}: {str(e)}")
         raise
     finally:
-        # Liberar lock
         cache.delete(lock_key)
+
+
+@shared_task(bind=True, name='pinbank.carga_base_unificada')
+def carga_base_unificada_task(self):
+    """
+    Task orquestradora que dispara 10 workers paralelos
+    Cada worker processa NSUs com MOD(NSU, 10) = worker_id
+    """
+    logger.info(f"[{datetime.now()}] Disparando 10 workers paralelos para carga Base Unificada")
+    
+    # Disparar 10 workers em paralelo
+    for worker_id in range(10):
+        carga_base_unificada_worker_task.delay(worker_id)
+    
+    logger.info(f"[{datetime.now()}] 10 workers disparados com sucesso")
+    return {'status': 'success', 'workers_dispatched': 10}

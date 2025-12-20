@@ -22,18 +22,24 @@ class CargaBaseUnificadaPOSService:
         from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
         self.calculadora = CalculadoraBaseGestao()
 
-    def carregar_valores_primarios(self, limite: int = None, nsu: str = None) -> int:
+    def carregar_valores_primarios(self, limite: int = None, nsu: str = None, worker_id: int = None) -> int:
         """
         Rotina principal de carga de variáveis primárias
         Processa registros com processado = 0 e data >= 2025-10-01
         Agrupa por NSU (1 linha por transação)
+        
+        Args:
+            limite: Limite de registros
+            nsu: NSU específico
+            worker_id: ID do worker (0-9) para processamento paralelo
         """
-        registrar_log('pinbank.cargas_pinbank', "Iniciando carga de valores primários - Base Unificada")
+        registrar_log('pinbank.cargas_pinbank', f"Iniciando carga de valores primários - Base Unificada (worker_id={worker_id})")
 
         limit_clause = f"LIMIT {limite}" if limite else ""
         nsu_clause = f"AND pep.NsuOperacao = '{nsu}'" if nsu else ""
+        worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 10) = {worker_id}" if worker_id is not None else ""
 
-        registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}")
+        registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}, worker_id={worker_id}")
 
         with connection.cursor() as cursor:
             # Query simplificada - pega apenas 1 registro por NSU (menor id)
@@ -98,11 +104,14 @@ class CargaBaseUnificadaPOSService:
                              FROM wallclub.pinbankExtratoPOS pep2
                              WHERE pep2.processado = 0
                              AND pep2.DataTransacao >= '2025-10-01'
+                             {worker_clause}
                              GROUP BY pep2.NsuOperacao
                          )
                          {nsu_clause}
+                         {worker_clause}
                 ORDER BY pep.id
                 {limit_clause}
+                FOR UPDATE SKIP LOCKED
             """)
 
             registrar_log('pinbank.cargas_pinbank', "Query executada com sucesso")
