@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def carga_extrato_pos_task(self, periodo='80min'):
     """
     Task para executar carga de extrato POS
-    
+
     Args:
         periodo: Período para buscar transações (ex: '80min', '2h', '1d')
     """
@@ -31,7 +31,7 @@ def carga_extrato_pos_task(self, periodo='80min'):
 def carga_base_gestao_task(self, limite=10000):
     """
     Task para executar carga base gestão (recálculo de variáveis)
-    
+
     Args:
         limite: Número máximo de registros a processar
     """
@@ -68,10 +68,10 @@ def cargas_completas_task(self):
     """
     import subprocess
     import sys
-    
+
     try:
         logger.info(f"[{datetime.now()}] 🚀 Executando script de cargas completas")
-        
+
         # Executar script Python
         result = subprocess.run(
             [sys.executable, '/app/pinbank/cargas_pinbank/executar_cargas_completas.py'],
@@ -79,7 +79,7 @@ def cargas_completas_task(self):
             text=True,
             cwd='/app'
         )
-        
+
         if result.returncode == 0:
             logger.info(f"[{datetime.now()}] 🎉 Script executado com sucesso")
             logger.info(result.stdout)
@@ -88,7 +88,7 @@ def cargas_completas_task(self):
             logger.error(f"[{datetime.now()}] ❌ Erro ao executar script")
             logger.error(result.stderr)
             raise Exception(f"Script falhou: {result.stderr}")
-        
+
     except Exception as e:
         logger.error(f"[{datetime.now()}] ⚠️ Erro nas cargas completas: {str(e)}")
         raise
@@ -113,7 +113,7 @@ def carga_credenciadora_task(self):
 def migrar_financeiro_pagamentos_task(self, limite=1000):
     """
     Task para migrar dados de wclub.financeiro para wallclub.pagamentos_efetuados
-    
+
     Args:
         limite: Número máximo de registros a processar por execução (padrão: 1000)
     """
@@ -132,22 +132,22 @@ def carga_base_unificada_worker_task(self, worker_id):
     """
     Task paralela para executar carga da Base Unificada
     Cada worker processa NSUs onde MOD(NSU, 10) = worker_id
-    
+
     Args:
         worker_id: ID do worker (0-9)
     """
     from django.core.cache import cache
-    
+
     lock_key = f"lock:carga_base_unificada:{worker_id}"
     lock_timeout = 7200  # 2 horas
-    
+
     # Tentar adquirir lock
     if cache.get(lock_key):
         logger.warning(f"[{datetime.now()}] Worker {worker_id} já está em execução. Pulando...")
         return {'status': 'skipped', 'reason': 'already_running', 'worker_id': worker_id}
-    
+
     cache.set(lock_key, "locked", lock_timeout)
-    
+
     try:
         logger.info(f"[{datetime.now()}] Worker {worker_id} iniciando - limite 1000")
         call_command('carga_base_unificada', limite=1000, worker_id=worker_id)
@@ -163,14 +163,16 @@ def carga_base_unificada_worker_task(self, worker_id):
 @shared_task(bind=True, name='pinbank.carga_base_unificada')
 def carga_base_unificada_task(self):
     """
-    Task orquestradora que dispara 10 workers paralelos
-    Cada worker processa NSUs com MOD(NSU, 10) = worker_id
+    Task orquestradora que dispara 2 workers paralelos
+    Cada worker processa NSUs com MOD(NSU, 2) = worker_id
     """
-    logger.info(f"[{datetime.now()}] Disparando 10 workers paralelos para carga Base Unificada")
+    NUM_WORKERS = 2  # Ajustado para capacidade da máquina
     
-    # Disparar 10 workers em paralelo
-    for worker_id in range(10):
+    logger.info(f"[{datetime.now()}] Disparando {NUM_WORKERS} workers paralelos para carga Base Unificada")
+    
+    # Disparar workers em paralelo
+    for worker_id in range(NUM_WORKERS):
         carga_base_unificada_worker_task.delay(worker_id)
     
-    logger.info(f"[{datetime.now()}] 10 workers disparados com sucesso")
-    return {'status': 'success', 'workers_dispatched': 10}
+    logger.info(f"[{datetime.now()}] {NUM_WORKERS} workers disparados com sucesso")
+    return {'status': 'success', 'workers_dispatched': NUM_WORKERS}

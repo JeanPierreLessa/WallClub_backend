@@ -33,7 +33,7 @@ class CargaBaseUnificadaCredenciadoraService:
         Rotina principal de carga de variáveis primárias
         Processa registros com processado = 0
         Agrupa por NSU (1 linha por transação)
-        
+
         Args:
             limite: Limite de registros
             nsu: NSU específico
@@ -43,7 +43,7 @@ class CargaBaseUnificadaCredenciadoraService:
 
         limit_clause = f"LIMIT {limite}" if limite else ""
         nsu_clause = f"AND pep.NsuOperacao = '{nsu}'" if nsu else ""
-        worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 10) = {worker_id}" if worker_id is not None else ""
+        worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 2) = {worker_id}" if worker_id is not None else ""
 
         registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}, worker_id={worker_id}")
 
@@ -382,33 +382,33 @@ class CargaBaseUnificadaCredenciadoraService:
             FROM base_transacoes_unificadas
             WHERE var9 = %s AND tipo_operacao = 'Credenciadora'
         """, [nsu])
-        
+
         registro_atual = cursor.fetchone()
 
         if registro_atual:
             var69_atual, var70_atual = registro_atual
             var69_novo = campos.get('var69')
             var70_novo = campos.get('var70')
-            
+
             # Só recalcular se status pagamento mudou OU data cancelamento foi preenchida
             status_mudou = str(var69_atual or '').strip() != str(var69_novo or '').strip()
             cancelamento_novo = (not var70_atual) and var70_novo
-            
+
             # Debug: logar comparação
             if status_mudou:
                 registrar_log('pinbank.cargas_pinbank', f"Status mudou NSU {nsu}: '{var69_atual}' -> '{var69_novo}'")
             if cancelamento_novo:
                 registrar_log('pinbank.cargas_pinbank', f"Cancelamento novo NSU {nsu}: {var70_novo}")
-            
+
             if status_mudou or cancelamento_novo:
                 # Fazer UPDATE completo
                 set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
                 valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
                 valores_update.append(nsu)
-                
+
                 sql_update = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
                 cursor.execute(sql_update, valores_update)
-                
+
                 # Registrar auditoria
                 import json
                 motivo = []
@@ -416,9 +416,9 @@ class CargaBaseUnificadaCredenciadoraService:
                     motivo.append(f"status: {var69_atual} -> {var69_novo}")
                 if cancelamento_novo:
                     motivo.append(f"cancelamento: {var70_novo}")
-                
+
                 cursor.execute("""
-                    INSERT INTO auditoria_base_unificada_mudancas 
+                    INSERT INTO auditoria_base_unificada_mudancas
                     (var9, tipo_operacao, colunas_alteradas, qtd_colunas_alteradas)
                     VALUES (%s, 'Credenciadora', %s, %s)
                 """, [nsu, json.dumps(motivo), 1])

@@ -27,7 +27,7 @@ class CargaBaseUnificadaPOSService:
         Rotina principal de carga de variáveis primárias
         Processa registros com processado = 0 e data >= 2025-10-01
         Agrupa por NSU (1 linha por transação)
-        
+
         Args:
             limite: Limite de registros
             nsu: NSU específico
@@ -37,7 +37,7 @@ class CargaBaseUnificadaPOSService:
 
         limit_clause = f"LIMIT {limite}" if limite else ""
         nsu_clause = f"AND pep.NsuOperacao = '{nsu}'" if nsu else ""
-        worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 10) = {worker_id}" if worker_id is not None else ""
+        worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 2) = {worker_id}" if worker_id is not None else ""
 
         registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}, worker_id={worker_id}")
 
@@ -299,16 +299,16 @@ class CargaBaseUnificadaPOSService:
     def _inserir_registro_sql(self, cursor, campos: Dict[str, Any]):
         """Insere ou atualiza registro - só UPDATE se status ou pagamento mudou"""
         nsu = campos.get('var9')
-        
+
         # Buscar var69 (status), var70 (cancelamento), var44 (valor pago) e var45 (data pagamento)
         cursor.execute("""
             SELECT var69, var70, var44, var45
-            FROM wallclub.base_transacoes_unificadas 
+            FROM wallclub.base_transacoes_unificadas
             WHERE var9 = %s AND tipo_operacao = 'Wallet'
         """, [nsu])
-        
+
         registro_atual = cursor.fetchone()
-        
+
         # Verificar estrutura da tabela
         cursor.execute("DESCRIBE wallclub.base_transacoes_unificadas")
         colunas_tabela = [row[0] for row in cursor.fetchall()]
@@ -322,7 +322,7 @@ class CargaBaseUnificadaPOSService:
             var70_novo = campos.get('var70')
             var44_novo = campos.get('var44')
             var45_novo = campos.get('var45')
-            
+
             # Só recalcular se:
             # 1. Status pagamento mudou
             # 2. Data cancelamento foi preenchida
@@ -330,16 +330,16 @@ class CargaBaseUnificadaPOSService:
             status_mudou = str(var69_atual or '') != str(var69_novo or '')
             cancelamento_novo = (not var70_atual) and var70_novo
             pagamento_mudou = (str(var44_atual or '') != str(var44_novo or '')) or (str(var45_atual or '') != str(var45_novo or ''))
-            
+
             if status_mudou or cancelamento_novo or pagamento_mudou:
                 # UPDATE completo
                 set_clause = ', '.join([f'`{col}` = %s' for col in campos_validos.keys() if col != 'var9'])
                 valores = [v for k, v in campos_validos.items() if k != 'var9']
                 valores.append(nsu)
-                
+
                 sql = f"UPDATE wallclub.base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Wallet'"
                 cursor.execute(sql, valores)
-                
+
                 # Registrar auditoria
                 import json
                 motivo = []
@@ -349,9 +349,9 @@ class CargaBaseUnificadaPOSService:
                     motivo.append(f"cancelamento: {var70_novo}")
                 if pagamento_mudou:
                     motivo.append(f"pagamento: var44={var44_novo}, var45={var45_novo}")
-                
+
                 cursor.execute("""
-                    INSERT INTO auditoria_base_unificada_mudancas 
+                    INSERT INTO auditoria_base_unificada_mudancas
                     (var9, tipo_operacao, colunas_alteradas, qtd_colunas_alteradas)
                     VALUES (%s, 'Wallet', %s, %s)
                 """, [nsu, json.dumps(motivo), 1])
