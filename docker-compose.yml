@@ -152,7 +152,7 @@ services:
       context: .
       dockerfile: Dockerfile.portais
     container_name: wallclub-celery-worker
-    command: celery -A wallclub worker --loglevel=info --pool=solo -E
+    command: celery -A wallclub worker --loglevel=info --concurrency=5 -E --max-tasks-per-child=100
     env_file:
       - ./services/django/.env
     environment:
