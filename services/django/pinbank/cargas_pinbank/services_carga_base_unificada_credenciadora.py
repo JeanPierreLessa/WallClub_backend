@@ -120,7 +120,6 @@ class CargaBaseUnificadaCredenciadoraService:
                          {worker_clause}
                 ORDER BY pep.id
                 {limit_clause}
-                FOR UPDATE SKIP LOCKED
             """)
 
             registrar_log('pinbank.cargas_pinbank', "Query executada com sucesso")
