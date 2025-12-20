@@ -382,8 +382,14 @@ class CargaBaseUnificadaCredenciadoraService:
             var70_novo = campos.get('var70')
             
             # Só recalcular se status pagamento mudou OU data cancelamento foi preenchida
-            status_mudou = str(var69_atual or '') != str(var69_novo or '')
+            status_mudou = str(var69_atual or '').strip() != str(var69_novo or '').strip()
             cancelamento_novo = (not var70_atual) and var70_novo
+            
+            # Debug: logar comparação
+            if status_mudou:
+                registrar_log('pinbank.cargas_pinbank', f"Status mudou NSU {nsu}: '{var69_atual}' -> '{var69_novo}'")
+            if cancelamento_novo:
+                registrar_log('pinbank.cargas_pinbank', f"Cancelamento novo NSU {nsu}: {var70_novo}")
             
             if status_mudou or cancelamento_novo:
                 # Fazer UPDATE completo
