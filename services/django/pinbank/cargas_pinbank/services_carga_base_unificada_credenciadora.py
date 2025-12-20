@@ -91,28 +91,30 @@ class CargaBaseUnificadaCredenciadoraService:
                            FROM   wallclub.pinbankExtratoPOS pep2
                            WHERE  pep.NsuOperacao = pep2.NsuOperacao
                                   AND pep2.DescricaoStatusPagamento in ('Pago','Pago-M'))   vRepasse
-                FROM     wallclub.pinbankExtratoPOS pep,
-                         wallclub.credenciaisExtratoContaPinbank cecp,
-                         wallclub.loja l
-                WHERE    pep.codigo_cliente = cecp.codigo_cliente
-                         and l.id = cecp.cliente_id
-                         and pep.processado = 0
-                         and pep.DataTransacao >= '2025-10-01'
-                         and pep.NsuOperacao not in ( select nsuPinbank from transactiondata)
-                         and pep.NsuOperacaoLoja not in ( select nsu from checkout_transactions where nsu is not null )
-                         and serialnumber not in ( select terminal from terminais )
+                FROM     wallclub.pinbankExtratoPOS pep
+                INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
+                INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
+                LEFT JOIN transactiondata td ON pep.NsuOperacao = td.nsuPinbank
+                LEFT JOIN checkout_transactions ct ON pep.NsuOperacaoLoja = ct.nsu
+                LEFT JOIN terminais t ON pep.serialnumber = t.terminal
+                WHERE    pep.processado = 0
+                         AND pep.DataTransacao >= '2025-10-01'
+                         AND td.nsuPinbank IS NULL
+                         AND ct.nsu IS NULL
+                         AND t.terminal IS NULL
                          AND pep.id IN (
                              SELECT MIN(pep2.id)
-                             FROM wallclub.pinbankExtratoPOS pep2,
-                                  wallclub.credenciaisExtratoContaPinbank cecp2,
-                                  wallclub.loja l2
-                             WHERE pep2.codigo_cliente = cecp2.codigo_cliente
-                             AND l2.id = cecp2.cliente_id
-                             AND pep2.processado = 0
+                             FROM wallclub.pinbankExtratoPOS pep2
+                             INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp2 ON pep2.codigo_cliente = cecp2.codigo_cliente
+                             INNER JOIN wallclub.loja l2 ON l2.id = cecp2.cliente_id
+                             LEFT JOIN transactiondata td2 ON pep2.NsuOperacao = td2.nsuPinbank
+                             LEFT JOIN checkout_transactions ct2 ON pep2.NsuOperacaoLoja = ct2.nsu
+                             LEFT JOIN terminais t2 ON pep2.serialnumber = t2.terminal
+                             WHERE pep2.processado = 0
                              AND pep2.DataTransacao >= '2025-10-01'
-                             AND pep2.NsuOperacao NOT IN (SELECT nsuPinbank FROM transactiondata)
-                             AND pep2.NsuOperacaoLoja NOT IN (SELECT nsu FROM checkout_transactions WHERE nsu IS NOT NULL)
-                             AND pep2.serialnumber NOT IN (SELECT terminal FROM terminais)
+                             AND td2.nsuPinbank IS NULL
+                             AND ct2.nsu IS NULL
+                             AND t2.terminal IS NULL
                              {worker_clause}
                              GROUP BY pep2.NsuOperacao
                          )
