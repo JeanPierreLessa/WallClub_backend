@@ -131,10 +131,10 @@ def migrar_financeiro_pagamentos_task(self, limite=1000):
 def carga_base_unificada_worker_task(self, worker_id):
     """
     Task paralela para executar carga da Base Unificada
-    Cada worker processa NSUs onde MOD(NSU, 10) = worker_id
+    Cada worker processa NSUs onde MOD(NSU, 5) = worker_id
 
     Args:
-        worker_id: ID do worker (0-9)
+        worker_id: ID do worker (0-4)
     """
     from django.core.cache import cache
 
@@ -163,10 +163,10 @@ def carga_base_unificada_worker_task(self, worker_id):
 @shared_task(bind=True, name='pinbank.carga_base_unificada')
 def carga_base_unificada_task(self):
     """
-    Task orquestradora que dispara 2 workers paralelos
-    Cada worker processa NSUs com MOD(NSU, 2) = worker_id
+    Task orquestradora que dispara 5 workers paralelos
+    Cada worker processa NSUs com MOD(NSU, 5) = worker_id
     """
-    NUM_WORKERS = 2  # Ajustado para capacidade da máquina
+    NUM_WORKERS = 5  # 5 workers paralelos
     
     logger.info(f"[{datetime.now()}] Disparando {NUM_WORKERS} workers paralelos para carga Base Unificada")
     
