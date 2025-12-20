@@ -149,8 +149,8 @@ def carga_base_unificada_worker_task(self, worker_id):
     cache.set(lock_key, "locked", lock_timeout)
 
     try:
-        logger.info(f"[{datetime.now()}] Worker {worker_id} iniciando - limite 1000")
-        call_command('carga_base_unificada', limite=1000, worker_id=worker_id)
+        logger.info(f"[{datetime.now()}] Worker {worker_id} iniciando - limite 100")
+        call_command('carga_base_unificada', limite=100, worker_id=worker_id)
         logger.info(f"[{datetime.now()}] Worker {worker_id} concluído com sucesso")
         return {'status': 'success', 'worker_id': worker_id}
     except Exception as e:
