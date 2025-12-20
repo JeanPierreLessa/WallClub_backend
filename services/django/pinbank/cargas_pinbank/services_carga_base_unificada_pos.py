@@ -37,7 +37,7 @@ class CargaBaseUnificadaPOSService:
 
         limit_clause = f"LIMIT {limite}" if limite else ""
         nsu_clause = f"AND pep.NsuOperacao = '{nsu}'" if nsu else ""
-        worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 5) = {worker_id}" if worker_id is not None else ""
+        worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 2) = {worker_id}" if worker_id is not None else ""
 
         registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}, worker_id={worker_id}")
 
