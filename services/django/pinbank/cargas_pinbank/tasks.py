@@ -127,17 +127,33 @@ def migrar_financeiro_pagamentos_task(self, limite=1000):
         raise
 
 
-@shared_task(bind=True, name='pinbank.carga_base_unificada')
+@shared_task(bind=True, name='pinbank.carga_base_unificada', soft_time_limit=7200, time_limit=7500)
 def carga_base_unificada_task(self):
     """
     Task para executar carga completa da Base Unificada (POS + Credenciadora)
     Processa transações de outubro/2025 em diante
+    Limite: 1000 registros por execução
+    Timeout: 2 horas
     """
+    from django_redis import get_redis_connection
+    
+    redis_conn = get_redis_connection("default")
+    lock_key = "lock:carga_base_unificada"
+    lock_timeout = 7200  # 2 horas
+    
+    # Tentar adquirir lock
+    if not redis_conn.set(lock_key, "locked", nx=True, ex=lock_timeout):
+        logger.warning(f"[{datetime.now()}] Carga Base Unificada já está em execução. Pulando...")
+        return {'status': 'skipped', 'reason': 'already_running'}
+    
     try:
-        logger.info(f"[{datetime.now()}] Iniciando carga Base Unificada (POS + Credenciadora)")
-        call_command('carga_base_unificada')
+        logger.info(f"[{datetime.now()}] Iniciando carga Base Unificada (POS + Credenciadora) - limite 1000")
+        call_command('carga_base_unificada', limite=1000)
         logger.info(f"[{datetime.now()}] Carga Base Unificada concluída com sucesso")
         return {'status': 'success'}
     except Exception as e:
         logger.error(f"[{datetime.now()}] Erro na carga Base Unificada: {str(e)}")
         raise
+    finally:
+        # Liberar lock
+        redis_conn.delete(lock_key)
