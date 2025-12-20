@@ -150,10 +150,12 @@ class CargaBaseUnificadaCredenciadoraService:
 
                 # Quando completar um lote de 100, processar
                 if len(lote_atual) >= BATCH_SIZE:
+                    import time
+                    inicio_lote = time.time()
                     registrar_log('pinbank.cargas_pinbank', f"Processando lote unificado Credenciadora {numero_lote}: {len(lote_atual)} registros")
 
                     with transaction.atomic():
-                        for row_lote in lote_atual:
+                        for idx, row_lote in enumerate(lote_atual):
                             linha = dict(zip(colunas, row_lote))
 
                             try:
@@ -177,10 +179,18 @@ class CargaBaseUnificadaCredenciadoraService:
                                 })
 
                                 # Calcular valores primários
+                                inicio_calc = time.time()
                                 valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                tempo_calc = time.time() - inicio_calc
+                                if tempo_calc > 1:
+                                    registrar_log('pinbank.cargas_pinbank', f"⚠️ Cálculo lento no registro {idx+1}: {tempo_calc:.2f}s")
 
                                 # Inserir na base unificada
+                                inicio_insert = time.time()
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
+                                tempo_insert = time.time() - inicio_insert
+                                if tempo_insert > 1:
+                                    registrar_log('pinbank.cargas_pinbank', f"⚠️ INSERT lento no registro {idx+1}: {tempo_insert:.2f}s")
 
                                 if sucesso:
                                     # Marcar TODAS as parcelas do NSU como processadas
@@ -203,6 +213,8 @@ class CargaBaseUnificadaCredenciadoraService:
 
                     registrar_log('pinbank.cargas_pinbank',
                                 f"Lote unificado Credenciadora {numero_lote} commitado ({len(lote_atual)} registros)")
+                    tempo_total_lote = time.time() - inicio_lote
+                    registrar_log('pinbank.cargas_pinbank', f"✅ Lote {numero_lote} concluído em {tempo_total_lote:.2f}s ({len(lote_atual)} registros)")
                     lote_atual = []
                     numero_lote += 1
 
