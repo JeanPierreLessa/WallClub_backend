@@ -349,17 +349,8 @@ class CargaBaseUnificadaCredenciadoraService:
         return campos
 
     def _inserir_registro_sql(self, cursor, campos: Dict[str, Any]):
-        """Insere novo registro usando SQL direto (apenas se NSU não existir)"""
+        """Insere ou atualiza registro - tenta UPDATE primeiro, se não existir faz INSERT"""
         nsu = campos.get('var9')
-
-        # Verificar se NSU já existe na base unificada
-        cursor.execute("""
-            SELECT COUNT(*)
-            FROM base_transacoes_unificadas
-            WHERE var9 = %s AND tipo_operacao = 'Credenciadora'
-        """, [nsu])
-
-        existe = cursor.fetchone()[0] > 0
 
         # Filtrar apenas campos válidos
         campos_validos = {k: v for k, v in campos.items() if k not in ['id']}
@@ -376,24 +367,22 @@ class CargaBaseUnificadaCredenciadoraService:
             else:
                 valores_finais.append(valor)
 
-        if existe:
-            # UPDATE - atualizar todas as colunas exceto var9 (chave)
-            set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
-            valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
-            valores_update.append(nsu)  # WHERE var9 = %s
+        # Tentar UPDATE primeiro
+        set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
+        valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
+        valores_update.append(nsu)  # WHERE var9 = %s
 
-            sql = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
-            cursor.execute(sql, valores_update)
-            registrar_log('pinbank.cargas_pinbank', f"🔄 Registro atualizado na base unificada (Credenciadora) - NSU: {nsu}")
-        else:
-            # INSERT
+        sql_update = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
+        cursor.execute(sql_update, valores_update)
+
+        # Se não atualizou nenhuma linha (não existe), fazer INSERT
+        if cursor.rowcount == 0:
             campos_sql = ', '.join(campos_ordenados)
             placeholders = ', '.join(['%s'] * len(campos_ordenados))
 
-            sql = f"""
+            sql_insert = f"""
                 INSERT INTO base_transacoes_unificadas ({campos_sql})
                 VALUES ({placeholders})
             """
 
-            cursor.execute(sql, valores_finais)
-            registrar_log('pinbank.cargas_pinbank', f"✅ Registro inserido na base unificada (Credenciadora) - NSU: {nsu}")
+            cursor.execute(sql_insert, valores_finais)
