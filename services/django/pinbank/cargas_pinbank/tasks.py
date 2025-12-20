@@ -135,16 +135,17 @@ def carga_base_unificada_task(self):
     Limite: 1000 registros por execução
     Timeout: 2 horas
     """
-    from django_redis import get_redis_connection
+    from django.core.cache import cache
     
-    redis_conn = get_redis_connection("default")
     lock_key = "lock:carga_base_unificada"
     lock_timeout = 7200  # 2 horas
     
     # Tentar adquirir lock
-    if not redis_conn.set(lock_key, "locked", nx=True, ex=lock_timeout):
+    if cache.get(lock_key):
         logger.warning(f"[{datetime.now()}] Carga Base Unificada já está em execução. Pulando...")
         return {'status': 'skipped', 'reason': 'already_running'}
+    
+    cache.set(lock_key, "locked", lock_timeout)
     
     try:
         logger.info(f"[{datetime.now()}] Iniciando carga Base Unificada (POS + Credenciadora) - limite 1000")
@@ -156,4 +157,4 @@ def carga_base_unificada_task(self):
         raise
     finally:
         # Liberar lock
-        redis_conn.delete(lock_key)
+        cache.delete(lock_key)
