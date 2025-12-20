@@ -152,7 +152,7 @@ services:
       context: .
       dockerfile: Dockerfile.portais
     container_name: wallclub-celery-worker
-    command: celery -A wallclub worker --loglevel=info --concurrency=5 --pool=solo
+    command: celery -A wallclub worker --loglevel=info --pool=solo -E
     env_file:
       - ./services/django/.env
     environment:
