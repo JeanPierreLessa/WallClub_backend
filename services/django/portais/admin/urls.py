@@ -90,6 +90,7 @@ urlpatterns = [
 
     # Terminais (REFATORADO - usando views_terminais.py)
     path('terminais/', views_terminais.terminais_list, name='terminais_list'),
+    path('terminais/historico/', views_terminais.terminais_historico, name='terminais_historico'),
     path('terminais/novo/', views_terminais.terminal_novo, name='terminal_novo'),
     path('terminais/<int:pk>/deletar/', views_terminais.terminal_delete, name='terminal_delete'),
 

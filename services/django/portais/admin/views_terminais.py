@@ -152,3 +152,62 @@ def terminal_delete(request, pk):
             messages.error(request, resultado['mensagem'])
     
     return redirect('portais_admin:terminais_list')
+
+
+@require_admin_access
+def terminais_historico(request):
+    """Lista histórico de terminais inativos (somente leitura)"""
+    usuario_logado = request.portal_usuario
+    
+    # Filtro por canal se necessário
+    nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
+    
+    if nivel_usuario == 'admin_canal':
+        canais_usuario = ControleAcessoService.obter_canais_usuario(usuario_logado)
+        canal_filter = f"AND c.id IN ({','.join(map(str, canais_usuario))})" if canais_usuario else "AND 1=0"
+    else:
+        canal_filter = ""
+    
+    # Query para buscar terminais inativos
+    from django.db import connection
+    query = f"""
+        SELECT 
+            t.id,
+            t.loja_id,
+            t.terminal,
+            t.idterminal,
+            t.endereco,
+            t.contato,
+            t.inicio,
+            t.fim,
+            l.razao_social as loja_nome,
+            c.nome as canal_nome
+        FROM terminais t
+        LEFT JOIN loja l ON t.loja_id = l.id
+        LEFT JOIN canal c ON l.canal_id = c.id
+        WHERE t.fim IS NOT NULL AND t.fim <= NOW() {canal_filter}
+        ORDER BY t.fim DESC, t.id DESC
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        terminais_inativos = cursor.fetchall()
+    
+    terminais = [{
+        'id': t[0],
+        'loja_id': t[1],
+        'terminal': t[2],
+        'idterminal': t[3],
+        'endereco': t[4],
+        'contato': t[5],
+        'inicio': t[6],
+        'fim': t[7],
+        'loja_nome': t[8],
+        'canal_nome': t[9]
+    } for t in terminais_inativos]
+    
+    context = {
+        'terminais': terminais,
+    }
+    
+    return render(request, 'portais/admin/terminais_historico.html', context)

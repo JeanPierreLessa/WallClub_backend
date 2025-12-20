@@ -1,0 +1,128 @@
+{% extends 'portais/admin/base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load controle_acesso_tags %}
+
+{% block title %}Histórico de Terminais - WallClub{% endblock %}
+
+{% block navbar_actions %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .badge-inativo {
+        background-color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-compact">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-history me-2" style="color: var(--primary-color);"></i>
+        <h1 class="mb-0">Histórico de Terminais</h1>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="form-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-archive me-2"></i>
+                    Terminais Inativos
+                    <a href="{% url 'portais_admin:terminais_list' %}" class="btn btn-sm btn-primary ms-2">
+                        <i class="fas fa-arrow-left me-1"></i>Voltar para Ativos
+                    </a>
+                </h5>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Esta página mostra apenas terminais que foram encerrados. Nenhuma edição é permitida.
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>ID</th>
+                                <th>Canal</th>
+                                <th>Loja</th>
+                                <th>Nr.Série Terminal</th>
+                                <th>Id do Terminal</th>
+                                <th>Endereço</th>
+                                <th>Contato</th>
+                                <th>Início operação</th>
+                                <th>Fim operação</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for terminal in terminais %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">#{{ terminal.id }}</span>
+                                </td>
+                                <td>
+                                    <small>{{ terminal.canal_nome|default:"-" }}</small>
+                                </td>
+                                <td>
+                                    <small><strong>{{ terminal.loja_nome|default:"-" }}</strong></small>
+                                </td>
+                                <td>
+                                    <small>{{ terminal.terminal|default:"-" }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ terminal.idterminal|default:"-" }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ terminal.endereco|default:"-"|truncatechars:30 }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ terminal.contato|default:"-" }}</small>
+                                </td>
+                                <td>
+                                    {% if terminal.inicio %}
+                                        <small class="text-muted">{{ terminal.inicio|timestamp_to_display }}</small>
+                                    {% else %}
+                                        <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if terminal.fim %}
+                                        <small class="text-danger"><strong>{{ terminal.fim|timestamp_to_display }}</strong></small>
+                                    {% else %}
+                                        <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-inativo">
+                                        <i class="fas fa-times-circle me-1"></i>Inativo
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center text-muted">
+                                    <i class="fas fa-inbox me-2"></i>
+                                    Nenhum terminal inativo encontrado
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if terminais %}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Total de terminais inativos: <strong>{{ terminais|length }}</strong>
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

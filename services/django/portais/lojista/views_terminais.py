@@ -56,7 +56,7 @@ class LojistaTerminaisView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
             })
             return context
         
-        # Query para buscar terminais
+        # Query para buscar terminais ativos
         sql = """
         SELECT  l.razao_social AS `Lojista`,
                 t.terminal AS `Nr_Serie_Terminal`,
@@ -64,6 +64,7 @@ class LojistaTerminaisView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
         FROM    terminais t
         INNER JOIN loja l ON t.loja_id = l.id
         WHERE   l.id IN %s
+                AND (t.fim IS NULL OR t.fim > NOW())
         ORDER BY t.inicio DESC
         """
         
