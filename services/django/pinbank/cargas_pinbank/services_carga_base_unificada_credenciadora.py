@@ -211,6 +211,9 @@ class CargaBaseUnificadaCredenciadoraService:
                                 
                                 if var69_atual is None:
                                     # Registro novo - inserir
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                        f"NSU {linha['NsuOperacao']}: NOVO (var69=NULL, status={descricao_status_normalizado}) → INSERT")
+                                    
                                     inicio_calculo = time.time()
                                     valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
                                     tempo_calculo = time.time() - inicio_calculo
@@ -228,12 +231,15 @@ class CargaBaseUnificadaCredenciadoraService:
                                                     nivel='ERROR')
                                 elif var69_atual == descricao_status_normalizado:
                                     # Status não mudou - apenas marca como processado
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                        f"NSU {linha['NsuOperacao']}: SEM MUDANÇA (var69={var69_atual}, status={descricao_status_normalizado}) → SKIP")
+                                    
                                     ids_processados.append(linha['id'])
                                     registros_processados += 1
                                 else:
                                     # Status mudou - atualizar
                                     registrar_log('pinbank.cargas_pinbank', 
-                                        f"Status mudou NSU {linha['NsuOperacao']}: '{var69_atual}' -> '{descricao_status_normalizado}'")
+                                        f"NSU {linha['NsuOperacao']}: MUDANÇA (var69={var69_atual} → status={descricao_status_normalizado}) → UPDATE")
                                     
                                     inicio_calculo = time.time()
                                     valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
