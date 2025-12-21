@@ -150,9 +150,9 @@ class CargaBaseUnificadaPOSService:
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                                 if sucesso:
-                                    # Marcar TODAS as parcelas do NSU como processadas
+                                    # Marcar apenas o registro específico como processado
                                     PinbankExtratoPOS.objects.filter(
-                                        NsuOperacao=linha['NsuOperacao']
+                                        id=linha['id']
                                     ).update(processado=1)
                                     registros_processados += 1
                                 else:
@@ -185,7 +185,7 @@ class CargaBaseUnificadaPOSService:
 
                             if sucesso:
                                 PinbankExtratoPOS.objects.filter(
-                                    NsuOperacao=linha['NsuOperacao']
+                                    id=linha['id']
                                 ).update(processado=1)
                                 registros_processados += 1
                             else:

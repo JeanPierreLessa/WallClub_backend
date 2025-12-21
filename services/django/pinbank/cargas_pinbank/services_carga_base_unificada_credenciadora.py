@@ -213,12 +213,13 @@ class CargaBaseUnificadaCredenciadoraService:
                                             nivel='ERROR')
                                 registrar_log('pinbank.cargas_pinbank', f"Traceback: {erro_detalhado}", nivel='ERROR')
 
-                    # Batch update: marcar todos NSUs processados de uma vez
+                    # Batch update: marcar apenas os IDs específicos processados
                     if nsus_processados:
+                        ids_processados = [linha['id'] for linha in [dict(zip(colunas, row)) for row in lote_atual] if linha['NsuOperacao'] in nsus_processados]
                         PinbankExtratoPOS.objects.filter(
-                            NsuOperacao__in=nsus_processados
+                            id__in=ids_processados
                         ).update(processado=1)
-                        registrar_log('pinbank.cargas_pinbank', f"✅ {len(nsus_processados)} NSUs marcados como processados")
+                        registrar_log('pinbank.cargas_pinbank', f"✅ {len(ids_processados)} registros marcados como processados")
 
                     tempo_total_lote = time.time() - inicio_lote
                     registrar_log('pinbank.cargas_pinbank', f"✅ Lote {numero_lote} concluído em {tempo_total_lote:.2f}s ({registros_processados} registros)")
