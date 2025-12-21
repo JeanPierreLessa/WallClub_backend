@@ -91,7 +91,7 @@ class CargaBaseUnificadaCredenciadoraService:
                            FROM   wallclub.pinbankExtratoPOS pep2
                            WHERE  pep.NsuOperacao = pep2.NsuOperacao
                                   AND pep2.DescricaoStatusPagamento in ('Pago','Pago-M'))   vRepasse,
-                         ( SELECT var69 
+                         ( SELECT var69
                            FROM   base_transacoes_unificadas btu
                            WHERE  btu.var9 = CAST(pep.NsuOperacao AS CHAR) COLLATE utf8mb4_unicode_ci ) var69_atual
                 FROM     wallclub.pinbankExtratoPOS pep
@@ -101,7 +101,6 @@ class CargaBaseUnificadaCredenciadoraService:
                 LEFT JOIN checkout_transactions ct ON pep.NsuOperacaoLoja = ct.nsu
                 LEFT JOIN terminais t ON pep.serialnumber = t.terminal
                 WHERE    pep.processado = 0
-                         AND pep.DataTransacao >= '2025-10-01'
                          AND td.nsuPinbank IS NULL
                          AND ct.nsu IS NULL
                          AND t.terminal IS NULL
@@ -177,7 +176,7 @@ class CargaBaseUnificadaCredenciadoraService:
                             try:
                                 import time
                                 inicio_registro = time.time()
-                                
+
                                 # Montar info_loja e info_canal
                                 linha['info_loja'] = {
                                     'id': linha.get('clienteId'),
@@ -198,22 +197,22 @@ class CargaBaseUnificadaCredenciadoraService:
                                 })
 
                                 tempo_setup = time.time() - inicio_registro
-                                
+
                                 # Verificar se precisa inserir/atualizar
                                 var69_atual = linha.get('var69_atual')
                                 descricao_status = linha.get('DescricaoStatusPagamento')
                                 # Normalizar Pago-M para Pago
                                 descricao_status_normalizado = 'Pago' if descricao_status == 'Pago-M' else descricao_status
-                                
+
                                 # Caso 1: var69_atual = NULL → registro novo → INSERT
                                 # Caso 2: var69_atual = DescricaoStatusPagamento → sem mudança → apenas marca processado
                                 # Caso 3: var69_atual ≠ DescricaoStatusPagamento → status mudou → INSERT/UPDATE
-                                
+
                                 if var69_atual is None:
                                     # Registro novo - inserir
-                                    registrar_log('pinbank.cargas_pinbank', 
+                                    registrar_log('pinbank.cargas_pinbank',
                                         f"NSU {linha['NsuOperacao']}: NOVO (var69=NULL, status={descricao_status_normalizado}) → INSERT")
-                                    
+
                                     inicio_calculo = time.time()
                                     valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
                                     tempo_calculo = time.time() - inicio_calculo
@@ -221,7 +220,7 @@ class CargaBaseUnificadaCredenciadoraService:
                                     inicio_insert = time.time()
                                     sucesso = self._inserir_valores_base_unificada(valores, linha)
                                     tempo_insert = time.time() - inicio_insert
-                                    
+
                                     if sucesso:
                                         ids_processados.append(linha['id'])
                                         registros_processados += 1
@@ -231,16 +230,16 @@ class CargaBaseUnificadaCredenciadoraService:
                                                     nivel='ERROR')
                                 elif var69_atual == descricao_status_normalizado:
                                     # Status não mudou - apenas marca como processado
-                                    registrar_log('pinbank.cargas_pinbank', 
+                                    registrar_log('pinbank.cargas_pinbank',
                                         f"NSU {linha['NsuOperacao']}: SEM MUDANÇA (var69={var69_atual}, status={descricao_status_normalizado}) → SKIP")
-                                    
+
                                     ids_processados.append(linha['id'])
                                     registros_processados += 1
                                 else:
                                     # Status mudou - atualizar
-                                    registrar_log('pinbank.cargas_pinbank', 
+                                    registrar_log('pinbank.cargas_pinbank',
                                         f"NSU {linha['NsuOperacao']}: MUDANÇA (var69={var69_atual} → status={descricao_status_normalizado}) → UPDATE")
-                                    
+
                                     inicio_calculo = time.time()
                                     valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
                                     tempo_calculo = time.time() - inicio_calculo
@@ -248,7 +247,7 @@ class CargaBaseUnificadaCredenciadoraService:
                                     inicio_insert = time.time()
                                     sucesso = self._inserir_ou_atualizar_valores(valores, linha)
                                     tempo_insert = time.time() - inicio_insert
-                                    
+
                                     if sucesso:
                                         ids_processados.append(linha['id'])
                                         registros_processados += 1
@@ -256,11 +255,11 @@ class CargaBaseUnificadaCredenciadoraService:
                                         registrar_log('pinbank.cargas_pinbank',
                                                     f"Valores não foram atualizados para NSU={linha['NsuOperacao']}",
                                                     nivel='ERROR')
-                                
+
                                 tempo_total_registro = time.time() - inicio_registro
-                                
+
                                 if tempo_total_registro > 1:
-                                    registrar_log('pinbank.cargas_pinbank', 
+                                    registrar_log('pinbank.cargas_pinbank',
                                         f"⚠️ NSU {linha['NsuOperacao']} demorou {tempo_total_registro:.2f}s",
                                         nivel='WARNING')
 
@@ -318,14 +317,14 @@ class CargaBaseUnificadaCredenciadoraService:
                             var69_atual = linha.get('var69_atual')
                             descricao_status = linha.get('DescricaoStatusPagamento')
                             descricao_status_normalizado = 'Pago' if descricao_status == 'Pago-M' else descricao_status
-                            
+
                             if var69_atual is None:
-                                registrar_log('pinbank.cargas_pinbank', 
+                                registrar_log('pinbank.cargas_pinbank',
                                     f"NSU {linha['NsuOperacao']}: NOVO (var69=NULL, status={descricao_status_normalizado}) → INSERT")
-                                
+
                                 valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
-                                
+
                                 if sucesso:
                                     ids_processados.append(linha['id'])
                                     registros_processados += 1
@@ -334,18 +333,18 @@ class CargaBaseUnificadaCredenciadoraService:
                                                 f"Valores não foram inseridos para NSU={linha['NsuOperacao']}",
                                                 nivel='ERROR')
                             elif var69_atual == descricao_status_normalizado:
-                                registrar_log('pinbank.cargas_pinbank', 
+                                registrar_log('pinbank.cargas_pinbank',
                                     f"NSU {linha['NsuOperacao']}: SEM MUDANÇA (var69={var69_atual}, status={descricao_status_normalizado}) → SKIP")
-                                
+
                                 ids_processados.append(linha['id'])
                                 registros_processados += 1
                             else:
-                                registrar_log('pinbank.cargas_pinbank', 
+                                registrar_log('pinbank.cargas_pinbank',
                                     f"NSU {linha['NsuOperacao']}: MUDANÇA (var69={var69_atual} → status={descricao_status_normalizado}) → UPDATE")
-                                
+
                                 valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
                                 sucesso = self._inserir_ou_atualizar_valores(valores, linha)
-                                
+
                                 if sucesso:
                                     ids_processados.append(linha['id'])
                                     registros_processados += 1
@@ -530,9 +529,9 @@ class CargaBaseUnificadaCredenciadoraService:
         # INSERT ON DUPLICATE KEY UPDATE
         placeholders = ', '.join(['%s'] * len(campos_ordenados))
         update_clause = ', '.join([f'{campo} = VALUES({campo})' for campo in campos_ordenados if campo not in ['var9', 'tipo_operacao']])
-        
+
         sql_insert = f"""
-            INSERT INTO base_transacoes_unificadas ({', '.join(campos_ordenados)}) 
+            INSERT INTO base_transacoes_unificadas ({', '.join(campos_ordenados)})
             VALUES ({placeholders})
             ON DUPLICATE KEY UPDATE {update_clause}
         """
