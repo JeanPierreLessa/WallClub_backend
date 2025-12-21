@@ -44,14 +44,14 @@ app.conf.beat_schedule = {
         }
     },
 
-    # Cargas completas - De hora em hora, minuto 5, das 5h às 23h
-    'cargas-completas-pinbank': {
-        'task': 'pinbank.cargas_completas',
-        'schedule': crontab(minute=5, hour='5-23'),  # xx:05 das 5h às 23h
-        'options': {
-            'expires': 3600,  # Expira em 1 hora
-        }
-    },
+    # Cargas completas - De hora em hora, minuto 5, das 5h às 23h (DESABILITADO)
+    # 'cargas-completas-pinbank': {
+    #     'task': 'pinbank.cargas_completas',
+    #     'schedule': crontab(minute=5, hour='5-23'),  # xx:05 das 5h às 23h
+    #     'options': {
+    #         'expires': 3600,  # Expira em 1 hora
+    #     }
+    # },
 
     # Carga Base Unificada (POS + Credenciadora) - A cada 10 minutos
     'carga-base-unificada': {
