@@ -90,7 +90,10 @@ class CargaBaseUnificadaCredenciadoraService:
                          ( SELECT  SUM(pep2.ValorLiquidoRepasse)
                            FROM   wallclub.pinbankExtratoPOS pep2
                            WHERE  pep.NsuOperacao = pep2.NsuOperacao
-                                  AND pep2.DescricaoStatusPagamento in ('Pago','Pago-M'))   vRepasse
+                                  AND pep2.DescricaoStatusPagamento in ('Pago','Pago-M'))   vRepasse,
+                         ( SELECT var69 
+                           FROM   base_transacoes_unificadas btu
+                           WHERE  btu.var9 = CAST(pep.NsuOperacao AS CHAR) COLLATE utf8mb4_unicode_ci ) var69_atual
                 FROM     wallclub.pinbankExtratoPOS pep
                 INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
                 INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
@@ -196,30 +199,64 @@ class CargaBaseUnificadaCredenciadoraService:
 
                                 tempo_setup = time.time() - inicio_registro
                                 
-                                # Calcular valores primários
-                                inicio_calculo = time.time()
-                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
-                                tempo_calculo = time.time() - inicio_calculo
-
-                                # Inserir na base unificada
-                                inicio_insert = time.time()
-                                sucesso = self._inserir_valores_base_unificada(valores, linha)
-                                tempo_insert = time.time() - inicio_insert
+                                # Verificar se precisa inserir/atualizar
+                                var69_atual = linha.get('var69_atual')
+                                descricao_status = linha.get('DescricaoStatusPagamento')
+                                # Normalizar Pago-M para Pago
+                                descricao_status_normalizado = 'Pago' if descricao_status == 'Pago-M' else descricao_status
                                 
-                                tempo_total_registro = time.time() - inicio_registro
+                                # Caso 1: var69_atual = NULL → registro novo → INSERT
+                                # Caso 2: var69_atual = DescricaoStatusPagamento → sem mudança → apenas marca processado
+                                # Caso 3: var69_atual ≠ DescricaoStatusPagamento → status mudou → INSERT/UPDATE
                                 
-                                if tempo_total_registro > 5:
-                                    registrar_log('pinbank.cargas_pinbank', 
-                                        f"⚠️ NSU {linha['NsuOperacao']} demorou {tempo_total_registro:.2f}s (setup={tempo_setup:.2f}s, calc={tempo_calculo:.2f}s, insert={tempo_insert:.2f}s)",
-                                        nivel='WARNING')
+                                if var69_atual is None:
+                                    # Registro novo - inserir
+                                    inicio_calculo = time.time()
+                                    valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                    tempo_calculo = time.time() - inicio_calculo
 
-                                if sucesso:
+                                    inicio_insert = time.time()
+                                    sucesso = self._inserir_valores_base_unificada(valores, linha)
+                                    tempo_insert = time.time() - inicio_insert
+                                    
+                                    if sucesso:
+                                        ids_processados.append(linha['id'])
+                                        registros_processados += 1
+                                    else:
+                                        registrar_log('pinbank.cargas_pinbank',
+                                                    f"Valores não foram inseridos para NSU={linha['NsuOperacao']}",
+                                                    nivel='ERROR')
+                                elif var69_atual == descricao_status_normalizado:
+                                    # Status não mudou - apenas marca como processado
                                     ids_processados.append(linha['id'])
                                     registros_processados += 1
                                 else:
-                                    registrar_log('pinbank.cargas_pinbank',
-                                                f"Valores não foram inseridos para NSU={linha['NsuOperacao']}",
-                                                nivel='ERROR')
+                                    # Status mudou - atualizar
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                        f"Status mudou NSU {linha['NsuOperacao']}: '{var69_atual}' -> '{descricao_status_normalizado}'")
+                                    
+                                    inicio_calculo = time.time()
+                                    valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                    tempo_calculo = time.time() - inicio_calculo
+
+                                    inicio_insert = time.time()
+                                    sucesso = self._inserir_ou_atualizar_valores(valores, linha)
+                                    tempo_insert = time.time() - inicio_insert
+                                    
+                                    if sucesso:
+                                        ids_processados.append(linha['id'])
+                                        registros_processados += 1
+                                    else:
+                                        registrar_log('pinbank.cargas_pinbank',
+                                                    f"Valores não foram atualizados para NSU={linha['NsuOperacao']}",
+                                                    nivel='ERROR')
+                                
+                                tempo_total_registro = time.time() - inicio_registro
+                                
+                                if tempo_total_registro > 1:
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                        f"⚠️ NSU {linha['NsuOperacao']} demorou {tempo_total_registro:.2f}s",
+                                        nivel='WARNING')
 
                             except Exception as e:
                                 import traceback
@@ -325,6 +362,28 @@ class CargaBaseUnificadaCredenciadoraService:
                         nivel='ERROR')
             return False
 
+    def _inserir_ou_atualizar_valores(self, valores: Dict[str, Any], linha: Dict[str, Any]) -> bool:
+        """
+        Insere ou atualiza valores na base_transacoes_unificadas usando INSERT ON DUPLICATE KEY UPDATE
+        """
+        try:
+            # Preparar campos para inserção
+            campos = self._preparar_campos_insercao(valores, linha)
+
+            # Inserir/atualizar via SQL direto
+            with connection.cursor() as cursor:
+                self._inserir_ou_atualizar_registro_sql(cursor, campos)
+
+            return True
+
+        except Exception as e:
+            import traceback
+            erro_detalhado = traceback.format_exc()
+            registrar_log('pinbank.cargas_pinbank',
+                        f"Erro ao inserir/atualizar na base unificada: {str(e)}",
+                        nivel='ERROR')
+            return False
+
     def _preparar_campos_insercao(self, valores: Dict[str, Any], linha: Dict[str, Any]) -> Dict[str, Any]:
         """Prepara campos para inserção na base_transacoes_unificadas"""
         from datetime import datetime
@@ -391,7 +450,7 @@ class CargaBaseUnificadaCredenciadoraService:
         return campos
 
     def _inserir_registro_sql(self, cursor, campos: Dict[str, Any]):
-        """Insere ou atualiza registro - tenta UPDATE primeiro, se não existir faz INSERT"""
+        """Insere registro usando INSERT IGNORE (não atualiza duplicatas)"""
         nsu = campos.get('var9')
 
         # Filtrar apenas campos válidos
@@ -409,60 +468,37 @@ class CargaBaseUnificadaCredenciadoraService:
             else:
                 valores_finais.append(valor)
 
-        # Buscar apenas var69 (status pagamento) e var70 (data cancelamento) para verificar se mudou
-        cursor.execute("""
-            SELECT var69, var70
-            FROM base_transacoes_unificadas
-            WHERE var9 = %s AND tipo_operacao = 'Credenciadora'
-        """, [nsu])
+        # INSERT IGNORE: insere apenas se não existir (ignora duplicatas)
+        placeholders = ', '.join(['%s'] * len(campos_ordenados))
+        sql_insert = f"INSERT IGNORE INTO base_transacoes_unificadas ({', '.join(campos_ordenados)}) VALUES ({placeholders})"
+        cursor.execute(sql_insert, valores_finais)
 
-        registro_atual = cursor.fetchone()
+    def _inserir_ou_atualizar_registro_sql(self, cursor, campos: Dict[str, Any]):
+        """Insere ou atualiza registro usando INSERT ON DUPLICATE KEY UPDATE"""
+        nsu = campos.get('var9')
 
-        if registro_atual:
-            var69_atual, var70_atual = registro_atual
-            var69_novo = campos.get('var69')
-            var70_novo = campos.get('var70')
+        # Filtrar apenas campos válidos
+        campos_validos = {k: v for k, v in campos.items() if k not in ['id']}
 
-            # Só recalcular se status pagamento mudou OU data cancelamento foi preenchida
-            status_mudou = str(var69_atual or '').strip() != str(var69_novo or '').strip()
-            cancelamento_novo = (not var70_atual) and var70_novo
+        # Ordenar campos
+        campos_ordenados = sorted(campos_validos.keys())
+        valores_ordenados = [campos_validos[campo] for campo in campos_ordenados]
 
-            # Debug: logar comparação
-            if status_mudou:
-                registrar_log('pinbank.cargas_pinbank', f"Status mudou NSU {nsu}: '{var69_atual}' -> '{var69_novo}'")
-            if cancelamento_novo:
-                registrar_log('pinbank.cargas_pinbank', f"Cancelamento novo NSU {nsu}: {var70_novo}")
+        # Converter datetime para string
+        valores_finais = []
+        for valor in valores_ordenados:
+            if hasattr(valor, 'strftime'):
+                valores_finais.append(valor.strftime('%Y-%m-%d %H:%M:%S'))
+            else:
+                valores_finais.append(valor)
 
-            if status_mudou or cancelamento_novo:
-                # Fazer UPDATE completo
-                set_clause = ', '.join([f'{campo} = %s' for campo in campos_ordenados if campo != 'var9'])
-                valores_update = [v for campo, v in zip(campos_ordenados, valores_finais) if campo != 'var9']
-                valores_update.append(nsu)
-
-                sql_update = f"UPDATE base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Credenciadora'"
-                cursor.execute(sql_update, valores_update)
-
-                # Registrar auditoria
-                import json
-                motivo = []
-                if status_mudou:
-                    motivo.append(f"status: {var69_atual} -> {var69_novo}")
-                if cancelamento_novo:
-                    motivo.append(f"cancelamento: {var70_novo}")
-
-                cursor.execute("""
-                    INSERT INTO auditoria_base_unificada_mudancas
-                    (var9, tipo_operacao, colunas_alteradas, qtd_colunas_alteradas)
-                    VALUES (%s, 'Credenciadora', %s, %s)
-                """, [nsu, json.dumps(motivo), 1])
-        else:
-            # INSERT
-            campos_sql = ', '.join(campos_ordenados)
-            placeholders = ', '.join(['%s'] * len(campos_ordenados))
-
-            sql_insert = f"""
-                INSERT INTO base_transacoes_unificadas ({campos_sql})
-                VALUES ({placeholders})
-            """
-
-            cursor.execute(sql_insert, valores_finais)
+        # INSERT ON DUPLICATE KEY UPDATE
+        placeholders = ', '.join(['%s'] * len(campos_ordenados))
+        update_clause = ', '.join([f'{campo} = VALUES({campo})' for campo in campos_ordenados if campo not in ['var9', 'tipo_operacao']])
+        
+        sql_insert = f"""
+            INSERT INTO base_transacoes_unificadas ({', '.join(campos_ordenados)}) 
+            VALUES ({placeholders})
+            ON DUPLICATE KEY UPDATE {update_clause}
+        """
+        cursor.execute(sql_insert, valores_finais)
