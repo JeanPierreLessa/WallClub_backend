@@ -163,16 +163,13 @@ def carga_base_unificada_worker_task(self, worker_id):
 @shared_task(bind=True, name='pinbank.carga_base_unificada')
 def carga_base_unificada_task(self):
     """
-    Task orquestradora que dispara 2 workers paralelos
-    Cada worker processa NSUs com MOD(NSU, 2) = worker_id
+    Task que executa carga sequencial (sem paralelismo)
+    Processa todos os NSUs sem filtro de MOD
     """
-    NUM_WORKERS = 2  # 2 workers paralelos
+    logger.info(f"[{datetime.now()}] Iniciando carga Base Unificada (sequencial)")
     
-    logger.info(f"[{datetime.now()}] Disparando {NUM_WORKERS} workers paralelos para carga Base Unificada")
+    # Executar diretamente sem worker_id (sem paralelismo)
+    carga_base_unificada_worker_task.delay(None)
     
-    # Disparar workers em paralelo
-    for worker_id in range(NUM_WORKERS):
-        carga_base_unificada_worker_task.delay(worker_id)
-    
-    logger.info(f"[{datetime.now()}] {NUM_WORKERS} workers disparados com sucesso")
-    return {'status': 'success', 'workers_dispatched': NUM_WORKERS}
+    logger.info(f"[{datetime.now()}] Carga disparada com sucesso")
+    return {'status': 'success'}
