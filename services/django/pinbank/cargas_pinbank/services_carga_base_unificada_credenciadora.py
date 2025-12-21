@@ -113,7 +113,6 @@ class CargaBaseUnificadaCredenciadoraService:
                              LEFT JOIN checkout_transactions ct2 ON pep2.NsuOperacaoLoja = ct2.nsu
                              LEFT JOIN terminais t2 ON pep2.serialnumber = t2.terminal
                              WHERE pep2.processado = 0
-                             AND pep2.DataTransacao >= '2025-10-01'
                              AND td2.nsuPinbank IS NULL
                              AND ct2.nsu IS NULL
                              AND t2.terminal IS NULL
