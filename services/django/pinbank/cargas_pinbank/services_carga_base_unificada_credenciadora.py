@@ -384,10 +384,7 @@ class CargaBaseUnificadaCredenciadoraService:
             # Buscar transações canceladas que ainda não foram atualizadas
             cursor.execute("""
                 SELECT
-                    btu.var9 as NsuOperacao,
-                    pep.DescricaoStatus,
-                    pep.DataCancelamento,
-                    btu.var68 as status_atual
+                    pep.NsuOperacao
                 FROM base_transacoes_unificadas btu
                 INNER JOIN wallclub.pinbankExtratoPOS pep ON btu.var9 = CAST(pep.NsuOperacao AS CHAR) COLLATE utf8mb4_unicode_ci
                 WHERE pep.DataCancelamento != '0001-01-01T00:00:00'
@@ -414,8 +411,6 @@ class CargaBaseUnificadaCredenciadoraService:
             atualizados = 0
             for row in cancelamentos:
                 nsu = row[0]
-                novo_status = row[1]
-                data_cancelamento = row[2]
 
                 try:
                     # Buscar dados completos do extrato para recalcular
@@ -507,7 +502,7 @@ class CargaBaseUnificadaCredenciadoraService:
                     if sucesso:
                         atualizados += 1
                         registrar_log('pinbank.cargas_pinbank',
-                                    f"NSU {nsu}: Recalculado com status '{novo_status}'")
+                                    f"NSU {nsu}: Recalculado com sucesso")
                     else:
                         registrar_log('pinbank.cargas_pinbank',
                                     f"NSU {nsu}: Falha ao recalcular",
