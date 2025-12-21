@@ -172,6 +172,9 @@ class CargaBaseUnificadaCredenciadoraService:
                             linha = dict(zip(colunas, row_lote))
 
                             try:
+                                import time
+                                inicio_registro = time.time()
+                                
                                 # Montar info_loja e info_canal
                                 linha['info_loja'] = {
                                     'id': linha.get('clienteId'),
@@ -191,11 +194,24 @@ class CargaBaseUnificadaCredenciadoraService:
                                     'nome': ''
                                 })
 
+                                tempo_setup = time.time() - inicio_registro
+                                
                                 # Calcular valores primários
+                                inicio_calculo = time.time()
                                 valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                tempo_calculo = time.time() - inicio_calculo
 
                                 # Inserir na base unificada
+                                inicio_insert = time.time()
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
+                                tempo_insert = time.time() - inicio_insert
+                                
+                                tempo_total_registro = time.time() - inicio_registro
+                                
+                                if tempo_total_registro > 5:
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                        f"⚠️ NSU {linha['NsuOperacao']} demorou {tempo_total_registro:.2f}s (setup={tempo_setup:.2f}s, calc={tempo_calculo:.2f}s, insert={tempo_insert:.2f}s)",
+                                        nivel='WARNING')
 
                                 if sucesso:
                                     ids_processados.append(linha['id'])
