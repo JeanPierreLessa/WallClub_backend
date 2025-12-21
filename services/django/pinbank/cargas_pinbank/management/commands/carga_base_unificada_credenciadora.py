@@ -32,3 +32,11 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f'✅ Processamento concluído: {registros_processados} registros processados')
         )
+
+        # Atualizar cancelamentos
+        self.stdout.write(self.style.SUCCESS('\nAtualizando cancelamentos...'))
+        cancelamentos_atualizados = service.atualizar_cancelamentos()
+
+        self.stdout.write(
+            self.style.SUCCESS(f'✅ Cancelamentos atualizados: {cancelamentos_atualizados}')
+        )

@@ -373,6 +373,149 @@ class CargaBaseUnificadaCredenciadoraService:
                         f"✅ Processamento Base Unificada Credenciadora concluído: {registros_processados} transações processadas")
             return registros_processados
 
+    def atualizar_cancelamentos(self) -> int:
+        """
+        Atualiza transações que foram canceladas posteriormente
+        Compara var68 (status transação) com DescricaoStatus do extrato
+        """
+        registrar_log('pinbank.cargas_pinbank', "Iniciando atualização de cancelamentos")
+
+        with connection.cursor() as cursor:
+            # Buscar transações canceladas que ainda não foram atualizadas
+            cursor.execute("""
+                SELECT
+                    btu.var9 as NsuOperacao,
+                    pep.DescricaoStatus,
+                    pep.DataCancelamento,
+                    btu.var68 as status_atual
+                FROM base_transacoes_unificadas btu
+                INNER JOIN wallclub.pinbankExtratoPOS pep ON btu.var9 = CAST(pep.NsuOperacao AS CHAR) COLLATE utf8mb4_unicode_ci
+                WHERE pep.DataCancelamento != '0001-01-01T00:00:00'
+                  AND pep.DescricaoStatus != btu.var68
+                  AND btu.tipo_operacao = 'Credenciadora'
+                  AND btu.adquirente = 'PINBANK'
+            """)
+
+            cancelamentos = cursor.fetchall()
+            total = len(cancelamentos)
+
+            if total == 0:
+                registrar_log('pinbank.cargas_pinbank', "Nenhum cancelamento pendente de atualização")
+                return 0
+
+            registrar_log('pinbank.cargas_pinbank', f"Encontrados {total} cancelamentos para atualizar")
+
+            atualizados = 0
+            for row in cancelamentos:
+                nsu = row[0]
+                novo_status = row[1]
+                data_cancelamento = row[2]
+
+                try:
+                    # Buscar dados completos do extrato para recalcular
+                    cursor.execute("""
+                        SELECT
+                            pep.id,
+                            l.canal_id,
+                            pep.codigo_cliente as codigoCliente,
+                            cecp.cliente_id as clienteId,
+                            cecp.nome as razao_social,
+                            cecp.cnpj as cnpj,
+                            '' as cpf,
+                            '' as nsuAcquirer,
+                            pep.idTerminal,
+                            pep.SerialNumber,
+                            pep.Terminal,
+                            pep.Bandeira,
+                            pep.TipoCompra,
+                            pep.DadosExtra,
+                            pep.CpfCnpjComprador,
+                            pep.NomeRazaoSocialComprador,
+                            pep.NumeroParcela,
+                            pep.NumeroTotalParcelas,
+                            pep.DataTransacao,
+                            pep.DataFuturaPagamento,
+                            pep.CodAutorizAdquirente,
+                            pep.NsuOperacao,
+                            pep.NsuOperacaoLoja,
+                            pep.ValorBruto,
+                            pep.ValorBrutoParcela,
+                            pep.ValorLiquidoRepasse,
+                            pep.ValorSplit,
+                            pep.IdStatus,
+                            pep.DescricaoStatus,
+                            pep.IdStatusPagamento,
+                            pep.DescricaoStatusPagamento,
+                            pep.ValorTaxaAdm,
+                            pep.ValorTaxaMes,
+                            pep.NumeroCartao,
+                            pep.DataCancelamento,
+                            pep.Submerchant,
+                            0 as valor_original,
+                            (SELECT SUM(pep2.ValorLiquidoRepasse)
+                             FROM wallclub.pinbankExtratoPOS pep2
+                             WHERE pep.NsuOperacao = pep2.NsuOperacao
+                               AND pep2.DescricaoStatusPagamento in ('Pago','Pago-M')) as vRepasse
+                        FROM wallclub.pinbankExtratoPOS pep
+                        INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
+                        INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
+                        WHERE pep.NsuOperacao = %s
+                        LIMIT 1
+                    """, [nsu])
+
+                    linha_dados = cursor.fetchone()
+                    if not linha_dados:
+                        registrar_log('pinbank.cargas_pinbank',
+                                    f"NSU {nsu}: Não encontrado no extrato",
+                                    nivel='WARNING')
+                        continue
+
+                    # Converter para dict
+                    colunas = [
+                        'id', 'canal_id', 'codigoCliente', 'clienteId', 'razao_social', 'cnpj', 'cpf',
+                        'nsuAcquirer', 'idTerminal', 'SerialNumber', 'Terminal', 'Bandeira', 'TipoCompra',
+                        'DadosExtra', 'CpfCnpjComprador', 'NomeRazaoSocialComprador', 'NumeroParcela',
+                        'NumeroTotalParcelas', 'DataTransacao', 'DataFuturaPagamento', 'CodAutorizAdquirente',
+                        'NsuOperacao', 'NsuOperacaoLoja', 'ValorBruto', 'ValorBrutoParcela', 'ValorLiquidoRepasse',
+                        'ValorSplit', 'IdStatus', 'DescricaoStatus', 'IdStatusPagamento', 'DescricaoStatusPagamento',
+                        'ValorTaxaAdm', 'ValorTaxaMes', 'NumeroCartao', 'DataCancelamento', 'Submerchant',
+                        'valor_original', 'vRepasse'
+                    ]
+                    linha = dict(zip(colunas, linha_dados))
+
+                    # Montar info_loja e info_canal
+                    linha['info_loja'] = {
+                        'id': linha.get('clienteId'),
+                        'loja': linha.get('razao_social')
+                    }
+                    linha['info_canal'] = {
+                        'id': linha.get('canal_id')
+                    }
+
+                    # Recalcular todos os valores
+                    valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+
+                    # Atualizar usando INSERT ON DUPLICATE KEY UPDATE
+                    sucesso = self._inserir_ou_atualizar_valores(valores, linha)
+
+                    if sucesso:
+                        atualizados += 1
+                        registrar_log('pinbank.cargas_pinbank',
+                                    f"NSU {nsu}: Recalculado com status '{novo_status}'")
+                    else:
+                        registrar_log('pinbank.cargas_pinbank',
+                                    f"NSU {nsu}: Falha ao recalcular",
+                                    nivel='ERROR')
+
+                except Exception as e:
+                    registrar_log('pinbank.cargas_pinbank',
+                                f"Erro ao recalcular cancelamento NSU {nsu}: {str(e)}",
+                                nivel='ERROR')
+
+            registrar_log('pinbank.cargas_pinbank',
+                        f"✅ Cancelamentos atualizados: {atualizados}/{total}")
+            return atualizados
+
     def _inserir_valores_base_unificada(self, valores: Dict[str, Any], linha: Dict[str, Any]) -> bool:
         """
         Insere valores na base_transacoes_unificadas

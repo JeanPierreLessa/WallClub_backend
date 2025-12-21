@@ -98,12 +98,10 @@ class CargaBaseUnificadaPOSService:
                 INNER JOIN wallclub.transactiondata t ON pep.NsuOperacao = t.nsuPinbank
                 LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsuPinbank
                 WHERE    pep.processado = 0
-                         AND pep.DataTransacao >= '2025-10-01'
                          AND pep.id IN (
                              SELECT MIN(pep2.id)
                              FROM wallclub.pinbankExtratoPOS pep2
                              WHERE pep2.processado = 0
-                             AND pep2.DataTransacao >= '2025-10-01'
                              {worker_clause}
                              GROUP BY pep2.NsuOperacao
                          )
@@ -111,7 +109,6 @@ class CargaBaseUnificadaPOSService:
                          {worker_clause}
                 ORDER BY pep.id
                 {limit_clause}
-                FOR UPDATE SKIP LOCKED
             """)
 
             registrar_log('pinbank.cargas_pinbank', "Query executada com sucesso")
