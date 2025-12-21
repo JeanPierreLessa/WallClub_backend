@@ -314,16 +314,45 @@ class CargaBaseUnificadaCredenciadoraService:
                                 'nome': ''
                             })
 
-                            valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
-                            sucesso = self._inserir_valores_base_unificada(valores, linha)
-
-                            if sucesso:
+                            # Verificar se precisa inserir/atualizar
+                            var69_atual = linha.get('var69_atual')
+                            descricao_status = linha.get('DescricaoStatusPagamento')
+                            descricao_status_normalizado = 'Pago' if descricao_status == 'Pago-M' else descricao_status
+                            
+                            if var69_atual is None:
+                                registrar_log('pinbank.cargas_pinbank', 
+                                    f"NSU {linha['NsuOperacao']}: NOVO (var69=NULL, status={descricao_status_normalizado}) → INSERT")
+                                
+                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                sucesso = self._inserir_valores_base_unificada(valores, linha)
+                                
+                                if sucesso:
+                                    ids_processados.append(linha['id'])
+                                    registros_processados += 1
+                                else:
+                                    registrar_log('pinbank.cargas_pinbank',
+                                                f"Valores não foram inseridos para NSU={linha['NsuOperacao']}",
+                                                nivel='ERROR')
+                            elif var69_atual == descricao_status_normalizado:
+                                registrar_log('pinbank.cargas_pinbank', 
+                                    f"NSU {linha['NsuOperacao']}: SEM MUDANÇA (var69={var69_atual}, status={descricao_status_normalizado}) → SKIP")
+                                
                                 ids_processados.append(linha['id'])
                                 registros_processados += 1
                             else:
-                                registrar_log('pinbank.cargas_pinbank',
-                                            f"Valores não foram inseridos para NSU={linha['NsuOperacao']}",
-                                            nivel='ERROR')
+                                registrar_log('pinbank.cargas_pinbank', 
+                                    f"NSU {linha['NsuOperacao']}: MUDANÇA (var69={var69_atual} → status={descricao_status_normalizado}) → UPDATE")
+                                
+                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                sucesso = self._inserir_ou_atualizar_valores(valores, linha)
+                                
+                                if sucesso:
+                                    ids_processados.append(linha['id'])
+                                    registros_processados += 1
+                                else:
+                                    registrar_log('pinbank.cargas_pinbank',
+                                                f"Valores não foram atualizados para NSU={linha['NsuOperacao']}",
+                                                nivel='ERROR')
 
                         except Exception as e:
                             import traceback
