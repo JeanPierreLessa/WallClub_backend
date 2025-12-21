@@ -380,6 +380,20 @@ class CargaBaseUnificadaCredenciadoraService:
         """
         registrar_log('pinbank.cargas_pinbank', "Iniciando atualização de cancelamentos")
 
+        # Carregar cache de canais
+        from wallclub_core.estr_organizacional.canal import Canal
+        canais = Canal.objects.all()
+        canais_cache = {}
+        for canal in canais:
+            canais_cache[canal.id] = {
+                'id': canal.id,
+                'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
+                'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
+                'key_loja': canal.keyvalue or '',
+                'canal': canal.canal or '',
+                'nome': canal.nome or ''
+            }
+
         with connection.cursor() as cursor:
             # Buscar transações canceladas que ainda não foram atualizadas
             cursor.execute("""
@@ -489,9 +503,11 @@ class CargaBaseUnificadaCredenciadoraService:
                         'id': linha.get('clienteId'),
                         'loja': linha.get('razao_social')
                     }
-                    linha['info_canal'] = {
-                        'id': linha.get('canal_id')
-                    }
+                    
+                    # Buscar dados do canal do cache
+                    canal_id = linha.get('canal_id')
+                    canal_info = canais_cache.get(canal_id, {})
+                    linha['info_canal'] = canal_info if canal_info else {'id': canal_id}
 
                     # Recalcular todos os valores
                     valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
