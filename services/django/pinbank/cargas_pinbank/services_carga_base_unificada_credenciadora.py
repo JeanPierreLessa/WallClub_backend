@@ -164,8 +164,8 @@ class CargaBaseUnificadaCredenciadoraService:
                     inicio_lote = time.time()
                     registrar_log('pinbank.cargas_pinbank', f"Processando lote unificado Credenciadora {numero_lote}: {len(lote_atual)} registros")
 
-                    # Coletar NSUs processados para batch update
-                    nsus_processados = []
+                    # Coletar IDs processados para batch update
+                    ids_processados = []
 
                     with transaction.atomic():
                         for idx, row_lote in enumerate(lote_atual):
@@ -198,7 +198,7 @@ class CargaBaseUnificadaCredenciadoraService:
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                                 if sucesso:
-                                    nsus_processados.append(linha['NsuOperacao'])
+                                    ids_processados.append(linha['id'])
                                     registros_processados += 1
                                 else:
                                     registrar_log('pinbank.cargas_pinbank',
@@ -213,13 +213,12 @@ class CargaBaseUnificadaCredenciadoraService:
                                             nivel='ERROR')
                                 registrar_log('pinbank.cargas_pinbank', f"Traceback: {erro_detalhado}", nivel='ERROR')
 
-                    # Batch update: marcar apenas os IDs específicos processados
-                    if nsus_processados:
-                        ids_processados = [linha['id'] for linha in [dict(zip(colunas, row)) for row in lote_atual] if linha['NsuOperacao'] in nsus_processados]
-                        PinbankExtratoPOS.objects.filter(
-                            id__in=ids_processados
-                        ).update(processado=1)
-                        registrar_log('pinbank.cargas_pinbank', f"✅ {len(ids_processados)} registros marcados como processados")
+                        # Batch update: marcar apenas os IDs específicos processados (dentro da transação)
+                        if ids_processados:
+                            PinbankExtratoPOS.objects.filter(
+                                id__in=ids_processados
+                            ).update(processado=1)
+                            registrar_log('pinbank.cargas_pinbank', f"✅ {len(ids_processados)} registros marcados como processados")
 
                     tempo_total_lote = time.time() - inicio_lote
                     registrar_log('pinbank.cargas_pinbank', f"✅ Lote {numero_lote} concluído em {tempo_total_lote:.2f}s ({registros_processados} registros)")
@@ -229,6 +228,8 @@ class CargaBaseUnificadaCredenciadoraService:
             # Processar último lote se houver registros restantes
             if lote_atual:
                 registrar_log('pinbank.cargas_pinbank', f"Processando último lote unificado Credenciadora: {len(lote_atual)} registros")
+
+                ids_processados = []
 
                 with transaction.atomic():
                     for row_lote in lote_atual:
@@ -243,15 +244,22 @@ class CargaBaseUnificadaCredenciadoraService:
                                 'cnpj': linha.get('cnpj'),
                                 'canal_id': linha.get('canal_id')
                             }
-                            linha['info_canal'] = self.pinbank_service.pega_info_canal_por_id(linha.get('canal_id'))
+                            # Usar cache ao invés de query
+                            canal_id = linha.get('canal_id')
+                            linha['info_canal'] = canais_cache.get(canal_id, {
+                                'id': canal_id,
+                                'codigo_canal': 0,
+                                'codigo_cliente': 0,
+                                'key_loja': '',
+                                'canal': '',
+                                'nome': ''
+                            })
 
                             valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
                             sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                             if sucesso:
-                                PinbankExtratoPOS.objects.filter(
-                                    NsuOperacao=linha['NsuOperacao']
-                                ).update(processado=1)
+                                ids_processados.append(linha['id'])
                                 registros_processados += 1
                             else:
                                 registrar_log('pinbank.cargas_pinbank',
@@ -265,6 +273,13 @@ class CargaBaseUnificadaCredenciadoraService:
                                         f"Erro crítico (Base Unificada Credenciadora): NSU={linha.get('NsuOperacao')}, Erro: {str(e)}",
                                         nivel='ERROR')
                             registrar_log('pinbank.cargas_pinbank', f"Traceback: {erro_detalhado}", nivel='ERROR')
+
+                    # Batch update do último lote (dentro da transação)
+                    if ids_processados:
+                        PinbankExtratoPOS.objects.filter(
+                            id__in=ids_processados
+                        ).update(processado=1)
+                        registrar_log('pinbank.cargas_pinbank', f"✅ {len(ids_processados)} registros do último lote marcados como processados")
 
                 registrar_log('pinbank.cargas_pinbank', f"Último lote unificado Credenciadora commitado ({len(lote_atual)} registros)")
 
