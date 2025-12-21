@@ -49,6 +49,11 @@ class Command(BaseCommand):
         registros_credenciadora = service_credenciadora.carregar_valores_primarios(limite=limite, nsu=nsu, worker_id=worker_id)
         self.stdout.write(self.style.SUCCESS(f'✅ Credenciadora: {registros_credenciadora} registros processados'))
 
+        # 3. Atualizar cancelamentos
+        self.stdout.write(self.style.SUCCESS('\n[3/3] Atualizando cancelamentos...'))
+        cancelamentos_atualizados = service_credenciadora.atualizar_cancelamentos()
+        self.stdout.write(self.style.SUCCESS(f'✅ Cancelamentos: {cancelamentos_atualizados} atualizados'))
+
         # Resumo
         total = registros_pos + registros_credenciadora
         if worker_id is not None:
