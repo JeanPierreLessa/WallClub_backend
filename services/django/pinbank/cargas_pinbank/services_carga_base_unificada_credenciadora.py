@@ -405,6 +405,12 @@ class CargaBaseUnificadaCredenciadoraService:
 
             registrar_log('pinbank.cargas_pinbank', f"Encontrados {total} cancelamentos para atualizar")
 
+            # Marcar como processado=0 para forçar reprocessamento
+            nsus_cancelados = [row[0] for row in cancelamentos]
+            PinbankExtratoPOS.objects.filter(NsuOperacao__in=nsus_cancelados).update(processado=0)
+            registrar_log('pinbank.cargas_pinbank', 
+                        f"✅ {len(nsus_cancelados)} NSUs marcados como processado=0 para reprocessamento")
+
             atualizados = 0
             for row in cancelamentos:
                 nsu = row[0]
