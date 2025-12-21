@@ -509,9 +509,12 @@ class CargaBaseUnificadaCredenciadoraService:
                                     nivel='ERROR')
 
                 except Exception as e:
+                    import traceback
+                    erro_detalhado = traceback.format_exc()
                     registrar_log('pinbank.cargas_pinbank',
                                 f"Erro ao recalcular cancelamento NSU {nsu}: {str(e)}",
                                 nivel='ERROR')
+                    registrar_log('pinbank.cargas_pinbank', f"Traceback: {erro_detalhado}", nivel='ERROR')
 
             registrar_log('pinbank.cargas_pinbank',
                         f"✅ Cancelamentos atualizados: {atualizados}/{total}")
