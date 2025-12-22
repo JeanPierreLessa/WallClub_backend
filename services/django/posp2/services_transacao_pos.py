@@ -301,6 +301,12 @@ class TRDataPosService:
             # 8. Gerar slip de impressão
             slip = self._gerar_slip_impressao(dados, valores_calculados, loja_info)
 
+            # 9. Enviar push notification para o cliente
+            self._enviar_push_notification(
+                dados, valores_calculados, loja_info, canal_id, 
+                datetime.now()
+            )
+
             registrar_log('posp2', 'Processamento concluído com sucesso')
 
             return {
@@ -784,3 +790,97 @@ class TRDataPosService:
             import traceback
             registrar_log('posp2', f'Traceback: {traceback.format_exc()}', nivel='ERROR')
             return {}
+
+    def _enviar_push_notification(self, dados: Dict, valores_calculados: Dict, 
+                                   loja_info: Dict, canal_id: int, data_transacao_dt: datetime):
+        """Envia push notification para o cliente após processamento da transação"""
+        try:
+            from wallclub_core.integracoes.notification_service import NotificationService
+
+            # Obter CPF do cliente - garantir formato correto sem pontos e traços
+            cpf = dados.get('cpf')
+            if not cpf:
+                registrar_log('posp2', 'Push não enviado: CPF não encontrado')
+                return
+
+            # Remover pontos e traços para garantir formato correto
+            cpf = cpf.replace('.', '').replace('-', '')
+            registrar_log('posp2', f'CPF formatado para envio de push: {cpf}')
+
+            # Validar que o cliente existe neste canal específico
+            try:
+                from wallclub_core.integracoes.api_interna_service import APIInternaService
+
+                response = APIInternaService.chamar_api_interna(
+                    metodo='POST',
+                    endpoint='/api/internal/cliente/consultar_por_cpf/',
+                    payload={'cpf': cpf, 'canal_id': canal_id},
+                    contexto='apis'
+                )
+
+                cliente_canal = response.get('cliente') if response.get('sucesso') else None
+
+                if not cliente_canal or not cliente_canal.get('is_active'):
+                    registrar_log('posp2', f'Push não enviado: Cliente {cpf} não encontrado ou inativo no canal {canal_id}')
+                    return
+
+                registrar_log('posp2', f'Cliente {cpf} confirmado no canal {canal_id}')
+
+            except Exception as e:
+                registrar_log('posp2', f'Erro ao validar cliente: {str(e)}', nivel='WARNING')
+                return
+
+            # Calcular valor final para push (usar amount se valores_calculados[26] for None)
+            valor_transacao = valores_calculados.get(26)
+            if not valor_transacao or valor_transacao == 0:
+                # Usar amount (valor cobrado do cartão)
+                amount_centavos = dados.get('amount', 0)
+                if amount_centavos:
+                    valor_transacao = float(amount_centavos) / 100
+                else:
+                    valor_transacao = float(dados.get('valor_original', 0))
+
+            registrar_log('posp2', f'Valor final para push: {valor_transacao}')
+
+            # Usar loja_info para obter o nome do estabelecimento
+            nome_estabelecimento = loja_info.get('loja', 'Estabelecimento')
+            registrar_log('posp2', f'Nome do estabelecimento: {nome_estabelecimento}')
+
+            # Preparar dados da transação para notificação
+            notification_data = {
+                'valor': valor_transacao,
+                'tipo_transacao': valores_calculados.get('tipo_transacao', 'Compra'),
+                'estabelecimento': nome_estabelecimento,
+                'data_hora': data_transacao_dt.strftime('%Y-%m-%d %H:%M:%S'),
+                'id': dados.get('nsu_gateway', '0')
+            }
+
+            # Inicializar serviço unificado de notificação para o canal
+            notification_service = NotificationService.get_instance(canal_id)
+
+            registrar_log('posp2', f'Enviando push notification para CPF {cpf} no canal {canal_id}')
+
+            try:
+                # Extrair dados da notificação
+                valor_formatado = notification_data.get('valor', '0,00')
+                estabelecimento = notification_data.get('estabelecimento', 'Estabelecimento')
+                tipo_transacao = notification_data.get('tipo_transacao', 'Transação')
+
+                push_result = notification_service.send_push(
+                    cpf=cpf,
+                    id_template='transacao_aprovada',
+                    tipo_transacao=tipo_transacao,
+                    valor=valor_formatado,
+                    estabelecimento=estabelecimento,
+                    data_hora=notification_data.get('data_hora', ''),
+                    transacao_id=notification_data.get('id', '')
+                )
+                registrar_log('posp2', f'✅ Push notification enviado: {push_result}')
+            except Exception as push_error:
+                registrar_log('posp2', f'ERRO ao enviar push: {str(push_error)}', nivel='ERROR')
+                import traceback
+                registrar_log('posp2', f'Traceback: {traceback.format_exc()}', nivel='ERROR')
+
+        except Exception as e:
+            # Não interromper o fluxo se houver erro no envio da notificação
+            registrar_log('posp2', f'Erro ao enviar push notification: {str(e)}', nivel='WARNING')

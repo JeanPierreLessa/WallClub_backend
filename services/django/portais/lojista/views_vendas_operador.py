@@ -14,21 +14,21 @@ from .mixins import LojistaAccessMixin, LojistaDataMixin
 class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
     """View de vendas agrupadas por operador"""
     template_name = 'portais/lojista/vendas_operador.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Obter lojas acessíveis
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = self.request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
             lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
         except PortalUsuario.DoesNotExist:
             lojas_acessiveis = []
-        
+
         # Pegar filtros da URL
         context.update({
             'current_page': 'vendas',
@@ -39,24 +39,24 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
             'nsu': self.request.GET.get('nsu', ''),
             'loja_selecionada': self.request.GET.get('loja', 'todas')
         })
-        
+
         return context
-    
+
     def _obter_lojas_acesso(self, request):
         """Obter lojas acessíveis usando serviço centralizado"""
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = request.session.get('lojista_usuario_id')
         if not usuario_id:
             return []
-        
+
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
             return FiltrosAcessoService.obter_lojas_acessiveis(usuario)
         except PortalUsuario.DoesNotExist:
             return []
-    
+
     def post(self, request):
         """Buscar vendas agrupadas por operador"""
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -64,12 +64,12 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
             data_fim = request.POST.get('data_fim')
             loja_selecionada = request.POST.get('loja')
             nsu = request.POST.get('nsu', '').strip()
-            
+
             # Obter lojas acessíveis
             lojas_acesso = self._obter_lojas_acesso(request)
             if not lojas_acesso:
                 return JsonResponse({'error': 'Nenhuma loja acessível'}, status=403)
-            
+
             # Determinar lojas para consulta
             if loja_selecionada and loja_selecionada != 'todas':
                 lojas_ids_acesso = [loja['id'] for loja in lojas_acesso]
@@ -78,26 +78,26 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
                 lojas_para_consulta = [int(loja_selecionada)]
             else:
                 lojas_para_consulta = [loja['id'] for loja in lojas_acesso]
-            
+
             try:
                 # Construir WHERE clause
                 where_conditions = []
                 params = []
-                
+
                 # Filtro de data (obrigatório)
                 if not data_inicio or not data_fim:
                     return JsonResponse({'error': 'Datas inicial e final são obrigatórias'}, status=400)
-                
+
                 where_conditions.append("data_transacao >= %s")
                 params.append(f"{data_inicio} 00:00:00")
-                
+
                 where_conditions.append("data_transacao < %s")
                 # Adicionar 1 dia à data final para incluir todo o dia
                 from datetime import datetime, timedelta
                 data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d')
                 data_fim_inclusiva = (data_fim_obj + timedelta(days=1)).strftime('%Y-%m-%d')
                 params.append(f"{data_fim_inclusiva} 00:00:00")
-                
+
                 # Filtro de loja
                 if len(lojas_para_consulta) == 1:
                     where_conditions.append("b.var6 = %s")
@@ -106,46 +106,46 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
                     placeholders = ','.join(['%s'] * len(lojas_para_consulta))
                     where_conditions.append(f"b.var6 IN ({placeholders})")
                     params.extend(lojas_para_consulta)
-                
+
                 # Filtro de NSU (opcional)
                 if nsu:
                     where_conditions.append("b.var9 LIKE %s")
                     params.append(f"%{nsu}%")
-                
+
                 where_clause = " AND ".join(where_conditions)
-                
-                # Query agrupada por operador
+
+                # Query agrupada por operador (MIGRADO para transactiondata_pos)
                 sql = f"""
-                    SELECT   
+                    SELECT
                         x.nome AS nome_operador,
                         SUM(x.var11) AS valor_total,
                         COUNT(1) AS qtde_vendas
                     FROM (
-                        SELECT DISTINCT 
+                        SELECT DISTINCT
                             b.var9,
                             b.var6,
-                            b.var11, 
+                            b.var11,
                             t.operador_pos,
-                            teops.nome 
+                            teops.nome
                         FROM base_transacoes_unificadas b
-                        INNER JOIN transactiondata t ON b.var9 = t.nsuPinbank 
-                        LEFT JOIN terminais_operadores_pos tepos ON t.operador_pos = tepos.id 
+                        INNER JOIN transactiondata_pos t ON b.var9 = t.nsu_gateway AND t.gateway = 'PINBANK'
+                        LEFT JOIN terminais_operadores_pos tepos ON t.operador_pos = tepos.id
                         LEFT JOIN terminais_operadores teops ON tepos.operador = teops.operador
                         WHERE {where_clause}
-                            AND t.operador_pos IS NOT NULL
                     ) x
+                    WHERE x.nome IS NOT NULL
                     GROUP BY x.nome
                     ORDER BY valor_total DESC
                 """
-                
+
                 registrar_log('portais.lojista', f"VENDAS OPERADOR - Query: {sql}")
                 registrar_log('portais.lojista', f"VENDAS OPERADOR - Params: {params}")
-                
+
                 results = []
                 with connection.cursor() as cursor:
                     cursor.execute(sql, params)
                     rows = cursor.fetchall()
-                    
+
                     for row in rows:
                         nome_operador, valor_total, qtde_vendas = row
                         results.append({
@@ -153,34 +153,34 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
                             'valor_total': float(valor_total or 0),
                             'qtde_vendas': int(qtde_vendas or 0)
                         })
-                
+
                 registrar_log('portais.lojista', f"VENDAS OPERADOR - {len(results)} operadores encontrados")
-                
+
                 # Renderizar HTML
                 html = self._render_operadores_html(results)
-                
+
                 return JsonResponse({
                     'success': True,
                     'html': html,
                     'total': len(results)
                 })
-                
+
             except Exception as e:
                 registrar_log('portais.lojista', f"VENDAS OPERADOR - Erro: {str(e)}", nivel='ERROR')
                 return JsonResponse({'error': f'Erro na consulta: {str(e)}'}, status=500)
-        
+
         # Se não for AJAX, renderizar template
         return self.get(request)
-    
+
     def _render_operadores_html(self, operadores):
         """Renderizar HTML dos operadores"""
         if not operadores:
             return '<div class="alert alert-info mt-3">Nenhum operador encontrado com os filtros informados.</div>'
-        
+
         # Calcular totais
         total_valor = sum(op['valor_total'] for op in operadores)
         total_vendas = sum(op['qtde_vendas'] for op in operadores)
-        
+
         # Cards de totais
         html = '<div class="row mt-3 mb-3">'
         html += f'''
@@ -210,7 +210,7 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
         </div>
         '''
         html += '</div>'
-        
+
         # Tabela de operadores
         html += '''
         <div class="table-responsive">
@@ -225,7 +225,7 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
                 </thead>
                 <tbody>
         '''
-        
+
         for op in operadores:
             ticket_medio = op['valor_total'] / op['qtde_vendas'] if op['qtde_vendas'] > 0 else 0
             html += f'''
@@ -236,9 +236,9 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
                 <td class="text-end">R$ {ticket_medio:,.2f}</td>
             </tr>
             '''
-        
+
         html += '</tbody>'
-        
+
         # Linha de totalizador
         ticket_medio_geral = total_valor / total_vendas if total_vendas > 0 else 0
         html += f'''
@@ -251,7 +251,7 @@ class LojistaVendasOperadorView(LojistaAccessMixin, LojistaDataMixin, TemplateVi
             </tr>
         </tfoot>
         '''
-        
+
         html += '</table></div>'
-        
+
         return html

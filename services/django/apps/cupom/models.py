@@ -175,7 +175,7 @@ class CupomUso(models.Model):
     )
     transacao_id = models.BigIntegerField(
         verbose_name='ID da Transação',
-        help_text='ID da TransactionData ou CheckoutTransaction'
+        help_text='ID da TransactionData, TransactionDataPos ou CheckoutTransaction'
     )
     nsu = models.CharField(
         max_length=50,

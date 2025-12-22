@@ -137,7 +137,7 @@ class CupomService:
             cliente_id: ID do cliente
             loja_id: ID da loja
             transacao_tipo: 'POS' ou 'CHECKOUT'
-            transacao_id: ID da TransactionData ou CheckoutTransaction
+            transacao_id: ID da TransactionData, TransactionDataPos ou CheckoutTransaction
             valor_original: Valor antes do cupom
             valor_desconto: Valor do desconto aplicado
             valor_final: Valor após o cupom
