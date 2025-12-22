@@ -851,9 +851,17 @@ class TRDataPosService:
                             except (ValueError, TypeError):
                                 dados_insert[campo_nome] = None
 
-            # Inserir usando Django ORM
-            from gestao_financeira.models import BaseTransacoesUnificadas
-            BaseTransacoesUnificadas.objects.create(**dados_insert)
+            # Inserir usando raw SQL
+            campos = list(dados_insert.keys())
+            valores = list(dados_insert.values())
+            placeholders = ', '.join(['%s'] * len(valores))
+            campos_str = ', '.join(campos)
+            
+            with connection.cursor() as cursor:
+                cursor.execute(f"""
+                    INSERT INTO base_transacoes_unificadas ({campos_str})
+                    VALUES ({placeholders})
+                """, valores)
             
             registrar_log('posp2', f'✅ Inserido em base_transacoes_unificadas - NSU: {nsu}')
 
