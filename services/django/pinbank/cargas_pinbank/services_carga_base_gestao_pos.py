@@ -1,7 +1,8 @@
 """
 Serviço para carga da Base de Gestão POS (Wallet)
-Processa transações da tabela transactiondata (Wallet)
+Processa transações da tabela transactiondata_pos (Wallet)
 Usa CalculadoraBaseGestao
+MIGRADO: 22/12/2025 - Consulta transactiondata_pos ao invés de transactiondata
 """
 
 from typing import Dict, Any
@@ -82,8 +83,8 @@ class CargaBaseGestaoPOSService:
                          pe.var111 f111,
                          pe.var112 f112
                 FROM     wallclub.pinbankExtratoPOS pep
-                INNER JOIN wallclub.transactiondata t ON pep.NsuOperacao = t.nsuPinbank
-                LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsuPinbank
+                INNER JOIN wallclub.transactiondata_pos t ON pep.NsuOperacao = t.nsu_gateway AND t.gateway = 'PINBANK'
+                LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsu_gateway
                 WHERE    1=1
                          and pep.lido = 0
                          {nsu_clause}
@@ -118,7 +119,7 @@ class CargaBaseGestaoPOSService:
 
                             try:
                                 # Calcular valores primários
-                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
+                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_pos')
 
                                 # Inserir na base de gestão
                                 sucesso = self._inserir_valores_base_gestao(valores, linha.get('codigo_cliente'))
@@ -164,7 +165,7 @@ class CargaBaseGestaoPOSService:
                             }
 
                             # Calcular valores usando a calculadora
-                            valores_calculados = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
+                            valores_calculados = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_pos')
 
                             # Atualizar transação com valores calculados
                             linha.update(valores_calculados)

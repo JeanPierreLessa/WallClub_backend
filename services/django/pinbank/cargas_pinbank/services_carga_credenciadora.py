@@ -2,6 +2,7 @@
 Serviço para carga da Base de Gestão - Credenciadora
 Processa transações de terminais credenciadora (sem cadastro no sistema)
 Usa CalculadoraBaseCredenciadora
+MIGRADO: 22/12/2025 - Consulta transactiondata_pos ao invés de transactiondata
 """
 
 from typing import Dict, Any
@@ -14,7 +15,7 @@ from wallclub_core.utilitarios.log_control import registrar_log
 class CargaCredenciadoraService:
     """
     Serviço para carga da base de gestão - Credenciadora
-    Processa transações que não estão na transactiondata e não são de terminais cadastrados
+    Processa transações que não estão na transactiondata_pos e não são de terminais cadastrados
     """
 
     def __init__(self):
@@ -84,7 +85,7 @@ class CargaCredenciadoraService:
                 WHERE    pep.codigo_cliente = cecp.codigo_cliente
                          and l.id = cecp.cliente_id
                          and pep.lido = 0
-                         and pep.NsuOperacao not in ( select nsuPinbank from transactiondata)
+                         and pep.NsuOperacao not in ( select nsu_gateway from transactiondata_pos )
                          and pep.NsuOperacaoLoja not in ( select nsu from checkout_transactions where nsu is not null )
                          and serialnumber not in ( select terminal from terminais )
                          {nsu_clause}
@@ -117,7 +118,7 @@ class CargaCredenciadoraService:
                             linha = dict(zip(colunas, row_lote))
 
                             try:
-                                # Montar info_loja e info_canal a partir dos dados da query (Credenciadora não tem em transactiondata)
+                                # Montar info_loja e info_canal a partir dos dados da query (Credenciadora não tem em transactiondata_pos)
                                 linha['info_loja'] = {
                                     'id': linha.get('clienteId'),
                                     'loja_id': linha.get('clienteId'),
@@ -126,7 +127,7 @@ class CargaCredenciadoraService:
                                     'canal_id': linha.get('canal_id')
                                 }
                                 linha['info_canal'] = self.pinbank_service.pega_info_canal_por_id(linha.get('canal_id'))
-                                
+
                                 # Calcular valores primários
                                 valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
 
@@ -174,7 +175,7 @@ class CargaCredenciadoraService:
                                 'canal_id': linha.get('canal_id')
                             }
                             linha['info_canal'] = self.pinbank_service.pega_info_canal_por_id(linha.get('canal_id'))
-                            
+
                             # Calcular valores primários
                             valores = self.calculadora.calcular_valores_primarios(linha)
 
@@ -277,7 +278,7 @@ class CargaCredenciadoraService:
                             campos[f'{campo_nome}_B'] = valor["B"]
                     else:
                         campos[campo_nome] = valor
-                        
+
         # DEBUG: Verificar se var45 foi mapeado
         if 'var45' in campos:
             registrar_log('pinbank.cargas_pinbank', f"DEBUG _mapear - var45 mapeado para campo: '{campos['var45']}'", nivel='DEBUG')

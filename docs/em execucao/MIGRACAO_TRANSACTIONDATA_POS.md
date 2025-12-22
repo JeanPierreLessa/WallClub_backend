@@ -333,21 +333,56 @@ Durante a migração, 3 tabelas coexistem:
 - 📊 Status: Coexistência ativa - dados novos sincronizam automaticamente via trigger
 
 ### 22/12/2025 - Implementações de Migração
+
+#### Push Notification e Base Unificada
 - ✅ **Push Notification em `TRDataPosService`**
-  - Adicionado método `_enviar_push_notification()` (linhas 794-886)
+  - Adicionado método `_enviar_push_notification()` (linhas 872-956)
   - Valida cliente no canal via API interna
   - Envia push via `NotificationService` com template `transacao_aprovada`
   - Não interrompe fluxo em caso de erro (fail-safe)
+  - **Testado:** Push enviado com sucesso em transação Own
   
+- ✅ **Inserção em `base_transacoes_unificadas`**
+  - Adicionado método `_inserir_base_transacoes_unificadas()` (linhas 799-870)
+  - Verifica duplicação por NSU antes de inserir
+  - Usa raw SQL (não ORM) para compatibilidade
+  - Mapeia 131 campos (var0-var130) com tipos corretos
+  - **Testado:** Inserção funcionando corretamente
+
+#### Processos de Leitura
 - ✅ **Portal Lojista - `views_vendas_operador.py`**
   - Migrado JOIN de `transactiondata` para `transactiondata_pos` (linha 131)
   - Query agora usa: `INNER JOIN transactiondata_pos t ON b.var9 = t.nsu_gateway AND t.gateway = 'PINBANK'`
+  - Filtro movido para WHERE externo: `WHERE x.nome IS NOT NULL`
   - Mantém compatibilidade com filtros existentes
   
 - ✅ **APIs de Cupom**
   - Atualizado `cupom/models.py` - help_text do campo `transacao_id` (linha 178)
   - Atualizado `cupom/services.py` - docstring do método `registrar_uso()` (linha 140)
   - Agora suporta `TransactionDataPos` além das tabelas legadas
+
+#### Cargas Pinbank (5 arquivos)
+- ✅ **`services_carga_base_gestao_pos.py`**
+  - JOIN: `transactiondata` → `transactiondata_pos` com `gateway = 'PINBANK'`
+  - Campos: `nsuPinbank` → `nsu_gateway`
+  - Calculadora: `tabela='transactiondata_pos'`
+  
+- ✅ **`services_carga_base_unificada_pos.py`**
+  - Mesmas mudanças de JOIN e campos
+  - Processa 1 linha por NSU (não duplica parcelas)
+  
+- ✅ **`services_carga_credenciadora.py`**
+  - Filtro: `NOT IN (SELECT nsu_gateway FROM transactiondata_pos WHERE gateway = 'PINBANK')`
+  - Processa terminais sem cadastro no sistema
+  
+- ✅ **`services_carga_base_unificada_credenciadora.py`**
+  - LEFT JOIN com `transactiondata_pos` e filtro `gateway = 'PINBANK'`
+  - Verifica `td.nsu_gateway IS NULL` para credenciadora
+  
+- ✅ **`services_ajustes_manuais.py`**
+  - INSERT: `transactiondata` → `transactiondata_pos`
+  - Adiciona campo `gateway = 'PINBANK'` no INSERT
+  - Verifica duplicação por `nsu_gateway` e `gateway`
 
 ---
 
@@ -902,10 +937,19 @@ DROP TRIGGER IF EXISTS trg_transactiondata_update_sync;
 1. ✅ **Criar triggers** (INSERT + UPDATE) - **Concluído em 22/12/2025**
 2. ✅ **Migrar dados históricos** (script de migração) - **Concluído em 22/12/2025**
 3. ✅ **Novos dados sincronizam automaticamente** via trigger - **Em produção desde 22/12/2025**
-4. ⏳ **Adicionar push notification em `TRDataPosService`** - Falta implementar envio de push para cliente
-5. ⏳ **Migrar processos de leitura** gradualmente para `transactiondata_pos`
-   - Portal Lojista (`views_vendas_operador.py`)
-   - APIs de Cupom (`cupom/models.py`, `cupom/services.py`)
-6. ⏳ **Virar fluxo de escrita** para `TRDataPosService` (grava direto na nova tabela)
-7. ⏳ **Remover triggers** após 100% migrado
-8. ⏳ **Deprecar tabela antiga**
+4. ✅ **Adicionar push notification em `TRDataPosService`** - **Concluído e testado em 22/12/2025**
+5. ✅ **Adicionar inserção em `base_transacoes_unificadas`** - **Concluído e testado em 22/12/2025**
+6. ✅ **Migrar processos de leitura** para `transactiondata_pos` - **Concluído em 22/12/2025**
+   - ✅ Portal Lojista (`views_vendas_operador.py`)
+   - ✅ APIs de Cupom (`cupom/models.py`, `cupom/services.py`)
+7. ✅ **Migrar cargas Pinbank** (5 arquivos) para `transactiondata_pos` - **Concluído em 22/12/2025**
+   - ✅ `services_carga_base_gestao_pos.py`
+   - ✅ `services_carga_base_unificada_pos.py`
+   - ✅ `services_carga_credenciadora.py`
+   - ✅ `services_carga_base_unificada_credenciadora.py`
+   - ✅ `services_ajustes_manuais.py`
+8. ⏳ **Alterar `services_transacao.py`** para escrever em `transactiondata_pos` (manter trigger ativo)
+9. ⏳ **Virar API do POS** - App chamar `/trdata_pinbank/` e `/trdata_own/`
+10. ⏳ **Deprecar services legados** - `services_transacao.py` e `services_transacao_own.py`
+11. ⏳ **Remover triggers** após 100% migrado
+12. ⏳ **Deprecar tabelas antigas** - `transactiondata` e `transactiondata_own`

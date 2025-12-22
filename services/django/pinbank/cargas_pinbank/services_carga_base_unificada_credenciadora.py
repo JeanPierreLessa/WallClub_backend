@@ -7,6 +7,8 @@ Diferença da base antiga:
 - Insere em base_transacoes_unificadas (nova tabela)
 - 1 linha por transação (não duplica por parcela)
 - Marca registros como processados
+
+MIGRADO: 22/12/2025 - Consulta transactiondata_pos ao invés de transactiondata
 """
 
 from typing import Dict, Any
@@ -97,11 +99,11 @@ class CargaBaseUnificadaCredenciadoraService:
                 FROM     wallclub.pinbankExtratoPOS pep
                 INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
                 INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
-                LEFT JOIN transactiondata td ON pep.NsuOperacao = td.nsuPinbank
+                LEFT JOIN transactiondata_pos td ON pep.NsuOperacao = td.nsu_gateway
                 LEFT JOIN checkout_transactions ct ON pep.NsuOperacaoLoja = ct.nsu
                 LEFT JOIN terminais t ON pep.serialnumber = t.terminal
                 WHERE    pep.processado = 0
-                         AND td.nsuPinbank IS NULL
+                         AND td.nsu_gateway IS NULL
                          AND ct.nsu IS NULL
                          AND t.terminal IS NULL
                          AND pep.id IN (
@@ -109,11 +111,11 @@ class CargaBaseUnificadaCredenciadoraService:
                              FROM wallclub.pinbankExtratoPOS pep2
                              INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp2 ON pep2.codigo_cliente = cecp2.codigo_cliente
                              INNER JOIN wallclub.loja l2 ON l2.id = cecp2.cliente_id
-                             LEFT JOIN transactiondata td2 ON pep2.NsuOperacao = td2.nsuPinbank
+                             LEFT JOIN transactiondata_pos td2 ON pep2.NsuOperacao = td2.nsu_gateway
                              LEFT JOIN checkout_transactions ct2 ON pep2.NsuOperacaoLoja = ct2.nsu
                              LEFT JOIN terminais t2 ON pep2.serialnumber = t2.terminal
                              WHERE pep2.processado = 0
-                             AND td2.nsuPinbank IS NULL
+                             AND td2.nsu_gateway IS NULL
                              AND ct2.nsu IS NULL
                              AND t2.terminal IS NULL
                              {worker_clause}
@@ -419,7 +421,7 @@ class CargaBaseUnificadaCredenciadoraService:
             # Marcar como processado=0 para forçar reprocessamento
             nsus_cancelados = [row[0] for row in cancelamentos]
             PinbankExtratoPOS.objects.filter(NsuOperacao__in=nsus_cancelados).update(processado=0)
-            registrar_log('pinbank.cargas_pinbank', 
+            registrar_log('pinbank.cargas_pinbank',
                         f"✅ {len(nsus_cancelados)} NSUs marcados como processado=0 para reprocessamento")
 
             atualizados = 0
@@ -503,7 +505,7 @@ class CargaBaseUnificadaCredenciadoraService:
                         'id': linha.get('clienteId'),
                         'loja': linha.get('razao_social')
                     }
-                    
+
                     # Buscar dados do canal do cache
                     canal_id = linha.get('canal_id')
                     canal_info = canais_cache.get(canal_id, {})

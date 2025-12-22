@@ -1,6 +1,7 @@
 """
 Serviços para ajustes manuais na base de dados Pinbank
 Queries de manutenção e correção de dados
+MIGRADO: 22/12/2025 - Insere em transactiondata_pos ao invés de transactiondata
 """
 
 from typing import Dict
@@ -18,28 +19,27 @@ class AjustesManuaisService:
     def ajustes_manuais_base() -> Dict[str, int]:
         """
         Executa ajustes manuais na base de dados:
-        1. Insere registros faltantes em transactiondata a partir de pinbankExtratoPOS
-        2. Remove duplicatas de baseTransacoesGestao sem idFilaExtrato quando existe versão com idFilaExtrato
+        1. Insere registros faltantes em transactiondata_pos a partir de pinbankExtratoPOS
 
         Returns:
-            Dict com contadores de registros inseridos e deletados
+            Dict com contador de registros inseridos
         """
         registrar_log('pinbank.cargas_pinbank', "Iniciando ajustes manuais da base")
 
         resultado = {
-            'inseridos_transactiondata': 0,
-            'deletados_base_gestao': 0
+            'inseridos_transactiondata': 0
         }
 
         try:
             with connection.cursor() as cursor:
-                # 1. Inserir registros faltantes em transactiondata
-                registrar_log('pinbank.cargas_pinbank', "Executando INSERT em transactiondata")
+                # 1. Inserir registros faltantes em transactiondata_pos
+                registrar_log('pinbank.cargas_pinbank', "Executando INSERT em transactiondata_pos")
 
                 cursor.execute("""
-                    INSERT INTO transactiondata
-                    ( datahora, valor_original, nsupinbank, terminal )
-                    SELECT  REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' ') AS Data_Transacao,
+                    INSERT INTO transactiondata_pos
+                    ( gateway, datahora, valor_original, nsu_gateway, terminal )
+                    SELECT  'PINBANK',
+                            REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' ') AS Data_Transacao,
                             p.ValorBruto,
                             p.NsuOperacao,
                             t.terminal
@@ -48,29 +48,11 @@ class AjustesManuaisService:
                     WHERE   t.terminal = p.SerialNumber
                             AND t.inicio <= REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' ')
                             AND ( t.fim IS NULL OR t.fim >= REPLACE(SUBSTRING_INDEX(p.DataTransacao, '.', 1), 'T', ' '))
-                            AND NOT EXISTS ( SELECT nsupinbank FROM transactiondata WHERE nsupinbank = NsuOperacao )
+                            AND NOT EXISTS ( SELECT nsu_gateway FROM transactiondata_pos WHERE nsu_gateway = NsuOperacao AND gateway = 'PINBANK' )
                 """)
 
                 resultado['inseridos_transactiondata'] = cursor.rowcount
-                registrar_log('pinbank.cargas_pinbank', f"INSERT concluído: {resultado['inseridos_transactiondata']} registros inseridos em transactiondata")
-
-                # 2. Deletar duplicatas de baseTransacoesGestao
-                registrar_log('pinbank.cargas_pinbank', "Executando DELETE em baseTransacoesGestao")
-
-                cursor.execute("""
-                    DELETE FROM wallclub.baseTransacoesGestao
-                    WHERE   idFilaExtrato IS NULL
-                            AND var9 IN (
-                                SELECT var9 FROM (
-                                    SELECT DISTINCT var9
-                                    FROM wallclub.baseTransacoesGestao
-                                    WHERE idFilaExtrato IS NOT NULL
-                                ) AS duplicatas
-                            )
-                """)
-
-                resultado['deletados_base_gestao'] = cursor.rowcount
-                registrar_log('pinbank.cargas_pinbank', f"DELETE concluído: {resultado['deletados_base_gestao']} registros deletados de baseTransacoesGestao")
+                registrar_log('pinbank.cargas_pinbank', f"INSERT concluído: {resultado['inseridos_transactiondata']} registros inseridos em transactiondata_pos")
 
             registrar_log('pinbank.cargas_pinbank', f"Ajustes manuais finalizados com sucesso: {resultado}")
             return resultado

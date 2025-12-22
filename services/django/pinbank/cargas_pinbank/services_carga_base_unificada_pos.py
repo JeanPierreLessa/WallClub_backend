@@ -1,8 +1,9 @@
 """
 Serviço para carga da Base Unificada POS (Wallet)
-Processa transações da tabela transactiondata (Wallet)
+Processa transações da tabela transactiondata_pos (Wallet)
 Insere em base_transacoes_unificadas (1 linha por NSU, sem duplicação de parcelas)
 Filtro: Apenas transações de outubro/2025 em diante
+MIGRADO: 22/12/2025 - Consulta transactiondata_pos ao invés de transactiondata
 """
 
 from typing import Dict, Any
@@ -95,8 +96,8 @@ class CargaBaseUnificadaPOSService:
                          pe.var111 f111,
                          pe.var112 f112
                 FROM     wallclub.pinbankExtratoPOS pep
-                INNER JOIN wallclub.transactiondata t ON pep.NsuOperacao = t.nsuPinbank
-                LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsuPinbank
+                INNER JOIN wallclub.transactiondata_pos t ON pep.NsuOperacao = t.nsu_gateway AND t.gateway = 'PINBANK'
+                LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsu_gateway
                 WHERE    pep.processado = 0
                          AND pep.id IN (
                              SELECT MIN(pep2.id)
@@ -141,7 +142,7 @@ class CargaBaseUnificadaPOSService:
 
                             try:
                                 # Calcular valores primários
-                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
+                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_pos')
 
                                 # Inserir na base unificada
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
@@ -177,7 +178,7 @@ class CargaBaseUnificadaPOSService:
                         linha = dict(zip(colunas, row_lote))
 
                         try:
-                            valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata')
+                            valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_pos')
                             sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                             if sucesso:
