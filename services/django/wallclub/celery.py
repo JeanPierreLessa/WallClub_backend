@@ -44,18 +44,9 @@ app.conf.beat_schedule = {
         }
     },
 
-    # Cargas completas - De hora em hora, minuto 5, das 5h às 23h
+    # Cargas completas - A cada 30 minutos
     'cargas-completas-pinbank': {
         'task': 'pinbank.cargas_completas',
-        'schedule': crontab(minute=5, hour='5-23'),  # xx:05 das 5h às 23h
-        'options': {
-            'expires': 3600,  # Expira em 1 hora
-        }
-    },
-
-    # Carga Base Unificada (POS + Credenciadora) - A cada 30 minutos
-    'carga-base-unificada': {
-        'task': 'pinbank.carga_base_unificada',
         'schedule': crontab(minute='*/30'),  # A cada 30 minutos
         'options': {
             'expires': 1800,  # Expira em 30 minutos
@@ -110,12 +101,12 @@ app.conf.beat_schedule = {
     # OFERTAS - DISPARO AUTOMÁTICO
     # ============================================
 
-    # Processar ofertas agendadas - A cada 5 minutos
+    # Processar ofertas agendadas - A cada 30 minutos
     'processar-ofertas-agendadas': {
         'task': 'apps.ofertas.processar_ofertas_agendadas',
-        'schedule': crontab(minute='*/5'),  # A cada 5 minutos
+        'schedule': crontab(minute='*/30'),  # A cada 30 minutos
         'options': {
-            'expires': 300,  # Expira em 5 minutos
+            'expires': 1800,  # Expira em 30 minutos
         }
     },
 }
