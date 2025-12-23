@@ -50,27 +50,30 @@ class PinbankService:
         if tabela == 'transactiondata_own':
             return self._buscar_loja_por_cnpj(identificador)
         elif tabela == 'transactiondata':
-            return self._buscar_loja_por_nsu(identificador)
+            return self._buscar_loja_por_nsu(identificador, tabela='transactiondata')
         elif tabela == 'transactiondata_pos':
             # Tabela unificada: usar NSU para buscar loja
-            return self._buscar_loja_por_nsu(identificador)
+            return self._buscar_loja_por_nsu(identificador, tabela='transactiondata_pos')
         else:
             raise ValueError(f"Tabela inválida: {tabela}. Use 'transactiondata', 'transactiondata_own' ou 'transactiondata_pos'")
 
-    def _buscar_loja_por_nsu(self, nsu_operacao: int) -> Dict[str, Any]:
+    def _buscar_loja_por_nsu(self, nsu_operacao: int, tabela: str = 'transactiondata') -> Dict[str, Any]:
         """Busca loja pelo NSU (Pinbank) - método interno"""
         with connection.cursor() as cursor:
-            cursor.execute("""
+            # Ajustar campo NSU conforme tabela
+            campo_nsu = 'nsuPinbank' if tabela == 'transactiondata' else 'nsu_gateway'
+            
+            cursor.execute(f"""
                 SELECT  l.id, l.razao_social, l.cnpj, l.canal_id
                 FROM    wallclub.loja l,
                         wallclub.terminais as t,
-                        wallclub.transactiondata as td
-                WHERE   td.nsuPinbank = %s
+                        wallclub.{tabela} as td
+                WHERE   td.{campo_nsu} = %s
                         AND (t.inicio <= CAST(td.datahora AS DATETIME(6)))
                         AND td.terminal = t.terminal
                         AND t.loja_id = l.id
                 ORDER BY t.id DESC LIMIT 1
-            """, [nsu_operacao])
+            """, [str(nsu_operacao)])
 
             row = cursor.fetchone()
             if row:
@@ -82,7 +85,7 @@ class PinbankService:
                     'canal_id': row[3]
                 }
             else:
-                raise Exception(f"Loja não encontrada para NSU {nsu_operacao}")
+                raise Exception(f"Loja não encontrada para NSU {nsu_operacao} na tabela {tabela}")
 
     def _buscar_loja_por_cnpj(self, cnpj: str) -> Dict[str, Any]:
         """Busca loja pelo CNPJ (Own) - método interno"""
