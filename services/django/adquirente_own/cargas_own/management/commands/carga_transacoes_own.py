@@ -1,41 +1,36 @@
 """
-Management command para carga de transações Own Financial
+Management command para carga de extrato Own Financial
 Uso: python manage.py carga_transacoes_own --cnpj=00000000000000 --data-inicial=2025-01-01 --data-final=2025-01-31
 """
 
 from django.core.management.base import BaseCommand
 from datetime import datetime
-from adquirente_own.cargas_own.services_carga_transacoes import CargaTransacoesOwnService
+from adquirente_own.cargas_own.services_carga_extrato_pos import CargaExtratoOwnService
 
 
 class Command(BaseCommand):
-    help = 'Executa carga de transações Own Financial'
+    help = 'Executa carga de extrato Own Financial'
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '--diaria',
+            action='store_true',
+            help='Executa carga diária (últimas 24h)'
+        )
+        parser.add_argument(
             '--cnpj',
             type=str,
-            help='CNPJ do cliente (opcional, se não informado processa todos)'
+            help='CNPJ específico do cliente'
         )
         parser.add_argument(
             '--data-inicial',
             type=str,
-            help='Data inicial (formato: YYYY-MM-DD)'
+            help='Data inicial (YYYY-MM-DD)'
         )
         parser.add_argument(
             '--data-final',
             type=str,
-            help='Data final (formato: YYYY-MM-DD)'
-        )
-        parser.add_argument(
-            '--dias',
-            type=int,
-            help='Número de dias retroativos (ex: --dias 7 busca últimos 7 dias)'
-        )
-        parser.add_argument(
-            '--diaria',
-            action='store_true',
-            help='Executa carga diária (ontem)'
+            help='Data final (YYYY-MM-DD)'
         )
 
     def handle(self, *args, **options):

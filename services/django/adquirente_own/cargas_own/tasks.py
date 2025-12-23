@@ -16,13 +16,13 @@ def carga_transacoes_own_diaria():
     O webhook recebe transações em tempo real, esta task apenas
     identifica e recupera transações que possam ter sido perdidas.
     """
-    from adquirente_own.cargas_own.services_carga_transacoes import CargaTransacoesOwnService
+    from adquirente_own.cargas_own.services_carga_extrato_pos import CargaExtratoOwnService
     from adquirente_own.cargas_own.models import OwnExtratoTransacoes
     
     registrar_log('own.tasks', '🔍 Iniciando double-check: transações Own')
     
     try:
-        service = CargaTransacoesOwnService()
+        service = CargaExtratoOwnService()
         resultado = service.executar_carga_diaria()
         
         # Contar quantas eram novas (não vieram via webhook)
@@ -104,12 +104,12 @@ def carga_transacoes_own_periodo(cnpj_cliente: str, data_inicial: str, data_fina
         data_inicial: Data inicial (formato: YYYY-MM-DD)
         data_final: Data final (formato: YYYY-MM-DD)
     """
-    from adquirente_own.cargas_own.services_carga_transacoes import CargaTransacoesOwnService
+    from adquirente_own.cargas_own.services_carga_extrato_pos import CargaExtratoOwnService
     
     registrar_log('own.tasks', f'🚀 Carga período: {data_inicial} a {data_final}')
     
     try:
-        service = CargaTransacoesOwnService()
+        service = CargaExtratoOwnService()
         
         # Converter strings para datetime
         dt_inicial = datetime.strptime(data_inicial, '%Y-%m-%d')

@@ -13,7 +13,6 @@ from wallclub_core.utilitarios.funcoes_gerais import proxima_sexta_feira
 from django.db import connection
 from wallclub_core.utilitarios.log_control import registrar_log, log_esta_habilitado
 from wallclub_core.database.queries import TransacoesQueries
-from gestao_financeira.models import BaseTransacoesGestao
 
 # logger removido - usando registrar_log
 
@@ -713,11 +712,19 @@ class CalculadoraBaseCredenciadora:
             descricao_status_pag = str(dados_linha.get('DescricaoStatusPagamento', '')).strip()
 
             try:
-                registro_existente = BaseTransacoesGestao.objects.filter(var9=nsu_operacao).first()
+                # Consultar base_transacoes_unificadas ao invés de BaseTransacoesGestao
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT var45 
+                        FROM base_transacoes_unificadas 
+                        WHERE var9 = %s 
+                        LIMIT 1
+                    """, [str(nsu_operacao)])
+                    resultado = cursor.fetchone()
 
-                if registro_existente and registro_existente.var45:
+                if resultado and resultado[0]:
                     # Preservar data existente
-                    valores[45] = registro_existente.var45
+                    valores[45] = resultado[0]
                     registrar_log('parametros_wallclub',
                                  f"var45 preservada para NSU {nsu_operacao}: {valores[45]}",
                                  nivel='DEBUG')

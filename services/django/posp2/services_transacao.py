@@ -433,10 +433,7 @@ class TRDataService:
             else:
                 data_transacao_dt = datetime.now().replace(microsecond=0)
 
-            registrar_log('posp2', f'Passando data_transacao_dt para baseTransacoesGestao: {data_transacao_dt}')
-            self._inserir_base_transacoes_gestao(dados, valores_calculados, data_transacao_dt)
-
-            # 10.5. INSERIR EM BASE_TRANSACOES_UNIFICADAS (NOVO - 19/12/2024)
+            # 10.5. INSERIR EM BASE_TRANSACOES_UNIFICADAS
             nsu_pinbank = dados.get('nsuPinbank')
             if nsu_pinbank:
                 registrar_log('posp2', f'Inserindo em base_transacoes_unificadas - NSU: {nsu_pinbank}')
@@ -1394,102 +1391,6 @@ class TRDataService:
             registrar_log('posp2', f'❌ Erro ao inserir base_transacoes_unificadas: {e}', nivel='ERROR')
             # NÃO interromper o fluxo - transação já foi gravada em transactiondata
 
-    def _inserir_base_transacoes_gestao(self, dados: Dict, valores_calculados: Dict, data_transacao=None):
-        """
-        Insere dados calculados na tabela baseTransacoesGestao
-        """
-        try:
-            from gestao_financeira.models import BaseTransacoesGestao
-
-            # Para chamadas POS: idFilaExtrato sempre NULL
-            # Para carga Pinbank: idFilaExtrato vem dos dados
-            id_fila_extrato = None  # Sempre NULL para transações POS
-
-            # Usar data_transacao passada ou datetime.now() como fallback
-            registrar_log('posp2', f'_inserir_base_transacoes_gestao recebeu data_transacao: {data_transacao} (tipo: {type(data_transacao)})')
-            if data_transacao is None:
-                data_transacao = datetime.now().replace(microsecond=0)
-                registrar_log('posp2', f'data_transacao era None, usando datetime.now(): {data_transacao}')
-            else:
-                registrar_log('posp2', f'Usando data_transacao recebida: {data_transacao}')
-
-            # Mapear TODOS os campos calculados para o modelo
-            dados_base_gestao = {
-                'idFilaExtrato': id_fila_extrato,
-                'banco': 'PINBANK',
-                'tipo_operacao': 'Wallet',
-                'data_transacao': data_transacao,
-            }
-
-            # Campos que devem ser string (varchar/text) - todos os outros são decimal/float
-            varchar_fields = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 43, 45, 57, 59, 65, 66, 68, 69, 70, 71, 96, 97, 98, 99, 100, 102, 119, 120, 121, 122, 123, 126, 129, 130}
-
-            # Mapear variáveis 0-130 com tipos corretos
-            for i in range(131):
-                if i in valores_calculados:
-                    valor = valores_calculados[i]
-                    campo_nome = f'var{i}'
-
-                    # Tratar valores None
-                    if valor is None:
-                        dados_base_gestao[campo_nome] = None
-                    # Tratar arrays (converter para string do primeiro valor)
-                    elif isinstance(valor, dict):
-                        if '0' in valor:
-                            valor_final = valor['0']
-                        else:
-                            valor_final = str(valor)
-
-                        # Aplicar tipo correto
-                        if i in varchar_fields:
-                            dados_base_gestao[campo_nome] = str(valor_final) if valor_final is not None else None
-                        else:  # decimal fields - usar float
-                            try:
-                                dados_base_gestao[campo_nome] = float(valor_final) if valor_final is not None else None
-                            except (ValueError, TypeError) as conv_error:
-                                registrar_log('posp2', f'ERRO conversão dict campo {campo_nome}: valor="{valor_final}" tipo={type(valor_final)} erro={conv_error}')
-                                dados_base_gestao[campo_nome] = 0.0
-                    # Aplicar tipo baseado no campo
-                    elif i in varchar_fields:
-                        dados_base_gestao[campo_nome] = str(valor)
-                    else:  # decimal fields - usar float
-                        try:
-                            dados_base_gestao[campo_nome] = float(valor)
-                        except (ValueError, TypeError) as conv_error:
-                            registrar_log('posp2', f'ERRO conversão campo {campo_nome}: valor="{valor}" tipo={type(valor)} erro={conv_error}')
-                            dados_base_gestao[campo_nome] = 0.0  # Valor padrão
-
-            # Mapear campos especiais com sufixos (_A, _B) - APENAS se existem no modelo
-            for key, valor in valores_calculados.items():
-                if isinstance(key, str) and '_' in key:
-                    campo_nome = f'var{key}'
-                    # Verificar se campo existe no modelo antes de adicionar
-                    if hasattr(BaseTransacoesGestao, campo_nome) and valor is not None:
-                        dados_base_gestao[campo_nome] = str(valor)
-
-            # Usar SQL raw para evitar conversão de timezone pelo Django ORM
-            from django.db import connection
-
-            registrar_log('posp2', f'Dados finais para inserção na BaseTransacoesGestao: data_transacao={dados_base_gestao["data_transacao"]}')
-
-            # Separar data_transacao dos outros campos
-            data_transacao_valor = dados_base_gestao.pop('data_transacao')
-
-            # Construir SQL INSERT
-            campos = list(dados_base_gestao.keys()) + ['data_transacao']
-            valores = list(dados_base_gestao.values()) + [data_transacao_valor.strftime('%Y-%m-%d %H:%M:%S')]
-
-            placeholders = ', '.join(['%s'] * len(valores))
-            campos_sql = ', '.join(campos)
-
-            sql = f"INSERT INTO baseTransacoesGestao ({campos_sql}) VALUES ({placeholders})"
-
-            with connection.cursor() as cursor:
-                cursor.execute(sql, valores)
-                base_id = cursor.lastrowid
-
-            registrar_log('posp2', f'BaseTransacoesGestao inserida com sucesso via SQL raw. ID: {base_id}, data_transacao: {data_transacao_valor}')
-
-        except Exception as e:
-            registrar_log('posp2', f'ERRO ao inserir BaseTransacoesGestao: {e}')
-            raise
+    # DEPRECATED: Método removido - usar _inserir_base_transacoes_unificadas()
+    # def _inserir_base_transacoes_gestao(self, dados: Dict, valores_calculados: Dict, data_transacao=None):
+    #     pass

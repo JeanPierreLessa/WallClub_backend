@@ -331,6 +331,7 @@ class PagamentoService:
     def listar_recebimentos(filtros=None):
         """
         Lista recebimentos com filtros avançados para relatórios.
+        MIGRADO: Consulta base_transacoes_unificadas
 
         Args:
             filtros (dict): Filtros de busca (lojas, data_inicio, data_fim, tipo)
@@ -338,42 +339,57 @@ class PagamentoService:
         Returns:
             QuerySet: Recebimentos filtrados com agregações
         """
-        from wallclub_core.database.queries import TransacoesQueries
-        from django.db.models import Q, Sum
-
-        queryset = BaseTransacoesGestao.objects.all()
+        from django.db import connection
+        from collections import namedtuple
 
         if not filtros:
-            return queryset.none()
+            return []
 
-        # Filtro base: apenas transações com data de recebimento
-        filtros_q = Q(var45__isnull=False) & ~Q(var45='')
+        # Construir WHERE clause
+        where_clauses = ["var45 IS NOT NULL", "var45 != ''"]
+        params = []
 
         # Filtro por lojas
         if filtros.get('lojas'):
             lojas_ids = filtros['lojas']
             if isinstance(lojas_ids, (list, tuple)):
-                filtros_q &= Q(var6__in=lojas_ids)
+                placeholders = ','.join(['%s'] * len(lojas_ids))
+                where_clauses.append(f"var6 IN ({placeholders})")
+                params.extend(lojas_ids)
             else:
-                filtros_q &= Q(var6=lojas_ids)
+                where_clauses.append("var6 = %s")
+                params.append(lojas_ids)
 
         # Filtro por NSU
         if filtros.get('nsu'):
-            filtros_q &= Q(var9__icontains=filtros['nsu'])
+            where_clauses.append("var9 LIKE %s")
+            params.append(f"%{filtros['nsu']}%")
 
-        queryset = queryset.filter(filtros_q)
+        where_sql = " AND ".join(where_clauses)
+
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT * FROM base_transacoes_unificadas
+                WHERE {where_sql}
+                ORDER BY data_transacao DESC
+            """, params)
+            
+            columns = [col[0] for col in cursor.description]
+            Transacao = namedtuple('Transacao', columns)
+            resultados = [Transacao(*row) for row in cursor.fetchall()]
 
         registrar_log(
             'gestao_financeira',
-            f'Listando recebimentos - Filtros: {filtros} - Total: {queryset.count()}'
+            f'Listando recebimentos - Filtros: {filtros} - Total: {len(resultados)}'
         )
 
-        return queryset.order_by('-data_transacao')
+        return resultados
 
     @staticmethod
     def obter_relatorio_financeiro(lojas_ids, data_inicio=None, data_fim=None):
         """
         Gera relatório financeiro agregado de recebimentos.
+        MIGRADO: Consulta base_transacoes_unificadas
 
         Args:
             lojas_ids (list): IDs das lojas
@@ -383,16 +399,34 @@ class PagamentoService:
         Returns:
             dict: Dados agregados do relatório
         """
-        from wallclub_core.database.queries import TransacoesQueries
-        from django.db.models import Sum, Count, Q, Avg
+        from django.db import connection
         from decimal import Decimal
+        from collections import namedtuple
 
-        # Construir filtros
-        filtros = Q(var6__in=lojas_ids) & Q(var45__isnull=False) & ~Q(var45='')
+        # Construir WHERE clause
+        where_clauses = ["var45 IS NOT NULL", "var45 != ''"]
+        params = []
 
-        # Processar datas
+        # Filtro por lojas
+        if lojas_ids:
+            placeholders = ','.join(['%s'] * len(lojas_ids))
+            where_clauses.append(f"var6 IN ({placeholders})")
+            params.extend(lojas_ids)
+
+        where_sql = " AND ".join(where_clauses)
+
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT * FROM base_transacoes_unificadas
+                WHERE {where_sql}
+            """, params)
+            
+            columns = [col[0] for col in cursor.description]
+            Transacao = namedtuple('Transacao', columns)
+            transacoes = [Transacao(*row) for row in cursor.fetchall()]
+
+        # Processar datas (filtro em Python porque var45 está em formato DD/MM/YYYY)
         if data_inicio or data_fim:
-            transacoes = BaseTransacoesGestao.objects.filter(filtros)
             recebimentos_filtrados = []
 
             for t in transacoes:
@@ -430,10 +464,10 @@ class PagamentoService:
 
             transacoes_queryset = recebimentos_filtrados
         else:
-            transacoes_queryset = BaseTransacoesGestao.objects.filter(filtros)
+            transacoes_queryset = transacoes
 
         # Calcular agregações
-        total_transacoes = len(transacoes_queryset) if isinstance(transacoes_queryset, list) else transacoes_queryset.count()
+        total_transacoes = len(transacoes_queryset)
 
         valor_total = Decimal('0.00')
         for t in transacoes_queryset:

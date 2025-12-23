@@ -1,6 +1,7 @@
 """
-Serviço para carga de transações da API Own Financial
+Serviço para carga de extrato da API Own Financial
 Endpoint: POST /agilli/transacoes/v2/buscaTransacoesGerais
+Equivalente ao services_carga_extrato_pos.py do Pinbank
 """
 
 from typing import Dict, Any, List
@@ -8,11 +9,10 @@ from datetime import datetime, timedelta
 from django.db import transaction
 from adquirente_own.services import OwnService
 from adquirente_own.cargas_own.models import OwnExtratoTransacoes
-from gestao_financeira.models import BaseTransacoesGestao
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
-class CargaTransacoesOwnService:
+class CargaExtratoOwnService:
     """Serviço para carga de transações Own Financial"""
     
     def __init__(self):
@@ -167,34 +167,9 @@ class CargaTransacoesOwnService:
         
         transacao_obj.save()
     
-    def processar_para_base_gestao(self, transacao: OwnExtratoTransacoes) -> BaseTransacoesGestao:
-        """
-        Processa transação Own para BaseTransacoesGestao
-        
-        Args:
-            transacao: OwnExtratoTransacoes
-            
-        Returns:
-            BaseTransacoesGestao criado
-        """
-        # TODO: Implementar mapeamento completo para BaseTransacoesGestao
-        # Similar ao que existe em pinbank/cargas_pinbank/services_carga_credenciadora.py
-        
-        base_transacao = BaseTransacoesGestao.objects.create(
-            adquirente='OWN',
-            tipo_operacao='Credenciadora',
-            data_transacao=transacao.data,
-            var9=transacao.identificadorTransacao,  # NSU/Identificador
-            var13=transacao.valor,  # Valor bruto
-            # Mapear demais campos conforme necessário
-        )
-        
-        transacao.processado = True
-        transacao.save()
-        
-        registrar_log('adquirente_own.cargas_own', f'✅ Processado para base gestão: {transacao.identificadorTransacao}')
-        
-        return base_transacao
+    # DEPRECATED: Método removido - usar services_carga_base_unificada_pos.py
+    # def processar_para_base_gestao(self, transacao: OwnExtratoTransacoes):
+    #     pass
     
     def executar_carga_diaria(self, cnpj_cliente: str = None) -> Dict[str, Any]:
         """

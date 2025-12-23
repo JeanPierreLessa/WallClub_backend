@@ -4,33 +4,34 @@ Uso: python manage.py carga_base_gestao_own --limite=1000
 """
 
 from django.core.management.base import BaseCommand
-from adquirente_own.cargas_own.services_carga_base_gestao_own import CargaBaseGestaoOwnService
+from adquirente_own.cargas_own.services_carga_base_unificada_pos import CargaBaseUnificadaOwnService
 
 
 class Command(BaseCommand):
-    help = 'Processa transações Own (ownExtratoTransacoes + transactiondata_own) para BaseTransacoesGestao'
+    help = 'Executa carga de valores primários na Base Transações Unificadas - Own'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--limite',
             type=int,
             default=None,
-            help='Número máximo de registros a processar'
+            help='Limite de registros a processar'
         )
         parser.add_argument(
             '--identificador',
             type=str,
-            help='Processar transação específica por identificador'
+            default=None,
+            help='Identificador específico da transação'
         )
 
     def handle(self, *args, **options):
-        service = CargaBaseGestaoOwnService()
+        service = CargaBaseUnificadaOwnService()
         
         limite = options['limite']
         identificador = options['identificador']
         
         if identificador:
-            self.stdout.write(self.style.SUCCESS(f'🔄 Processando transação específica: {identificador}'))
+            self.stdout.write(self.style.SUCCESS(f' Processando transação específica: {identificador}'))
         else:
             msg = f'🔄 Processando transações Own não lidas'
             if limite:
