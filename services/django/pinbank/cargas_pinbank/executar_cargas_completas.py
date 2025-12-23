@@ -69,15 +69,7 @@ def main():
         },
         {
             'comando_args': ['carga_base_unificada', '--limite=5000'],
-            'descricao': 'Carga Base Unificada - Wallet (5000 registros)'
-        },
-        {
-            'comando_args': ['carga_base_unificada_credenciadora', '--limite=5000'],
-            'descricao': 'Carga Base Unificada - Credenciadora (5000 registros)'
-        },
-        {
-            'comando_args': ['carga_base_unificada_checkout', '--limite=5000'],
-            'descricao': 'Carga Base Unificada - Checkout (5000 registros)'
+            'descricao': 'Carga Base Unificada - POS + Credenciadora + Checkout (5000 registros cada)'
         },
         {
             'comando_args': ['ajustes_manuais_base'],
