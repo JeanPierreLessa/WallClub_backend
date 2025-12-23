@@ -56,7 +56,7 @@ class CargaBaseUnificadaCheckoutService:
                          cecp.cliente_id as clienteId,
                          cecp.nome as razao_social,
                          cecp.cnpj as cnpj,
-                         ct.cpf as cpf,
+                         cc.cpf as cpf,
                          ct.nsu as nsuAcquirer,
                          pep.idTerminal,
                          pep.SerialNumber,
@@ -98,6 +98,7 @@ class CargaBaseUnificadaCheckoutService:
                 INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
                 INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
                 INNER JOIN wallclub.checkout_transactions ct ON pep.NsuOperacaoLoja = ct.nsu
+                INNER JOIN wallclub.checkout_cliente cc ON ct.cliente_id = cc.id
                 WHERE    pep.processado = 0
                          AND pep.id IN (
                              SELECT MIN(pep2.id)
@@ -169,7 +170,7 @@ class CargaBaseUnificadaCheckoutService:
                                     'cnpj': linha.get('cnpj'),
                                     'canal_id': linha.get('canal_id')
                                 }
-                                
+
                                 # Usar cache ao invés de query
                                 canal_id = linha.get('canal_id')
                                 linha['info_canal'] = canais_cache.get(canal_id, {
