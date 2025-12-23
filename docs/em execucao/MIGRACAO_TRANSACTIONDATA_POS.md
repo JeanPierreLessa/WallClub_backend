@@ -383,6 +383,13 @@ Durante a migração, 3 tabelas coexistem:
   - INSERT: `transactiondata` → `transactiondata_pos`
   - Adiciona campo `gateway = 'PINBANK'` no INSERT
   - Verifica duplicação por `nsu_gateway` e `gateway`
+  - Removido bloco de DELETE de `baseTransacoesGestao` (desnecessário)
+
+### 22/12/2025 - Deploy em Produção
+- ✅ Cargas Pinbank migradas deployadas em produção
+- 📊 **Período de observação:** 23/12/2025 (1 dia)
+- 🎯 **Objetivo:** Validar funcionamento das cargas antes de alterar `services_transacao.py`
+- ⚠️ **Monitorar:** Logs de cargas, erros, performance, integridade dos dados
 
 ---
 
@@ -942,13 +949,15 @@ DROP TRIGGER IF EXISTS trg_transactiondata_update_sync;
 6. ✅ **Migrar processos de leitura** para `transactiondata_pos` - **Concluído em 22/12/2025**
    - ✅ Portal Lojista (`views_vendas_operador.py`)
    - ✅ APIs de Cupom (`cupom/models.py`, `cupom/services.py`)
-7. ✅ **Migrar cargas Pinbank** (5 arquivos) para `transactiondata_pos` - **Concluído em 22/12/2025**
+7. ✅ **Migrar cargas Pinbank** (5 arquivos) para `transactiondata_pos` - **Concluído e em produção desde 22/12/2025**
    - ✅ `services_carga_base_gestao_pos.py`
    - ✅ `services_carga_base_unificada_pos.py`
    - ✅ `services_carga_credenciadora.py`
    - ✅ `services_carga_base_unificada_credenciadora.py`
    - ✅ `services_ajustes_manuais.py`
+   - 📊 **Status:** Em observação por 1 dia antes de prosseguir
 8. ⏳ **Alterar `services_transacao.py`** para escrever em `transactiondata_pos` (manter trigger ativo)
+   - Aguardando validação das cargas (Passo 7)
 9. ⏳ **Virar API do POS** - App chamar `/trdata_pinbank/` e `/trdata_own/`
 10. ⏳ **Deprecar services legados** - `services_transacao.py` e `services_transacao_own.py`
 11. ⏳ **Remover triggers** após 100% migrado

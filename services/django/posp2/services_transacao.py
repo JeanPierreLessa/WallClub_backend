@@ -287,7 +287,7 @@ class TRDataService:
             calculadora = CalculadoraBaseGestao()
             registrar_log('posp2', f'Chamando calcular_valores_primarios com dados_linha: {dados_linha}')
             try:
-                valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata')
+                valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata_pos')
                 registrar_log('posp2', 'Calculadora executada com sucesso')
 
                 # Log completo dos valores calculados
@@ -1113,9 +1113,9 @@ class TRDataService:
         return float(valor) if valor else 0.0
 
     def _inserir_transaction_data(self, dados: Dict, resultado: Dict, autorizacao_id: str = '', modalidade_wall: str = '', cashback_concedido: float = 0):
-        """Insere dados na tabela transactiondata replicando lógica PHP"""
+        """Insere dados na tabela transactiondata_pos (unificada) com gateway=PINBANK"""
         try:
-            registrar_log('posp2', f'=== INÍCIO _inserir_transaction_data ===')
+            registrar_log('posp2', f'=== INÍCIO _inserir_transaction_data (PINBANK → transactiondata_pos) ===')
             registrar_log('posp2', f'Dados recebidos: {list(dados.keys())}')
             registrar_log('posp2', f'DEBUG ANTES conversão: valor_desconto={dados.get("valor_desconto")}, valor_cashback={dados.get("valor_cashback")}')
 
@@ -1179,22 +1179,23 @@ class TRDataService:
 
             # Log detalhado dos valores finais que serão inseridos
             registrar_log('posp2', f'VALORES FINAIS PARA INSERT:')
+            registrar_log('posp2', f'gateway=PINBANK')
             registrar_log('posp2', f'operador_pos={dados_para_inserir.get("operador_pos")}')
             registrar_log('posp2', f'valor_desconto_json={valor_desconto_json} (tipo: {type(valor_desconto_json)})')
             registrar_log('posp2', f'valor_cashback_json={valor_cashback_json} (tipo: {type(valor_cashback_json)})')
             registrar_log('posp2', f'cashback_concedido_json={cashback_concedido_json} (tipo: {type(cashback_concedido_json)})')
 
-            # Inserir diretamente na tabela transactiondata
+            # Inserir diretamente na tabela transactiondata_pos (unificada)
             with connection.cursor() as cursor:
                 # Log dos últimos valores que serão inseridos
-                registrar_log('posp2', f'Valores do INSERT: operador={dados_para_inserir.get("operador_pos")}, desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
+                registrar_log('posp2', f'Valores do INSERT em transactiondata_pos: gateway=PINBANK, operador={dados_para_inserir.get("operador_pos")}, desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
 
                 cursor.execute("""
-                    INSERT INTO transactiondata (
-                        datahora, valor_original, celular, cpf, terminal,
+                    INSERT INTO transactiondata_pos (
+                        gateway, datahora, valor_original, celular, cpf, terminal,
                         nsuHostCancellation, amountCancellation, originalAmount,
                         preAuthorizationConfirmationTimestamp, amount, nsuTerminal,
-                        status, transactionWithSignature, nsuAcquirer, nsuPinbank,
+                        status, transactionWithSignature, nsuAcquirer, nsu_gateway,
                         arqc, aid, terminalTimestamp, captureType,
                         hostTimestampCancellation, authorizationCode, nsuHost,
                         applicationName, brand, paymentMethod, totalInstallments,
@@ -1205,9 +1206,10 @@ class TRDataService:
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                 """, (
+                    'PINBANK',  # gateway
                     dados_para_inserir.get('datahora'),
                     dados_para_inserir.get('valor_original'),
                     dados_para_inserir.get('celular'),
@@ -1222,14 +1224,14 @@ class TRDataService:
                     dados_para_inserir.get('status'),
                     dados_para_inserir.get('transactionWithSignature'),
                     dados_para_inserir.get('nsuAcquirer'),
-                    dados_para_inserir.get('nsuPinbank'),
+                    str(dados_para_inserir.get('nsuPinbank')),  # nsu_gateway (VARCHAR)
                     dados_para_inserir.get('arqc'),
                     dados_para_inserir.get('aid'),
                     dados_para_inserir.get('terminalTimestamp'),
                     dados_para_inserir.get('captureType'),
                     dados_para_inserir.get('hostTimestampCancellation'),
                     dados_para_inserir.get('authorizationCode'),
-                    dados_para_inserir.get('nsuHost'),
+                    str(dados_para_inserir.get('nsuHost')) if dados_para_inserir.get('nsuHost') else None,  # VARCHAR
                     dados_para_inserir.get('applicationName'),
                     dados_para_inserir.get('brand'),
                     dados_para_inserir.get('paymentMethod'),
@@ -1237,7 +1239,7 @@ class TRDataService:
                     dados_para_inserir.get('nsuTerminalCancellation'),
                     dados_para_inserir.get('billPaymentEffectiveDate'),
                     dados_para_inserir.get('pinCaptured'),
-                    dados_para_inserir.get('hostTimestamp'),
+                    str(dados_para_inserir.get('hostTimestamp')) if dados_para_inserir.get('hostTimestamp') else None,  # VARCHAR
                     dados_para_inserir.get('capturedTransaction'),
                     dados_para_inserir.get('cardName'),
                     dados_para_inserir.get('cardNumber'),
@@ -1249,7 +1251,7 @@ class TRDataService:
                     modalidade_wall if modalidade_wall else None
                 ))
 
-            registrar_log('posp2', f'INSERT executado com sucesso - NSU: {dados_para_inserir.get("nsuPinbank")}')
+            registrar_log('posp2', f'INSERT executado com sucesso em transactiondata_pos - Gateway: PINBANK, NSU: {dados_para_inserir.get("nsuPinbank")}')
 
             # Registrar auditoria da transação
             try:
