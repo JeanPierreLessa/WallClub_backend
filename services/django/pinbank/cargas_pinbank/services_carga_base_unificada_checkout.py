@@ -86,7 +86,7 @@ class CargaBaseUnificadaCheckoutService:
                          pep.NumeroCartao,
                          pep.DataCancelamento,
                          pep.Submerchant,
-                         ct.amount as valor_original,
+                         pep.ValorBruto as valor_original,
                          ( SELECT  SUM(pep2.ValorLiquidoRepasse)
                            FROM   wallclub.pinbankExtratoPOS pep2
                            WHERE  pep.NsuOperacao = pep2.NsuOperacao
