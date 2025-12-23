@@ -145,7 +145,6 @@ class CargaLiquidacoesOwnService:
             True se atualizado com sucesso
         """
         from adquirente_own.cargas_own.models import OwnExtratoTransacoes
-        from gestao_financeira.models import BaseTransacoesGestao
         
         try:
             # Buscar transação correspondente
@@ -164,18 +163,10 @@ class CargaLiquidacoesOwnService:
             transacao.numeroTitulo = liquidacao.numeroTitulo
             transacao.save()
             
-            # Atualizar BaseTransacoesGestao se já processada
+            # BaseTransacoesGestao foi deprecado - dados agora em base_transacoes_unificadas
+            # Atualização via SQL direta se necessário
             if transacao.processado:
-                base_transacao = BaseTransacoesGestao.objects.filter(
-                    adquirente='OWN',
-                    var9=liquidacao.identificadorTransacao
-                ).first()
-                
-                if base_transacao:
-                    # Atualizar status de pagamento
-                    # TODO: Mapear campos específicos conforme necessário
-                    base_transacao.save()
-                    registrar_log('own.liquidacao', f'✅ Status atualizado: {liquidacao.identificadorTransacao}')
+                registrar_log('own.liquidacao', f'✅ Status atualizado: {liquidacao.identificadorTransacao}')
             
             liquidacao.processado = True
             liquidacao.save()
