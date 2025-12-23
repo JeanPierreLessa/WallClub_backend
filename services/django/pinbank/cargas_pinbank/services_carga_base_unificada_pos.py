@@ -102,6 +102,7 @@ class CargaBaseUnificadaPOSService:
                          AND pep.id IN (
                              SELECT MIN(pep2.id)
                              FROM wallclub.pinbankExtratoPOS pep2
+                             INNER JOIN wallclub.transactiondata_pos t2 ON pep2.NsuOperacao = t2.nsu_gateway AND t2.gateway = 'PINBANK'
                              WHERE pep2.processado = 0
                              {worker_clause}
                              GROUP BY pep2.NsuOperacao
