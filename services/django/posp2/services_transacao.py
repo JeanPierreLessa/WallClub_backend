@@ -278,10 +278,10 @@ class TRDataService:
             # Usar dados_trdata como dados principais (elimina duplicação)
             dados = dados_trdata
 
-            # 8. INSERIR NA TRANSACTIONDATA
-            registrar_log('posp2', 'Iniciando inserção na transactiondata...')
+            # 8. INSERIR NA TRANSACTIONDATA_POS
+            registrar_log('posp2', 'Iniciando inserção na transactiondata_pos...')
             self._inserir_transaction_data(dados, {}, autorizacao_id, modalidade_wall, cashback_concedido_pos)
-            registrar_log('posp2', 'Inserção na transactiondata concluída')
+            registrar_log('posp2', 'Inserção na transactiondata_pos concluída')
 
             # 9. CALCULAR VALORES APÓS INSERÇÃO
             calculadora = CalculadoraBaseGestao()
@@ -298,7 +298,7 @@ class TRDataService:
                 # Continuar com valores vazios para não interromper o fluxo
                 valores_calculados = {}
 
-            # 9.5. BUSCAR LOJA PRIMEIRO (necessário para obter canal_id)
+            # 9.5. BUSCAR LOJA (necessário para obter canal_id)
             nsu_pinbank = dados.get('nsuPinbank')
             loja_info = None
             if nsu_pinbank:
