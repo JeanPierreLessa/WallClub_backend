@@ -140,7 +140,7 @@ class PinbankService:
 
         Args:
             identificador: NSU (int) para Pinbank OU CNPJ (str) para Own
-            tabela: 'transactiondata' ou 'transactiondata_own' (OBRIGATÓRIO)
+            tabela: 'transactiondata', 'transactiondata_own' ou 'transactiondata_pos' (OBRIGATÓRIO)
 
         Returns:
             Dict com informações do canal (id, canal)
@@ -151,26 +151,31 @@ class PinbankService:
         if tabela == 'transactiondata_own':
             return self._buscar_canal_por_cnpj(identificador)
         elif tabela == 'transactiondata':
-            return self._buscar_canal_por_nsu(identificador)
+            return self._buscar_canal_por_nsu(identificador, tabela='transactiondata')
+        elif tabela == 'transactiondata_pos':
+            return self._buscar_canal_por_nsu(identificador, tabela='transactiondata_pos')
         else:
-            raise ValueError(f"Tabela inválida: {tabela}. Use 'transactiondata' ou 'transactiondata_own'")
+            raise ValueError(f"Tabela inválida: {tabela}. Use 'transactiondata', 'transactiondata_own' ou 'transactiondata_pos'")
 
-    def _buscar_canal_por_nsu(self, nsu_operacao: int) -> Dict[str, Any]:
+    def _buscar_canal_por_nsu(self, nsu_operacao: int, tabela: str = 'transactiondata') -> Dict[str, Any]:
         """Busca canal pelo NSU (Pinbank) - método interno"""
         with connection.cursor() as cursor:
-            cursor.execute("""
+            # Ajustar campo NSU conforme tabela
+            campo_nsu = 'nsuPinbank' if tabela == 'transactiondata' else 'nsu_gateway'
+            
+            cursor.execute(f"""
                 SELECT   canal.id, canal.nome
                 FROM     wallclub.canal as canal,
                          wallclub.loja  as loja,
                          wallclub.terminais as terminais,
-                         wallclub.transactiondata as td
-                WHERE    td.nsuPinbank = %s
+                         wallclub.{tabela} as td
+                WHERE    td.{campo_nsu} = %s
                          AND td.terminal= terminais.terminal
                          AND ( terminais.inicio <= DATE_ADD(CAST(td.datahora AS DATETIME(6)), INTERVAL 3 HOUR) )
                          AND terminais.loja_id = loja.id
                          AND loja.canal_id = canal.id
                 ORDER BY terminais.id DESC LIMIT 1
-            """, [nsu_operacao])
+            """, [str(nsu_operacao)])
 
             row = cursor.fetchone()
             if row:
