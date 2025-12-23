@@ -63,6 +63,14 @@ class PinbankService:
             # Ajustar campo NSU conforme tabela
             campo_nsu = 'nsuPinbank' if tabela == 'transactiondata' else 'nsu_gateway'
             
+            # DEBUG: Verificar se registro existe
+            cursor.execute(f"SELECT COUNT(*), terminal, datahora FROM wallclub.{tabela} WHERE {campo_nsu} = %s GROUP BY terminal, datahora", [str(nsu_operacao)])
+            debug_row = cursor.fetchone()
+            if debug_row:
+                registrar_log('pinbank', f'DEBUG: Registro encontrado em {tabela}: count={debug_row[0]}, terminal={debug_row[1]}, datahora={debug_row[2]}')
+            else:
+                registrar_log('pinbank', f'DEBUG: Nenhum registro encontrado em {tabela} para NSU {nsu_operacao}')
+            
             cursor.execute(f"""
                 SELECT  l.id, l.razao_social, l.cnpj, l.canal_id
                 FROM    wallclub.loja l,

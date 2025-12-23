@@ -1186,72 +1186,78 @@ class TRDataService:
             registrar_log('posp2', f'cashback_concedido_json={cashback_concedido_json} (tipo: {type(cashback_concedido_json)})')
 
             # Inserir diretamente na tabela transactiondata_pos (unificada)
-            with connection.cursor() as cursor:
-                # Log dos últimos valores que serão inseridos
-                registrar_log('posp2', f'Valores do INSERT em transactiondata_pos: gateway=PINBANK, operador={dados_para_inserir.get("operador_pos")}, desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
+            try:
+                with connection.cursor() as cursor:
+                    # Log dos últimos valores que serão inseridos
+                    registrar_log('posp2', f'Valores do INSERT em transactiondata_pos: gateway=PINBANK, operador={dados_para_inserir.get("operador_pos")}, desconto={valor_desconto_json}, cashback={valor_cashback_json}, cashback_concedido={cashback_concedido_json}')
 
-                cursor.execute("""
-                    INSERT INTO transactiondata_pos (
-                        gateway, datahora, valor_original, celular, cpf, terminal,
-                        nsuHostCancellation, amountCancellation, originalAmount,
-                        preAuthorizationConfirmationTimestamp, amount, nsuTerminal,
-                        status, transactionWithSignature, nsuAcquirer, nsu_gateway,
-                        arqc, aid, terminalTimestamp, captureType,
-                        hostTimestampCancellation, authorizationCode, nsuHost,
-                        applicationName, brand, paymentMethod, totalInstallments,
-                        nsuTerminalCancellation, billPaymentEffectiveDate,
-                        pinCaptured, hostTimestamp, capturedTransaction,
-                        cardName, cardNumber, operador_pos,
-                        valor_desconto, valor_cashback, autorizacao_id, cashback_concedido, modalidade_wall
-                    ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    )
-                """, (
-                    'PINBANK',  # gateway
-                    dados_para_inserir.get('datahora'),
-                    dados_para_inserir.get('valor_original'),
-                    dados_para_inserir.get('celular'),
-                    dados_para_inserir.get('cpf'),
-                    dados_para_inserir.get('terminal'),
-                    dados_para_inserir.get('nsuHostCancellation'),
-                    dados_para_inserir.get('amountCancellation'),
-                    dados_para_inserir.get('originalAmount'),
-                    dados_para_inserir.get('preAuthorizationConfirmationTimestamp'),
-                    dados_para_inserir.get('amount'),
-                    dados_para_inserir.get('nsuTerminal'),
-                    dados_para_inserir.get('status'),
-                    dados_para_inserir.get('transactionWithSignature'),
-                    dados_para_inserir.get('nsuAcquirer'),
-                    str(dados_para_inserir.get('nsuPinbank')),  # nsu_gateway (VARCHAR)
-                    dados_para_inserir.get('arqc'),
-                    dados_para_inserir.get('aid'),
-                    dados_para_inserir.get('terminalTimestamp'),
-                    dados_para_inserir.get('captureType'),
-                    dados_para_inserir.get('hostTimestampCancellation'),
-                    dados_para_inserir.get('authorizationCode'),
-                    str(dados_para_inserir.get('nsuHost')) if dados_para_inserir.get('nsuHost') else None,  # VARCHAR
-                    dados_para_inserir.get('applicationName'),
-                    dados_para_inserir.get('brand'),
-                    dados_para_inserir.get('paymentMethod'),
-                    dados_para_inserir.get('totalInstallments'),
-                    dados_para_inserir.get('nsuTerminalCancellation'),
-                    dados_para_inserir.get('billPaymentEffectiveDate'),
-                    dados_para_inserir.get('pinCaptured'),
-                    str(dados_para_inserir.get('hostTimestamp')) if dados_para_inserir.get('hostTimestamp') else None,  # VARCHAR
-                    dados_para_inserir.get('capturedTransaction'),
-                    dados_para_inserir.get('cardName'),
-                    dados_para_inserir.get('cardNumber'),
-                    dados_para_inserir.get('operador_pos'),
-                    valor_desconto_json,
-                    valor_cashback_json,
-                    autorizacao_id if autorizacao_id else None,
-                    cashback_concedido_json,
-                    modalidade_wall if modalidade_wall else None
-                ))
+                    cursor.execute("""
+                        INSERT INTO transactiondata_pos (
+                            gateway, datahora, valor_original, celular, cpf, terminal,
+                            nsuHostCancellation, amountCancellation, originalAmount,
+                            preAuthorizationConfirmationTimestamp, amount, nsuTerminal,
+                            status, transactionWithSignature, nsuAcquirer, nsu_gateway,
+                            arqc, aid, terminalTimestamp, captureType,
+                            hostTimestampCancellation, authorizationCode, nsuHost,
+                            applicationName, brand, paymentMethod, totalInstallments,
+                            nsuTerminalCancellation, billPaymentEffectiveDate,
+                            pinCaptured, hostTimestamp, capturedTransaction,
+                            cardName, cardNumber, operador_pos,
+                            valor_desconto, valor_cashback, autorizacao_id, cashback_concedido, modalidade_wall
+                        ) VALUES (
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                    """, (
+                        'PINBANK',  # gateway
+                        dados_para_inserir.get('datahora'),
+                        dados_para_inserir.get('valor_original'),
+                        dados_para_inserir.get('celular'),
+                        dados_para_inserir.get('cpf'),
+                        dados_para_inserir.get('terminal'),
+                        dados_para_inserir.get('nsuHostCancellation'),
+                        dados_para_inserir.get('amountCancellation'),
+                        dados_para_inserir.get('originalAmount'),
+                        dados_para_inserir.get('preAuthorizationConfirmationTimestamp'),
+                        dados_para_inserir.get('amount'),
+                        dados_para_inserir.get('nsuTerminal'),
+                        dados_para_inserir.get('status'),
+                        dados_para_inserir.get('transactionWithSignature'),
+                        dados_para_inserir.get('nsuAcquirer'),
+                        str(dados_para_inserir.get('nsuPinbank')),  # nsu_gateway (VARCHAR)
+                        dados_para_inserir.get('arqc'),
+                        dados_para_inserir.get('aid'),
+                        dados_para_inserir.get('terminalTimestamp'),
+                        dados_para_inserir.get('captureType'),
+                        dados_para_inserir.get('hostTimestampCancellation'),
+                        dados_para_inserir.get('authorizationCode'),
+                        str(dados_para_inserir.get('nsuHost')) if dados_para_inserir.get('nsuHost') else None,  # VARCHAR
+                        dados_para_inserir.get('applicationName'),
+                        dados_para_inserir.get('brand'),
+                        dados_para_inserir.get('paymentMethod'),
+                        dados_para_inserir.get('totalInstallments'),
+                        dados_para_inserir.get('nsuTerminalCancellation'),
+                        dados_para_inserir.get('billPaymentEffectiveDate'),
+                        dados_para_inserir.get('pinCaptured'),
+                        str(dados_para_inserir.get('hostTimestamp')) if dados_para_inserir.get('hostTimestamp') else None,  # VARCHAR
+                        dados_para_inserir.get('capturedTransaction'),
+                        dados_para_inserir.get('cardName'),
+                        dados_para_inserir.get('cardNumber'),
+                        dados_para_inserir.get('operador_pos'),
+                        valor_desconto_json,
+                        valor_cashback_json,
+                        autorizacao_id if autorizacao_id else None,
+                        cashback_concedido_json,
+                        modalidade_wall if modalidade_wall else None
+                    ))
 
-            registrar_log('posp2', f'INSERT executado com sucesso em transactiondata_pos - Gateway: PINBANK, NSU: {dados_para_inserir.get("nsuPinbank")}')
+                registrar_log('posp2', f'INSERT executado com sucesso em transactiondata_pos - Gateway: PINBANK, NSU: {dados_para_inserir.get("nsuPinbank")}')
+            except Exception as e_insert:
+                registrar_log('posp2', f'❌ ERRO CRÍTICO no INSERT transactiondata_pos: {str(e_insert)}', nivel='ERROR')
+                import traceback
+                registrar_log('posp2', f'Traceback INSERT: {traceback.format_exc()}', nivel='ERROR')
+                raise
 
             # Registrar auditoria da transação
             try:
