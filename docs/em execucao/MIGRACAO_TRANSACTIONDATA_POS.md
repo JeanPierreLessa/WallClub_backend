@@ -238,17 +238,18 @@ Durante a migração, 3 tabelas coexistem:
 
 ## 📋 Checklist de Migração Completa
 
-### Fase 1: Pinbank em Produção ⏳
-- [ ] Migrar endpoint `/trdata/` para `TRDataPosService`
-- [ ] Testar transações Pinbank em `transactiondata_pos`
-- [ ] Validar slip e cálculos
+### Fase 1: Pinbank em Produção ✅
+- [x] Migrar endpoint `/trdata/` para gravar em `transactiondata_pos` - ✅ 23/12/2025
+- [x] Testar transações Pinbank em `transactiondata_pos` - ✅ 23/12/2025
+- [x] Validar slip e cálculos - ✅ 23/12/2025
 
-### Fase 2: Cargas e Processamento ⏳
-- [ ] Migrar `services_carga_base_gestao_pos.py`
-- [ ] Migrar `services_carga_base_unificada_pos.py`
-- [ ] Migrar `services_carga_credenciadora.py`
-- [ ] Migrar `services_carga_base_unificada_credenciadora.py`
-- [ ] Migrar `services_ajustes_manuais.py`
+### Fase 2: Cargas e Processamento ✅
+- [x] Migrar `services_carga_base_gestao_pos.py` - ✅ 22/12/2025
+- [x] Migrar `services_carga_base_unificada_pos.py` - ✅ 22/12/2025
+- [x] Migrar `services_carga_credenciadora.py` - ✅ 22/12/2025
+- [x] Migrar `services_carga_base_unificada_credenciadora.py` - ✅ 22/12/2025
+- [x] Migrar `services_ajustes_manuais.py` - ✅ 22/12/2025
+- [x] Migrar `services_carga_checkout.py` - ✅ 23/12/2025
 
 ### Fase 3: Portais e Consultas ⏳
 - [ ] Migrar `views_vendas_operador.py` (Portal Lojista)
@@ -736,6 +737,138 @@ GROUP BY gateway;
 
 ---
 
+## ✅ PASSO 8 - Migração Pinbank para transactiondata_pos (23/12/2025)
+
+### Objetivo
+Migrar endpoint `/trdata/` (Pinbank) para gravar em `transactiondata_pos` em vez de `transactiondata`.
+
+### Alterações Realizadas
+
+#### 1. Adicionar Campos Faltantes em `transactiondata_pos`
+**Arquivo:** `services/django/posp2/migrations/add_cancellation_fields_transactiondata_pos.sql`
+
+Campos adicionados:
+- `applicationName` VARCHAR(256)
+- `billPaymentEffectiveDate` BIGINT
+
+**Motivo:** Tabela `transactiondata_pos` estava incompleta - faltavam campos do Pinbank.
+
+#### 2. Migração de Dados Históricos
+**Arquivo:** `services/django/posp2/migrations/migrate_transactiondata_to_pos.sql`
+
+- Migra todos os registros de `transactiondata` → `transactiondata_pos`
+- Adiciona `gateway='PINBANK'`
+- Converte `nsuPinbank` → `nsu_gateway` (VARCHAR)
+- Trata formatos de data inconsistentes (ISO com milissegundos)
+- Evita duplicatas com `NOT EXISTS`
+
+#### 3. Atualizar `services_transacao.py` - Método `_inserir_transaction_data`
+**Arquivo:** `services/django/posp2/services_transacao.py`
+
+**Mudança:**
+```python
+# ANTES
+INSERT INTO transactiondata (...)
+
+# DEPOIS
+INSERT INTO transactiondata_pos (
+    gateway, datahora, valor_original, celular, cpf, terminal,
+    originalAmount, amount, nsuTerminal,
+    nsuAcquirer, nsu_gateway, authorizationCode, nsuHost,
+    paymentMethod, totalInstallments, brand,
+    cardNumber, cardName, hostTimestamp, terminalTimestamp,
+    operador_pos, valor_desconto, valor_cashback, 
+    autorizacao_id, cashback_concedido, modalidade_wall
+) VALUES (
+    'PINBANK',  # gateway fixo
+    ...,
+    str(nsuPinbank),  # nsu_gateway (VARCHAR)
+    ...
+)
+```
+
+**Campos removidos do INSERT:**
+- Campos de cancelamento (não existem em `transactiondata_pos`)
+- Campos EMV específicos que não são usados
+
+**Campos essenciais mantidos:**
+- Identificadores: `nsu_gateway`, `nsuAcquirer`, `nsuTerminal`, `nsuHost`
+- Valores: `amount`, `originalAmount`, `totalInstallments`
+- Pagamento: `paymentMethod`, `brand`, `cardNumber`, `cardName`
+- Timestamps: `hostTimestamp`, `terminalTimestamp`
+- Wall: `operador_pos`, `valor_desconto`, `valor_cashback`, `autorizacao_id`, `cashback_concedido`, `modalidade_wall`
+
+#### 4. Atualizar `services_transacao.py` - Calculadora usa `transactiondata_pos`
+**Arquivo:** `services/django/posp2/services_transacao.py`
+
+**Mudança:**
+```python
+# ANTES
+valores_calculados = calculadora.calcular_valores_primarios(
+    dados_linha, 
+    tabela='transactiondata'
+)
+
+# DEPOIS
+valores_calculados = calculadora.calcular_valores_primarios(
+    dados_linha, 
+    tabela='transactiondata_pos'
+)
+```
+
+#### 5. Atualizar `pinbank/services.py` - Suporte a `transactiondata_pos`
+
+**Método `pega_info_loja`:**
+```python
+elif tabela == 'transactiondata_pos':
+    return self._buscar_loja_por_nsu(identificador, tabela='transactiondata_pos')
+```
+
+**Método `pega_info_canal`:**
+```python
+elif tabela == 'transactiondata_pos':
+    return self._buscar_canal_por_nsu(identificador, tabela='transactiondata_pos')
+```
+
+**Método `_buscar_loja_por_nsu`:**
+- Aceita parâmetro `tabela`
+- Usa campo correto: `nsuPinbank` (antiga) ou `nsu_gateway` (nova)
+- Query dinâmica: `SELECT ... FROM wallclub.{tabela} WHERE {campo_nsu} = %s`
+
+**Método `_buscar_canal_por_nsu`:**
+- Aceita parâmetro `tabela`
+- Usa campo correto: `nsuPinbank` (antiga) ou `nsu_gateway` (nova)
+- Query dinâmica: `SELECT ... FROM wallclub.{tabela} WHERE {campo_nsu} = %s`
+
+### Status
+✅ **CONCLUÍDO** - Pinbank gravando em `transactiondata_pos` desde 23/12/2025
+
+### Validação
+- ✅ INSERT funcionando
+- ✅ Calculadora funcionando (busca loja e canal)
+- ✅ Push notification enviado
+- ✅ Base unificada inserida
+- ✅ JSON resposta gerado corretamente
+- ✅ Carga de checkout migrada (`services_carga_checkout.py`)
+- ✅ Model `TransactionData` marcado como DEPRECATED
+
+### Código Atualizado
+- ✅ `services_transacao.py` - INSERT em `transactiondata_pos`
+- ✅ `services_transacao.py` - Calculadora usa `transactiondata_pos`
+- ✅ `pinbank/services.py` - Métodos `pega_info_loja` e `pega_info_canal` suportam `transactiondata_pos`
+- ✅ `services_carga_checkout.py` - Calculadora usa `transactiondata_pos`
+- ✅ `posp2/models.py` - Model `TransactionData` marcado como DEPRECATED
+
+### Próximos Passos
+1. ⏳ Monitorar logs por 24h
+2. ⏳ Validar integridade dos dados
+3. ⏳ Comparar `transactiondata` vs `transactiondata_pos` (valores calculados)
+4. ⏳ Após validação: Deprecar trigger de sincronização
+5. ⏳ Após validação: Deprecar `transactiondata` (tabela legada)
+6. ⏳ Após validação: Remover model `TransactionData` (Fase 6 - Deprecação)
+
+---
+
 ## 🔔 Trigger de Sincronização Automática
 
 ### Trigger: `transactiondata` → `transactiondata_pos` (INSERT)
@@ -956,9 +1089,16 @@ DROP TRIGGER IF EXISTS trg_transactiondata_update_sync;
    - ✅ `services_carga_base_unificada_credenciadora.py`
    - ✅ `services_ajustes_manuais.py`
    - 📊 **Status:** Em observação por 1 dia antes de prosseguir
-8. ⏳ **Alterar `services_transacao.py`** para escrever em `transactiondata_pos` (manter trigger ativo)
-   - Aguardando validação das cargas (Passo 7)
-9. ⏳ **Virar API do POS** - App chamar `/trdata_pinbank/` e `/trdata_own/`
-10. ⏳ **Deprecar services legados** - `services_transacao.py` e `services_transacao_own.py`
-11. ⏳ **Remover triggers** após 100% migrado
-12. ⏳ **Deprecar tabelas antigas** - `transactiondata` e `transactiondata_own`
+8. ✅ **Alterar `services_transacao.py`** para escrever em `transactiondata_pos` - **Concluído em 23/12/2025**
+   - ✅ INSERT em `transactiondata_pos` com `gateway='PINBANK'`
+   - ✅ Calculadora usa `transactiondata_pos`
+   - ✅ `PinbankService` suporta tabela unificada
+   - ✅ Carga de checkout migrada
+   - ✅ Model `TransactionData` marcado como DEPRECATED
+9. ⏳ **Monitorar e validar** (24-48h)
+   - Logs de transações Pinbank
+   - Integridade dos dados
+   - Comparar valores calculados
+10. ⏳ **Remover triggers** após validação completa
+11. ⏳ **Deprecar tabelas antigas** - `transactiondata` e `transactiondata_own`
+12. ⏳ **Virar API do POS** - App chamar `/trdata_pinbank/` e `/trdata_own/` (futuro)

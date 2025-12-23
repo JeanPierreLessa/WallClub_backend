@@ -26,37 +26,40 @@ def cupons_ativos(request):
     """
     POST /api/cupons/ativos/
     Lista cupons ativos disponíveis para o cliente autenticado
-    Autenticação: JWT (App Mobile) - extrai cliente_id do token
+    Autenticação: JWT (App Mobile) - extrai cliente_id e canal_id do token
     
-    Retorna cupons de TODAS as lojas que o cliente pode usar:
+    Retorna cupons de TODAS as lojas do canal do cliente:
     - Cupons genéricos ativos e vigentes
     - Cupons individuais vinculados ao cliente
     
-    Payload (opcional):
-    {
-        "loja_id": 26  // Opcional: filtrar por loja específica
-    }
+    Sem payload necessário - usa dados do JWT
     """
-    # Cliente ID vem do JWT (request.user.cliente_id)
+    # Cliente ID e Canal ID vêm do JWT
     cliente_id = request.user.cliente_id
-    
-    # Parâmetros opcionais do body
-    loja_id = request.data.get('loja_id') if hasattr(request, 'data') else None
+    canal_id = request.user.canal_id
     
     try:
-        # Buscar cupons ativos e vigentes
+        from django.db import connection
+        
+        # Buscar todas lojas do canal
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM loja WHERE canal_id = %s", [canal_id])
+            lojas_ids = [row[0] for row in cursor.fetchall()]
+        
+        if not lojas_ids:
+            return Response({
+                'cupons': [],
+                'total': 0
+            })
+        
+        # Buscar cupons ativos e vigentes das lojas do canal
         agora = timezone.now()
-        filtros = {
-            'ativo': True,
-            'data_inicio__lte': agora,
-            'data_fim__gte': agora
-        }
-        
-        # Filtrar por loja se informado
-        if loja_id:
-            filtros['loja_id'] = loja_id
-        
-        cupons = Cupom.objects.filter(**filtros)
+        cupons = Cupom.objects.filter(
+            loja_id__in=lojas_ids,
+            ativo=True,
+            data_inicio__lte=agora,
+            data_fim__gte=agora
+        )
         
         # Filtrar cupons que ainda têm usos disponíveis
         cupons_disponiveis = []
@@ -73,6 +76,8 @@ def cupons_ativos(request):
             cupons_disponiveis.append(cupom)
         
         serializer = CupomAtivoSerializer(cupons_disponiveis, many=True)
+        
+        registrar_log('apps.cupom', f'Cupons listados para cliente_id={cliente_id}, canal_id={canal_id}: {len(cupons_disponiveis)} cupons')
         
         return Response({
             'cupons': serializer.data,

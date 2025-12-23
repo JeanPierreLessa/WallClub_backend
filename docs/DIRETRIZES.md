@@ -1,9 +1,11 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 4.9  
-**Data:** 20/12/2025  
+**Versão:** 5.0  
+**Data:** 23/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** Migração Terminais DATETIME - Campos `inicio`/`fim` convertidos de Unix timestamp para DATETIME (20/12/2025)
+**Mudanças:** 
+- Migração Pinbank para `transactiondata_pos` - Endpoint `/trdata/` agora grava em tabela unificada (23/12/2025)
+- Migração Terminais DATETIME - Campos `inicio`/`fim` convertidos de Unix timestamp para DATETIME (20/12/2025)
 
 ---
 

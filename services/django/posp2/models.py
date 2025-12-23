@@ -101,10 +101,17 @@ class Terminal(models.Model):
         return self.fim.date() if self.fim else None
 
 
+# DEPRECATED: Tabela legada - usar TransactionDataPos
+# Mantido apenas para trigger de sincronização durante período de transição
+# TODO: Remover após validação completa da migração (Fase 6 - Deprecação)
 class TransactionData(models.Model):
     """
-    Modelo para tabela transactiondata - dados de transações POS
-    Usado no script pinbank_cria_base_gestao.php
+    ⚠️ DEPRECATED - Usar TransactionDataPos
+    
+    Modelo para tabela transactiondata - dados de transações POS Pinbank (LEGADO)
+    Substituído por TransactionDataPos (tabela unificada Pinbank + Own)
+    
+    Status: Trigger ativo sincronizando com transactiondata_pos
     """
     
     id = models.PositiveIntegerField(primary_key=True)
@@ -182,8 +189,8 @@ class TransactionData(models.Model):
     class Meta:
         db_table = 'transactiondata'
         managed = False  # Django não gerencia esta tabela (legado)
-        verbose_name = 'Transaction Data'
-        verbose_name_plural = 'Transaction Data'
+        verbose_name = 'Transaction Data (DEPRECATED)'
+        verbose_name_plural = 'Transaction Data (DEPRECATED)'
     
     def __str__(self):
         return f"Transaction {self.id} - NSU: {self.nsuPinbank}"

@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 20/12/2025
+**Última Atualização:** 23/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -75,6 +75,13 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Queries SQL atualizadas (Pinbank cargas, services, portais)
   - ✅ Portal Admin: Página de histórico (terminais inativos)
   - ✅ Template filters compatíveis com DATETIME e timestamp
+- ✅ **Migração Pinbank para transactiondata_pos (23/12/2025):**
+  - ✅ Endpoint `/trdata/` (Pinbank) grava em `transactiondata_pos`
+  - ✅ Tabela unificada com campos Pinbank + Own
+  - ✅ `PinbankService` suporta `transactiondata_pos` (busca loja/canal)
+  - ✅ Calculadora usa tabela unificada
+  - ✅ Migração histórica: `transactiondata` → `transactiondata_pos`
+  - ⏳ Trigger de sincronização ativo (período de transição)
 
 ## 📋 Navegação Rápida
 
