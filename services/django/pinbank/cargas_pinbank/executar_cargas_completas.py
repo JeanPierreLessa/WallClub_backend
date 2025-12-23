@@ -68,16 +68,20 @@ def main():
             'descricao': 'Carga extrato POS (últimos 80 minutos)'
         },
         {
-            'comando_args': ['carga_base_gestao', '--limite=10000'],
-            'descricao': 'Carga base gestão (recálculo de variáveis - 10000 registros)'
+            'comando_args': ['carga_base_unificada', '--limite=5000'],
+            'descricao': 'Carga Base Unificada - Wallet (5000 registros)'
         },
         {
-            'comando_args': ['carga_credenciadora'],
-            'descricao': 'Carga Credenciadora (transações de terminais não cadastrados)'
+            'comando_args': ['carga_base_unificada_credenciadora', '--limite=5000'],
+            'descricao': 'Carga Base Unificada - Credenciadora (5000 registros)'
+        },
+        {
+            'comando_args': ['carga_base_unificada_checkout', '--limite=5000'],
+            'descricao': 'Carga Base Unificada - Checkout (5000 registros)'
         },
         {
             'comando_args': ['ajustes_manuais_base'],
-            'descricao': 'Ajustes manuais de base (correções de inconsistências)'
+            'descricao': 'Ajustes manuais de base (insere em transactiondata_pos)'
         }
     ]
 
