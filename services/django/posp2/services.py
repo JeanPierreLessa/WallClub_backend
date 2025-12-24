@@ -17,7 +17,7 @@ from django.conf import settings
 from .models import POSP2Transaction, VersaoTerminal
 from wallclub_core.utilitarios.funcoes_gerais import proxima_sexta_feira, calcular_cet, formatar_valor_brasileiro
 from parametros_wallclub.services import ParametrosService, CalculadoraDesconto
-from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
+from parametros_wallclub.calculadora_base_unificada import CalculadoraBaseUnificada
 from pinbank.services import PinbankService
 from wallclub_core.utilitarios.log_control import registrar_log
 from django.apps import apps

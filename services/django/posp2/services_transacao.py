@@ -10,7 +10,7 @@ from django.db import connection
 
 from wallclub_core.utilitarios.funcoes_gerais import calcular_cet
 from parametros_wallclub.services import ParametrosService
-from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
+from parametros_wallclub.calculadora_base_unificada import CalculadoraBaseUnificada
 from pinbank.services import PinbankService
 from wallclub_core.utilitarios.log_control import registrar_log
 from wallclub_core.services.auditoria_service import AuditoriaService

@@ -10,7 +10,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Any
 from django.db import connection, transaction
 from wallclub_core.utilitarios.log_control import registrar_log
-from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
+from parametros_wallclub.calculadora_base_unificada import CalculadoraBaseUnificada
 from parametros_wallclub.services import ParametrosService
 
 
