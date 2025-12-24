@@ -35,14 +35,24 @@ class CalculadoraBaseCredenciadora:
             return value.quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
         return Decimal(str(value)).quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
 
-    def calcular_valores_primarios(self, dados_linha, tabela: str = 'credenciadora'):
+    def calcular_valores_primarios(
+        self, 
+        dados_linha: Dict[str, Any],
+        tipo_operacao: str,
+        info_loja: Dict[str, Any],
+        info_canal: Dict[str, Any]
+    ) -> Dict[int, Any]:
         """
         Calcula os valores primários baseados nos dados da linha.
-        Replica a lógica do PHP pinbank_cria_base_gestao.php
-
+        
         Args:
             dados_linha: Dict com dados da transação
-            tabela: Identificador da origem (default: 'credenciadora')
+            tipo_operacao: Tipo de operação ('Credenciadora', 'Wallet', etc)
+            info_loja: Dict com informações da loja
+            info_canal: Dict com informações do canal
+        
+        Returns:
+            Dict com valores calculados (var0-var130)
         """
         from datetime import datetime as dt, timedelta
         try:
@@ -58,20 +68,7 @@ class CalculadoraBaseCredenciadora:
                 wall = 'n'
                 valores[130] = "Normal"
 
-            # Capturar informações da Loja, canal e plano
-            nsu_operacao = dados_linha['NsuOperacao']
-
-            # Usar info_loja de dados_linha se já existir (Credenciadora/Checkout), senão buscar (Wallet)
-            if 'info_loja' in dados_linha:
-                info_loja = dados_linha['info_loja']
-            else:
-                info_loja = self.pinbank_service.pega_info_loja(nsu_operacao)
-
-            # Usar info_canal de dados_linha se já existir (Credenciadora/Checkout), senão buscar (Wallet)
-            if 'info_canal' in dados_linha:
-                info_canal = dados_linha['info_canal']
-            else:
-                info_canal = self.pinbank_service.pega_info_canal(nsu_operacao)
+            # info_loja e info_canal são obrigatórios (passados pelo service de carga)
 
             # Data de referência dos cálculos
             data_ref = self.parametros_service.converter_para_timestamp(dados_linha['DataTransacao'])

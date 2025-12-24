@@ -215,7 +215,12 @@ class CargaBaseUnificadaCredenciadoraService:
                                         f"NSU {linha['NsuOperacao']}: NOVO (var69=NULL, status={descricao_status_normalizado}) → INSERT")
 
                                     inicio_calculo = time.time()
-                                    valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                    valores = self.calculadora.calcular_valores_primarios(
+                                        dados_linha=linha,
+                                        tipo_operacao='Credenciadora',
+                                        info_loja=linha['info_loja'],
+                                        info_canal=linha['info_canal']
+                                    )
                                     tempo_calculo = time.time() - inicio_calculo
 
                                     inicio_insert = time.time()
@@ -242,7 +247,12 @@ class CargaBaseUnificadaCredenciadoraService:
                                         f"NSU {linha['NsuOperacao']}: MUDANÇA (var69={var69_atual} → status={descricao_status_normalizado}) → UPDATE")
 
                                     inicio_calculo = time.time()
-                                    valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                    valores = self.calculadora.calcular_valores_primarios(
+                                        dados_linha=linha,
+                                        tipo_operacao='Credenciadora',
+                                        info_loja=linha['info_loja'],
+                                        info_canal=linha['info_canal']
+                                    )
                                     tempo_calculo = time.time() - inicio_calculo
 
                                     inicio_insert = time.time()
@@ -323,7 +333,12 @@ class CargaBaseUnificadaCredenciadoraService:
                                 registrar_log('pinbank.cargas_pinbank',
                                     f"NSU {linha['NsuOperacao']}: NOVO (var69=NULL, status={descricao_status_normalizado}) → INSERT")
 
-                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                                valores = self.calculadora.calcular_valores_primarios(
+                                    dados_linha=linha,
+                                    tipo_operacao='Credenciadora',
+                                    info_loja=linha['info_loja'],
+                                    info_canal=linha['info_canal']
+                                )
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                                 if sucesso:
@@ -512,7 +527,12 @@ class CargaBaseUnificadaCredenciadoraService:
                     linha['info_canal'] = canal_info if canal_info else {'id': canal_id}
 
                     # Recalcular todos os valores
-                    valores = self.calculadora.calcular_valores_primarios(linha, tabela='credenciadora')
+                    valores = self.calculadora.calcular_valores_primarios(
+                        dados_linha=linha,
+                        tipo_operacao='Credenciadora',
+                        info_loja=linha['info_loja'],
+                        info_canal=linha['info_canal']
+                    )
 
                     # Atualizar usando INSERT ON DUPLICATE KEY UPDATE
                     sucesso = self._inserir_ou_atualizar_valores(valores, linha)

@@ -20,8 +20,8 @@ class CargaBaseUnificadaPOSService:
     """
 
     def __init__(self):
-        from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
-        self.calculadora = CalculadoraBaseGestao()
+        from parametros_wallclub.calculadora_base_unificada import CalculadoraBaseUnificada
+        self.calculadora = CalculadoraBaseUnificada()
 
     def carregar_valores_primarios(self, limite: int = None, nsu: str = None, worker_id: int = None) -> int:
         """
@@ -43,10 +43,39 @@ class CargaBaseUnificadaPOSService:
         registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}, worker_id={worker_id}")
 
         with connection.cursor() as cursor:
+            # Cache de canais e lojas
+            from wallclub_core.estr_organizacional.canal import Canal
+            from wallclub_core.estr_organizacional.loja import Loja
+            
+            canais_cache = {}
+            for canal in Canal.objects.all():
+                canais_cache[canal.id] = {
+                    'id': canal.id,
+                    'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
+                    'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
+                    'key_loja': canal.keyvalue or '',
+                    'canal': canal.nome or '',
+                    'nome': canal.nome or ''
+                }
+            
+            lojas_cache = {}
+            for loja in Loja.objects.select_related('canal').all():
+                lojas_cache[loja.id] = {
+                    'id': loja.id,
+                    'loja_id': loja.id,
+                    'loja': loja.razao_social or '',
+                    'cnpj': loja.cnpj or '',
+                    'canal_id': loja.canal_id
+                }
+            
+            registrar_log('pinbank.cargas_pinbank', f"Cache carregado: {len(canais_cache)} canais, {len(lojas_cache)} lojas")
+            
             # Query simplificada - pega apenas 1 registro por NSU (menor id)
             cursor.execute(f"""
                 SELECT   pep.id,
                          pep.codigo_cliente,
+                         l.id as loja_id,
+                         l.canal_id,
                          pep.idTerminal,
                          pep.SerialNumber,
                          pep.Terminal,
@@ -97,6 +126,8 @@ class CargaBaseUnificadaPOSService:
                          pe.var112 f112
                 FROM     wallclub.pinbankExtratoPOS pep
                 INNER JOIN wallclub.transactiondata_pos t ON pep.NsuOperacao = t.nsu_gateway AND t.gateway = 'PINBANK'
+                INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
+                INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
                 LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsu_gateway
                 WHERE    pep.processado = 0
                          AND pep.id IN (
@@ -142,8 +173,31 @@ class CargaBaseUnificadaPOSService:
                             linha = dict(zip(colunas, row_lote))
 
                             try:
+                                # Montar info_loja e info_canal
+                                loja_id = linha.get('loja_id')
+                                canal_id = linha.get('canal_id')
+                                
+                                info_loja = lojas_cache.get(loja_id)
+                                if not info_loja:
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                                f"⚠️ Loja ID {loja_id} não encontrada no cache", 
+                                                nivel='WARNING')
+                                    continue
+                                
+                                info_canal = canais_cache.get(canal_id)
+                                if not info_canal:
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                                f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                                nivel='WARNING')
+                                    continue
+                                
                                 # Calcular valores primários
-                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_pos')
+                                valores = self.calculadora.calcular_valores_primarios(
+                                    dados_linha=linha,
+                                    tipo_operacao='Wallet',
+                                    info_loja=info_loja,
+                                    info_canal=info_canal
+                                )
 
                                 # Inserir na base unificada
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
@@ -179,7 +233,30 @@ class CargaBaseUnificadaPOSService:
                         linha = dict(zip(colunas, row_lote))
 
                         try:
-                            valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_pos')
+                            # Montar info_loja e info_canal
+                            loja_id = linha.get('loja_id')
+                            canal_id = linha.get('canal_id')
+                            
+                            info_loja = lojas_cache.get(loja_id)
+                            if not info_loja:
+                                registrar_log('pinbank.cargas_pinbank', 
+                                            f"⚠️ Loja ID {loja_id} não encontrada no cache", 
+                                            nivel='WARNING')
+                                continue
+                            
+                            info_canal = canais_cache.get(canal_id)
+                            if not info_canal:
+                                registrar_log('pinbank.cargas_pinbank', 
+                                            f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                            nivel='WARNING')
+                                continue
+                            
+                            valores = self.calculadora.calcular_valores_primarios(
+                                dados_linha=linha,
+                                tipo_operacao='Wallet',
+                                info_loja=info_loja,
+                                info_canal=info_canal
+                            )
                             sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                             if sucesso:
@@ -236,6 +313,7 @@ class CargaBaseUnificadaPOSService:
         campos = {
             'tipo_operacao': 'Wallet',
             'adquirente': 'PINBANK',
+            'origem_transacao': 'POS',
             'data_transacao': None
         }
 

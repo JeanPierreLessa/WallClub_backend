@@ -5,7 +5,7 @@
 - Alteracao em loja (alterar, mudar vendedor, todas as lojas)
 - checkout esta ok e tokenizando cartao; precisa validar recorrencia (debitar 1 pra validar cartao)
 - calculadoras e cargas base unificada
--> checkout em validacao
+-> checkout OK
 -> mudar pos para usar calculadora abstrata e marcar origem_transacao
 -> mudar crendenciadora
 -> mudar own

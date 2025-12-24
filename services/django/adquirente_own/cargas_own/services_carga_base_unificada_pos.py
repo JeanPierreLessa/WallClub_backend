@@ -21,8 +21,8 @@ class CargaBaseUnificadaOwnService:
     """
 
     def __init__(self):
-        from parametros_wallclub.calculadora_base_credenciadora import CalculadoraBaseCredenciadora
-        self.calculadora = CalculadoraBaseCredenciadora()
+        from parametros_wallclub.calculadora_base_unificada import CalculadoraBaseUnificada
+        self.calculadora = CalculadoraBaseUnificada()
 
     def carregar_valores_primarios(self, limite: int = None, identificador: str = None) -> int:
         """
@@ -36,6 +36,22 @@ class CargaBaseUnificadaOwnService:
         identificador_clause = f"AND oet.identificadorTransacao = '{identificador}'" if identificador else ""
 
         with connection.cursor() as cursor:
+            # Cache de canais
+            from wallclub_core.estr_organizacional.canal import Canal
+            
+            canais_cache = {}
+            for canal in Canal.objects.all():
+                canais_cache[canal.id] = {
+                    'id': canal.id,
+                    'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
+                    'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
+                    'key_loja': canal.keyvalue or '',
+                    'canal': canal.nome or '',
+                    'nome': canal.nome or ''
+                }
+            
+            registrar_log('adquirente_own.cargas_own', f"Cache carregado: {len(canais_cache)} canais")
+            
             cursor.execute(f"""
                 SELECT   oet.id,
                          oet.cnpjCpfParceiro,
@@ -67,6 +83,9 @@ class CargaBaseUnificadaOwnService:
                          t.modalidade_wall,
                          t.autorizacao_id,
                          l.id as loja_id,
+                         l.razao_social,
+                         l.cnpj,
+                         l.canal_id,
                          term.id as terminal_id
                 FROM     wallclub.ownExtratoTransacoes oet
                  JOIN wallclub.transactiondata_own t ON oet.identificadorTransacao = t.txTransactionId
@@ -103,8 +122,32 @@ class CargaBaseUnificadaOwnService:
                             linha = dict(zip(colunas, row_lote))
 
                             try:
+                                # Montar info_loja e info_canal
+                                loja_id = linha.get('loja_id')
+                                canal_id = linha.get('canal_id')
+                                
+                                info_loja = {
+                                    'id': loja_id,
+                                    'loja_id': loja_id,
+                                    'loja': linha.get('razao_social'),
+                                    'cnpj': linha.get('cnpj'),
+                                    'canal_id': canal_id
+                                }
+                                
+                                info_canal = canais_cache.get(canal_id)
+                                if not info_canal:
+                                    registrar_log('adquirente_own.cargas_own', 
+                                                f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                                nivel='WARNING')
+                                    continue
+                                
                                 # Calcular valores primários
-                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_own')
+                                valores = self.calculadora.calcular_valores_primarios(
+                                    dados_linha=linha,
+                                    tipo_operacao='Wallet',
+                                    info_loja=info_loja,
+                                    info_canal=info_canal
+                                )
 
                                 # Inserir na base de gestão
                                 sucesso = self._inserir_valores_base_gestao(valores, linha)
@@ -149,44 +192,35 @@ class CargaBaseUnificadaOwnService:
                                 'id': linha.get('id')
                             }
 
-                            # Mapear campos Own para formato esperado pela calculadora
-                            linha['TipoCompra'] = self._mapear_tipo_compra(linha.get('modalidade'))
-                            linha['NumeroTotalParcelas'] = linha.get('totalInstallments') or linha.get('quantidadeParcelas', 1)
-                            linha['Bandeira'] = linha.get('bandeira')
+                            # Montar info_loja e info_canal
+                            loja_id = linha.get('loja_id')
+                            canal_id = linha.get('canal_id')
                             
-                            # Converter datetime para string no formato esperado (ISO com T)
-                            data_transacao = linha.get('data')
-                            if isinstance(data_transacao, datetime):
-                                linha['DataTransacao'] = data_transacao.strftime('%Y-%m-%dT%H:%M:%S')
-                            else:
-                                linha['DataTransacao'] = data_transacao
+                            info_loja = {
+                                'id': loja_id,
+                                'loja_id': loja_id,
+                                'loja': linha.get('razao_social'),
+                                'cnpj': linha.get('cnpj'),
+                                'canal_id': canal_id
+                            }
                             
-                            # Campos que Own não tem - usar valores padrão
-                            linha['SerialNumber'] = linha.get('numeroSerieEquipamento', '')
-                            linha['idTerminal'] = linha.get('numeroSerieEquipamento', '')
-                            linha['NsuOperacao'] = linha.get('identificadorTransacao', '')
-                            linha['nsuAcquirer'] = linha.get('nsuTransacao', '')
-                            linha['valor_original'] = linha.get('valor', 0)
-                            linha['ValorBruto'] = linha.get('valor', 0)
-                            linha['ValorBrutoParcela'] = linha.get('valorParcela', 0)
-                            linha['ValorTaxaAdm'] = 0  # Own não fornece
-                            linha['ValorTaxaMes'] = 0  # Own não fornece
-                            linha['DescricaoStatus'] = linha.get('statusTransacao', '')
-                            linha['ValorSplit'] = None  # Own não fornece split
-                            linha['DataFuturaPagamento'] = linha.get('dataPagamentoPrevista', '')  # Data prevista de pagamento
-                            linha['DataCancelamento'] = None  # Own não fornece data de cancelamento
-
-                            # Calcular valores usando a calculadora
-                            valores_calculados = self.calculadora.calcular_valores_primarios(linha, tabela='transactiondata_own')
-
-                            # Atualizar transação com valores calculados
-                            linha.update(valores_calculados)
-
-                            # Restaurar campos originais importantes
-                            linha.update(campos_originais)
+                            info_canal = canais_cache.get(canal_id)
+                            if not info_canal:
+                                registrar_log('adquirente_own.cargas_own', 
+                                            f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                            nivel='WARNING')
+                                continue
+                            
+                            # Calcular valores primários
+                            valores = self.calculadora.calcular_valores_primarios(
+                                dados_linha=linha,
+                                tipo_operacao='Wallet',
+                                info_loja=info_loja,
+                                info_canal=info_canal
+                            )
 
                             # Inserir na base de gestão
-                            sucesso = self._inserir_valores_base_gestao(linha, linha)
+                            sucesso = self._inserir_valores_base_gestao(valores, linha)
 
                             if sucesso:
                                 # Marcar como lido
@@ -240,7 +274,8 @@ class CargaBaseUnificadaOwnService:
             dados_insert = {
                 'banco': 'OWN',
                 'adquirente': 'OWN',
-                'tipo_operacao': 'Wallet' if linha.get('txTransactionId') else 'Credenciadora',
+                'tipo_operacao': 'Wallet',
+                'origem_transacao': 'POS',
                 'data_transacao': linha.get('data') or datetime.now()
             }
 
