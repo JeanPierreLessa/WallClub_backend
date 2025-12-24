@@ -66,7 +66,7 @@ class GatewayRouter:
         else:
             from pinbank.services_transacoes_pagamento import TransacoesPinbankService
             registrar_log('checkout.gateway', f'🔵 Usando Pinbank para loja {loja_id}')
-            return TransacoesPinbankService()
+            return TransacoesPinbankService(loja_id=loja_id)
     
     @staticmethod
     def processar_pagamento_debito(

@@ -97,7 +97,7 @@ class CargaBaseUnificadaCheckoutService:
                 FROM     wallclub.pinbankExtratoPOS pep
                 INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
                 INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
-                INNER JOIN wallclub.checkout_transactions ct ON pep.NsuOperacaoLoja = ct.nsu
+                INNER JOIN wallclub.checkout_transactions ct ON pep.NsuOperacao = ct.nsu
                 INNER JOIN wallclub.checkout_cliente cc ON ct.cliente_id = cc.id
                 WHERE    pep.processado = 0
                          AND pep.id IN (
@@ -105,7 +105,7 @@ class CargaBaseUnificadaCheckoutService:
                              FROM wallclub.pinbankExtratoPOS pep2
                              INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp2 ON pep2.codigo_cliente = cecp2.codigo_cliente
                              INNER JOIN wallclub.loja l2 ON l2.id = cecp2.cliente_id
-                             INNER JOIN wallclub.checkout_transactions ct2 ON pep2.NsuOperacaoLoja = ct2.nsu
+                             INNER JOIN wallclub.checkout_transactions ct2 ON pep2.NsuOperacao = ct2.nsu
                              WHERE pep2.processado = 0
                              {worker_clause}
                              GROUP BY pep2.NsuOperacao
