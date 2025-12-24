@@ -1,12 +1,13 @@
 """
 Serviço para carga da Base Transações Unificadas - Checkout
 Processa transações de checkout (vendas diretas via portal de vendas)
-Usa CalculadoraBaseCredenciadora
+Usa CalculadoraBaseUnificada (tipo_operacao: Wallet)
 
 Diferença da base antiga:
 - Insere em base_transacoes_unificadas (nova tabela)
 - 1 linha por transação (não duplica por parcela)
 - Marca registros como processados
+- tipo_operacao = 'Wallet' (não passa por credenciadora)
 """
 
 from typing import Dict, Any
@@ -20,12 +21,13 @@ class CargaBaseUnificadaCheckoutService:
     Serviço para carga da base unificada - Checkout
     Regra: 1 linha por transação (NSU único), não por parcela
     Filtro: Apenas transações com processado = 0
+    Tipo: Wallet (vendas diretas, sem credenciadora)
     """
 
     def __init__(self):
-        from parametros_wallclub.calculadora_base_credenciadora import CalculadoraBaseCredenciadora
+        from parametros_wallclub.calculadora_base_unificada import CalculadoraBaseUnificada
         from pinbank.services import PinbankService
-        self.calculadora = CalculadoraBaseCredenciadora()
+        self.calculadora = CalculadoraBaseUnificada()
         self.pinbank_service = PinbankService()
 
     def carregar_valores_primarios(self, limite: int = None, nsu: str = None, worker_id: int = None) -> int:
@@ -162,8 +164,8 @@ class CargaBaseUnificadaCheckoutService:
                             linha = dict(zip(colunas, row_lote))
 
                             try:
-                                # Montar info_loja e info_canal
-                                linha['info_loja'] = {
+                                # Montar info_loja
+                                info_loja = {
                                     'id': linha.get('clienteId'),
                                     'loja_id': linha.get('clienteId'),
                                     'loja': linha.get('razao_social'),
@@ -173,7 +175,7 @@ class CargaBaseUnificadaCheckoutService:
 
                                 # Usar cache ao invés de query
                                 canal_id = linha.get('canal_id')
-                                linha['info_canal'] = canais_cache.get(canal_id, {
+                                info_canal = canais_cache.get(canal_id, {
                                     'id': canal_id,
                                     'codigo_canal': 0,
                                     'codigo_cliente': 0,
@@ -183,7 +185,13 @@ class CargaBaseUnificadaCheckoutService:
                                 })
 
                                 # Calcular valores primários
-                                valores = self.calculadora.calcular_valores_primarios(linha, tabela='checkout')
+                                # Passa tipo_operacao='Wallet' (checkout = venda direta, sem credenciadora)
+                                valores = self.calculadora.calcular_valores_primarios(
+                                    dados_linha=linha,
+                                    tipo_operacao='Wallet',
+                                    info_loja=info_loja,
+                                    info_canal=info_canal
+                                )
 
                                 # Inserir na base unificada
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
@@ -224,8 +232,8 @@ class CargaBaseUnificadaCheckoutService:
                         linha = dict(zip(colunas, row_lote))
 
                         try:
-                            # Montar info_loja e info_canal
-                            linha['info_loja'] = {
+                            # Montar info_loja
+                            info_loja = {
                                 'id': linha.get('clienteId'),
                                 'loja_id': linha.get('clienteId'),
                                 'loja': linha.get('razao_social'),
@@ -233,9 +241,9 @@ class CargaBaseUnificadaCheckoutService:
                                 'canal_id': linha.get('canal_id')
                             }
 
-                            # Usar cache
+                            # Usar cache ao invés de query
                             canal_id = linha.get('canal_id')
-                            linha['info_canal'] = canais_cache.get(canal_id, {
+                            info_canal = canais_cache.get(canal_id, {
                                 'id': canal_id,
                                 'codigo_canal': 0,
                                 'codigo_cliente': 0,
@@ -244,7 +252,14 @@ class CargaBaseUnificadaCheckoutService:
                                 'nome': ''
                             })
 
-                            valores = self.calculadora.calcular_valores_primarios(linha, tabela='checkout')
+                            # Calcular valores primários
+                            # Passa tipo_operacao='Wallet' (checkout = venda direta, sem credenciadora)
+                            valores = self.calculadora.calcular_valores_primarios(
+                                dados_linha=linha,
+                                tipo_operacao='Wallet',
+                                info_loja=info_loja,
+                                info_canal=info_canal
+                            )
                             sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                             if sucesso:

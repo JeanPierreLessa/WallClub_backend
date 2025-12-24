@@ -87,9 +87,9 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ssh -i /Users/jeanlessa/wall_projects/aws/webserver-dev.pem ubuntu@10.0.1.124
 cd /var/www/WallClub_backend
 git pull origin release-2.2.0
-docker-compose build wallclub-apis
-docker-compose stop wallclub-apis
-docker-compose up -d wallclub-apis
+docker-compose build wallclub-apis wallclub-pos wallclub-portais nginx
+docker-compose stop wallclub-apis wallclub-pos wallclub-portais nginx
+docker-compose up -d wallclub-apis wallclub-pos wallclub-portais nginx
 
 # Verificar
 docker ps
