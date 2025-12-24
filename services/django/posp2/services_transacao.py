@@ -292,7 +292,7 @@ class TRDataService:
                 terminal_obj = Terminal.objects.filter(terminal=terminal).first()
                 
                 if terminal_obj and terminal_obj.loja_id:
-                    Loja = apps.get_model('parametros_wallclub', 'Loja')
+                    from wallclub_core.estr_organizacional.loja import Loja
                     loja = Loja.objects.filter(id=terminal_obj.loja_id).first()
                     
                     if loja:
