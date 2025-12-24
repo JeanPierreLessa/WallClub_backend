@@ -210,7 +210,7 @@ class CargaBaseUnificadaPOSService:
                                 # Calcular valores primários
                                 valores = self.calculadora.calcular_valores_primarios(
                                     dados_linha=linha,
-                                    tipo_operacao='Wallet',
+                                    tabela='transactiondata_pos',
                                     info_loja=info_loja,
                                     info_canal=info_canal
                                 )
@@ -269,7 +269,7 @@ class CargaBaseUnificadaPOSService:
 
                             valores = self.calculadora.calcular_valores_primarios(
                                 dados_linha=linha,
-                                tipo_operacao='Wallet',
+                                tabela='transactiondata_pos',
                                 info_loja=info_loja,
                                 info_canal=info_canal
                             )
