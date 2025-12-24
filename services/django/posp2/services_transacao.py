@@ -278,32 +278,50 @@ class TRDataService:
             dados = dados_trdata
 
             # 8. BUSCAR LOJA E CANAL (necessário para calculadora)
-            nsu_pinbank = dados_trdata.get('nsuPinbank')
+            # Buscar loja pelo terminal (não pelo NSU que ainda não foi inserido)
             loja_info = None
             canal_info = None
-            if nsu_pinbank:
-                registrar_log('posp2', f'Buscando loja e canal para nsuPinbank: "{nsu_pinbank}"')
+            if terminal:
+                registrar_log('posp2', f'Buscando loja e canal para terminal: "{terminal}"')
 
-                from pinbank.services import PinbankService
                 from wallclub_core.estr_organizacional.canal import Canal
+                from django.apps import apps
                 
-                pinbank_service = PinbankService()
-                loja_info = pinbank_service.pega_info_loja(int(nsu_pinbank), tabela='transactiondata_pos')
-                registrar_log('posp2', f'Loja encontrada: {loja_info}')
+                # Buscar terminal
+                Terminais = apps.get_model('parametros_wallclub', 'Terminais')
+                terminal_obj = Terminais.objects.filter(terminal=terminal).first()
                 
-                # Buscar canal
-                if loja_info and 'canal_id' in loja_info:
-                    canal = Canal.objects.filter(id=loja_info['canal_id']).first()
-                    if canal:
-                        canal_info = {
-                            'id': canal.id,
-                            'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
-                            'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
-                            'key_loja': canal.keyvalue or '',
-                            'canal': canal.nome or '',
-                            'nome': canal.nome or ''
+                if terminal_obj and terminal_obj.loja_id:
+                    Loja = apps.get_model('parametros_wallclub', 'Loja')
+                    loja = Loja.objects.filter(id=terminal_obj.loja_id).first()
+                    
+                    if loja:
+                        loja_info = {
+                            'id': loja.id,
+                            'loja_id': loja.id,
+                            'loja': loja.razao_social,
+                            'cnpj': loja.cnpj,
+                            'canal_id': loja.canal_id
                         }
-                        registrar_log('posp2', f'Canal encontrado: {canal_info}')
+                        registrar_log('posp2', f'Loja encontrada: {loja_info}')
+                        
+                        # Buscar canal
+                        if loja.canal_id:
+                            canal = Canal.objects.filter(id=loja.canal_id).first()
+                            if canal:
+                                canal_info = {
+                                    'id': canal.id,
+                                    'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
+                                    'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
+                                    'key_loja': canal.keyvalue or '',
+                                    'canal': canal.nome or '',
+                                    'nome': canal.nome or ''
+                                }
+                                registrar_log('posp2', f'Canal encontrado: {canal_info}')
+                    else:
+                        registrar_log('posp2', f'Loja não encontrada para terminal {terminal}', nivel='WARNING')
+                else:
+                    registrar_log('posp2', f'Terminal {terminal} não encontrado ou sem loja associada', nivel='WARNING')
 
             # 9. INSERIR NA TRANSACTIONDATA_POS
             registrar_log('posp2', 'Iniciando inserção na transactiondata_pos...')
