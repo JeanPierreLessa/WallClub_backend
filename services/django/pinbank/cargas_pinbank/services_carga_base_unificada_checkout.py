@@ -135,7 +135,7 @@ class CargaBaseUnificadaCheckoutService:
                     'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
                     'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
                     'key_loja': canal.keyvalue or '',
-                    'canal': canal.canal or '',
+                    'canal': canal.nome or '',  # Nome do canal, não o código
                     'nome': canal.nome or ''
                 }
             registrar_log('pinbank.cargas_pinbank', f"Cache de {len(canais_cache)} canais carregado")
@@ -176,14 +176,19 @@ class CargaBaseUnificadaCheckoutService:
 
                                 # Usar cache ao invés de query
                                 canal_id = linha.get('canal_id')
-                                info_canal = canais_cache.get(canal_id, {
-                                    'id': canal_id,
-                                    'codigo_canal': 0,
-                                    'codigo_cliente': 0,
-                                    'key_loja': '',
-                                    'canal': '',
-                                    'nome': ''
-                                })
+                                info_canal = canais_cache.get(canal_id)
+                                if not info_canal:
+                                    registrar_log('pinbank.cargas_pinbank', 
+                                                f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                                nivel='WARNING')
+                                    info_canal = {
+                                        'id': canal_id,
+                                        'codigo_canal': 0,
+                                        'codigo_cliente': 0,
+                                        'key_loja': '',
+                                        'canal': f'CANAL_{canal_id}',  # Fallback com ID
+                                        'nome': f'CANAL_{canal_id}'
+                                    }
 
                                 # Calcular valores primários
                                 # Passa tipo_operacao='Wallet' (checkout = venda direta, sem credenciadora)
@@ -244,14 +249,19 @@ class CargaBaseUnificadaCheckoutService:
 
                             # Usar cache ao invés de query
                             canal_id = linha.get('canal_id')
-                            info_canal = canais_cache.get(canal_id, {
-                                'id': canal_id,
-                                'codigo_canal': 0,
-                                'codigo_cliente': 0,
-                                'key_loja': '',
-                                'canal': '',
-                                'nome': ''
-                            })
+                            info_canal = canais_cache.get(canal_id)
+                            if not info_canal:
+                                registrar_log('pinbank.cargas_pinbank', 
+                                            f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                            nivel='WARNING')
+                                info_canal = {
+                                    'id': canal_id,
+                                    'codigo_canal': 0,
+                                    'codigo_cliente': 0,
+                                    'key_loja': '',
+                                    'canal': f'CANAL_{canal_id}',
+                                    'nome': f'CANAL_{canal_id}'
+                                }
 
                             # Calcular valores primários
                             # Passa tipo_operacao='Wallet' (checkout = venda direta, sem credenciadora)
@@ -309,11 +319,11 @@ class CargaBaseUnificadaCheckoutService:
 
             # Preparar dados para inserção
             dados_insert = {}
-            
+
             # Campos fixos
             dados_insert['tipo_operacao'] = valores.get('tipo_operacao', 'Wallet')
             dados_insert['adquirente'] = 'PINBANK'
-            
+
             # Mapear origem do checkout_transactions para origem_transacao
             origem_checkout = linha.get('origem_checkout', 'CHECKOUT')
             if origem_checkout == 'RECORRENCIA':
@@ -321,7 +331,7 @@ class CargaBaseUnificadaCheckoutService:
             else:
                 # 'CHECKOUT' ou 'LINK' = LINK_PAGAMENTO
                 dados_insert['origem_transacao'] = 'LINK_PAGAMENTO'
-            
+
             dados_insert['data_transacao'] = linha.get('DataTransacao')
 
             # Campos varchar (texto)
