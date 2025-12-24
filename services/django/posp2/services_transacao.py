@@ -288,8 +288,8 @@ class TRDataService:
                 from django.apps import apps
                 
                 # Buscar terminal
-                Terminais = apps.get_model('parametros_wallclub', 'Terminais')
-                terminal_obj = Terminais.objects.filter(terminal=terminal).first()
+                Terminal = apps.get_model('posp2', 'Terminal')
+                terminal_obj = Terminal.objects.filter(terminal=terminal).first()
                 
                 if terminal_obj and terminal_obj.loja_id:
                     Loja = apps.get_model('parametros_wallclub', 'Loja')
