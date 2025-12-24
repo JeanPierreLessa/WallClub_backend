@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 6.0  
-**Data:** 23/12/2025  
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico
+**Versão:** 6.1  
+**Data:** 24/12/2025  
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)**
 
 ---
 
@@ -1510,8 +1510,9 @@ POST /api/internal/cliente/verificar_cadastro/
 **Container:** wallclub-pos  
 **Celery Task:** `carga_base_unificada_task` (a cada 30 minutos)
 
-**Calculadora:** Compartilhada com Credenciadora (1178 linhas)  
-**Arquivo:** `parametros_wallclub/calculadora_base_gestao.py`
+**Calculadora:** `CalculadoraBaseUnificada` (abstração completa - 24/12/2025)  
+**Arquivo:** `parametros_wallclub/calculadora_base_unificada.py`  
+**Parâmetros obrigatórios:** `info_loja`, `info_canal` (sem busca interna)
 
 **Melhorias (16/12/2025):**
 - ✅ INSERT/UPDATE ao invés de INSERT/SKIP

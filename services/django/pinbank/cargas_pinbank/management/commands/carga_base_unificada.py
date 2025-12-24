@@ -33,33 +33,20 @@ class Command(BaseCommand):
         nsu = options.get('nsu')
         worker_id = options.get('worker_id')
 
-        if worker_id is not None:
-            self.stdout.write(self.style.SUCCESS(f'=== Worker {worker_id} iniciando ==='))
-        else:
-            self.stdout.write(self.style.SUCCESS('=== Iniciando carga Base Unificada ==='))
-
         # 1. Processar POS
-        self.stdout.write(self.style.SUCCESS('\n[1/3] Processando POS...'))
         service_pos = CargaBaseUnificadaPOSService()
         registros_pos = service_pos.carregar_valores_primarios(limite=limite, nsu=nsu, worker_id=worker_id)
-        self.stdout.write(self.style.SUCCESS(f'✅ POS: {registros_pos} registros processados'))
 
         # 2. Processar Credenciadora
-        self.stdout.write(self.style.SUCCESS('\n[2/3] Processando Credenciadora...'))
         service_credenciadora = CargaBaseUnificadaCredenciadoraService()
         registros_credenciadora = service_credenciadora.carregar_valores_primarios(limite=limite, nsu=nsu, worker_id=worker_id)
-        self.stdout.write(self.style.SUCCESS(f'✅ Credenciadora: {registros_credenciadora} registros processados'))
 
         # 3. Processar Checkout
-        self.stdout.write(self.style.SUCCESS('\n[3/3] Processando Checkout...'))
         service_checkout = CargaBaseUnificadaCheckoutService()
         registros_checkout = service_checkout.carregar_valores_primarios(limite=limite, nsu=nsu, worker_id=worker_id)
-        self.stdout.write(self.style.SUCCESS(f'✅ Checkout: {registros_checkout} registros processados'))
 
         # 4. Atualizar cancelamentos
-        self.stdout.write(self.style.SUCCESS('\n[4/4] Atualizando cancelamentos...'))
         cancelamentos_atualizados = service_credenciadora.atualizar_cancelamentos()
-        self.stdout.write(self.style.SUCCESS(f'✅ Cancelamentos: {cancelamentos_atualizados} atualizados'))
 
         # Resumo
         total = registros_pos + registros_credenciadora + registros_checkout

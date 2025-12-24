@@ -46,7 +46,7 @@ class CargaBaseUnificadaPOSService:
             # Cache de canais e lojas
             from wallclub_core.estr_organizacional.canal import Canal
             from wallclub_core.estr_organizacional.loja import Loja
-            
+
             canais_cache = {}
             for canal in Canal.objects.all():
                 canais_cache[canal.id] = {
@@ -57,7 +57,7 @@ class CargaBaseUnificadaPOSService:
                     'canal': canal.nome or '',
                     'nome': canal.nome or ''
                 }
-            
+
             lojas_cache = {}
             for loja in Loja.objects.select_related('canal').all():
                 lojas_cache[loja.id] = {
@@ -67,9 +67,9 @@ class CargaBaseUnificadaPOSService:
                     'cnpj': loja.cnpj or '',
                     'canal_id': loja.canal_id
                 }
-            
+
             registrar_log('pinbank.cargas_pinbank', f"Cache carregado: {len(canais_cache)} canais, {len(lojas_cache)} lojas")
-            
+
             # Query simplificada - pega apenas 1 registro por NSU (menor id)
             cursor.execute(f"""
                 SELECT   pep.id,
@@ -176,21 +176,21 @@ class CargaBaseUnificadaPOSService:
                                 # Montar info_loja e info_canal
                                 loja_id = linha.get('loja_id')
                                 canal_id = linha.get('canal_id')
-                                
+
                                 info_loja = lojas_cache.get(loja_id)
                                 if not info_loja:
-                                    registrar_log('pinbank.cargas_pinbank', 
-                                                f"⚠️ Loja ID {loja_id} não encontrada no cache", 
+                                    registrar_log('pinbank.cargas_pinbank',
+                                                f"⚠️ Loja ID {loja_id} não encontrada no cache",
                                                 nivel='WARNING')
                                     continue
-                                
+
                                 info_canal = canais_cache.get(canal_id)
                                 if not info_canal:
-                                    registrar_log('pinbank.cargas_pinbank', 
-                                                f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                    registrar_log('pinbank.cargas_pinbank',
+                                                f"⚠️ Canal ID {canal_id} não encontrado no cache",
                                                 nivel='WARNING')
                                     continue
-                                
+
                                 # Calcular valores primários
                                 valores = self.calculadora.calcular_valores_primarios(
                                     dados_linha=linha,
@@ -236,21 +236,21 @@ class CargaBaseUnificadaPOSService:
                             # Montar info_loja e info_canal
                             loja_id = linha.get('loja_id')
                             canal_id = linha.get('canal_id')
-                            
+
                             info_loja = lojas_cache.get(loja_id)
                             if not info_loja:
-                                registrar_log('pinbank.cargas_pinbank', 
-                                            f"⚠️ Loja ID {loja_id} não encontrada no cache", 
+                                registrar_log('pinbank.cargas_pinbank',
+                                            f"⚠️ Loja ID {loja_id} não encontrada no cache",
                                             nivel='WARNING')
                                 continue
-                            
+
                             info_canal = canais_cache.get(canal_id)
                             if not info_canal:
-                                registrar_log('pinbank.cargas_pinbank', 
-                                            f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                registrar_log('pinbank.cargas_pinbank',
+                                            f"⚠️ Canal ID {canal_id} não encontrado no cache",
                                             nivel='WARNING')
                                 continue
-                            
+
                             valores = self.calculadora.calcular_valores_primarios(
                                 dados_linha=linha,
                                 tipo_operacao='Wallet',

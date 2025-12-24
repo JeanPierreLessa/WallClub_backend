@@ -36,26 +36,17 @@ def executar_comando(comando_args, descricao):
     log_message(f"🔄 Iniciando: {descricao}")
 
     try:
-        # Capturar output
-        old_stdout = sys.stdout
-        sys.stdout = captured_output = StringIO()
-
-        # Executar comando Django
+        # Executar comando Django SEM capturar output
+        # Deixa o output ir direto para stdout/logs
         call_command(*comando_args)
 
-        # Restaurar stdout
-        sys.stdout = old_stdout
-        output = captured_output.getvalue()
-
         log_message(f"✅ Concluído: {descricao}")
-        if output.strip():
-            print(output)
         return True
 
     except Exception as e:
-        # Restaurar stdout em caso de erro
-        sys.stdout = old_stdout
         log_message(f"❌ Exceção em: {descricao} - {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def main():

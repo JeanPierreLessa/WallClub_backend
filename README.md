@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 23/12/2025
+**Última Atualização:** 24/12/2025
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -82,6 +82,14 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Calculadora usa tabela unificada
   - ✅ Migração histórica: `transactiondata` → `transactiondata_pos`
   - ⏳ Trigger de sincronização ativo (período de transição)
+- ✅ **Abstração Calculadoras Base (24/12/2025):**
+  - ✅ `CalculadoraBaseUnificada`: Wallet (Checkout + POS Pinbank/Own)
+  - ✅ `CalculadoraBaseCredenciadora`: TEF (Credenciadora)
+  - ✅ Parâmetros obrigatórios: `info_loja` e `info_canal` (sem busca interna)
+  - ✅ Todas as cargas migradas (Checkout, Credenciadora, POS Pinbank, POS Own)
+  - ✅ Campo `origem_transacao`: LINK_PAGAMENTO, RECORRENCIA, TEF, POS
+  - ✅ Campo `tipo_operacao`: Wallet, Credenciadora
+  - ✅ Deprecados: `CalculadoraBaseGestao`, `calculadora_tef.py`
 
 ## 📋 Navegação Rápida
 

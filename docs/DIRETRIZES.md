@@ -1,9 +1,10 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.0  
-**Data:** 23/12/2025  
+**Versão:** 5.1  
+**Data:** 24/12/2025  
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
 **Mudanças:** 
+- Abstração Calculadoras Base - Parâmetros obrigatórios, sem busca interna (24/12/2025)
 - Migração Pinbank para `transactiondata_pos` - Endpoint `/trdata/` agora grava em tabela unificada (23/12/2025)
 - Migração Terminais DATETIME - Campos `inicio`/`fim` convertidos de Unix timestamp para DATETIME (20/12/2025)
 
@@ -809,6 +810,51 @@ valor = calculadora.calcular(
     id_loja=id_loja  # Variável já resolvida
 )
 ```
+
+### Calculadoras Base (24/12/2025)
+
+**Abstração Completa:**
+
+**2 Calculadoras:**
+- `CalculadoraBaseUnificada`: Wallet (Checkout + POS Pinbank/Own)
+- `CalculadoraBaseCredenciadora`: TEF (Credenciadora)
+
+**Regra de Ouro:** Calculadoras NÃO buscam dados
+
+```python
+# ❌ ERRADO - Buscar dados internamente
+class Calculadora:
+    def calcular(self, nsu):
+        loja = Loja.objects.get(...)  # PROIBIDO
+        canal = Canal.objects.get(...)  # PROIBIDO
+
+# ✅ CORRETO - Receber tudo via parâmetros
+class CalculadoraBaseUnificada:
+    def calcular_valores_primarios(
+        self,
+        dados_linha: Dict[str, Any],
+        tabela: str,
+        info_loja: Dict[str, Any],  # OBRIGATÓRIO
+        info_canal: Dict[str, Any]  # OBRIGATÓRIO
+    ):
+        # Usa apenas dados recebidos
+        valores[6] = info_loja['id']
+        valores[4] = info_canal['canal']
+```
+
+**Campos Adicionados:**
+- `origem_transacao`: LINK_PAGAMENTO, RECORRENCIA, TEF, POS
+- `tipo_operacao`: Wallet, Credenciadora
+
+**Cargas Migradas:**
+1. Checkout (LINK_PAGAMENTO, RECORRENCIA)
+2. Credenciadora (TEF)
+3. POS Pinbank (POS)
+4. POS Own (POS)
+
+**Deprecados:**
+- `CalculadoraBaseGestao` → renomeado para `.bkp`
+- `calculadora_tef.py` → renomeado para `.bkp`
 
 ### Cargas Pinbank (25/10/2025)
 
