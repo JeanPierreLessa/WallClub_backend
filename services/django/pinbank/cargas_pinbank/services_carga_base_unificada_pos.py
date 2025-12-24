@@ -59,7 +59,7 @@ class CargaBaseUnificadaPOSService:
                 }
 
             lojas_cache = {}
-            for loja in Loja.objects.select_related('canal').all():
+            for loja in Loja.objects.all():
                 lojas_cache[loja.id] = {
                     'id': loja.id,
                     'loja_id': loja.id,
