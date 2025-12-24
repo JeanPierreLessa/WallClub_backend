@@ -108,7 +108,10 @@ class TransacaoService:
                         btu.data_transacao,
                         btu.var5,
                         btu.var11,
-                        btu.amount/100,
+                        CASE 
+                            WHEN btu.var13 >= 1 THEN ABS(btu.var13 * btu.var20)
+                            ELSE btu.var26
+                        END - COALESCE(btu.valor_cashback, 0),
                         btu.var13,
                         btu.var3,
                         btu.var12,
