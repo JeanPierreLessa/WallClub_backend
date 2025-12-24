@@ -100,7 +100,7 @@ class CargaBaseUnificadaCredenciadoraService:
                 INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp ON pep.codigo_cliente = cecp.codigo_cliente
                 INNER JOIN wallclub.loja l ON l.id = cecp.cliente_id
                 LEFT JOIN transactiondata_pos td ON pep.NsuOperacao = td.nsu_gateway
-                LEFT JOIN checkout_transactions ct ON pep.NsuOperacaoLoja = ct.nsu
+                LEFT JOIN checkout_transactions ct ON pep.NsuOperacao = ct.nsu
                 LEFT JOIN terminais t ON pep.serialnumber = t.terminal
                 WHERE    pep.processado = 0
                          AND td.nsu_gateway IS NULL
@@ -112,7 +112,7 @@ class CargaBaseUnificadaCredenciadoraService:
                              INNER JOIN wallclub.credenciaisExtratoContaPinbank cecp2 ON pep2.codigo_cliente = cecp2.codigo_cliente
                              INNER JOIN wallclub.loja l2 ON l2.id = cecp2.cliente_id
                              LEFT JOIN transactiondata_pos td2 ON pep2.NsuOperacao = td2.nsu_gateway
-                             LEFT JOIN checkout_transactions ct2 ON pep2.NsuOperacaoLoja = ct2.nsu
+                             LEFT JOIN checkout_transactions ct2 ON pep2.NsuOperacao = ct2.nsu
                              LEFT JOIN terminais t2 ON pep2.serialnumber = t2.terminal
                              WHERE pep2.processado = 0
                              AND td2.nsu_gateway IS NULL
@@ -588,7 +588,8 @@ class CargaBaseUnificadaCredenciadoraService:
 
         campos = {
             'tipo_operacao': 'Credenciadora',
-            'adquirente': 'PINBANK'
+            'adquirente': 'PINBANK',
+            'origem_transacao': 'TEF'
         }
 
         # Adicionar todas as variáveis calculadas

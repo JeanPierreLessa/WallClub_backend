@@ -2,8 +2,13 @@
 
 - Email Aclub nao esta indo com layout correto (portal lojista)
 - nao envia mensagem de baixar app no checkout
-- ⏳ App: Adicionar device_fingerprint no payload de POST /api/v1/cliente/cadastro/validar_otp/
 - Alteracao em loja (alterar, mudar vendedor, todas as lojas)
+- checkout esta ok e tokenizando cartao; precisa validar recorrencia (debitar 1 pra validar cartao)
+- calculadoras e cargas base unificada
+-> checkout em validacao
+-> mudar pos para usar calculadora abstrata e marcar origem_transacao
+-> mudar crendenciadora
+-> mudar own
 
 Contabilizar
 - cupom
