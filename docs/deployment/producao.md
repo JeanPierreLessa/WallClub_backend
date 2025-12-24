@@ -69,7 +69,11 @@ docker system df
 ```bash
 # Pull do código
 
-c
+cd /var/www/WallClub_backend
+git pull origin release-2.2.0
+docker-compose build
+docker-compose down
+docker-compose up -d
 
 
 # em dev

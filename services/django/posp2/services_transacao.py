@@ -277,38 +277,57 @@ class TRDataService:
             # Usar dados_trdata como dados principais (elimina duplicação)
             dados = dados_trdata
 
-            # 8. INSERIR NA TRANSACTIONDATA_POS
+            # 8. BUSCAR LOJA E CANAL (necessário para calculadora)
+            nsu_pinbank = dados_trdata.get('nsuPinbank')
+            loja_info = None
+            canal_info = None
+            if nsu_pinbank:
+                registrar_log('posp2', f'Buscando loja e canal para nsuPinbank: "{nsu_pinbank}"')
+
+                from pinbank.services import PinbankService
+                from wallclub_core.estr_organizacional.canal import Canal
+                
+                pinbank_service = PinbankService()
+                loja_info = pinbank_service.pega_info_loja(int(nsu_pinbank), tabela='transactiondata_pos')
+                registrar_log('posp2', f'Loja encontrada: {loja_info}')
+                
+                # Buscar canal
+                if loja_info and 'canal_id' in loja_info:
+                    canal = Canal.objects.filter(id=loja_info['canal_id']).first()
+                    if canal:
+                        canal_info = {
+                            'id': canal.id,
+                            'codigo_canal': int(canal.canal) if canal.canal and canal.canal.isdigit() else 0,
+                            'codigo_cliente': int(canal.codigo_cliente) if canal.codigo_cliente and canal.codigo_cliente.isdigit() else 0,
+                            'key_loja': canal.keyvalue or '',
+                            'canal': canal.nome or '',
+                            'nome': canal.nome or ''
+                        }
+                        registrar_log('posp2', f'Canal encontrado: {canal_info}')
+
+            # 9. INSERIR NA TRANSACTIONDATA_POS
             registrar_log('posp2', 'Iniciando inserção na transactiondata_pos...')
             self._inserir_transaction_data(dados, {}, autorizacao_id, modalidade_wall, cashback_concedido_pos)
             registrar_log('posp2', 'Inserção na transactiondata_pos concluída')
 
-            # 9. CALCULAR VALORES APÓS INSERÇÃO
-            calculadora = CalculadoraBaseGestao()
-            registrar_log('posp2', f'Chamando calcular_valores_primarios com dados_linha: {dados_linha}')
-            try:
-                valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata_pos')
-                registrar_log('posp2', 'Calculadora executada com sucesso')
+            # 10. CALCULAR VALORES APÓS INSERÇÃO
+            if loja_info and canal_info:
+                calculadora = CalculadoraBaseUnificada()
+                registrar_log('posp2', f'Chamando calcular_valores_primarios com dados_linha: {dados_linha}')
+                try:
+                    valores_calculados = calculadora.calcular_valores_primarios(dados_linha, tabela='transactiondata_pos', info_loja=loja_info, info_canal=canal_info)
+                    registrar_log('posp2', 'Calculadora executada com sucesso')
 
-                # Log completo dos valores calculados
-                registrar_log('posp2', f'Valores calculados - Total de campos: {len(valores_calculados)}')
-                registrar_log('posp2', f'Valores calculados completos: {valores_calculados}')
-            except Exception as e:
-                registrar_log('posp2', f'ERRO na calculadora: {str(e)}')
-                # Continuar com valores vazios para não interromper o fluxo
+                    # Log completo dos valores calculados
+                    registrar_log('posp2', f'Valores calculados - Total de campos: {len(valores_calculados)}')
+                    registrar_log('posp2', f'Valores calculados completos: {valores_calculados}')
+                except Exception as e:
+                    registrar_log('posp2', f'ERRO na calculadora: {str(e)}')
+                    # Continuar com valores vazios para não interromper o fluxo
+                    valores_calculados = {}
+            else:
+                registrar_log('posp2', 'Loja ou canal não encontrados, pulando cálculo de valores')
                 valores_calculados = {}
-
-            # 9.5. BUSCAR LOJA (necessário para obter canal_id)
-            nsu_pinbank = dados.get('nsuPinbank')
-            loja_info = None
-            if nsu_pinbank:
-                registrar_log('posp2', f'nsuPinbank extraído: "{nsu_pinbank}"')
-                registrar_log('posp2', f'Buscando loja para nsuPinbank: "{nsu_pinbank}" (tipo: {type(nsu_pinbank)})')
-
-                from pinbank.services import PinbankService
-                pinbank_service = PinbankService()
-                loja_info = pinbank_service.pega_info_loja(int(nsu_pinbank), tabela='transactiondata_pos')
-                registrar_log('posp2', f'Chamando pega_info_loja({nsu_pinbank})')
-                registrar_log('posp2', f'Loja encontrada: {loja_info}')
 
             # 9.6. DETERMINAR MODALIDADE WALL
             valor_desconto = Decimal(str(valor_desconto_pos)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) if valor_desconto_pos else Decimal('0')
