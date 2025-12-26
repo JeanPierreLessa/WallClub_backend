@@ -1365,6 +1365,7 @@ class TRDataService:
             dados_insert = {
                 'tipo_operacao': 'Wallet',
                 'adquirente': 'PINBANK',
+                'origem_transacao': 'POS',
                 'data_transacao': data_transacao,
             }
 
