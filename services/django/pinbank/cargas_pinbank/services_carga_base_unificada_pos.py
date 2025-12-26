@@ -196,14 +196,14 @@ class CargaBaseUnificadaPOSService:
                                 info_loja = lojas_cache.get(loja_id)
                                 if not info_loja:
                                     registrar_log('pinbank.cargas_pinbank',
-                                                f"⚠️ Loja ID {loja_id} não encontrada no cache",
+                                                f"⚠️ Loja ID {loja_id} não encontrada no cache - NSU {linha.get('NsuOperacao')}",
                                                 nivel='WARNING')
                                     continue
 
                                 info_canal = canais_cache.get(canal_id)
                                 if not info_canal:
                                     registrar_log('pinbank.cargas_pinbank',
-                                                f"⚠️ Canal ID {canal_id} não encontrado no cache",
+                                                f"⚠️ Canal ID {canal_id} não encontrado no cache - NSU {linha.get('NsuOperacao')}",
                                                 nivel='WARNING')
                                     continue
 
@@ -215,17 +215,11 @@ class CargaBaseUnificadaPOSService:
                                     info_canal=info_canal
                                 )
 
-                                # Inserir na base unificada
+                                # Inserir na base unificada (já marca como processado internamente)
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
-
+                                
                                 if sucesso:
-                                    # Marcar apenas o registro específico como processado
-                                    PinbankExtratoPOS.objects.filter(
-                                        id=linha['id']
-                                    ).update(processado=1)
                                     registros_processados += 1
-                                else:
-                                    registrar_log('pinbank.cargas_pinbank', "ERROR")
 
                             except Exception as e:
                                 import traceback
@@ -303,14 +297,20 @@ class CargaBaseUnificadaPOSService:
         """
         Insere valores na base_transacoes_unificadas
         Popula campos novos: card_number, authorization_code, amount, valor_cashback
+        Marca registro como processado no mesmo cursor para garantir consistência
         """
         try:
             # Preparar campos para inserção
             campos = self._preparar_campos_insercao(valores, linha)
 
-            # Inserir via SQL direto
+            # Inserir via SQL direto e marcar como processado no mesmo cursor
             with connection.cursor() as cursor:
                 self._inserir_registro_sql(cursor, campos)
+                # Marcar como processado no mesmo cursor para garantir commit junto
+                cursor.execute(
+                    "UPDATE wallclub.pinbankExtratoPOS SET processado = 1 WHERE id = %s",
+                    [linha['id']]
+                )
 
             return True
 
