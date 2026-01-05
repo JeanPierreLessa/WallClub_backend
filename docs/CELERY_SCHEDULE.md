@@ -1,6 +1,6 @@
 # Celery Beat - Tasks Agendadas
 
-Documento atualizado em: 2025-12-09
+Documento atualizado em: 2026-01-05
 
 ## Tasks Agendadas Automaticamente
 
@@ -13,7 +13,14 @@ Documento atualizado em: 2025-12-09
 - **Expira em:** 1 hora
 - **O que faz:** Busca transações da API Pinbank das últimas 72 horas
 
-#### 2. `cargas-completas-pinbank`
+#### 2. `carga-extrato-pos-60dias`
+- **Task:** `pinbank.carga_extrato_pos`
+- **Agendamento:** Diariamente às 02:00
+- **Parâmetros:** `periodo='60dias'`
+- **Expira em:** 2 horas
+- **O que faz:** Busca transações da API Pinbank dos últimos 60 dias (carga completa para reconciliação)
+
+#### 3. `cargas-completas-pinbank`
 - **Task:** `pinbank.cargas_completas`
 - **Agendamento:** De hora em hora, minuto :05, das 5h às 23h
 - **Expira em:** 1 hora
@@ -25,7 +32,7 @@ Documento atualizado em: 2025-12-09
 
 ### 💰 Conta Digital
 
-#### 3. `expirar-autorizacoes-saldo`
+#### 4. `expirar-autorizacoes-saldo`
 - **Task:** `apps.conta_digital.expirar_autorizacoes_saldo`
 - **Agendamento:** Diariamente às 01:00
 - **Expira em:** 1 hora
@@ -33,19 +40,19 @@ Documento atualizado em: 2025-12-09
 
 ### 🎁 Cashback
 
-#### 4. `liberar-cashback-retido`
+#### 5. `liberar-cashback-retido`
 - **Task:** `cashback.liberar_cashback_retido`
 - **Agendamento:** Diariamente às 02:00
 - **Expira em:** 1 hora
 - **O que faz:** Libera cashback que completou período de retenção (move de bloqueado para disponível)
 
-#### 5. `expirar-cashback-vencido`
+#### 6. `expirar-cashback-vencido`
 - **Task:** `cashback.expirar_cashback_vencido`
 - **Agendamento:** Diariamente às 03:00
 - **Expira em:** 1 hora
 - **O que faz:** Expira cashback vencido (remove de disponível)
 
-#### 6. `resetar-gasto-mensal-lojas`
+#### 7. `resetar-gasto-mensal-lojas`
 - **Task:** `cashback.resetar_gasto_mensal_lojas`
 - **Agendamento:** Mensalmente no dia 1 às 04:00
 - **Expira em:** 1 hora
@@ -53,7 +60,7 @@ Documento atualizado em: 2025-12-09
 
 ### 🎁 Ofertas
 
-#### 7. `processar-ofertas-agendadas`
+#### 8. `processar-ofertas-agendadas`
 - **Task:** `apps.ofertas.processar_ofertas_agendadas`
 - **Agendamento:** A cada 5 minutos
 - **Expira em:** 5 minutos
@@ -91,7 +98,7 @@ Documento atualizado em: 2025-12-09
 
 ## Resumo
 
-- **Total de tasks agendadas:** 7
+- **Total de tasks agendadas:** 8
 - **Total de tasks definidas:** 11+
 - **Broker:** Redis
 - **Containers:**
