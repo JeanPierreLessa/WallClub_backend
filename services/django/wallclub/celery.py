@@ -44,6 +44,16 @@ app.conf.beat_schedule = {
         }
     },
 
+    # Carga extrato POS 60 dias - 1x ao dia às 02:00
+    'carga-extrato-pos-60dias': {
+        'task': 'pinbank.carga_extrato_pos',
+        'schedule': crontab(hour=2, minute=0),  # 02:00 todos os dias
+        'args': ('60dias',),  # Período de 60 dias
+        'options': {
+            'expires': 7200,  # Expira em 2 horas
+        }
+    },
+
     # Cargas completas - A cada 30 minutos
     'cargas-completas-pinbank': {
         'task': 'pinbank.cargas_completas',
