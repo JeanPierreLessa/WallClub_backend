@@ -270,9 +270,6 @@ class CargaBaseUnificadaPOSService:
                             sucesso = self._inserir_valores_base_unificada(valores, linha)
 
                             if sucesso:
-                                PinbankExtratoPOS.objects.filter(
-                                    id=linha['id']
-                                ).update(processado=1)
                                 registros_processados += 1
                             else:
                                 registrar_log('pinbank.cargas_pinbank',
@@ -306,10 +303,11 @@ class CargaBaseUnificadaPOSService:
             # Inserir via SQL direto e marcar como processado no mesmo cursor
             with connection.cursor() as cursor:
                 self._inserir_registro_sql(cursor, campos)
-                # Marcar como processado no mesmo cursor para garantir commit junto
+                # Marcar TODOS os registros com o mesmo NSU como processados
+                nsu = linha.get('NsuOperacao')
                 cursor.execute(
-                    "UPDATE wallclub.pinbankExtratoPOS SET processado = 1 WHERE id = %s",
-                    [linha['id']]
+                    "UPDATE wallclub.pinbankExtratoPOS SET processado = 1 WHERE NsuOperacao = %s",
+                    [nsu]
                 )
 
             return True
