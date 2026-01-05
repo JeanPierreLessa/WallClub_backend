@@ -299,27 +299,20 @@ class CargaBaseUnificadaCheckoutService:
         return registros_processados
 
     def _inserir_valores_base_unificada(self, valores: Dict[int, Any], linha: Dict) -> bool:
-        """Insere valores na base unificada usando SQL direto"""
+        """
+        Insere ou atualiza valores na base unificada
+        Lógica: Se já existe, verifica mudanças (status, cancelamento, pagamento)
+        """
         try:
             nsu = linha.get('NsuOperacao')
             if not nsu:
                 return False
 
-            # Verificar se já existe registro com este NSU
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "SELECT id FROM base_transacoes_unificadas WHERE var9 = %s",
-                    [str(nsu)]
-                )
-                if cursor.fetchone():
-                    registrar_log('pinbank.cargas_pinbank', f"NSU {nsu} já existe em base_transacoes_unificadas. Pulando...")
-                    return True
-
-            # Preparar dados para inserção
+            # Preparar dados para inserção/update
             dados_insert = {}
 
             # Campos fixos
-            dados_insert['tipo_operacao'] = valores.get('tipo_operacao', 'Wallet')
+            dados_insert['tipo_operacao'] = 'Wallet'
             dados_insert['adquirente'] = 'PINBANK'
 
             # Mapear origem do checkout_transactions para origem_transacao
@@ -327,7 +320,6 @@ class CargaBaseUnificadaCheckoutService:
             if origem_checkout == 'RECORRENCIA':
                 dados_insert['origem_transacao'] = 'RECORRENCIA'
             else:
-                # 'CHECKOUT' ou 'LINK' = LINK_PAGAMENTO
                 dados_insert['origem_transacao'] = 'LINK_PAGAMENTO'
 
             dados_insert['data_transacao'] = linha.get('DataTransacao')
@@ -357,23 +349,87 @@ class CargaBaseUnificadaCheckoutService:
                                 except (ValueError, TypeError):
                                     dados_insert[campo_nome] = None
 
-            # Inserir usando raw SQL
-            campos = list(dados_insert.keys())
-            valores_lista = list(dados_insert.values())
-            placeholders = ', '.join(['%s'] * len(valores_lista))
-            campos_str = ', '.join(campos)
-
             with connection.cursor() as cursor:
-                cursor.execute(f"""
-                    INSERT INTO base_transacoes_unificadas ({campos_str})
-                    VALUES ({placeholders})
-                """, valores_lista)
+                # Verificar se já existe e buscar campos críticos
+                cursor.execute("""
+                    SELECT var69, var70, var44, var45
+                    FROM wallclub.base_transacoes_unificadas
+                    WHERE var9 = %s AND tipo_operacao = 'Wallet'
+                """, [str(nsu)])
 
-            registrar_log('pinbank.cargas_pinbank', f'✅ Inserido em base_transacoes_unificadas - NSU: {nsu}')
+                registro_atual = cursor.fetchone()
+
+                if registro_atual:
+                    # Registro já existe - verificar se precisa UPDATE
+                    var69_atual, var70_atual, var44_atual, var45_atual = registro_atual
+                    var69_novo = dados_insert.get('var69')
+                    var70_novo = dados_insert.get('var70')
+                    var44_novo = dados_insert.get('var44')
+                    var45_novo = dados_insert.get('var45')
+
+                    # Verificar mudanças
+                    status_mudou = str(var69_atual or '') != str(var69_novo or '')
+                    cancelamento_novo = (not var70_atual) and var70_novo
+                    pagamento_mudou = (str(var44_atual or '') != str(var44_novo or '')) or (str(var45_atual or '') != str(var45_novo or ''))
+
+                    if status_mudou or cancelamento_novo or pagamento_mudou:
+                        # UPDATE completo
+                        set_clause = ', '.join([f'`{col}` = %s' for col in dados_insert.keys() if col != 'var9'])
+                        valores_update = [v for k, v in dados_insert.items() if k != 'var9']
+                        valores_update.append(str(nsu))
+
+                        sql = f"UPDATE wallclub.base_transacoes_unificadas SET {set_clause} WHERE var9 = %s AND tipo_operacao = 'Wallet'"
+                        cursor.execute(sql, valores_update)
+
+                        # Auditoria
+                        import json
+                        motivo = []
+                        if status_mudou:
+                            motivo.append(f"status: {var69_atual} -> {var69_novo}")
+                        if cancelamento_novo:
+                            motivo.append(f"cancelamento: {var70_novo}")
+                        if pagamento_mudou:
+                            motivo.append(f"pagamento: var44={var44_novo}, var45={var45_novo}")
+
+                        cursor.execute("""
+                            INSERT INTO auditoria_base_unificada_mudancas
+                            (var9, tipo_operacao, colunas_alteradas, qtd_colunas_alteradas)
+                            VALUES (%s, 'Wallet', %s, %s)
+                        """, [str(nsu), json.dumps(motivo), 1])
+
+                        registrar_log('pinbank.cargas_pinbank', f'✅ Atualizado em base_transacoes_unificadas - NSU: {nsu} - Motivo: {", ".join(motivo)}')
+                    else:
+                        registrar_log('pinbank.cargas_pinbank', f'NSU {nsu} já existe sem mudanças. Apenas marcando como processado.')
+
+                    # Marcar como processado
+                    cursor.execute(
+                        "UPDATE wallclub.pinbankExtratoPOS SET processado = 1 WHERE NsuOperacao = %s",
+                        [nsu]
+                    )
+                else:
+                    # INSERT novo registro
+                    campos = list(dados_insert.keys())
+                    valores_lista = list(dados_insert.values())
+                    placeholders = ', '.join(['%s'] * len(valores_lista))
+                    campos_str = ', '.join(campos)
+
+                    cursor.execute(f"""
+                        INSERT INTO base_transacoes_unificadas ({campos_str})
+                        VALUES ({placeholders})
+                    """, valores_lista)
+
+                    # Marcar como processado
+                    cursor.execute(
+                        "UPDATE wallclub.pinbankExtratoPOS SET processado = 1 WHERE NsuOperacao = %s",
+                        [nsu]
+                    )
+
+                    registrar_log('pinbank.cargas_pinbank', f'✅ Inserido em base_transacoes_unificadas - NSU: {nsu}')
+
             return True
 
         except Exception as e:
             registrar_log('pinbank.cargas_pinbank',
-                        f'❌ Erro ao inserir em base_transacoes_unificadas: {str(e)}',
+                        f'❌ Erro ao inserir/atualizar base_transacoes_unificadas: {str(e)}',
                         nivel='ERROR')
             return False
