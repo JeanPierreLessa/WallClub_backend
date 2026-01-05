@@ -191,10 +191,9 @@ class CargaBaseUnificadaCheckoutService:
                                     }
 
                                 # Calcular valores primários
-                                # Passa tipo_operacao='Wallet' (checkout = venda direta, sem credenciadora)
                                 valores = self.calculadora.calcular_valores_primarios(
                                     dados_linha=linha,
-                                    tipo_operacao='Wallet',
+                                    tabela='transactiondata_pos',
                                     info_loja=info_loja,
                                     info_canal=info_canal
                                 )
@@ -264,10 +263,9 @@ class CargaBaseUnificadaCheckoutService:
                                 }
 
                             # Calcular valores primários
-                            # Passa tipo_operacao='Wallet' (checkout = venda direta, sem credenciadora)
                             valores = self.calculadora.calcular_valores_primarios(
                                 dados_linha=linha,
-                                tipo_operacao='Wallet',
+                                tabela='transactiondata_pos',
                                 info_loja=info_loja,
                                 info_canal=info_canal
                             )
