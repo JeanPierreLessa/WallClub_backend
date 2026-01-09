@@ -262,6 +262,13 @@ class TRDataPosService:
             # 7. Calcular valores via CalculadoraBaseGestao e gerar slip
             tipo_compra = self.TIPO_COMPRA_MAP.get(dados['paymentMethod'], dados['paymentMethod'])
             
+            # Se houver cupom, usar valor após desconto (amount), senão usar valor_original
+            valor_para_calculo = dados['valor_original']
+            if cupom_id and dados.get('amount'):
+                # Amount vem em centavos, converter para decimal
+                valor_para_calculo = Decimal(str(dados['amount'])) / 100
+                registrar_log('posp2', f'🎟️ Cupom aplicado: valor_original={dados["valor_original"]}, valor_com_cupom={valor_para_calculo}')
+            
             dados_linha = {
                 'id': transaction_id,
                 'DataTransacao': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
@@ -271,9 +278,9 @@ class TRDataPosService:
                 'TipoCompra': tipo_compra,
                 'NsuOperacao': dados['nsu_gateway'],
                 'nsuAcquirer': dados['nsuAcquirer'],
-                'valor_original': dados['valor_original'],
-                'ValorBruto': dados['valor_original'],
-                'ValorBrutoParcela': dados['valor_original'],
+                'valor_original': valor_para_calculo,
+                'ValorBruto': valor_para_calculo,
+                'ValorBrutoParcela': valor_para_calculo,
                 'Bandeira': dados['brand'],
                 'NumeroTotalParcelas': dados['totalInstallments'],
                 'ValorTaxaAdm': 0,
@@ -283,7 +290,9 @@ class TRDataPosService:
                 'DescricaoStatusPagamento': 'Pendente',
                 'IdStatusPagamento': 1,
                 'DataCancelamento': None,
-                'DataFuturaPagamento': None
+                'DataFuturaPagamento': None,
+                'cupom_codigo': dados.get('cupom_codigo', ''),
+                'cupom_valor_desconto': dados.get('cupom_valor_desconto', 0)
             }
 
             # 7. Calcular valores (passar info_loja e info_canal já resolvidos)
@@ -714,6 +723,12 @@ class TRDataPosService:
                         "desconto": f"Valor do desconto CLUB: R$ {formatar_valor_monetario(desconto)}",
                     }
 
+                    # Cupom aplicado
+                    cupom_codigo = dados.get('cupom_codigo', '')
+                    cupom_valor = dados.get('cupom_valor_desconto', 0)
+                    if cupom_codigo and cupom_valor:
+                        array_update["cupom"] = f"Cupom {cupom_codigo}: -R$ {formatar_valor_monetario(cupom_valor)}"
+
                     if saldo_cashback_usado > 0:
                         array_update["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
 
@@ -751,6 +766,12 @@ class TRDataPosService:
                         "desconto": label_desconto,
                         "vdesconto": label_vdesconto,
                     }
+
+                    # Cupom aplicado
+                    cupom_codigo = dados.get('cupom_codigo', '')
+                    cupom_valor = dados.get('cupom_valor_desconto', 0)
+                    if cupom_codigo and cupom_valor:
+                        array_update["cupom"] = f"Cupom {cupom_codigo}: -R$ {formatar_valor_monetario(cupom_valor)}"
 
                     if saldo_cashback_usado > 0:
                         array_update["saldo_usado"] = f"Saldo utilizado de cashback: R$ {formatar_valor_monetario(saldo_cashback_usado)}"
