@@ -74,7 +74,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Valor do Desconto *</label>
                                 <input type="number" name="valor_desconto" class="form-control" 
-                                       value="{{ cupom.valor_desconto|default:'' }}" 
+                                       value="{% if cupom %}{{ cupom.valor_desconto }}{% endif %}" 
                                        step="0.01" min="0" placeholder="Ex: 10.00 ou 15.00" required>
                                 <small class="text-muted">Valor fixo (R$) ou percentual (%)</small>
                             </div>

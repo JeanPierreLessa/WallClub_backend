@@ -11,3 +11,6 @@ Contabilizar
 - cashback wall
 
 
+Cupom
+- ver se engine esta obedecendo a todas as regras
+- contabilizar
