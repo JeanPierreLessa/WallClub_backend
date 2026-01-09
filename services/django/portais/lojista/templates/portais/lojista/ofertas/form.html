@@ -111,8 +111,15 @@
                                    accept="image/*"
                                    {% if oferta.disparada %}disabled{% endif %}>
                             <small class="form-text text-muted">Envie uma imagem para a oferta (JPG, PNG ou GIF - opcional)</small>
+                            
+                            <!-- Preview da imagem -->
+                            <div id="image-preview" class="mt-2" style="display: none;">
+                                <img id="preview-img" src="" alt="Preview" class="img-thumbnail" style="max-width: 300px; max-height: 300px;">
+                                <p class="small text-muted mt-1">Preview da nova imagem</p>
+                            </div>
+                            
                             {% if oferta and oferta.imagem_url %}
-                            <div class="mt-2">
+                            <div class="mt-2" id="current-image">
                                 <img src="{{ oferta.imagem_url }}" alt="Imagem atual" class="img-thumbnail" style="max-width: 200px;">
                                 <p class="small text-muted mt-1">Imagem atual</p>
                             </div>
@@ -342,6 +349,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Listeners nos radios
     radioTodos.addEventListener('change', toggleGrupoSelect);
     radioGrupo.addEventListener('change', toggleGrupoSelect);
+    
+    // Preview de imagem
+    const imagemInput = document.getElementById('imagem');
+    const imagePreview = document.getElementById('image-preview');
+    const previewImg = document.getElementById('preview-img');
+    const currentImage = document.getElementById('current-image');
+    
+    imagemInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        
+        if (file) {
+            // Validar tipo de arquivo
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor, selecione apenas arquivos de imagem.');
+                imagemInput.value = '';
+                return;
+            }
+            
+            // Criar URL temporária para preview
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                previewImg.src = event.target.result;
+                imagePreview.style.display = 'block';
+                
+                // Ocultar imagem atual se existir
+                if (currentImage) {
+                    currentImage.style.display = 'none';
+                }
+            };
+            
+            reader.readAsDataURL(file);
+        } else {
+            // Se limpar o input, ocultar preview e mostrar imagem atual
+            imagePreview.style.display = 'none';
+            if (currentImage) {
+                currentImage.style.display = 'block';
+            }
+        }
+    });
     
     // Validação de datas
     form.addEventListener('submit', function(e) {
