@@ -251,6 +251,7 @@ class OfertaService:
                         AND is_active = 1
                         AND firebase_token IS NOT NULL 
                         AND firebase_token != ''
+                        AND bypass_2fa = 0
                         """,
                         [canal_id]
                     )
@@ -271,6 +272,7 @@ class OfertaService:
                         AND c.is_active = 1
                         AND c.firebase_token IS NOT NULL 
                         AND c.firebase_token != ''
+                        AND c.bypass_2fa = 0
                         """,
                         [grupo_id, canal_id]
                     )
