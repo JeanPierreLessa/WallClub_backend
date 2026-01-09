@@ -432,19 +432,18 @@ class CheckoutVendasService:
                 telefone_obfuscado = ''
                 try:
                     from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
-                    cpf_limpo = cliente.cpf.replace('.', '').replace('-', '')
                     telefone_obj = CheckoutClienteTelefone.objects.filter(
-                        cpf=cpf_limpo,
+                        cliente_id=cliente.id,
                         ativo__in=[1, -1]  # Ativo ou pendente
-                    ).first()
+                    ).order_by('-criado_em').first()
 
                     if telefone_obj:
                         tel = telefone_obj.telefone
                         tel_limpo = tel.replace('(', '').replace(')', '').replace('-', '').replace(' ', '')
                         if len(tel_limpo) >= 10:
-                            telefone_obfuscado = f"({tel_limpo[:2]})****{tel_limpo[-4:]}"
+                            telefone_obfuscado = f"({tel_limpo[:2]}) XXXX-{tel_limpo[-4:]}"
                         else:
-                            telefone_obfuscado = "****" + tel_limpo[-4:] if len(tel_limpo) >= 4 else tel_limpo
+                            telefone_obfuscado = "XXXX-" + tel_limpo[-4:] if len(tel_limpo) >= 4 else tel_limpo
                 except Exception:
                     pass
 
