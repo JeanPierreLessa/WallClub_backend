@@ -11,7 +11,6 @@ from typing import Dict, Any
 from django.db import connection, transaction
 from wallclub_core.utilitarios.log_control import registrar_log
 from parametros_wallclub.calculadora_base_unificada import CalculadoraBaseUnificada
-from parametros_wallclub.calculadora_base_gestao import CalculadoraBaseGestao
 from parametros_wallclub.services import ParametrosService
 
 
@@ -290,7 +289,7 @@ class TRDataPosService:
             # 7. Calcular valores (passar info_loja e info_canal já resolvidos)
             loja_info = {'id': loja_id, 'loja_id': loja_id, 'loja': razao_social, 'cnpj': cnpj, 'canal_id': canal_id}
             canal_info = {'id': canal_id, 'canal_id': canal_id, 'canal': nome_canal}
-            calculadora = CalculadoraBaseGestao()
+            calculadora = CalculadoraBaseUnificada()
             valores_calculados = calculadora.calcular_valores_primarios(
                 dados_linha, 
                 tabela='transactiondata_pos',
