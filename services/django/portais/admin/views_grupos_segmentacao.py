@@ -91,7 +91,7 @@ def grupos_create(request):
 def grupos_edit(request, grupo_id):
     """Edita grupo de segmentação"""
     try:
-        GrupoSegmentacao = apps.get_model('apps.ofertas', 'GrupoSegmentacao')
+        GrupoSegmentacao = apps.get_model('ofertas', 'GrupoSegmentacao')
         
         grupo = GrupoSegmentacao.objects.filter(id=grupo_id).first()
         if not grupo:

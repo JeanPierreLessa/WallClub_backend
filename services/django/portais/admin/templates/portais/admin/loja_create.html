@@ -88,22 +88,24 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="canal_id" class="form-label">
-                                    <i class="fas fa-hashtag me-1"></i>
-                                    ID Canal
+                                    <i class="fas fa-stream me-1"></i>
+                                    Canal *
                                 </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="canal_id" 
-                                       name="canal_id" 
-                                       placeholder="123"
-                                       pattern="[0-9]+"
-                                       value="{{ request.POST.canal_id|default:'' }}">
-                                <div class="form-text">Identificador do canal</div>
+                                <select class="form-select" id="canal_id" name="canal_id" required>
+                                    <option value="">Selecione um canal</option>
+                                    {% for canal in canais %}
+                                    <option value="{{ canal.id }}" 
+                                            {% if request.POST.canal_id == canal.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ canal.nome }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Canal ao qual a loja pertence</div>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="email" class="form-label">
                                     <i class="fas fa-envelope me-1"></i>
                                     Email
@@ -116,38 +118,10 @@
                                        value="{{ request.POST.email|default:'' }}">
                                 <div class="form-text">Email de contato da loja</div>
                             </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="senha" class="form-label">
-                                    <i class="fas fa-lock me-1"></i>
-                                    Senha
-                                </label>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="senha" 
-                                       name="senha" 
-                                       placeholder="senha de acesso"
-                                       value="{{ request.POST.senha|default:'' }}">
-                                <div class="form-text">Senha para acesso ao sistema</div>
-                            </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="cod_cliente" class="form-label">
-                                    <i class="fas fa-barcode me-1"></i>
-                                    Código Cliente
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="cod_cliente" 
-                                       name="cod_cliente" 
-                                       placeholder="código do cliente"
-                                       value="{{ request.POST.cod_cliente|default:'' }}">
-                                <div class="form-text">Código identificador do cliente</div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label for="celular" class="form-label">
                                     <i class="fas fa-mobile-alt me-1"></i>
                                     Celular

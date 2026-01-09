@@ -145,13 +145,6 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'dispositivos' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'portais_admin:dispositivos_list' %}">
-                                <i class="fas fa-mobile-alt me-2"></i>
-                                Dispositivos
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link {% if 'atividades_suspeitas' in request.resolver_match.url_name or 'investigar_atividade' in request.resolver_match.url_name %}active{% endif %}" 
                                href="{% url 'portais_admin:atividades_suspeitas' %}">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
@@ -163,13 +156,6 @@
                                href="{% url 'portais_admin:bloqueios_seguranca' %}">
                                 <i class="fas fa-ban me-2"></i>
                                 Bloqueios
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'celery' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'portais_admin:celery_dashboard' %}">
-                                <i class="fas fa-tasks me-2"></i>
-                                Monitoramento Celery
                             </a>
                         </li>
                     </ul>

@@ -763,14 +763,21 @@ def loja_create(request):
             'canal_nome': row[4]
         } for row in cursor.fetchall()]
     
+    # Buscar canais disponíveis
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, nome
+            FROM canal
+            ORDER BY nome
+        """)
+        canais = [{'id': row[0], 'nome': row[1]} for row in cursor.fetchall()]
+    
     if request.method == 'POST':
         razao_social = request.POST.get('razao_social', '').strip()
         cnpj = request.POST.get('cnpj', '').strip()
         complemento = request.POST.get('complemento', '').strip()
         canal_id = request.POST.get('canal_id', '').strip()
         email = request.POST.get('email', '').strip()
-        senha = request.POST.get('senha', '').strip()
-        cod_cliente = request.POST.get('cod_cliente', '').strip()
         celular = request.POST.get('celular', '').strip()
         aceite = 0  # Sempre criado com 0
         nomebanco = request.POST.get('nomebanco', '').strip()
@@ -782,17 +789,18 @@ def loja_create(request):
         
         if not grupo_id:
             messages.error(request, 'Grupo econômico é obrigatório.')
+        elif not canal_id:
+            messages.error(request, 'Canal é obrigatório.')
         else:
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        INSERT INTO loja (razao_social, cnpj, complemento, canal_id, email, senha, 
-                                        cod_cliente, celular, aceite, nomebanco, numerobanco, 
+                        INSERT INTO loja (razao_social, cnpj, complemento, canal_id, email, 
+                                        celular, aceite, nomebanco, numerobanco, 
                                         agencia, conta, pix, GrupoEconomicoId)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, [razao_social or None, cnpj or None, complemento or None, 
-                          int(canal_id) if canal_id else None, email or None, senha or None, 
-                          cod_cliente or None, celular or None, int(aceite), 
+                          int(canal_id), email or None, celular or None, int(aceite), 
                           nomebanco or None, numerobanco or None, agencia or None, 
                           conta or None, pix or None, grupo_id])
                 
@@ -802,7 +810,8 @@ def loja_create(request):
                 messages.error(request, f'Erro ao criar loja: {str(e)}')
     
     context = {
-        'grupos': grupos
+        'grupos': grupos,
+        'canais': canais
     }
     
     return render(request, 'portais/admin/loja_create.html', context)

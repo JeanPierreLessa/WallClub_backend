@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_dispositivos, views_seguranca, views_perfil, views_celery
+from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_seguranca, views_perfil
 
 app_name = 'portais_admin'
 
@@ -115,21 +115,9 @@ urlpatterns = [
     path('antifraude/aprovar/', views_antifraude.antifraude_aprovar, name='antifraude_aprovar'),
     path('antifraude/reprovar/', views_antifraude.antifraude_reprovar, name='antifraude_reprovar'),
 
-    # Dispositivos Confiáveis
-    path('dispositivos/', views_dispositivos.listar_dispositivos, name='dispositivos_list'),
-    path('dispositivos/dashboard/', views_dispositivos.dashboard_dispositivos, name='dispositivos_dashboard'),
-    path('dispositivos/usuario/', views_dispositivos.buscar_dispositivos_usuario, name='dispositivos_usuario'),
-    path('dispositivos/revogar/', views_dispositivos.revogar_dispositivo, name='dispositivos_revogar'),
-    path('dispositivos/revogar-todos/', views_dispositivos.revogar_todos_dispositivos_usuario, name='dispositivos_revogar_todos'),
-
     # Segurança - Atividades Suspeitas e Bloqueios (Semana 23)
     path('seguranca/atividades/', views_seguranca.atividades_suspeitas, name='atividades_suspeitas'),
     path('seguranca/atividades/<int:atividade_id>/investigar/', views_seguranca.investigar_atividade, name='investigar_atividade'),
     path('seguranca/bloqueios/', views_seguranca.bloqueios_seguranca, name='bloqueios_seguranca'),
     path('seguranca/bloqueios/criar/', views_seguranca.criar_bloqueio, name='criar_bloqueio'),
-
-    # Monitoramento Celery
-    path('celery/', views_celery.celery_dashboard, name='celery_dashboard'),
-    path('celery/history/', views_celery.celery_task_history, name='celery_task_history'),
-    path('celery/task/<str:task_id>/', views_celery.celery_task_detail, name='celery_task_detail'),
 ]
