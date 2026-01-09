@@ -183,12 +183,17 @@ class CupomEditView(LojistaAccessMixin, LojistaDataMixin, View):
         
         lojas_acessiveis = self.get_lojas_acessiveis()
         
+        # Verificar se cupom já foi usado
+        from apps.cupom.models import CupomUso
+        cupom_foi_usado = CupomUso.objects.filter(cupom_id=cupom.id).exists()
+        
         context = {
             'cupom': cupom,
             'tipos_cupom': Cupom._meta.get_field('tipo_cupom').choices,
             'tipos_desconto': Cupom._meta.get_field('tipo_desconto').choices,
             'lojas_acessiveis': lojas_acessiveis,
             'loja_id_atual': cupom.loja_id,  # Usar loja do cupom, não da sessão
+            'cupom_foi_usado': cupom_foi_usado,
         }
         return render(request, 'portais/lojista/cupons/form.html', context)
     
@@ -197,21 +202,33 @@ class CupomEditView(LojistaAccessMixin, LojistaDataMixin, View):
             lojas_ids = self.get_lojas_ids()
             cupom = get_object_or_404(Cupom, id=cupom_id, loja_id__in=lojas_ids)
             
-            # Atualizar campos (código não pode ser alterado)
-            cupom.tipo_cupom = request.POST.get('tipo_cupom')
-            cupom.tipo_desconto = request.POST.get('tipo_desconto')
-            cupom.valor_desconto = Decimal(request.POST.get('valor_desconto'))
-            cupom.valor_minimo_compra = Decimal(request.POST.get('valor_minimo_compra', 0))
-            cupom.limite_uso_total = int(request.POST.get('limite_uso_total')) if request.POST.get('limite_uso_total') else None
-            cupom.limite_uso_por_cpf = int(request.POST.get('limite_uso_por_cpf', 1))
-            cupom.cliente_id = int(request.POST.get('cliente_id')) if request.POST.get('cliente_id') else None
-            cupom.data_inicio = datetime.strptime(request.POST.get('data_inicio'), '%Y-%m-%dT%H:%M')
-            cupom.data_fim = datetime.strptime(request.POST.get('data_fim'), '%Y-%m-%dT%H:%M')
-            cupom.ativo = request.POST.get('ativo') == 'on'
-            cupom.save()
+            # Verificar se cupom já foi usado
+            from apps.cupom.models import CupomUso
+            cupom_foi_usado = CupomUso.objects.filter(cupom_id=cupom.id).exists()
             
-            registrar_log('portais.lojista', f'Cupom atualizado: {cupom.codigo} - Loja {cupom.loja_id}')
-            messages.success(request, f'Cupom "{cupom.codigo}" atualizado com sucesso!')
+            if cupom_foi_usado:
+                # Se já foi usado, permitir apenas alterar data_fim e ativo
+                cupom.data_fim = datetime.strptime(request.POST.get('data_fim'), '%Y-%m-%dT%H:%M')
+                cupom.ativo = request.POST.get('ativo') == 'on'
+                cupom.save(update_fields=['data_fim', 'ativo'])
+                registrar_log('portais.lojista', f'Cupom encerrado: {cupom.codigo} - Nova data_fim: {cupom.data_fim}')
+                messages.success(request, f'Cupom "{cupom.codigo}" atualizado (apenas data de encerramento).')
+            else:
+                # Se não foi usado, permitir edição completa
+                cupom.tipo_cupom = request.POST.get('tipo_cupom')
+                cupom.tipo_desconto = request.POST.get('tipo_desconto')
+                cupom.valor_desconto = Decimal(request.POST.get('valor_desconto'))
+                cupom.valor_minimo_compra = Decimal(request.POST.get('valor_minimo_compra', 0))
+                cupom.limite_uso_total = int(request.POST.get('limite_uso_total')) if request.POST.get('limite_uso_total') else None
+                cupom.limite_uso_por_cpf = int(request.POST.get('limite_uso_por_cpf', 1))
+                cupom.cliente_id = int(request.POST.get('cliente_id')) if request.POST.get('cliente_id') else None
+                cupom.data_inicio = datetime.strptime(request.POST.get('data_inicio'), '%Y-%m-%dT%H:%M')
+                cupom.data_fim = datetime.strptime(request.POST.get('data_fim'), '%Y-%m-%dT%H:%M')
+                cupom.ativo = request.POST.get('ativo') == 'on'
+                cupom.save()
+                registrar_log('portais.lojista', f'Cupom atualizado: {cupom.codigo} - Loja {cupom.loja_id}')
+                messages.success(request, f'Cupom "{cupom.codigo}" atualizado com sucesso!')
+            
             return redirect('lojista:cupom_detail', cupom_id=cupom.id)
             
         except Exception as e:

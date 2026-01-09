@@ -15,6 +15,13 @@
                     </h4>
                 </div>
                 <div class="card-body">
+                    {% if cupom_foi_usado %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Este cupom já foi utilizado. Você pode apenas alterar a data de encerramento ou desativá-lo.
+                    </div>
+                    {% endif %}
+                    
                     <form method="post">
                         {% csrf_token %}
                         
@@ -48,7 +55,7 @@
                             <!-- Tipo de Cupom -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Tipo de Cupom *</label>
-                                <select name="tipo_cupom" class="form-select" required>
+                                <select name="tipo_cupom" class="form-select" {% if cupom_foi_usado %}disabled{% endif %} required>
                                     {% for value, label in tipos_cupom %}
                                     <option value="{{ value }}" {% if cupom.tipo_cupom == value %}selected{% endif %}>
                                         {{ label }}
@@ -61,7 +68,7 @@
                             <!-- Tipo de Desconto -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Tipo de Desconto *</label>
-                                <select name="tipo_desconto" class="form-select" required>
+                                <select name="tipo_desconto" class="form-select" {% if cupom_foi_usado %}disabled{% endif %} required>
                                     {% for value, label in tipos_desconto %}
                                     <option value="{{ value }}" {% if cupom.tipo_desconto == value %}selected{% endif %}>
                                         {{ label }}
@@ -75,7 +82,7 @@
                                 <label class="form-label">Valor do Desconto *</label>
                                 <input type="number" name="valor_desconto" class="form-control" 
                                        value="{% if cupom.valor_desconto %}{{ cupom.valor_desconto|stringformat:'.2f' }}{% endif %}" 
-                                       step="0.01" min="0" placeholder="Ex: 10.00 ou 15.00" required>
+                                       step="0.01" min="0" placeholder="Ex: 10.00 ou 15.00" {% if cupom_foi_usado %}readonly{% endif %} required>
                                 <small class="text-muted">Valor fixo (R$) ou percentual (%)</small>
                             </div>
 
@@ -84,7 +91,7 @@
                                 <label class="form-label">Valor Mínimo de Compra</label>
                                 <input type="number" name="valor_minimo_compra" class="form-control" 
                                        value="{{ cupom.valor_minimo_compra|default:'0' }}" 
-                                       step="0.01" min="0" placeholder="0.00">
+                                       step="0.01" min="0" placeholder="0.00" {% if cupom_foi_usado %}readonly{% endif %}>
                                 <small class="text-muted">0 = sem mínimo</small>
                             </div>
 
@@ -93,7 +100,7 @@
                                 <label class="form-label">Limite de Uso Total</label>
                                 <input type="number" name="limite_uso_total" class="form-control" 
                                        value="{{ cupom.limite_uso_total|default:'' }}" 
-                                       min="1" placeholder="Deixe vazio para ilimitado">
+                                       min="1" placeholder="Deixe vazio para ilimitado" {% if cupom_foi_usado %}readonly{% endif %}>
                                 <small class="text-muted">Quantidade máxima de usos</small>
                             </div>
 
@@ -102,7 +109,7 @@
                                 <label class="form-label">Limite de Uso por CPF *</label>
                                 <input type="number" name="limite_uso_por_cpf" class="form-control" 
                                        value="{{ cupom.limite_uso_por_cpf|default:'1' }}" 
-                                       min="1" required>
+                                       min="1" {% if cupom_foi_usado %}readonly{% endif %} required>
                                 <small class="text-muted">Quantas vezes o mesmo CPF pode usar</small>
                             </div>
 
@@ -111,7 +118,7 @@
                                 <label class="form-label">ID do Cliente (Opcional)</label>
                                 <input type="number" name="cliente_id" class="form-control" 
                                        value="{{ cupom.cliente_id|default:'' }}" 
-                                       placeholder="Deixe vazio para qualquer cliente">
+                                       placeholder="Deixe vazio para qualquer cliente" {% if cupom_foi_usado %}readonly{% endif %}>
                                 <small class="text-muted">Para cupom individual vinculado a um cliente específico</small>
                             </div>
 
@@ -120,7 +127,7 @@
                                 <label class="form-label">Data/Hora Início *</label>
                                 <input type="datetime-local" name="data_inicio" class="form-control" 
                                        value="{% if cupom %}{{ cupom.data_inicio|date:'Y-m-d\TH:i' }}{% endif %}" 
-                                       required>
+                                       {% if cupom_foi_usado %}readonly{% endif %} required>
                             </div>
 
                             <!-- Data Fim -->

@@ -340,16 +340,13 @@ class CheckoutVendasService:
 
             # Buscar telefone ativo de cada cliente (em Python)
             for cliente in resultado:
-                if cliente.cpf:
-                    telefone_obj = CheckoutClienteTelefone.objects.filter(
-                        cpf=cliente.cpf,
-                        ativo__in=[1, -1]  # Ativo ou pendente
-                    ).order_by('-criado_em').first()
+                telefone_obj = CheckoutClienteTelefone.objects.filter(
+                    cliente_id=cliente.id,
+                    ativo__in=[1, -1]  # Ativo ou pendente
+                ).order_by('-criado_em').first()
 
-                    if telefone_obj:
-                        cliente.celular_ultimos_4 = telefone_obj.telefone[-4:] if len(telefone_obj.telefone) >= 4 else telefone_obj.telefone
-                    else:
-                        cliente.celular_ultimos_4 = None
+                if telefone_obj:
+                    cliente.celular_ultimos_4 = telefone_obj.telefone[-4:] if len(telefone_obj.telefone) >= 4 else telefone_obj.telefone
                 else:
                     cliente.celular_ultimos_4 = None
 
