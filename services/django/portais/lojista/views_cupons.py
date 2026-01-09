@@ -183,9 +183,6 @@ class CupomEditView(LojistaAccessMixin, LojistaDataMixin, View):
         
         lojas_acessiveis = self.get_lojas_acessiveis()
         
-        # Debug: verificar valor
-        registrar_log('portais.lojista', f'Cupom {cupom.id} - valor_desconto: {cupom.valor_desconto} (tipo: {type(cupom.valor_desconto).__name__})')
-        
         context = {
             'cupom': cupom,
             'tipos_cupom': Cupom._meta.get_field('tipo_cupom').choices,
