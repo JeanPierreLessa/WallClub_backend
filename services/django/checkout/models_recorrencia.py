@@ -232,7 +232,7 @@ class RecorrenciaAgendada(models.Model):
         
         total = CheckoutTransaction.objects.filter(
             checkout_recorrencia=self,
-            status='APROVADO'
+            status='APROVADA'
         ).aggregate(
             total=models.Sum('valor_transacao_final')
         )['total'] or Decimal('0.00')
