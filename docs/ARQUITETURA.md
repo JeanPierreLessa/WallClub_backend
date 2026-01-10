@@ -2735,6 +2735,221 @@ curl -X GET "http://wallclub-prod-release300:8003/cliente/api/v1/autenticacao/an
 
 **Usado por:** Portais Admin/Lojista (gestão de recorrências)
 
+### Sistema de Recorrências - Fluxo Completo
+
+**Status:** ⚠️ Em validação (10/01/2026) - Aguardando autorização Pinbank para pré-autorização
+
+#### Arquitetura
+
+**Módulos:**
+- `checkout/link_recorrencia_web/` - Fluxo de cadastro de cartão
+- `checkout/models_recorrencia.py` - Models (RecorrenciaAgendada, RecorrenciaToken, CartaoTokenizado)
+- `checkout/link_recorrencia_web/services.py` - Lógica de negócio
+- `checkout/link_recorrencia_web/views.py` - Endpoints públicos
+- `portais/vendas/views_recorrencia.py` - Portal de vendas
+
+**Tabelas:**
+```sql
+-- Recorrências agendadas
+checkout_recorrencias (
+    id, cliente_id, descricao, cartao_tokenizado_id,
+    loja_id, vendedor_id, valor_recorrencia,
+    tipo_periodicidade, dia_cobranca, proxima_cobranca,
+    status, tentativas_falhas_consecutivas, max_tentativas
+)
+
+-- Tokens de acesso (link de cadastro)
+checkout_recorrencia_tokens (
+    id, recorrencia_id, token, cliente_cpf, expires_at, usado
+)
+
+-- Cartões tokenizados
+checkout_cartao_tokenizado (
+    id, cliente_id, loja_id, id_token_gateway, cartao_mascarado,
+    bandeira, nome_titular, validade, ativo
+)
+
+-- Histórico de cobranças
+checkout_recorrencia_cobrancas (
+    id, recorrencia_id, data_cobranca, valor, status,
+    nsu, mensagem_erro, tentativa_numero
+)
+```
+
+#### Fluxo 1: Criação da Recorrência (Portal Vendas)
+
+```
+1. Vendedor cria recorrência no portal
+   - Cliente (CPF), descrição, valor, periodicidade
+   - Status inicial: 'pendente'
+   - cartao_tokenizado_id: NULL
+
+2. Sistema gera token único (UUID)
+   - Validade: 7 dias
+   - Vinculado à recorrência
+
+3. Email enviado ao cliente
+   - Link: https://checkout.wallclub.com.br/api/v1/checkout/recorrencia/?token=xxx
+   - Template: checkout/link_recorrencia_web/templates/recorrencia/email_cadastro_cartao.html
+```
+
+#### Fluxo 2: Cadastro de Cartão (Cliente)
+
+**Endpoint:** `GET /api/v1/checkout/recorrencia/?token=xxx`
+
+```
+1. Cliente acessa link do email
+   - Validação do token (expirado? usado?)
+   - Exibe formulário de cadastro
+
+2. Cliente preenche dados do cartão
+   - Número, nome, validade, CVV
+   - Celular (com DDD)
+
+3. Solicita código OTP
+   POST /api/v1/checkout/recorrencia/enviar-otp/
+   {
+       "token": "xxx",
+       "telefone": "11999999999",
+       "ultimos_4_digitos": "1234"  // Últimos 4 dígitos do cartão
+   }
+   
+   → Gera OTP via OTPService (6 dígitos, 5min)
+   → Envia WhatsApp com código + últimos 4 dígitos do cartão
+   → Template: autorizar_transacao_cartao (AUTHENTICATION)
+
+4. Cliente informa OTP + dados do cartão
+   POST /api/v1/checkout/recorrencia/processar/
+   {
+       "token": "xxx",
+       "telefone": "11999999999",
+       "otp_code": "123456",
+       "numero_cartao": "4111111111111234",  // ⚠️ Apenas para tokenização
+       "nome_cartao": "JOAO SILVA",
+       "validade": "12/2028",
+       "cvv": "123"
+   }
+```
+
+#### Fluxo 3: Validação e Tokenização
+
+```
+1. Validar OTP
+   - OTPService.validar_otp()
+   - Máximo 3 tentativas
+   - Expiração: 5 minutos
+
+2. Pré-autorização R$ 1,00 (⚠️ PENDENTE - Aguardando Pinbank)
+   - Valida se cartão é válido e tem saldo
+   - transacoes_service.efetuar_transacao_cartao()
+   - Parâmetros: transacao_pre_autorizada=True
+   - Retorna NSU da pré-autorização
+
+3. Cancelamento imediato da pré-autorização
+   - Estorna os R$ 1,00
+   - transacoes_service.cancelar_transacao(nsu, valor=1.00)
+   - Cliente não é cobrado
+
+4. Tokenização do cartão
+   - Gateway tokeniza e retorna id_token
+   - Salva em checkout_cartao_tokenizado:
+     * id_token_gateway (token do gateway)
+     * cartao_mascarado (****1234)
+     * bandeira, nome_titular, validade
+   - ⚠️ NUNCA armazena número completo ou CVV (PCI-DSS)
+
+5. Vincula cartão à recorrência
+   - RecorrenciaAgendada.cartao_tokenizado_id = cartao.id
+   - RecorrenciaAgendada.status = 'ativo'
+   - RecorrenciaToken.usado = True
+```
+
+#### Fluxo 4: Cobrança Automática (Celery)
+
+**Task:** `processar_cobrancas_recorrentes` (diária, 06:00)
+
+```
+1. Busca recorrências ativas com proxima_cobranca <= hoje
+   - Status: 'ativo'
+   - cartao_tokenizado_id NOT NULL
+
+2. Para cada recorrência:
+   a) Efetua transação usando token
+      - transacoes_service.efetuar_transacao_token()
+      - Parâmetros: id_token, valor, parcelas=1
+   
+   b) Registra resultado em checkout_recorrencia_cobrancas
+      - Status: 'sucesso' ou 'falha'
+      - NSU (se sucesso)
+      - mensagem_erro (se falha)
+   
+   c) Atualiza recorrência:
+      - Se sucesso:
+        * proxima_cobranca += periodicidade
+        * tentativas_falhas_consecutivas = 0
+      
+      - Se falha:
+        * tentativas_falhas_consecutivas += 1
+        * Se >= max_tentativas (padrão: 3):
+          → status = 'cancelada'
+          → Notifica vendedor/cliente
+
+3. Logs detalhados
+   - checkout.recorrencia.log
+   - Nível INFO/ERROR
+```
+
+#### Segurança e Compliance
+
+**PCI-DSS:**
+- ❌ NUNCA armazenar número completo do cartão
+- ❌ NUNCA armazenar CVV
+- ❌ NUNCA trafegar dados completos entre frontend/backend
+- ✅ Tokenização via gateway certificado (Pinbank/Own)
+- ✅ Apenas últimos 4 dígitos para exibição
+- ✅ Pré-autorização + cancelamento para validação
+
+**2FA:**
+- ✅ OTP obrigatório via WhatsApp
+- ✅ Rate limiting (3 tentativas/15min)
+- ✅ Expiração 5 minutos
+- ✅ Validação contra tabela de auditoria
+
+**Dados Sensíveis:**
+- Número do cartão: usado apenas para tokenização, descartado após
+- CVV: usado apenas para tokenização, descartado após
+- Últimos 4 dígitos: enviados no WhatsApp para confirmação
+- Token do gateway: armazenado criptografado
+
+#### Status e Próximos Passos
+
+**✅ Implementado:**
+- Criação de recorrências no portal vendas
+- Geração de token e envio de email
+- Formulário de cadastro de cartão
+- Validação 2FA com OTP
+- Tokenização de cartão
+- Vinculação cartão → recorrência
+- Task Celery de cobrança automática
+- Histórico de cobranças
+
+**⚠️ Em Validação:**
+- Pré-autorização R$ 1,00 + cancelamento
+  - Aguardando autorização Pinbank
+  - Implementado mas não testado em produção
+
+**📋 Pendente:**
+- Notificações de falha de cobrança
+- Reativação de recorrências canceladas
+- Atualização de cartão (trocar cartão vencido)
+- Relatórios de recorrências no portal
+
+**Arquivos:**
+- `checkout/link_recorrencia_web/views.py` (261 linhas)
+- `checkout/link_recorrencia_web/services.py` (340 linhas)
+- `checkout/link_recorrencia_web/templates/recorrencia/` (4 templates)
+- `portais/vendas/views_recorrencia.py` (351 linhas)
+
 ### Middleware Diferenciado
 
 **Path `/api/internal/*`:**

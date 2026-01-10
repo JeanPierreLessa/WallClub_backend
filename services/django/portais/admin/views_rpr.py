@@ -1011,8 +1011,26 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                         for campo in campos_ordenados:
                             valor = linha_individual.get(campo, '')
                             
+                            # Formatação para campos percentuais
+                            if campo in obter_colunas_percentuais_rpr_dinamico() and valor:
+                                try:
+                                    if isinstance(valor, (int, float)):
+                                        percentual = valor * 100
+                                        valor = f"{percentual:.2f}%"
+                                    elif isinstance(valor, str) and valor != 'Não Finalizada':
+                                        valor_float = float(str(valor).replace(',', '.').replace('%', ''))
+                                        # Se já veio como percentual (>1), não multiplicar
+                                        if valor_float > 1:
+                                            valor = f"{valor_float:.2f}%"
+                                        else:
+                                            percentual = valor_float * 100
+                                            valor = f"{percentual:.2f}%"
+                                    else:
+                                        valor = str(valor) if valor else ''
+                                except:
+                                    valor = str(valor) if valor else ''
                             # Formatação para campos monetários
-                            if campo in obter_colunas_monetarias_rpr_dinamico() and valor:
+                            elif campo in obter_colunas_monetarias_rpr_dinamico() and valor:
                                 try:
                                     if isinstance(valor, (int, float)):
                                         valor = f"{valor:.2f}".replace('.', ',')
