@@ -4,6 +4,32 @@ Documento atualizado em: 2026-01-05
 
 ## Tasks Agendadas Automaticamente
 
+### 🔄 Recorrências
+
+#### 1. `processar-recorrencias-do-dia`
+- **Task:** `checkout.processar_recorrencias_do_dia`
+- **Agendamento:** Diariamente às 09:30
+- **Expira em:** 1 hora
+- **O que faz:** Processa todas as recorrências agendadas para o dia atual
+
+#### 2. `retentar-cobrancas-falhadas`
+- **Task:** `checkout.retentar_cobrancas_falhadas`
+- **Agendamento:** Diariamente às 21:30
+- **Expira em:** 1 hora
+- **O que faz:** Retenta cobranças que falharam anteriormente
+
+#### 3. `notificar-recorrencias-hold`
+- **Task:** `checkout.notificar_recorrencias_hold`
+- **Agendamento:** Diariamente às 18:00
+- **Expira em:** 1 hora
+- **O que faz:** Notifica vendedores sobre recorrências em HOLD que precisam de intervenção manual (atualizar cartão, contatar cliente, etc)
+
+#### 4. `limpar-recorrencias-antigas`
+- **Task:** `checkout.limpar_recorrencias_antigas`
+- **Agendamento:** Diariamente às 02:00
+- **Expira em:** 1 hora
+- **O que faz:** Remove dados antigos de recorrências para manter a base limpa
+
 ### 💳 Cargas Pinbank
 
 #### 1. `carga-extrato-pos`
@@ -72,18 +98,6 @@ Documento atualizado em: 2026-01-05
 
 ---
 
-## Tasks Definidas mas NÃO Agendadas
-
-### Recorrências (Desabilitadas)
-- `portais.vendas.tasks_recorrencia.processar_recorrencias_do_dia`
-- `portais.vendas.tasks_recorrencia.retentar_cobrancas_falhadas`
-- `portais.vendas.tasks_recorrencia.notificar_recorrencias_hold`
-- `portais.vendas.tasks_recorrencia.limpar_recorrencias_antigas`
-
-**Status:** Tasks definidas mas não agendadas. Sistema de recorrências ainda não está em produção.
-
----
-
 ## Configuração
 
 **Arquivo:** `services/django/wallclub/celery.py`
@@ -98,8 +112,7 @@ Documento atualizado em: 2026-01-05
 
 ## Resumo
 
-- **Total de tasks agendadas:** 8
-- **Total de tasks definidas:** 11+
+- **Total de tasks agendadas:** 12
 - **Broker:** Redis
 - **Containers:**
   - `wallclub-celery-worker` - Executa as tasks

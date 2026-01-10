@@ -22,13 +22,44 @@ app.autodiscover_tasks()
 # Configuração do Celery Beat Schedule
 app.conf.beat_schedule = {
     # ============================================
-    # RECORRÊNCIAS (Fase 5) - DESABILITADAS
+    # RECORRÊNCIAS
     # ============================================
-    # Tasks de recorrência definidas mas não agendadas:
-    # - portais.vendas.tasks_recorrencia.processar_recorrencias_do_dia
-    # - portais.vendas.tasks_recorrencia.retentar_cobrancas_falhadas
-    # - portais.vendas.tasks_recorrencia.notificar_recorrencias_hold
-    # - portais.vendas.tasks_recorrencia.limpar_recorrencias_antigas
+
+    # Processar recorrências do dia - 1x ao dia às 09:30
+    'processar-recorrencias-do-dia': {
+        'task': 'checkout.processar_recorrencias_do_dia',
+        'schedule': crontab(hour=9, minute=30),  # 09:30 todos os dias
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+
+    # Retentar cobranças falhadas - 1x ao dia às 21:30
+    'retentar-cobrancas-falhadas': {
+        'task': 'checkout.retentar_cobrancas_falhadas',
+        'schedule': crontab(hour=21, minute=30),  # 21:30 todos os dias
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+
+    # Notificar recorrências em HOLD - 1x ao dia às 18:00
+    'notificar-recorrencias-hold': {
+        'task': 'checkout.notificar_recorrencias_hold',
+        'schedule': crontab(hour=18, minute=0),  # 18:00 todos os dias
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
+
+    # Limpar recorrências antigas - 1x ao dia às 02:00
+    'limpar-recorrencias-antigas': {
+        'task': 'checkout.limpar_recorrencias_antigas',
+        'schedule': crontab(hour=2, minute=0),  # 02:00 todos os dias
+        'options': {
+            'expires': 3600,  # Expira em 1 hora
+        }
+    },
 
     # ============================================
     # CARGAS PINBANK (Automáticas)
