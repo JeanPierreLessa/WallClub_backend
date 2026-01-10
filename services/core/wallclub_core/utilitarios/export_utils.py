@@ -123,11 +123,9 @@ def exportar_excel(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, s
                         celula.number_format = '0.00%'
                     elif isinstance(valor, (int, float)):
                         # Valor já é numérico decimal (0.015)
-                        from openpyxl.styles import numbers
                         celula.value = float(valor)
+                        # Usar apenas o estilo Percent (formato padrão do Excel)
                         celula.style = 'Percent'
-                        # Formato built-in do Excel para percentual com 2 casas decimais
-                        celula.number_format = numbers.FORMAT_PERCENTAGE_00
                     else:
                         celula.value = valor
                 except:
@@ -479,11 +477,9 @@ def criar_excel_em_arquivo(caminho_arquivo: str, dados: List[Dict], cabecalhos: 
                         celula.number_format = '0.00%'
                     elif isinstance(valor, (int, float)):
                         # Valor já é numérico decimal (0.015)
-                        from openpyxl.styles import numbers
                         celula.value = float(valor)
+                        # Usar apenas o estilo Percent (formato padrão do Excel)
                         celula.style = 'Percent'
-                        # Formato built-in do Excel para percentual com 2 casas decimais
-                        celula.number_format = numbers.FORMAT_PERCENTAGE_00
                     else:
                         celula.value = valor
                 except:
