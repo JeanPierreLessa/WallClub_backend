@@ -1,0 +1,107 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Log de Vínculo - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Histórico do Vínculo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Informações do Vínculo</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="40%">Operador:</th>
+                                    <td><strong>{{ vinculo.operador.operador }} - {{ vinculo.operador.nome }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Terminal:</th>
+                                    <td><strong>{{ vinculo.terminal.terminal }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Status Atual:</th>
+                                    <td>
+                                        {% if vinculo.ativo %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mb-3">Histórico de Ativações/Desativações</h5>
+                    
+                    {% if logs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="15%">Data/Hora</th>
+                                        <th width="15%">Ação</th>
+                                        <th width="20%">Usuário</th>
+                                        <th>Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td>{{ log.created_at|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if log.acao == 'ATIVADO' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Ativado
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Desativado
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.usuario_id %}
+                                                Usuário #{{ log.usuario_id }}
+                                            {% else %}
+                                                <span class="text-muted">Sistema</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ log.motivo|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Nenhum registro de log encontrado para este vínculo.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <a href="{% url 'lojista:listar_vinculos' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar para Vínculos
+                            </a>
+                            <a href="{% url 'lojista:visualizar_operador' vinculo.operador.id %}" class="btn btn-info">
+                                <i class="fas fa-user me-2"></i>Ver Operador
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

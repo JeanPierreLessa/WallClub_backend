@@ -1,0 +1,100 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Operadores - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-users me-2"></i>
+                            Operadores de Terminais
+                            <span class="badge bg-light text-dark ms-2">{{ operadores|length }} operadores</span>
+                        </h4>
+                        <div>
+                            <a href="{% url 'lojista:listar_vinculos' %}" class="btn btn-light btn-sm me-2">
+                                <i class="fas fa-link me-2"></i>Vínculos
+                            </a>
+                            <a href="{% url 'lojista:criar_operador' %}" class="btn btn-light btn-sm">
+                                <i class="fas fa-plus me-2"></i>Novo Operador
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form method="get" class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <input type="text" name="busca" class="form-control" placeholder="Buscar por código, nome ou CPF" value="{{ busca }}">
+                        </div>
+                        <div class="col-md-4">
+                            <select name="status" class="form-select">
+                                <option value="todos" {% if status == 'todos' %}selected{% endif %}>Todos</option>
+                                <option value="ativos" {% if status == 'ativos' %}selected{% endif %}>Com vínculos ativos</option>
+                                <option value="inativos" {% if status == 'inativos' %}selected{% endif %}>Sem vínculos ativos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Tabela -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome</th>
+                                    <th>CPF</th>
+                                    <th>Identificação Loja</th>
+                                    <th>Vínculos Ativos</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for operador in operadores %}
+                                <tr>
+                                    <td><strong>{{ operador.operador }}</strong></td>
+                                    <td>{{ operador.nome }}</td>
+                                    <td>{{ operador.cpf|default:"-" }}</td>
+                                    <td>{{ operador.identificacao_loja|default:"-" }}</td>
+                                    <td>
+                                        {% if operador.total_vinculos_ativos > 0 %}
+                                            <span class="badge bg-success">{{ operador.total_vinculos_ativos }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'lojista:visualizar_operador' operador.id %}" class="btn btn-sm btn-info" title="Visualizar">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'lojista:editar_operador' operador.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <p>Nenhum operador encontrado</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

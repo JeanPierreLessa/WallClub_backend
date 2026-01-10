@@ -1,7 +1,7 @@
 # ROTEIRO: GESTÃO DE OPERADORES DE TERMINAIS
 
-**Data:** 09/01/2026  
-**Objetivo:** Criar funcionalidade de gestão de operadores no Portal Lojista  
+**Data:** 09/01/2026
+**Objetivo:** Criar funcionalidade de gestão de operadores no Portal Lojista
 **Responsável:** Jean Lessa
 
 ---
@@ -73,13 +73,13 @@ CREATE TABLE terminais_operadores_log (
   usuario_id INT UNSIGNED NULL,
   motivo VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
+
   KEY idx_vinculo (vinculo_id),
   KEY idx_created_at (created_at),
-  
-  CONSTRAINT fk_log_vinculo 
-    FOREIGN KEY (vinculo_id) 
-    REFERENCES terminais_operadores_pos(id) 
+
+  CONSTRAINT fk_log_vinculo
+    FOREIGN KEY (vinculo_id)
+    REFERENCES terminais_operadores_pos(id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
@@ -97,7 +97,7 @@ SHOW CREATE TABLE terminais_operadores_log;
 ```sql
 -- Inserir log para vínculos que estão inativos (valido=0)
 INSERT INTO terminais_operadores_log (vinculo_id, acao, motivo, created_at)
-SELECT 
+SELECT
   id,
   'DESATIVADO',
   'Migração: vínculo estava inativo',
@@ -144,6 +144,10 @@ SELECT ativo, COUNT(*) FROM terminais_operadores_pos GROUP BY ativo;
 CREATE TABLE terminais_operadores_backup_20260110 AS
 SELECT * FROM terminais_operadores;
 
+-- Dropar constraint que usa data_inicio
+ALTER TABLE terminais_operadores
+DROP CONSTRAINT chk_datas_colab;
+
 -- Dropar colunas
 ALTER TABLE terminais_operadores
 DROP COLUMN data_inicio,
@@ -165,34 +169,49 @@ SELECT COUNT(*) FROM terminais_operadores_backup_20260110;
 #### 1.5 Adicionar Foreign Keys
 
 ```sql
--- FK para terminais
+-- Verificar e corrigir tipo de terminal_id se necessário
+-- terminais.id é INT UNSIGNED
+-- terminal_id precisa ser INT UNSIGNED também
+
+-- Verificar tipo atual
+SELECT COLUMN_NAME, COLUMN_TYPE
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'wallclub'
+  AND TABLE_NAME = 'terminais_operadores_pos'
+  AND COLUMN_NAME = 'terminal_id';
+
+-- Se terminal_id não for INT UNSIGNED, ajustar:
+-- ALTER TABLE terminais_operadores_pos
+-- MODIFY terminal_id INT UNSIGNED NOT NULL;
+
+-- FK para terminais (só adicionar se tipos forem compatíveis)
 ALTER TABLE terminais_operadores_pos
-ADD CONSTRAINT fk_terminal_id 
-  FOREIGN KEY (terminal_id) 
-  REFERENCES terminais(id) 
-  ON DELETE CASCADE 
+ADD CONSTRAINT fk_terminal_id
+  FOREIGN KEY (terminal_id)
+  REFERENCES terminais(id)
+  ON DELETE CASCADE
   ON UPDATE CASCADE;
 
 -- FK para operadores
 ALTER TABLE terminais_operadores_pos
-ADD CONSTRAINT fk_operador_codigo 
-  FOREIGN KEY (operador) 
-  REFERENCES terminais_operadores(operador) 
-  ON DELETE RESTRICT 
+ADD CONSTRAINT fk_operador_codigo
+  FOREIGN KEY (operador)
+  REFERENCES terminais_operadores(operador)
+  ON DELETE RESTRICT
   ON UPDATE CASCADE;
 ```
 
 **Validação:**
 ```sql
 -- Verificar constraints
-SELECT 
+SELECT
   CONSTRAINT_NAME,
   TABLE_NAME,
   COLUMN_NAME,
   REFERENCED_TABLE_NAME,
   REFERENCED_COLUMN_NAME
 FROM information_schema.KEY_COLUMN_USAGE
-WHERE TABLE_SCHEMA = 'wallclub' 
+WHERE TABLE_SCHEMA = 'wallclub'
   AND TABLE_NAME = 'terminais_operadores_pos'
   AND REFERENCED_TABLE_NAME IS NOT NULL;
 ```
@@ -222,7 +241,7 @@ SHOW INDEX FROM terminais_operadores_pos;
 
 #### 2.1 Atualizar `posp2/services.py` - método `listar_operadores_pos`
 
-**Arquivo:** `/services/django/posp2/services.py`  
+**Arquivo:** `/services/django/posp2/services.py`
 **Linha:** 814-819
 
 **Código Atual:**
@@ -406,20 +425,20 @@ def listar_operadores(request):
     Tela 1: Lista operadores da loja
     """
     loja = request.user.loja
-    
+
     # Filtros
     busca = request.GET.get('busca', '')
     status = request.GET.get('status', 'todos')  # todos, ativos, inativos
-    
+
     operadores = TerminalOperador.objects.filter(loja=loja)
-    
+
     if busca:
         operadores = operadores.filter(
             Q(operador__icontains=busca) |
             Q(nome__icontains=busca) |
             Q(cpf__icontains=busca)
         )
-    
+
     # Anotar quantidade de vínculos ativos
     operadores = operadores.annotate(
         total_vinculos_ativos=Count(
@@ -427,20 +446,20 @@ def listar_operadores(request):
             filter=Q(vinculos__ativo=True)
         )
     )
-    
+
     if status == 'ativos':
         operadores = operadores.filter(total_vinculos_ativos__gt=0)
     elif status == 'inativos':
         operadores = operadores.filter(total_vinculos_ativos=0)
-    
+
     operadores = operadores.order_by('nome')
-    
+
     context = {
         'operadores': operadores,
         'busca': busca,
         'status': status,
     }
-    
+
     return render(request, 'lojista/operadores/listar.html', context)
 
 
@@ -451,26 +470,26 @@ def criar_operador(request):
     """
     if request.method == 'POST':
         loja = request.user.loja
-        
+
         # Validar campos obrigatórios
         operador = request.POST.get('operador', '').strip()
         nome = request.POST.get('nome', '').strip()
         cpf = request.POST.get('cpf', '').replace('.', '').replace('-', '')
-        
+
         if not operador or not nome or not cpf:
             messages.error(request, 'Preencha todos os campos obrigatórios')
             return redirect('lojista:criar_operador')
-        
+
         # Verificar se operador já existe
         if TerminalOperador.objects.filter(operador=operador).exists():
             messages.error(request, f'Código de operador {operador} já existe')
             return redirect('lojista:criar_operador')
-        
+
         # Verificar se CPF já existe na loja
         if TerminalOperador.objects.filter(loja=loja, cpf=cpf).exists():
             messages.error(request, f'CPF {cpf} já cadastrado nesta loja')
             return redirect('lojista:criar_operador')
-        
+
         # Criar operador
         novo_operador = TerminalOperador.objects.create(
             loja=loja,
@@ -483,10 +502,10 @@ def criar_operador(request):
             email=request.POST.get('email', ''),
             endereco_loja=request.POST.get('endereco_loja', ''),
         )
-        
+
         messages.success(request, f'Operador {novo_operador.nome} criado com sucesso')
         return redirect('lojista:listar_operadores')
-    
+
     return render(request, 'lojista/operadores/criar.html')
 
 
@@ -496,7 +515,7 @@ def editar_operador(request, operador_id):
     Edita dados do operador
     """
     operador = get_object_or_404(TerminalOperador, id=operador_id, loja=request.user.loja)
-    
+
     if request.method == 'POST':
         operador.nome = request.POST.get('nome', '').strip()
         operador.identificacao_loja = request.POST.get('identificacao_loja', '')
@@ -505,14 +524,14 @@ def editar_operador(request, operador_id):
         operador.email = request.POST.get('email', '')
         operador.endereco_loja = request.POST.get('endereco_loja', '')
         operador.save()
-        
+
         messages.success(request, f'Operador {operador.nome} atualizado com sucesso')
         return redirect('lojista:listar_operadores')
-    
+
     context = {
         'operador': operador,
     }
-    
+
     return render(request, 'lojista/operadores/editar.html', context)
 
 
@@ -522,16 +541,16 @@ def visualizar_operador(request, operador_id):
     Visualiza detalhes e histórico de vínculos do operador
     """
     operador = get_object_or_404(TerminalOperador, id=operador_id, loja=request.user.loja)
-    
+
     vinculos_ativos = operador.vinculos_ativos()
     vinculos_inativos = operador.vinculos_inativos()
-    
+
     context = {
         'operador': operador,
         'vinculos_ativos': vinculos_ativos,
         'vinculos_inativos': vinculos_inativos,
     }
-    
+
     return render(request, 'lojista/operadores/visualizar.html', context)
 
 
@@ -541,31 +560,31 @@ def listar_vinculos(request):
     Tela 2: Lista terminais e seus operadores vinculados
     """
     loja = request.user.loja
-    
+
     terminais = Terminal.objects.filter(loja=loja).prefetch_related(
         'operadores_vinculados__operador'
     ).order_by('terminal')
-    
+
     # Para cada terminal, separar vínculos ativos e inativos
     terminais_data = []
     for terminal in terminais:
         vinculos_ativos = terminal.operadores_vinculados.filter(
             ativo=True
         ).select_related('operador')
-        
+
         terminais_data.append({
             'terminal': terminal,
             'vinculos_ativos': vinculos_ativos,
         })
-    
+
     # Operadores disponíveis para vincular (sem vínculo ativo)
     operadores_disponiveis = TerminalOperador.objects.filter(loja=loja).order_by('nome')
-    
+
     context = {
         'terminais_data': terminais_data,
         'operadores_disponiveis': operadores_disponiveis,
     }
-    
+
     return render(request, 'lojista/operadores/vinculos.html', context)
 
 
@@ -576,23 +595,23 @@ def criar_vinculo(request):
     """
     if request.method == 'POST':
         loja = request.user.loja
-        
+
         terminal_id = request.POST.get('terminal_id')
         operador_id = request.POST.get('operador_id')
-        
+
         if not terminal_id or not operador_id:
             messages.error(request, 'Preencha todos os campos obrigatórios')
             return redirect('lojista:listar_vinculos')
-        
+
         terminal = get_object_or_404(Terminal, id=terminal_id, loja=loja)
         operador = get_object_or_404(TerminalOperador, id=operador_id, loja=loja)
-        
+
         # Verificar se já existe vínculo
         vinculo_existente = TerminalOperadorPos.objects.filter(
             terminal=terminal,
             operador=operador
         ).first()
-        
+
         if vinculo_existente:
             if vinculo_existente.ativo:
                 messages.error(request, f'Operador {operador.nome} já está vinculado ao terminal {terminal.terminal}')
@@ -601,14 +620,14 @@ def criar_vinculo(request):
                 vinculo_existente.ativar(usuario=request.user)
                 messages.success(request, f'Vínculo reativado: {operador.nome} → Terminal {terminal.terminal}')
             return redirect('lojista:listar_vinculos')
-        
+
         # Criar novo vínculo
         vinculo = TerminalOperadorPos.objects.create(
             terminal=terminal,
             operador=operador,
             ativo=True
         )
-        
+
         # Log gerado automaticamente pelo método create (ativo=True por padrão)
         TerminalOperadorLog.objects.create(
             vinculo=vinculo,
@@ -616,10 +635,10 @@ def criar_vinculo(request):
             usuario_id=request.user.id,
             motivo='Vínculo criado via portal'
         )
-        
+
         messages.success(request, f'Operador {operador.nome} vinculado ao terminal {terminal.terminal}')
         return redirect('lojista:listar_vinculos')
-    
+
     return redirect('lojista:listar_vinculos')
 
 
@@ -629,18 +648,18 @@ def desativar_vinculo(request, vinculo_id):
     Desativa vínculo
     """
     vinculo = get_object_or_404(TerminalOperadorPos, id=vinculo_id, terminal__loja=request.user.loja)
-    
+
     if request.method == 'POST':
         motivo = request.POST.get('motivo', '')
         vinculo.desativar(usuario=request.user, motivo=motivo)
-        
+
         messages.success(request, f'Vínculo desativado: {vinculo.operador.nome} → Terminal {vinculo.terminal.terminal}')
         return redirect('lojista:listar_vinculos')
-    
+
     context = {
         'vinculo': vinculo,
     }
-    
+
     return render(request, 'lojista/operadores/desativar_vinculo.html', context)
 
 
@@ -650,14 +669,14 @@ def ativar_vinculo(request, vinculo_id):
     Ativa vínculo
     """
     vinculo = get_object_or_404(TerminalOperadorPos, id=vinculo_id, terminal__loja=request.user.loja)
-    
+
     if request.method == 'POST':
         motivo = request.POST.get('motivo', '')
         vinculo.ativar(usuario=request.user, motivo=motivo)
-        
+
         messages.success(request, f'Vínculo ativado: {vinculo.operador.nome} → Terminal {vinculo.terminal.terminal}')
         return redirect('lojista:listar_vinculos')
-    
+
     return redirect('lojista:listar_vinculos')
 
 
@@ -668,12 +687,12 @@ def visualizar_log_vinculo(request, vinculo_id):
     """
     vinculo = get_object_or_404(TerminalOperadorPos, id=vinculo_id, terminal__loja=request.user.loja)
     logs = vinculo.logs.all().order_by('-created_at')
-    
+
     context = {
         'vinculo': vinculo,
         'logs': logs,
     }
-    
+
     return render(request, 'lojista/operadores/log_vinculo.html', context)
 ```
 
@@ -689,13 +708,13 @@ app_name = 'lojista'
 
 urlpatterns = [
     # ... URLs existentes ...
-    
+
     # Operadores
     path('operadores/', views_operadores.listar_operadores, name='listar_operadores'),
     path('operadores/criar/', views_operadores.criar_operador, name='criar_operador'),
     path('operadores/<int:operador_id>/editar/', views_operadores.editar_operador, name='editar_operador'),
     path('operadores/<int:operador_id>/', views_operadores.visualizar_operador, name='visualizar_operador'),
-    
+
     # Vínculos
     path('operadores/vinculos/', views_operadores.listar_vinculos, name='listar_vinculos'),
     path('operadores/vinculos/criar/', views_operadores.criar_vinculo, name='criar_vinculo'),
@@ -746,7 +765,7 @@ class TerminalOperadorTestCase(TestCase):
             nome='João Silva',
             cpf='12345678900'
         )
-    
+
     def test_vinculo_ativo(self):
         """Testa vínculo ativo"""
         vinculo = TerminalOperadorPos.objects.create(
@@ -755,7 +774,7 @@ class TerminalOperadorTestCase(TestCase):
             ativo=True
         )
         self.assertTrue(vinculo.ativo)
-    
+
     def test_vinculo_inativo(self):
         """Testa vínculo inativo"""
         vinculo = TerminalOperadorPos.objects.create(
@@ -764,7 +783,7 @@ class TerminalOperadorTestCase(TestCase):
             ativo=False
         )
         self.assertFalse(vinculo.ativo)
-    
+
     def test_desativar_vinculo(self):
         """Testa desativação de vínculo"""
         vinculo = TerminalOperadorPos.objects.create(
@@ -774,12 +793,12 @@ class TerminalOperadorTestCase(TestCase):
         )
         vinculo.desativar(motivo='Teste')
         self.assertFalse(vinculo.ativo)
-        
+
         # Verificar log
         log = vinculo.logs.first()
         self.assertEqual(log.acao, 'DESATIVADO')
         self.assertEqual(log.motivo, 'Teste')
-    
+
     def test_ativar_vinculo(self):
         """Testa ativação de vínculo"""
         vinculo = TerminalOperadorPos.objects.create(
@@ -789,7 +808,7 @@ class TerminalOperadorTestCase(TestCase):
         )
         vinculo.ativar(motivo='Reativação')
         self.assertTrue(vinculo.ativo)
-        
+
         # Verificar log
         log = vinculo.logs.first()
         self.assertEqual(log.acao, 'ATIVADO')
@@ -866,6 +885,6 @@ class TerminalOperadorTestCase(TestCase):
 
 ---
 
-**Status:** 📋 Planejamento  
-**Próximo Passo:** Executar FASE 1 (Ajustes no Banco de Dados)  
+**Status:** 📋 Planejamento
+**Próximo Passo:** Executar FASE 1 (Ajustes no Banco de Dados)
 **Data Prevista Início:** A definir

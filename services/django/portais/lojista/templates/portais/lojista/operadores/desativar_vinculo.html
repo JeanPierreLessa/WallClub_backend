@@ -1,0 +1,60 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Desativar Vínculo - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Desativar Vínculo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção!</strong> Esta ação irá desativar o vínculo do operador com o terminal.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Operador:</label>
+                                <p class="form-control-plaintext"><strong>{{ vinculo.operador.operador }} - {{ vinculo.operador.nome }}</strong></p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Terminal:</label>
+                                <p class="form-control-plaintext"><strong>{{ vinculo.terminal.terminal }}</strong></p>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="motivo" class="form-label">Motivo da Desativação (opcional)</label>
+                                <textarea name="motivo" id="motivo" class="form-control" rows="4" placeholder="Descreva o motivo da desativação..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-times me-2"></i>Confirmar Desativação
+                                </button>
+                                <a href="{% url 'lojista:listar_vinculos' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

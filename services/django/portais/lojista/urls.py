@@ -35,6 +35,7 @@ from .views_cashback import (
     CashbackToggleView,
     CashbackRelatorioView
 )
+from . import views_operadores
 # from .views_relatorios import ()
 
 app_name = 'lojista'
@@ -101,4 +102,17 @@ urlpatterns = [
     path('cashback/<int:regra_id>/editar/', CashbackEditView.as_view(), name='cashback_editar'),
     path('cashback/<int:regra_id>/toggle/', CashbackToggleView.as_view(), name='cashback_toggle'),
     path('cashback/relatorio/', CashbackRelatorioView.as_view(), name='cashback_relatorio'),
+    
+    # Operadores
+    path('operadores/', views_operadores.listar_operadores, name='listar_operadores'),
+    path('operadores/criar/', views_operadores.criar_operador, name='criar_operador'),
+    path('operadores/<int:operador_id>/editar/', views_operadores.editar_operador, name='editar_operador'),
+    path('operadores/<int:operador_id>/', views_operadores.visualizar_operador, name='visualizar_operador'),
+    
+    # Vínculos
+    path('operadores/vinculos/', views_operadores.listar_vinculos, name='listar_vinculos'),
+    path('operadores/vinculos/criar/', views_operadores.criar_vinculo, name='criar_vinculo'),
+    path('operadores/vinculos/<int:vinculo_id>/desativar/', views_operadores.desativar_vinculo, name='desativar_vinculo'),
+    path('operadores/vinculos/<int:vinculo_id>/ativar/', views_operadores.ativar_vinculo, name='ativar_vinculo'),
+    path('operadores/vinculos/<int:vinculo_id>/log/', views_operadores.visualizar_log_vinculo, name='visualizar_log_vinculo'),
 ]

@@ -1,0 +1,145 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Vínculos Operadores-Terminais - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-link me-2"></i>
+                            Vínculos Operadores-Terminais
+                        </h4>
+                        <a href="{% url 'lojista:listar_operadores' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-users me-2"></i>Operadores
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% for item in terminais_data %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-desktop me-2"></i>
+                                    Terminal: {{ item.terminal.terminal }}
+                                </h5>
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalVincular{{ item.terminal.id }}">
+                                    <i class="fas fa-plus me-2"></i>Vincular Operador
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if item.vinculos_ativos %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Código</th>
+                                                <th>Nome</th>
+                                                <th>CPF</th>
+                                                <th class="text-center">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for vinculo in item.vinculos_ativos %}
+                                            <tr>
+                                                <td><strong>{{ vinculo.operador.operador }}</strong></td>
+                                                <td>{{ vinculo.operador.nome }}</td>
+                                                <td>{{ vinculo.operador.cpf|default:"-" }}</td>
+                                                <td class="text-center">
+                                                    <a href="{% url 'lojista:visualizar_operador' vinculo.operador.id %}" class="btn btn-sm btn-info" title="Visualizar">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{% url 'lojista:visualizar_log_vinculo' vinculo.id %}" class="btn btn-sm btn-secondary" title="Ver Log">
+                                                        <i class="fas fa-history"></i>
+                                                    </a>
+                                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#modalDesativar{{ vinculo.id }}" title="Desativar">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Modal Desativar -->
+                                            <div class="modal fade" id="modalDesativar{{ vinculo.id }}" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title">Desativar Vínculo</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <form method="post" action="{% url 'lojista:desativar_vinculo' vinculo.id %}">
+                                                            {% csrf_token %}
+                                                            <div class="modal-body">
+                                                                <p>Desativar vínculo:</p>
+                                                                <p><strong>{{ vinculo.operador.nome }}</strong> → Terminal {{ vinculo.terminal.terminal }}</p>
+                                                                <div class="mb-3">
+                                                                    <label for="motivo{{ vinculo.id }}" class="form-label">Motivo (opcional)</label>
+                                                                    <textarea name="motivo" id="motivo{{ vinculo.id }}" class="form-control" rows="3"></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                                <button type="submit" class="btn btn-danger">Desativar</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted mb-0">Nenhum operador vinculado a este terminal</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Vincular -->
+                    <div class="modal fade" id="modalVincular{{ item.terminal.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-success text-white">
+                                    <h5 class="modal-title">Vincular Operador</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="post" action="{% url 'lojista:criar_vinculo' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="terminal_id" value="{{ item.terminal.id }}">
+                                    <div class="modal-body">
+                                        <p>Terminal: <strong>{{ item.terminal.terminal }}</strong></p>
+                                        <div class="mb-3">
+                                            <label for="operador_id{{ item.terminal.id }}" class="form-label">Selecione o Operador *</label>
+                                            <select name="operador_id" id="operador_id{{ item.terminal.id }}" class="form-select" required>
+                                                <option value="">Selecione...</option>
+                                                {% for operador in operadores_disponiveis %}
+                                                    <option value="{{ operador.id }}">{{ operador.operador }} - {{ operador.nome }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-success">Vincular</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Nenhum terminal encontrado
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

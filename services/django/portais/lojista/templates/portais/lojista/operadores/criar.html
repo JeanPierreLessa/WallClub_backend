@@ -1,0 +1,127 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Novo Operador - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Novo Operador
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="loja_id" class="form-label">Loja *</label>
+                                <select name="loja_id" id="loja_id" class="form-select" required>
+                                    <option value="">Selecione a loja</option>
+                                    {% for loja in lojas_acessiveis %}
+                                        <option value="{{ loja.id }}">{{ loja.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="operador" class="form-label">Código do Operador *</label>
+                                <input type="text" name="operador" id="operador" class="form-control" maxlength="10" required>
+                                <small class="text-muted">Código único do operador (máx. 10 caracteres)</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nome" class="form-label">Nome Completo *</label>
+                                <input type="text" name="nome" id="nome" class="form-control" maxlength="150" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="cpf" class="form-label">CPF *</label>
+                                <input type="text" name="cpf" id="cpf" class="form-control" maxlength="14" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="identificacao_loja" class="form-label">Identificação na Loja</label>
+                                <input type="text" name="identificacao_loja" id="identificacao_loja" class="form-control" maxlength="50">
+                                <small class="text-muted">Ex: Loja 1, Setor A, etc</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="matricula" class="form-label">Matrícula</label>
+                                <input type="text" name="matricula" id="matricula" class="form-control" maxlength="50">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="telefone" class="form-label">Telefone</label>
+                                <input type="text" name="telefone" id="telefone" class="form-control" maxlength="20">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" name="email" id="email" class="form-control" maxlength="256">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="endereco_loja" class="form-label">Endereço da Loja</label>
+                                <input type="text" name="endereco_loja" id="endereco_loja" class="form-control" maxlength="255">
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-2"></i>Salvar
+                                </button>
+                                <a href="{% url 'lojista:listar_operadores' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Máscara CPF
+document.getElementById('cpf').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = value;
+    }
+});
+
+// Máscara Telefone
+document.getElementById('telefone').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        if (value.length <= 10) {
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        } else {
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        }
+        e.target.value = value;
+    }
+});
+</script>
+{% endblock %}

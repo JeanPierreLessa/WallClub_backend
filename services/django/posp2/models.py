@@ -424,3 +424,114 @@ class TransactionDataOwn(models.Model):
     
     def __str__(self):
         return f"Transaction Own {self.id} - TxID: {self.txTransactionId}"
+
+
+class TerminalOperador(models.Model):
+    """
+    Cadastro de operadores (dados pessoais)
+    """
+    loja = models.ForeignKey('cliente.Loja', on_delete=models.PROTECT, db_column='loja_id')
+    operador = models.CharField(max_length=10, unique=True, help_text='Código único do operador')
+    nome = models.CharField(max_length=150)
+    cpf = models.CharField(max_length=11, db_index=True)
+    identificacao_loja = models.CharField(max_length=50, blank=True, null=True)
+    matricula = models.CharField(max_length=50, blank=True, null=True)
+    telefone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(max_length=256, blank=True, null=True)
+    endereco_loja = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'terminais_operadores'
+        verbose_name = 'Operador de Terminal'
+        verbose_name_plural = 'Operadores de Terminais'
+        unique_together = [['loja', 'cpf']]
+        indexes = [
+            models.Index(fields=['loja']),
+            models.Index(fields=['operador']),
+        ]
+
+    def __str__(self):
+        return f'{self.operador} - {self.nome}'
+
+    def vinculos_ativos(self):
+        """Retorna vínculos ativos"""
+        return self.vinculos.filter(ativo=True)
+
+    def vinculos_inativos(self):
+        """Retorna vínculos inativos"""
+        return self.vinculos.filter(ativo=False)
+
+
+class TerminalOperadorPos(models.Model):
+    """
+    Vínculo operador-terminal
+    """
+    terminal = models.ForeignKey(Terminal, on_delete=models.CASCADE, db_column='terminal_id', related_name='operadores_vinculados')
+    operador = models.ForeignKey(TerminalOperador, on_delete=models.PROTECT, to_field='operador', db_column='operador', related_name='vinculos')
+    ativo = models.BooleanField(default=True, help_text='Vínculo ativo')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'terminais_operadores_pos'
+        verbose_name = 'Vínculo Operador-Terminal'
+        verbose_name_plural = 'Vínculos Operadores-Terminais'
+        unique_together = [['terminal', 'operador']]
+        indexes = [
+            models.Index(fields=['terminal', 'ativo']),
+            models.Index(fields=['operador', 'ativo']),
+        ]
+
+    def __str__(self):
+        status = 'Ativo' if self.ativo else 'Inativo'
+        return f'{self.operador.operador} → Terminal {self.terminal.terminal} ({status})'
+
+    def ativar(self, usuario=None, motivo=None):
+        """Ativa vínculo e registra log automaticamente"""
+        if not self.ativo:
+            self.ativo = True
+            self.save()
+            # Log gerado automaticamente pela tela de gestão
+            TerminalOperadorLog.objects.create(
+                vinculo=self,
+                acao='ATIVADO',
+                usuario_id=usuario.id if usuario else None,
+                motivo=motivo or 'Ativado via portal'
+            )
+
+    def desativar(self, usuario=None, motivo=None):
+        """Desativa vínculo e registra log automaticamente"""
+        if self.ativo:
+            self.ativo = False
+            self.save()
+            # Log gerado automaticamente pela tela de gestão
+            TerminalOperadorLog.objects.create(
+                vinculo=self,
+                acao='DESATIVADO',
+                usuario_id=usuario.id if usuario else None,
+                motivo=motivo or 'Desativado via portal'
+            )
+
+
+class TerminalOperadorLog(models.Model):
+    """
+    Log de ativações/desativações de vínculos
+    """
+    vinculo = models.ForeignKey(TerminalOperadorPos, on_delete=models.CASCADE, db_column='vinculo_id', related_name='logs')
+    acao = models.CharField(max_length=20, choices=[('ATIVADO', 'Ativado'), ('DESATIVADO', 'Desativado')])
+    usuario_id = models.IntegerField(null=True, blank=True)
+    motivo = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'terminais_operadores_log'
+        verbose_name = 'Log Operador-Terminal'
+        verbose_name_plural = 'Logs Operadores-Terminais'
+        indexes = [
+            models.Index(fields=['vinculo', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.acao} - {self.vinculo} em {self.created_at.strftime("%d/%m/%Y %H:%M")}'

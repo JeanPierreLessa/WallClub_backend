@@ -1,0 +1,112 @@
+{% extends 'portais/lojista/base.html' %}
+{% load static %}
+
+{% block title %}Visualizar Operador - Portal Lojista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Operador: {{ operador.operador }} - {{ operador.nome }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Dados Cadastrais</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="40%">Código:</th>
+                                    <td><strong>{{ operador.operador }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Nome:</th>
+                                    <td>{{ operador.nome }}</td>
+                                </tr>
+                                <tr>
+                                    <th>CPF:</th>
+                                    <td>{{ operador.cpf|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Identificação Loja:</th>
+                                    <td>{{ operador.identificacao_loja|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Matrícula:</th>
+                                    <td>{{ operador.matricula|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Telefone:</th>
+                                    <td>{{ operador.telefone|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>E-mail:</th>
+                                    <td>{{ operador.email|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Endereço Loja:</th>
+                                    <td>{{ operador.endereco_loja|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Vínculos</h5>
+                            
+                            <div class="mb-3">
+                                <h6 class="text-success">Ativos ({{ vinculos_ativos|length }})</h6>
+                                {% if vinculos_ativos %}
+                                    <ul class="list-group">
+                                        {% for vinculo in vinculos_ativos %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Terminal {{ vinculo.terminal.terminal }}
+                                            <span class="badge bg-success">Ativo</span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">Nenhum vínculo ativo</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <h6 class="text-secondary">Inativos ({{ vinculos_inativos|length }})</h6>
+                                {% if vinculos_inativos %}
+                                    <ul class="list-group">
+                                        {% for vinculo in vinculos_inativos %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Terminal {{ vinculo.terminal.terminal }}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">Nenhum vínculo inativo</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <a href="{% url 'lojista:editar_operador' operador.id %}" class="btn btn-warning">
+                                <i class="fas fa-edit me-2"></i>Editar
+                            </a>
+                            <a href="{% url 'lojista:listar_operadores' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            <a href="{% url 'lojista:listar_vinculos' %}" class="btn btn-primary">
+                                <i class="fas fa-link me-2"></i>Gerenciar Vínculos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
