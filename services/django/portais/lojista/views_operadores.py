@@ -88,9 +88,6 @@ def criar_operador(request):
             messages.error(request, 'Loja não permitida')
             return redirect('lojista:criar_operador')
         
-        from cliente.models import Loja
-        loja = Loja.objects.get(id=loja_id)
-        
         # Validar campos obrigatórios
         operador = request.POST.get('operador', '').strip()
         nome = request.POST.get('nome', '').strip()
@@ -106,13 +103,13 @@ def criar_operador(request):
             return redirect('lojista:criar_operador')
         
         # Verificar se CPF já existe na loja
-        if TerminalOperador.objects.filter(loja=loja, cpf=cpf).exists():
+        if TerminalOperador.objects.filter(loja_id=loja_id, cpf=cpf).exists():
             messages.error(request, f'CPF {cpf} já cadastrado nesta loja')
             return redirect('lojista:criar_operador')
         
         # Criar operador
         novo_operador = TerminalOperador.objects.create(
-            loja=loja,
+            loja_id=loja_id,
             operador=operador,
             nome=nome,
             cpf=cpf,

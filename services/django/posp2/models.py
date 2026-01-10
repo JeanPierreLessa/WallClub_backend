@@ -430,7 +430,7 @@ class TerminalOperador(models.Model):
     """
     Cadastro de operadores (dados pessoais)
     """
-    loja = models.ForeignKey('cliente.Loja', on_delete=models.PROTECT, db_column='loja_id')
+    loja_id = models.IntegerField(db_index=True)
     operador = models.CharField(max_length=10, unique=True, help_text='Código único do operador')
     nome = models.CharField(max_length=150)
     cpf = models.CharField(max_length=11, db_index=True)
@@ -446,9 +446,10 @@ class TerminalOperador(models.Model):
         db_table = 'terminais_operadores'
         verbose_name = 'Operador de Terminal'
         verbose_name_plural = 'Operadores de Terminais'
-        unique_together = [['loja', 'cpf']]
+        managed = False
+        unique_together = [['loja_id', 'cpf']]
         indexes = [
-            models.Index(fields=['loja']),
+            models.Index(fields=['loja_id']),
             models.Index(fields=['operador']),
         ]
 
