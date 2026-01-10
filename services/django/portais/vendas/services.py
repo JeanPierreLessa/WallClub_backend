@@ -1094,10 +1094,11 @@ class CheckoutVendasService:
                 cartao_id=recorrencia.cartao_tokenizado_id,
                 valor=recorrencia.valor_recorrencia,
                 parcelas=1,
-                vendedor_id=recorrencia.vendedor_id,
-                loja_id=recorrencia.loja_id,
-                ip_address='0.0.0.0',  # Sistema automático
-                user_agent='Celery/RecorrenciaTask'
+                bandeira=recorrencia.cartao_tokenizado.bandeira,
+                descricao=f'Recorrência: {recorrencia.descricao}',
+                ip_address='0.0.0.0',
+                user_agent='Celery/RecorrenciaTask',
+                portais_usuarios_id=recorrencia.vendedor_id
             )
 
             # Buscar a transação criada e vincular à recorrência
