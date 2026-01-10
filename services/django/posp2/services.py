@@ -814,7 +814,7 @@ class POSP2Service:
                 cursor.execute("""
                     SELECT id, operador
                     FROM terminais_operadores_pos
-                    WHERE terminal_id = %s AND valido = 1
+                    WHERE terminal_id = %s AND ativo = 1
                     ORDER BY operador
                 """, [terminal_id])
 
