@@ -300,7 +300,8 @@ def criar_vinculo(request):
                 messages.error(request, f'Operador {operador.nome} já está vinculado ao terminal {terminal.terminal}')
             else:
                 # Reativar vínculo existente
-                vinculo_existente.ativar(usuario=request.user)
+                usuario_id = request.session.get('lojista_usuario_id')
+                vinculo_existente.ativar(usuario_id=usuario_id)
                 messages.success(request, f'Vínculo reativado: {operador.nome} → Terminal {terminal.terminal}')
             return redirect('lojista:listar_vinculos')
         
@@ -311,11 +312,12 @@ def criar_vinculo(request):
             ativo=True
         )
         
-        # Log gerado automaticamente pelo método create (ativo=True por padrão)
+        # Log gerado automaticamente
+        usuario_id = request.session.get('lojista_usuario_id')
         TerminalOperadorLog.objects.create(
             vinculo=vinculo,
             acao='ATIVADO',
-            usuario_id=request.user.id,
+            usuario_id=usuario_id,
             motivo='Vínculo criado via portal'
         )
         
@@ -347,7 +349,8 @@ def desativar_vinculo(request, vinculo_id):
     
     if request.method == 'POST':
         motivo = request.POST.get('motivo', '')
-        vinculo.desativar(usuario=request.user, motivo=motivo)
+        usuario_id = request.session.get('lojista_usuario_id')
+        vinculo.desativar(usuario_id=usuario_id, motivo=motivo)
         
         messages.success(request, f'Vínculo desativado: {vinculo.operador.nome} → Terminal {vinculo.terminal.terminal}')
         return redirect('lojista:listar_vinculos')
@@ -382,7 +385,8 @@ def ativar_vinculo(request, vinculo_id):
     
     if request.method == 'POST':
         motivo = request.POST.get('motivo', '')
-        vinculo.ativar(usuario=request.user, motivo=motivo)
+        usuario_id = request.session.get('lojista_usuario_id')
+        vinculo.ativar(usuario_id=usuario_id, motivo=motivo)
         
         messages.success(request, f'Vínculo ativado: {vinculo.operador.nome} → Terminal {vinculo.terminal.terminal}')
         return redirect('lojista:listar_vinculos')

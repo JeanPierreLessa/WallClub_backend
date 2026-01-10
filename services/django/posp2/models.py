@@ -490,29 +490,31 @@ class TerminalOperadorPos(models.Model):
         status = 'Ativo' if self.ativo else 'Inativo'
         return f'{self.operador.operador} → Terminal {self.terminal.terminal} ({status})'
 
-    def ativar(self, usuario=None, motivo=None):
+    def ativar(self, usuario=None, usuario_id=None, motivo=None):
         """Ativa vínculo e registra log automaticamente"""
         if not self.ativo:
             self.ativo = True
             self.save()
             # Log gerado automaticamente pela tela de gestão
+            uid = usuario_id if usuario_id else (usuario.id if usuario else None)
             TerminalOperadorLog.objects.create(
                 vinculo=self,
                 acao='ATIVADO',
-                usuario_id=usuario.id if usuario else None,
+                usuario_id=uid,
                 motivo=motivo or 'Ativado via portal'
             )
 
-    def desativar(self, usuario=None, motivo=None):
+    def desativar(self, usuario=None, usuario_id=None, motivo=None):
         """Desativa vínculo e registra log automaticamente"""
         if self.ativo:
             self.ativo = False
             self.save()
             # Log gerado automaticamente pela tela de gestão
+            uid = usuario_id if usuario_id else (usuario.id if usuario else None)
             TerminalOperadorLog.objects.create(
                 vinculo=self,
                 acao='DESATIVADO',
-                usuario_id=usuario.id if usuario else None,
+                usuario_id=uid,
                 motivo=motivo or 'Desativado via portal'
             )
 
