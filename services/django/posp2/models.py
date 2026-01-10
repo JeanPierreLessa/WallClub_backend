@@ -439,6 +439,7 @@ class TerminalOperador(models.Model):
     telefone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(max_length=256, blank=True, null=True)
     endereco_loja = models.CharField(max_length=255, blank=True, null=True)
+    ativo = models.BooleanField(default=True, help_text='Operador ativo')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

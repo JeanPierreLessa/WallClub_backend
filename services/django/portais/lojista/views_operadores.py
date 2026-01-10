@@ -166,6 +166,7 @@ def editar_operador(request, operador_id):
         operador.telefone = request.POST.get('telefone', '')
         operador.email = request.POST.get('email', '')
         operador.endereco_loja = request.POST.get('endereco_loja', '')
+        operador.ativo = request.POST.get('ativo') == 'on'
         operador.save()
         
         messages.success(request, f'Operador {operador.nome} atualizado com sucesso')

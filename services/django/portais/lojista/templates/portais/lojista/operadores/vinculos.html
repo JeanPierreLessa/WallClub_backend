@@ -63,33 +63,6 @@
                                                     </button>
                                                 </td>
                                             </tr>
-                                            
-                                            <!-- Modal Desativar -->
-                                            <div class="modal fade" id="modalDesativar{{ vinculo.id }}" tabindex="-1">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header bg-danger text-white">
-                                                            <h5 class="modal-title">Desativar Vínculo</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                        </div>
-                                                        <form method="post" action="{% url 'lojista:desativar_vinculo' vinculo.id %}">
-                                                            {% csrf_token %}
-                                                            <div class="modal-body">
-                                                                <p>Desativar vínculo:</p>
-                                                                <p><strong>{{ vinculo.operador.nome }}</strong> → Terminal {{ vinculo.terminal.terminal }}</p>
-                                                                <div class="mb-3">
-                                                                    <label for="motivo{{ vinculo.id }}" class="form-label">Motivo (opcional)</label>
-                                                                    <textarea name="motivo" id="motivo{{ vinculo.id }}" class="form-control" rows="3"></textarea>
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                                <button type="submit" class="btn btn-danger">Desativar</button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
                                             {% endfor %}
                                         </tbody>
                                     </table>
@@ -97,38 +70,6 @@
                             {% else %}
                                 <p class="text-muted mb-0">Nenhum operador vinculado a este terminal</p>
                             {% endif %}
-                        </div>
-                    </div>
-                    
-                    <!-- Modal Vincular -->
-                    <div class="modal fade" id="modalVincular{{ item.terminal.id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header bg-success text-white">
-                                    <h5 class="modal-title">Vincular Operador</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form method="post" action="{% url 'lojista:criar_vinculo' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="terminal_id" value="{{ item.terminal.id }}">
-                                    <div class="modal-body">
-                                        <p>Terminal: <strong>{{ item.terminal.terminal }}</strong></p>
-                                        <div class="mb-3">
-                                            <label for="operador_id{{ item.terminal.id }}" class="form-label">Selecione o Operador *</label>
-                                            <select name="operador_id" id="operador_id{{ item.terminal.id }}" class="form-select" required>
-                                                <option value="">Selecione...</option>
-                                                {% for operador in operadores_disponiveis %}
-                                                    <option value="{{ operador.id }}">{{ operador.operador }} - {{ operador.nome }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="submit" class="btn btn-success">Vincular</button>
-                                    </div>
-                                </form>
-                            </div>
                         </div>
                     </div>
                     {% empty %}
@@ -142,4 +83,68 @@
         </div>
     </div>
 </div>
+
+<!-- Modais Vincular (fora do loop para evitar problemas de z-index) -->
+{% for item in terminais_data %}
+<div class="modal fade" id="modalVincular{{ item.terminal.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Vincular Operador</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'lojista:criar_vinculo' %}">
+                {% csrf_token %}
+                <input type="hidden" name="terminal_id" value="{{ item.terminal.id }}">
+                <div class="modal-body">
+                    <p>Terminal: <strong>{{ item.terminal.terminal }}</strong></p>
+                    <div class="mb-3">
+                        <label for="operador_id{{ item.terminal.id }}" class="form-label">Selecione o Operador *</label>
+                        <select name="operador_id" id="operador_id{{ item.terminal.id }}" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for operador in operadores_disponiveis %}
+                                <option value="{{ operador.id }}">{{ operador.operador }} - {{ operador.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Vincular</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Desativar para cada vínculo -->
+{% for vinculo in item.vinculos_ativos %}
+<div class="modal fade" id="modalDesativar{{ vinculo.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Desativar Vínculo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'lojista:desativar_vinculo' vinculo.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Desativar vínculo:</p>
+                    <p><strong>{{ vinculo.operador.nome }}</strong> → Terminal {{ vinculo.terminal.terminal }}</p>
+                    <div class="mb-3">
+                        <label for="motivo{{ vinculo.id }}" class="form-label">Motivo (opcional)</label>
+                        <textarea name="motivo" id="motivo{{ vinculo.id }}" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Desativar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
+
 {% endblock %}

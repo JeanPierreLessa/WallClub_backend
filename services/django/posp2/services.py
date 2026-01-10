@@ -810,12 +810,15 @@ class POSP2Service:
 
                 terminal_id = terminal_row[0]
 
-                # Buscar operadores para este terminal_id
+                # Buscar operadores para este terminal_id (vínculo E operador ativos)
                 cursor.execute("""
-                    SELECT id, operador
-                    FROM terminais_operadores_pos
-                    WHERE terminal_id = %s AND ativo = 1
-                    ORDER BY operador
+                    SELECT top.id, top.operador
+                    FROM terminais_operadores_pos top
+                    INNER JOIN terminais_operadores toper ON top.operador = toper.operador
+                    WHERE top.terminal_id = %s 
+                      AND top.ativo = 1
+                      AND toper.ativo = 1
+                    ORDER BY top.operador
                 """, [terminal_id])
 
                 operadores = cursor.fetchall()
