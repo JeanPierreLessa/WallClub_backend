@@ -1182,8 +1182,8 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
                         linha[campo] = 'R$ 0,00'
                 except (ValueError, TypeError):
                     linha[campo] = str(valor) if valor else ''
-            elif not para_export and campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
-                # Variáveis que devem ser formatadas como percentual
+            elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
+                # Variáveis que devem ser formatadas como percentual (SEMPRE, mesmo em export)
                 try:
                     valor_float = float(str(valor).replace(',', '.')) if valor else 0
                     if valor_float != 0:
@@ -1213,9 +1213,9 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             resultado = variaveis_calculadas.get(campo, 0)
             
             # Formatação para exibição
-            if not para_export and campo in ['variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7', 
-                                           'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                # Variáveis que devem ser formatadas como percentual
+            if campo in ['variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7', 
+                        'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                # Variáveis que devem ser formatadas como percentual (SEMPRE, mesmo em export)
                 try:
                     valor_float = float(str(resultado).replace(',', '.')) if resultado else 0
                     if valor_float != 0:
