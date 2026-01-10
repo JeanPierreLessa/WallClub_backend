@@ -862,26 +862,10 @@ def exportar_rpr_excel(request):
         
         dados = []
         estrutura_colunas = obter_estrutura_colunas_rpr()
-        colunas_percentuais_lista = obter_colunas_percentuais_rpr_dinamico()
         
         for transacao in transacoes:
+            # para_export=True já retorna percentuais como decimal
             linha = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
-            
-            # Converter valores percentuais de string "X.XX%" para decimal 0.0XXX
-            for campo in colunas_percentuais_lista:
-                if campo in linha and linha[campo]:
-                    valor = linha[campo]
-                    if isinstance(valor, str) and '%' in valor:
-                        try:
-                            # Remove % e converte para decimal
-                            valor_limpo = valor.replace('%', '').strip()
-                            if ',' in valor_limpo:
-                                valor_limpo = valor_limpo.replace(',', '.')
-                            # Converte de percentual para decimal (1.30% -> 0.013)
-                            linha[campo] = float(valor_limpo) / 100
-                        except:
-                            pass
-            
             dados.append(linha)
         
         # Usar utilitário comum para exportar
@@ -1200,16 +1184,21 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
                 except (ValueError, TypeError):
                     linha[campo] = str(valor) if valor else ''
             elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
-                # Variáveis que devem ser formatadas como percentual (SEMPRE, mesmo em export)
+                # Variáveis percentuais
                 try:
                     valor_float = float(str(valor).replace(',', '.')) if valor else 0
-                    if valor_float != 0:
-                        percentual = valor_float * 100
-                        linha[campo] = f"{percentual:.2f}%"
+                    if para_export:
+                        # Para export: manter como decimal (0.015)
+                        linha[campo] = valor_float
                     else:
-                        linha[campo] = '0.00%'
+                        # Para tela: formatar como string "1.50%"
+                        if valor_float != 0:
+                            percentual = valor_float * 100
+                            linha[campo] = f"{percentual:.2f}%"
+                        else:
+                            linha[campo] = '0.00%'
                 except (ValueError, TypeError):
-                    linha[campo] = '0.00%'
+                    linha[campo] = 0 if para_export else '0.00%'
             elif not para_export and campo in ['var11'] and isinstance(valor, (int, float)) and valor > 0:
                 # var11 deve ser formatado como monetário
                 linha[campo] = f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
@@ -1232,16 +1221,21 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             # Formatação para exibição
             if campo in ['variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7', 
                         'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                # Variáveis que devem ser formatadas como percentual (SEMPRE, mesmo em export)
+                # Fórmulas percentuais
                 try:
                     valor_float = float(str(resultado).replace(',', '.')) if resultado else 0
-                    if valor_float != 0:
-                        percentual = valor_float * 100
-                        linha[campo] = f"{percentual:.2f}%"
+                    if para_export:
+                        # Para export: manter como decimal (0.015)
+                        linha[campo] = valor_float
                     else:
-                        linha[campo] = '0.00%'
+                        # Para tela: formatar como string "1.50%"
+                        if valor_float != 0:
+                            percentual = valor_float * 100
+                            linha[campo] = f"{percentual:.2f}%"
+                        else:
+                            linha[campo] = '0.00%'
                 except (ValueError, TypeError):
-                    linha[campo] = '0.00%'
+                    linha[campo] = 0 if para_export else '0.00%'
             elif not para_export and resultado != 0:
                 # Outras fórmulas monetárias
                 try:
