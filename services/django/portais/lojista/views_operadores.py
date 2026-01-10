@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from datetime import date
 from posp2.models import TerminalOperador, TerminalOperadorPos, TerminalOperadorLog, Terminal
@@ -8,11 +7,14 @@ from portais.controle_acesso.models import PortalUsuario
 from portais.controle_acesso.filtros import FiltrosAcessoService
 
 
-@login_required
 def listar_operadores(request):
     """
     Tela 1: Lista operadores da loja (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     # Obter lojas acessíveis ao usuário
     usuario_id = request.session.get('lojista_usuario_id')
     try:
@@ -60,11 +62,14 @@ def listar_operadores(request):
     return render(request, 'portais/lojista/operadores/listar.html', context)
 
 
-@login_required
 def criar_operador(request):
     """
     Cria novo operador (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     if request.method == 'POST':
         # Obter lojas acessíveis
         usuario_id = request.session.get('lojista_usuario_id')
@@ -135,11 +140,14 @@ def criar_operador(request):
     return render(request, 'portais/lojista/operadores/criar.html', context)
 
 
-@login_required
 def editar_operador(request, operador_id):
     """
     Edita dados do operador (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     # Verificar acesso
     usuario_id = request.session.get('lojista_usuario_id')
     try:
@@ -171,11 +179,14 @@ def editar_operador(request, operador_id):
     return render(request, 'portais/lojista/operadores/editar.html', context)
 
 
-@login_required
 def visualizar_operador(request, operador_id):
     """
     Visualiza detalhes e histórico de vínculos do operador (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     # Verificar acesso
     usuario_id = request.session.get('lojista_usuario_id')
     try:
@@ -200,11 +211,14 @@ def visualizar_operador(request, operador_id):
     return render(request, 'portais/lojista/operadores/visualizar.html', context)
 
 
-@login_required
 def listar_vinculos(request):
     """
     Tela 2: Lista terminais e seus operadores vinculados (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     # Obter lojas acessíveis
     usuario_id = request.session.get('lojista_usuario_id')
     try:
@@ -242,11 +256,14 @@ def listar_vinculos(request):
     return render(request, 'portais/lojista/operadores/vinculos.html', context)
 
 
-@login_required
 def criar_vinculo(request):
     """
     Cria novo vínculo operador-terminal (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     if request.method == 'POST':
         # Verificar acesso
         usuario_id = request.session.get('lojista_usuario_id')
@@ -303,11 +320,14 @@ def criar_vinculo(request):
     return redirect('lojista:listar_vinculos')
 
 
-@login_required
 def desativar_vinculo(request, vinculo_id):
     """
     Desativa vínculo (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     # Verificar acesso
     usuario_id = request.session.get('lojista_usuario_id')
     try:
@@ -334,11 +354,14 @@ def desativar_vinculo(request, vinculo_id):
     return render(request, 'portais/lojista/operadores/desativar_vinculo.html', context)
 
 
-@login_required
 def ativar_vinculo(request, vinculo_id):
     """
     Ativa vínculo (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     # Verificar acesso
     usuario_id = request.session.get('lojista_usuario_id')
     try:
@@ -360,11 +383,14 @@ def ativar_vinculo(request, vinculo_id):
     return redirect('lojista:listar_vinculos')
 
 
-@login_required
 def visualizar_log_vinculo(request, vinculo_id):
     """
     Visualiza log de ativações/desativações do vínculo (respeitando hierarquia)
     """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return redirect('lojista:login')
+    
     # Verificar acesso
     usuario_id = request.session.get('lojista_usuario_id')
     try:
