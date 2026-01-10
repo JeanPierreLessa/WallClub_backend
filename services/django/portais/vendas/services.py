@@ -946,6 +946,10 @@ class CheckoutVendasService:
 
             recorrencias = queryset.select_related('cliente', 'cartao_tokenizado', 'loja').order_by('-created_at')
 
+            # DEBUG: Ver IDs retornados
+            ids_encontrados = list(recorrencias.values_list('id', flat=True))
+            registrar_log('portais.vendas', f"IDs encontrados na query: {ids_encontrados}")
+
             resultado = []
             for rec in recorrencias:
                 total_exec = rec.total_execucoes

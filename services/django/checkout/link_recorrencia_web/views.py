@@ -132,7 +132,7 @@ def enviar_otp_view(request):
         from decimal import Decimal
         otp_enviado = CheckoutSecurityService.enviar_otp_checkout(
             telefone=telefone,
-            codigo_otp=resultado_otp['codigo'],
+            codigo_otp=resultado_otp.get('otp') or resultado_otp.get('codigo'),
             valor=Decimal(str(token_obj.valor_recorrencia))
         )
         
