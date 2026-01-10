@@ -81,6 +81,7 @@ def enviar_otp_view(request):
         data = json.loads(request.body)
         token = data.get('token')
         telefone = data.get('telefone', '').replace('(', '').replace(')', '').replace('-', '').replace(' ', '')
+        ultimos_4_digitos = data.get('ultimos_4_digitos')  # Últimos 4 dígitos do cartão
         
         if not token or not telefone:
             return JsonResponse({
@@ -128,12 +129,17 @@ def enviar_otp_view(request):
                 'mensagem': resultado_otp.get('mensagem', 'Erro ao gerar código')
             })
         
-        # 3. Enviar OTP via WhatsApp
+        # 3. Buscar código do banco (em produção não retorna no resultado)
+        from wallclub_core.seguranca.models import AutenticacaoOTP
+        otp_obj = AutenticacaoOTP.objects.get(id=resultado_otp['otp_id'])
+        
+        # 4. Enviar OTP via WhatsApp
         from decimal import Decimal
         otp_enviado = CheckoutSecurityService.enviar_otp_checkout(
             telefone=telefone,
-            codigo_otp=resultado_otp.get('otp') or resultado_otp.get('codigo'),
-            valor=Decimal(str(token_obj.valor_recorrencia))
+            codigo_otp=otp_obj.codigo,
+            valor=Decimal(str(token_obj.valor_recorrencia)),
+            ultimos_4_digitos=ultimos_4_digitos
         )
         
         resultado = {
