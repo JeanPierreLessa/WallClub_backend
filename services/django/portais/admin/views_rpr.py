@@ -862,9 +862,26 @@ def exportar_rpr_excel(request):
         
         dados = []
         estrutura_colunas = obter_estrutura_colunas_rpr()
+        colunas_percentuais_lista = obter_colunas_percentuais_rpr_dinamico()
         
         for transacao in transacoes:
             linha = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+            
+            # Converter valores percentuais de string "X.XX%" para decimal 0.0XXX
+            for campo in colunas_percentuais_lista:
+                if campo in linha and linha[campo]:
+                    valor = linha[campo]
+                    if isinstance(valor, str) and '%' in valor:
+                        try:
+                            # Remove % e converte para decimal
+                            valor_limpo = valor.replace('%', '').strip()
+                            if ',' in valor_limpo:
+                                valor_limpo = valor_limpo.replace(',', '.')
+                            # Converte de percentual para decimal (1.30% -> 0.013)
+                            linha[campo] = float(valor_limpo) / 100
+                        except:
+                            pass
+            
             dados.append(linha)
         
         # Usar utilitário comum para exportar
