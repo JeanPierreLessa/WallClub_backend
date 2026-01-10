@@ -188,7 +188,7 @@ def recorrencia_pausar(request, recorrencia_id):
     try:
         resultado = CheckoutVendasService.pausar_recorrencia(
             recorrencia_id=recorrencia_id,
-            vendedor_id=request.portal_usuario.id
+            vendedor_id=request.vendedor.id
         )
         
         if resultado['sucesso']:
@@ -212,7 +212,7 @@ def recorrencia_cancelar(request, recorrencia_id):
     try:
         resultado = CheckoutVendasService.cancelar_recorrencia(
             recorrencia_id=recorrencia_id,
-            vendedor_id=request.portal_usuario.id
+            vendedor_id=request.vendedor.id
         )
         
         if resultado['sucesso']:

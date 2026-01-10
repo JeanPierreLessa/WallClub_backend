@@ -948,6 +948,13 @@ class CheckoutVendasService:
 
             resultado = []
             for rec in recorrencias:
+                total_exec = rec.total_execucoes
+                total_cob = float(rec.total_cobrado)
+                
+                # DEBUG
+                registrar_log('portais.vendas.recorrencia', 
+                    f"Recorrencia ID={rec.id}: total_execucoes={total_exec}, total_cobrado={total_cob}")
+                
                 resultado.append({
                     'id': rec.id,
                     'cliente_nome': rec.cliente.nome if rec.cliente else 'N/A',
@@ -957,8 +964,8 @@ class CheckoutVendasService:
                     'proxima_cobranca': rec.proxima_cobranca.strftime('%d/%m/%Y'),
                     'status': rec.get_status_display(),
                     'tentativas_falhas': rec.tentativas_falhas_consecutivas,
-                    'total_cobrado': float(rec.total_cobrado),
-                    'total_execucoes': rec.total_execucoes,
+                    'total_cobrado': total_cob,
+                    'total_execucoes': total_exec,
                     'cartao_mascarado': rec.cartao_tokenizado.cartao_mascarado if rec.cartao_tokenizado else 'N/A',
                     'created_at': rec.created_at.strftime('%d/%m/%Y %H:%M'),
                     'loja_nome': rec.loja.razao_social if rec.loja else 'N/A'
