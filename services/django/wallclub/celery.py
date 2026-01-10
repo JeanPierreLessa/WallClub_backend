@@ -19,6 +19,9 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Descobre tasks automaticamente em todos os apps instalados
 app.autodiscover_tasks()
 
+# Importar tasks explicitamente para garantir registro
+app.autodiscover_tasks(['checkout'], related_name='tasks_recorrencia')
+
 # Configuração do Celery Beat Schedule
 app.conf.beat_schedule = {
     # ============================================
