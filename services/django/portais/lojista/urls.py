@@ -115,4 +115,5 @@ urlpatterns = [
     path('operadores/vinculos/<int:vinculo_id>/desativar/', views_operadores.desativar_vinculo, name='desativar_vinculo'),
     path('operadores/vinculos/<int:vinculo_id>/ativar/', views_operadores.ativar_vinculo, name='ativar_vinculo'),
     path('operadores/vinculos/<int:vinculo_id>/log/', views_operadores.visualizar_log_vinculo, name='visualizar_log_vinculo'),
+    path('operadores/proximo-codigo/', views_operadores.proximo_codigo_operador, name='proximo_codigo_operador'),
 ]

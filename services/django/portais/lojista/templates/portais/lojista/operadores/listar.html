@@ -54,6 +54,7 @@
                                     <th>Nome</th>
                                     <th>CPF</th>
                                     <th>Identificação Loja</th>
+                                    <th>Status</th>
                                     <th>Vínculos Ativos</th>
                                     <th class="text-center">Ações</th>
                                 </tr>
@@ -65,6 +66,17 @@
                                     <td>{{ operador.nome }}</td>
                                     <td>{{ operador.cpf|default:"-" }}</td>
                                     <td>{{ operador.identificacao_loja|default:"-" }}</td>
+                                    <td>
+                                        {% if operador.ativo %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Ativo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Inativo
+                                            </span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if operador.total_vinculos_ativos > 0 %}
                                             <span class="badge bg-success">{{ operador.total_vinculos_ativos }}</span>

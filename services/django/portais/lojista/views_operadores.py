@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q, Count
+from django.http import JsonResponse
 from datetime import date
 from posp2.models import TerminalOperador, TerminalOperadorPos, TerminalOperadorLog, Terminal
 from portais.controle_acesso.models import PortalUsuario
@@ -417,3 +418,42 @@ def visualizar_log_vinculo(request, vinculo_id):
     }
     
     return render(request, 'portais/lojista/operadores/log_vinculo.html', context)
+
+
+def proximo_codigo_operador(request):
+    """
+    Retorna próximo código disponível para operador (AJAX)
+    """
+    # Verificar autenticação
+    if not request.session.get('lojista_authenticated'):
+        return JsonResponse({'sucesso': False, 'mensagem': 'Não autenticado'}, status=401)
+    
+    loja_id = request.GET.get('loja_id')
+    prefixo = request.GET.get('prefixo', '').upper()
+    
+    if not loja_id or not prefixo:
+        return JsonResponse({'sucesso': False, 'mensagem': 'Parâmetros inválidos'})
+    
+    # Buscar último operador com este prefixo nesta loja
+    ultimo_operador = TerminalOperador.objects.filter(
+        loja_id=loja_id,
+        operador__startswith=prefixo
+    ).order_by('-operador').first()
+    
+    if ultimo_operador:
+        # Extrair número do código (últimos 4 dígitos)
+        try:
+            ultimo_numero = int(ultimo_operador.operador[len(prefixo):])
+            proximo_numero = ultimo_numero + 1
+        except (ValueError, IndexError):
+            proximo_numero = 1
+    else:
+        proximo_numero = 1
+    
+    # Formatar com 4 dígitos
+    codigo_sugerido = f"{prefixo}{proximo_numero:04d}"
+    
+    return JsonResponse({
+        'sucesso': True,
+        'codigo_sugerido': codigo_sugerido
+    })

@@ -31,7 +31,12 @@
                             
                             <div class="col-md-6 mb-3">
                                 <label for="operador" class="form-label">Código do Operador *</label>
-                                <input type="text" name="operador" id="operador" class="form-control" maxlength="10" required>
+                                <div class="input-group">
+                                    <input type="text" name="operador" id="operador" class="form-control" maxlength="10" required>
+                                    <button type="button" class="btn btn-outline-primary" id="btnSugerirCodigo" onclick="sugerirCodigo()">
+                                        <i class="fas fa-lightbulb me-1"></i>Sugerir
+                                    </button>
+                                </div>
                                 <small class="text-muted">Código único do operador (máx. 10 caracteres)</small>
                             </div>
                         </div>
@@ -123,5 +128,46 @@ document.getElementById('telefone').addEventListener('input', function(e) {
         e.target.value = value;
     }
 });
+
+// Sugerir código de operador
+async function sugerirCodigo() {
+    const lojaSelect = document.getElementById('loja_id');
+    const operadorInput = document.getElementById('operador');
+    
+    if (!lojaSelect.value) {
+        alert('Selecione uma loja primeiro');
+        lojaSelect.focus();
+        return;
+    }
+    
+    // Pegar nome da loja do option selecionado
+    const nomeLoja = lojaSelect.options[lojaSelect.selectedIndex].text;
+    
+    // Extrair 3 primeiras letras em maiúsculo (removendo espaços e caracteres especiais)
+    const prefixo = nomeLoja.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+    
+    if (prefixo.length < 3) {
+        alert('Nome da loja muito curto para gerar código');
+        return;
+    }
+    
+    // Buscar último código usado para esta loja via AJAX
+    try {
+        const response = await fetch(`/operadores/proximo-codigo/?loja_id=${lojaSelect.value}&prefixo=${prefixo}`);
+        const data = await response.json();
+        
+        if (data.sucesso) {
+            operadorInput.value = data.codigo_sugerido;
+        } else {
+            // Fallback: gerar sequencial local
+            const sequencial = String(Math.floor(Math.random() * 9000) + 1000);
+            operadorInput.value = prefixo + sequencial;
+        }
+    } catch (error) {
+        // Fallback: gerar sequencial aleatório
+        const sequencial = String(Math.floor(Math.random() * 9000) + 1000);
+        operadorInput.value = prefixo + sequencial;
+    }
+}
 </script>
 {% endblock %}
