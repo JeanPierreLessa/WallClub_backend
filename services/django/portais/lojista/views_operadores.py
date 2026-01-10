@@ -19,7 +19,8 @@ def listar_operadores(request):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+        lojas_ids = [loja['id'] for loja in lojas_acessiveis]
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Usuário não encontrado')
         return redirect('lojista:home')
@@ -75,7 +76,8 @@ def criar_operador(request):
         usuario_id = request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
-            lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+            lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+            lojas_ids = [loja['id'] for loja in lojas_acessiveis]
         except PortalUsuario.DoesNotExist:
             messages.error(request, 'Usuário não encontrado')
             return redirect('lojista:home')
@@ -128,7 +130,7 @@ def criar_operador(request):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_acessiveis = FiltrosAcessoService.get_lojas_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
     except PortalUsuario.DoesNotExist:
         lojas_acessiveis = []
     
@@ -152,7 +154,8 @@ def editar_operador(request, operador_id):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+        lojas_ids = [loja['id'] for loja in lojas_acessiveis]
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Usuário não encontrado')
         return redirect('lojista:home')
@@ -191,7 +194,8 @@ def visualizar_operador(request, operador_id):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+        lojas_ids = [loja['id'] for loja in lojas_acessiveis]
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Usuário não encontrado')
         return redirect('lojista:home')
@@ -223,7 +227,8 @@ def listar_vinculos(request):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+        lojas_ids = [loja['id'] for loja in lojas_acessiveis]
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Usuário não encontrado')
         return redirect('lojista:home')
@@ -269,7 +274,8 @@ def criar_vinculo(request):
         usuario_id = request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
-            lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+            lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+            lojas_ids = [loja['id'] for loja in lojas_acessiveis]
         except PortalUsuario.DoesNotExist:
             messages.error(request, 'Usuário não encontrado')
             return redirect('lojista:home')
@@ -332,7 +338,8 @@ def desativar_vinculo(request, vinculo_id):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+        lojas_ids = [loja['id'] for loja in lojas_acessiveis]
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Usuário não encontrado')
         return redirect('lojista:home')
@@ -366,7 +373,8 @@ def ativar_vinculo(request, vinculo_id):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+        lojas_ids = [loja['id'] for loja in lojas_acessiveis]
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Usuário não encontrado')
         return redirect('lojista:home')
@@ -395,7 +403,8 @@ def visualizar_log_vinculo(request, vinculo_id):
     usuario_id = request.session.get('lojista_usuario_id')
     try:
         usuario = PortalUsuario.objects.get(id=usuario_id)
-        lojas_ids = FiltrosAcessoService.get_lojas_ids_usuario(usuario)
+        lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+        lojas_ids = [loja['id'] for loja in lojas_acessiveis]
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Usuário não encontrado')
         return redirect('lojista:home')
