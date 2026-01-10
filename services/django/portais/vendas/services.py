@@ -822,7 +822,7 @@ class CheckoutVendasService:
 
                     if resultado['sucesso']:
                         registrar_log(
-                            'portais.vendas.recorrencia',
+                            'portais.vendas',
                             f"Recorrência pendente criada: ID={recorrencia.id}, Cliente={cliente.nome}. "
                             f"Link de cadastro enviado para {cliente.email}"
                         )
@@ -892,7 +892,7 @@ class CheckoutVendasService:
                 recorrencia.save()
 
             registrar_log(
-                'portais.vendas.recorrencia',
+                'portais.vendas',
                 f"Recorrência criada: ID={recorrencia.id}, Cliente={cliente.nome}, "
                 f"Tipo={tipo_periodicidade}, Próxima={proxima}"
             )
@@ -905,7 +905,7 @@ class CheckoutVendasService:
             }
 
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao criar recorrência: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao criar recorrência: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro ao criar recorrência: {str(e)}'}
 
     @staticmethod
@@ -952,7 +952,7 @@ class CheckoutVendasService:
                 total_cob = float(rec.total_cobrado)
                 
                 # DEBUG
-                registrar_log('portais.vendas.recorrencia', 
+                registrar_log('portais.vendas', 
                     f"Recorrencia ID={rec.id}: total_execucoes={total_exec}, total_cobrado={total_cob}")
                 
                 resultado.append({
@@ -971,11 +971,11 @@ class CheckoutVendasService:
                     'loja_nome': rec.loja.razao_social if rec.loja else 'N/A'
                 })
 
-            registrar_log('portais.vendas.recorrencia', f"Listadas {len(resultado)} recorrências")
+            registrar_log('portais.vendas', f"Listadas {len(resultado)} recorrências")
             return resultado
 
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao listar recorrências: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao listar recorrências: {str(e)}", nivel='ERROR')
             return []
 
     @staticmethod
@@ -1005,7 +1005,7 @@ class CheckoutVendasService:
             recorrencia.save(update_fields=['status', 'updated_at'])
 
             registrar_log(
-                'portais.vendas.recorrencia',
+                'portais.vendas',
                 f"Recorrência pausada: ID={recorrencia_id}, Vendedor={vendedor_id}"
             )
 
@@ -1014,7 +1014,7 @@ class CheckoutVendasService:
         except RecorrenciaAgendada.DoesNotExist:
             return {'sucesso': False, 'mensagem': 'Recorrência não encontrada'}
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao pausar recorrência: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao pausar recorrência: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro ao pausar recorrência: {str(e)}'}
 
     @staticmethod
@@ -1041,7 +1041,7 @@ class CheckoutVendasService:
             recorrencia.save(update_fields=['status', 'updated_at'])
 
             registrar_log(
-                'portais.vendas.recorrencia',
+                'portais.vendas',
                 f"Recorrência cancelada: ID={recorrencia_id}, Vendedor={vendedor_id}"
             )
 
@@ -1050,7 +1050,7 @@ class CheckoutVendasService:
         except RecorrenciaAgendada.DoesNotExist:
             return {'sucesso': False, 'mensagem': 'Recorrência não encontrada'}
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao cancelar recorrência: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao cancelar recorrência: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro ao cancelar recorrência: {str(e)}'}
 
     @staticmethod
@@ -1083,7 +1083,7 @@ class CheckoutVendasService:
             # Validar se cartão está válido antes de processar
             if not recorrencia.cartao_tokenizado.valido:
                 registrar_log(
-                    'portais.vendas.recorrencia',
+                    'portais.vendas',
                     f"Cartão inválido: Recorrencia_ID={recorrencia_id}, "
                     f"Cartao_ID={recorrencia.cartao_tokenizado_id}, "
                     f"Motivo={recorrencia.cartao_tokenizado.motivo_invalidacao}",
@@ -1136,7 +1136,7 @@ class CheckoutVendasService:
                 CartaoControleService.registrar_transacao_aprovada(recorrencia.cartao_tokenizado_id)
 
                 registrar_log(
-                    'portais.vendas.recorrencia',
+                    'portais.vendas',
                     f"Cobrança recorrente APROVADA: Recorrencia_ID={recorrencia_id}, "
                     f"Transacao_ID={transacao.id}, NSU={resultado.get('nsu')}, Próxima={proxima}"
                 )
@@ -1161,7 +1161,7 @@ class CheckoutVendasService:
                 )
 
                 registrar_log(
-                    'portais.vendas.recorrencia',
+                    'portais.vendas',
                     f"Cobrança recorrente NEGADA: Recorrencia_ID={recorrencia_id}, "
                     f"Tentativa={recorrencia.tentativas_falhas_consecutivas}, "
                     f"Falhas_Cartao={controle_resultado['falhas_consecutivas']}, "
@@ -1182,7 +1182,7 @@ class CheckoutVendasService:
         except RecorrenciaAgendada.DoesNotExist:
             return {'sucesso': False, 'mensagem': 'Recorrência não encontrada'}
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao processar cobrança agendada: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao processar cobrança agendada: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro ao processar cobrança: {str(e)}'}
 
     @staticmethod
@@ -1218,7 +1218,7 @@ class CheckoutVendasService:
             recorrencia.save(update_fields=['proxima_cobranca', 'updated_at'])
 
             registrar_log(
-                'portais.vendas.recorrencia',
+                'portais.vendas',
                 f"Retry agendado: Recorrencia_ID={recorrencia_id}, Tentativa={recorrencia.tentativas_falhas_consecutivas}, Próxima={proxima_tentativa}"
             )
 
@@ -1231,7 +1231,7 @@ class CheckoutVendasService:
         except RecorrenciaAgendada.DoesNotExist:
             return {'sucesso': False, 'mensagem': 'Recorrência não encontrada'}
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao retentar cobrança: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao retentar cobrança: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro: {str(e)}'}
 
     @staticmethod
@@ -1255,7 +1255,7 @@ class CheckoutVendasService:
             recorrencia.save(update_fields=['status', 'updated_at'])
 
             registrar_log(
-                'portais.vendas.recorrencia',
+                'portais.vendas',
                 f"Recorrência marcada como HOLD: Recorrencia_ID={recorrencia_id}, Tentativas={recorrencia.tentativas_falhas_consecutivas}",
                 nivel='WARNING'
             )
@@ -1269,7 +1269,7 @@ class CheckoutVendasService:
         except RecorrenciaAgendada.DoesNotExist:
             return {'sucesso': False, 'mensagem': 'Recorrência não encontrada'}
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao marcar hold: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao marcar hold: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': f'Erro: {str(e)}'}
 
     @staticmethod
@@ -1311,9 +1311,9 @@ class CheckoutVendasService:
                     'loja_nome': hold.loja.razao_social if hold.loja else 'N/A'
                 })
 
-            registrar_log('portais.vendas.recorrencia', f"Relatório não cobrados: {len(resultado)} recorrências em hold")
+            registrar_log('portais.vendas', f"Relatório não cobrados: {len(resultado)} recorrências em hold")
             return resultado
 
         except Exception as e:
-            registrar_log('portais.vendas.recorrencia', f"Erro ao obter não cobrados: {str(e)}", nivel='ERROR')
+            registrar_log('portais.vendas', f"Erro ao obter não cobrados: {str(e)}", nivel='ERROR')
             return []
