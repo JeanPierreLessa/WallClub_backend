@@ -1089,9 +1089,10 @@ class CheckoutVendasService:
                 }
 
             # Processar cobrança via CheckoutService (usa cartão tokenizado)
-            resultado = CheckoutService.processar_pagamento_com_cartao_tokenizado(
-                cartao_tokenizado_id=recorrencia.cartao_tokenizado_id,
-                valor=float(recorrencia.valor_recorrencia),
+            resultado = CheckoutService.processar_pagamento_cartao_tokenizado(
+                cliente_id=recorrencia.cliente_id,
+                cartao_id=recorrencia.cartao_tokenizado_id,
+                valor=recorrencia.valor_recorrencia,
                 parcelas=1,
                 vendedor_id=recorrencia.vendedor_id,
                 loja_id=recorrencia.loja_id,
