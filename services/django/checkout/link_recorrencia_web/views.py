@@ -202,10 +202,16 @@ def processar_cadastro_cartao_view(request):
         
         cpf_limpo = token_obj.cliente_cpf.replace('.', '').replace('-', '')
         
-        # Buscar cliente
-        try:
-            cliente = CheckoutCliente.objects.get(cpf=cpf_limpo)
-        except CheckoutCliente.DoesNotExist:
+        # Buscar cliente da mesma loja da recorrência
+        from checkout.models_recorrencia import RecorrenciaAgendada
+        recorrencia = RecorrenciaAgendada.objects.get(id=token_obj.recorrencia_id)
+        
+        cliente = CheckoutCliente.objects.filter(
+            cpf=cpf_limpo,
+            loja_id=recorrencia.loja_id
+        ).first()
+        
+        if not cliente:
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'Cliente não encontrado'
