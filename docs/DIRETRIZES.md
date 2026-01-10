@@ -459,6 +459,58 @@ DB_PASSWORD = secrets.get('DB_PASSWORD')
 MERCHANT_URL = os.environ.get('MERCHANT_URL')  # Obrigatória para Own Financial
 ```
 
+### 🚨 REGRA CRÍTICA: Dados Sensíveis de Cartão (PCI-DSS)
+
+**PROIBIDO ABSOLUTAMENTE:**
+```python
+# ❌ NUNCA trafegar número completo de cartão
+payload = {
+    'numero_cartao': numero_cartao,  # VIOLAÇÃO PCI-DSS
+    'telefone': telefone
+}
+
+# ❌ NUNCA armazenar número completo
+cartao.numero = '4111111111111111'  # VIOLAÇÃO PCI-DSS
+
+# ❌ NUNCA enviar número completo para frontend
+response = {
+    'numero_cartao': cartao.numero  # VIOLAÇÃO PCI-DSS
+}
+```
+
+**OBRIGATÓRIO:**
+```python
+# ✅ SEMPRE usar apenas últimos 4 dígitos
+ultimos_4 = numero_cartao[-4:]
+payload = {
+    'ultimos_4_digitos': ultimos_4,
+    'telefone': telefone
+}
+
+# ✅ SEMPRE armazenar apenas mascarado
+cartao.cartao_mascarado = f"****{numero_cartao[-4:]}"
+
+# ✅ SEMPRE tokenizar via gateway (Pinbank/Own)
+token_id = gateway.tokenizar(numero_cartao)
+cartao.id_token = token_id  # Salvar apenas token
+```
+
+**Regras PCI-DSS:**
+1. ❌ **NUNCA** armazenar número completo do cartão
+2. ❌ **NUNCA** armazenar CVV/CVC
+3. ❌ **NUNCA** trafegar dados completos entre frontend/backend
+4. ✅ **SEMPRE** tokenizar via gateway certificado
+5. ✅ **SEMPRE** usar apenas últimos 4 dígitos para exibição
+6. ✅ **SEMPRE** mascarar: `****1234` ou `4444########1234`
+
+**Locais onde dados completos NUNCA devem aparecer:**
+- ❌ Requests HTTP (query params ou body)
+- ❌ Responses HTTP (JSON)
+- ❌ Banco de dados (exceto gateway certificado)
+- ❌ Logs de aplicação
+- ❌ Cache (Redis/Memcached)
+- ❌ Mensagens (WhatsApp/SMS/Email)
+
 **Variáveis Obrigatórias no `.env`:**
 ```bash
 # Desenvolvimento (services/django/.env)

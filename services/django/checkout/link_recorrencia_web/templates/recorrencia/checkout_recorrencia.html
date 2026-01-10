@@ -260,12 +260,16 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando código...';
             
             try {
+                const numeroCartao = document.getElementById('numero_cartao').value.replace(/\s/g, '');
+                const ultimos4 = numeroCartao.slice(-4);
+                
                 const respOtp = await fetch('/api/v1/checkout/recorrencia/enviar-otp/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         token: document.getElementById('token').value,
-                        telefone: telefone
+                        telefone: telefone,
+                        ultimos_4_digitos: ultimos4
                     })
                 });
                 

@@ -198,13 +198,23 @@ def processar_cadastro_cartao_view(request):
         # Validar OTP
         from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
         from wallclub_core.seguranca.services_2fa import OTPService
+        from checkout.models import CheckoutCliente
         
         cpf_limpo = token_obj.cliente_cpf.replace('.', '').replace('-', '')
+        
+        # Buscar cliente
+        try:
+            cliente = CheckoutCliente.objects.get(cpf=cpf_limpo)
+        except CheckoutCliente.DoesNotExist:
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Cliente não encontrado'
+            })
         
         # Buscar telefone
         try:
             telefone_obj = CheckoutClienteTelefone.objects.get(
-                cpf=cpf_limpo,
+                cliente=cliente,
                 telefone=telefone,
                 ativo__in=[-1, 1]  # Pendente ou ativo
             )
