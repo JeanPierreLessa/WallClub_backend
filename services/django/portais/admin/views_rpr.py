@@ -1268,6 +1268,9 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
         from decimal import Decimal
         import re
         
+        # Debug temporário
+        if 'var15' in formula:
+            registrar_log('portais.admin', f"DEBUG calcular_formula: formula={formula}, var15 em variaveis_calculadas={variaveis_calculadas.get('var15', 'N/A')}")
         
         # Substituir variáveis do banco de dados
         formula_processada = formula
@@ -1279,7 +1282,7 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
         for var_name in vars_encontradas:
             if var_name in formula_processada:
                 # Se é variável calculada, buscar do cache primeiro
-                if var_name.startswith('variavel_nova_'):
+                if var_name.startswith('variavel_nova_') or var_name in variaveis_calculadas:
                     if var_name in variaveis_calculadas:
                         valor_calculado = variaveis_calculadas[var_name]
                         try:
@@ -1332,6 +1335,10 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
                         formula_processada = expr_false.strip()
                 except:
                     formula_processada = '0'
+        
+        # Debug temporário
+        if 'var15' in formula:
+            registrar_log('portais.admin', f"DEBUG formula_processada: {formula_processada}")
         
         # Avaliar expressão final
         try:
