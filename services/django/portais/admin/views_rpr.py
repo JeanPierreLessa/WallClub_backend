@@ -129,8 +129,8 @@ def obter_estrutura_colunas_rpr():
         # 21: Fórmula encargos
         {'tipo': 'formula', 'campo': 'variavel_nova_3', 'nome': 'Encargos Cobrados Clientes Finais (%)', 'formula': 'abs(var14)'},
         
-        # 22: var15
-        {'tipo': 'variavel', 'campo': 'var15', 'nome': None},
+        # 22: Receita Encargos Cobrados Clientes Finais (R$) - baseado em var86
+        {'tipo': 'formula', 'campo': 'var15', 'nome': 'Receita Encargos Cobrados Clientes Finais (R$)', 'formula': '-var86 if var86 < 0 else 0'},
         
         # 23: Fórmula receita total
         {'tipo': 'formula', 'campo': 'variavel_nova_4', 'nome': 'Receita Total Antec. + Encargos (Total - R$)', 'formula': 'var15 + var41'},
@@ -1152,7 +1152,7 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
     
     # Depois processar fórmulas na ordem correta de dependências
     formulas_ordenadas = [
-        'variavel_nova_1', 'variavel_nova_2', 'variavel_nova_3', 'variavel_nova_4',
+        'variavel_nova_1', 'variavel_nova_2', 'variavel_nova_3', 'var15', 'variavel_nova_4',
         'variavel_nova_5', 'variavel_nova_6', 'variavel_nova_8', 'variavel_nova_7',
         'variavel_nova_9', 'variavel_nova_11', 'variavel_nova_10', 'variavel_nova_12',
         'variavel_nova_13', 'variavel_nova_14', 'variavel_nova_15', 'variavel_nova_17', 'variavel_nova_16'
@@ -1236,11 +1236,14 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
                             linha[campo] = '0.00%'
                 except (ValueError, TypeError):
                     linha[campo] = 0 if para_export else '0.00%'
-            elif not para_export and resultado != 0:
-                # Outras fórmulas monetárias
+            elif campo == 'var15' or (not para_export and resultado != 0):
+                # var15 e outras fórmulas monetárias
                 try:
                     valor_num = float(resultado) if resultado else 0
-                    linha[campo] = f"R$ {valor_num:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+                    if para_export:
+                        linha[campo] = valor_num
+                    else:
+                        linha[campo] = f"R$ {valor_num:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
                 except (ValueError, TypeError):
                     linha[campo] = str(resultado) if resultado else ''
             else:
