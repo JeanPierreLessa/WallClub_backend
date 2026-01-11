@@ -1163,16 +1163,6 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             if item['tipo'] == 'formula' and item['campo'] == campo_formula:
                 resultado = calcular_formula(item['formula'], transacao, variaveis_calculadas)
                 variaveis_calculadas[campo_formula] = resultado
-                
-                # Debug temporário para var15 e variavel_nova_4
-                if campo_formula == 'var15':
-                    var86_valor = transacao.get('var86', 'N/A')
-                    registrar_log('portais.admin', f"DEBUG var15: var86={var86_valor}, resultado={resultado}")
-                elif campo_formula == 'variavel_nova_4':
-                    var15_calc = variaveis_calculadas.get('var15', 'N/A')
-                    var41_valor = transacao.get('var41', 'N/A')
-                    registrar_log('portais.admin', f"DEBUG variavel_nova_4: var15={var15_calc}, var41={var41_valor}, resultado={resultado}")
-                
                 break
     
     # FASE 2: Montar linha na ordem de exibição com formatação
@@ -1268,10 +1258,6 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
         from decimal import Decimal
         import re
         
-        # Debug temporário
-        if 'var15' in formula:
-            registrar_log('portais.admin', f"DEBUG calcular_formula: formula={formula}, var15 em variaveis_calculadas={variaveis_calculadas.get('var15', 'N/A')}")
-        
         # Substituir variáveis do banco de dados
         formula_processada = formula
         
@@ -1335,10 +1321,6 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
                         formula_processada = expr_false.strip()
                 except:
                     formula_processada = '0'
-        
-        # Debug temporário
-        if 'var15' in formula:
-            registrar_log('portais.admin', f"DEBUG formula_processada: {formula_processada}")
         
         # Avaliar expressão final
         try:
