@@ -97,16 +97,21 @@ def obter_estrutura_colunas_rpr():
     var43
     """
     return [
-        # 0: Tipo de transação
-        {'tipo': 'variavel', 'campo': 'tipo_operacao', 'nome': None},
-        
-        # 1-13: Variáveis base
+        # 1-7: Variáveis base iniciais
         {'tipo': 'variavel', 'campo': 'var9', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var0', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var1', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var68', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var5', 'nome': None},
+        {'tipo': 'variavel', 'campo': 'var5', 'nome': 'Nome do Estabelecimento'},
+        
+        # Modalidade (tipo_operacao movido para depois de var5)
+        {'tipo': 'variavel', 'campo': 'tipo_operacao', 'nome': 'Modalidade'},
+        
+        {'tipo': 'variavel', 'campo': 'var8', 'nome': None},  # Plano/Produto
+        {'tipo': 'variavel', 'campo': 'var12', 'nome': None},  # Bandeira
         {'tipo': 'variavel', 'campo': 'var6', 'nome': None},
+        
+        # Continuação variáveis base
         {'tipo': 'variavel', 'campo': 'var4', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var11', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var26', 'nome': None},
@@ -324,9 +329,9 @@ def relatorio_producao_receita(request):
             SUM(CAST(var90 AS DECIMAL(15,2))) as custo_mdr_direto,
             SUM(CAST(var94_A AS DECIMAL(15,2))) as custo_antecipacao_direto,
             SUM(CAST(var41 AS DECIMAL(15,2))) as receita_var41,
-            SUM(CASE WHEN CAST(var14 AS DECIMAL(15,2)) < 0 AND var15 IS NOT NULL 
-                     THEN ABS(CAST(var15 AS DECIMAL(15,2))) * 100 
-                     ELSE 0 END) as receita_var14_var15,
+            SUM(CASE WHEN CAST(var86 AS DECIMAL(15,2)) < 0 
+                     THEN ABS(CAST(var86 AS DECIMAL(15,2))) 
+                     ELSE 0 END) as receita_var15_calculada,
             SUM(CAST(var109_A AS DECIMAL(15,2))) as impostos_total,
             SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0 
                      THEN CAST(var116_A AS DECIMAL(15,2)) 
@@ -354,12 +359,12 @@ def relatorio_producao_receita(request):
     custo_mdr_direto = Decimal(str(resultado[6] or 0))
     custo_antecipacao_direto = Decimal(str(resultado[7] or 0))
     receita_var41 = Decimal(str(resultado[8] or 0))
-    receita_var14_var15 = Decimal(str(resultado[9] or 0))
+    receita_var15_calculada = Decimal(str(resultado[9] or 0))
     impostos_total = Decimal(str(resultado[10] or 0))
     resultado_financeiro = Decimal(str(resultado[11] or 0))
     
     # Cálculos derivados
-    receita_antecipacao_parcelamentos = receita_var41 + receita_var14_var15
+    receita_antecipacao_parcelamentos = receita_var41 + receita_var15_calculada
     receita_outras_tarifas = Decimal('0.00')
     receita_financeira_total = receita_mdr_total + receita_antecipacao_parcelamentos + receita_outras_tarifas
     
