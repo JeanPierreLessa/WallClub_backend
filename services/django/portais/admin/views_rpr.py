@@ -1163,6 +1163,12 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             if item['tipo'] == 'formula' and item['campo'] == campo_formula:
                 resultado = calcular_formula(item['formula'], transacao, variaveis_calculadas)
                 variaveis_calculadas[campo_formula] = resultado
+                
+                # Debug temporário para var15
+                if campo_formula == 'var15':
+                    var86_valor = transacao.get('var86', 'N/A')
+                    registrar_log('portais.admin', f"DEBUG var15: var86={var86_valor}, resultado={resultado}")
+                
                 break
     
     # FASE 2: Montar linha na ordem de exibição com formatação
