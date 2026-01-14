@@ -10,4 +10,5 @@ urlpatterns = [
     path('webhook/transacao/', views_webhook.webhook_transacao, name='own_webhook_transacao'),
     path('webhook/liquidacao/', views_webhook.webhook_liquidacao, name='own_webhook_liquidacao'),
     path('webhook/cadastro/', views_webhook.webhook_cadastro, name='own_webhook_cadastro'),
+    path('webhook/credenciamento/', views_webhook.webhook_credenciamento, name='own_webhook_credenciamento'),
 ]

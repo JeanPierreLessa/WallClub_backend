@@ -1,0 +1,308 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}Cadastro de Loja - Own Financial{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-section h5 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .required-field::after {
+        content: " *";
+        color: #e74c3c;
+    }
+    #campos_own {
+        display: none;
+    }
+    .checkbox-own {
+        background: #ecf0f1;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Cadastro de Loja</h2>
+
+            <form id="form_cadastro_loja" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Dados Básicos -->
+                <div class="form-section">
+                    <h5>Dados Básicos</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">CNPJ</label>
+                            <input type="text" class="form-control" id="cnpj" name="cnpj"
+                                   maxlength="14" required pattern="\d{14}">
+                            <small class="text-muted">Apenas números</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Razão Social</label>
+                            <input type="text" class="form-control" id="razao_social"
+                                   name="razao_social" maxlength="256" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Nome Fantasia</label>
+                            <input type="text" class="form-control" id="nome_fantasia"
+                                   name="nome_fantasia" maxlength="256" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Email</label>
+                            <input type="email" class="form-control" id="email"
+                                   name="email" maxlength="256" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contato -->
+                <div class="form-section">
+                    <h5>Contato</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label required-field">DDD Comercial</label>
+                            <input type="text" class="form-control" id="ddd_telefone_comercial"
+                                   name="ddd_telefone_comercial" maxlength="2" required pattern="\d{2}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Telefone Comercial</label>
+                            <input type="text" class="form-control" id="telefone_comercial"
+                                   name="telefone_comercial" maxlength="20" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">DDD Celular</label>
+                            <input type="text" class="form-control" id="ddd_celular"
+                                   name="ddd_celular" maxlength="2" required pattern="\d{2}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Celular</label>
+                            <input type="text" class="form-control" id="celular"
+                                   name="celular" maxlength="20" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Endereço -->
+                <div class="form-section">
+                    <h5>Endereço</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label required-field">CEP</label>
+                            <input type="text" class="form-control" id="cep" name="cep"
+                                   maxlength="8" required pattern="\d{8}">
+                            <small class="text-muted">Apenas números</small>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label required-field">Logradouro</label>
+                            <input type="text" class="form-control" id="logradouro"
+                                   name="logradouro" maxlength="256" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label required-field">Número</label>
+                            <input type="number" class="form-control" id="numero_endereco"
+                                   name="numero_endereco" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Complemento</label>
+                            <input type="text" class="form-control" id="complemento"
+                                   name="complemento" maxlength="256">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Bairro</label>
+                            <input type="text" class="form-control" id="bairro"
+                                   name="bairro" maxlength="100" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Município</label>
+                            <input type="text" class="form-control" id="municipio"
+                                   name="municipio" maxlength="100" required>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label required-field">UF</label>
+                            <input type="text" class="form-control" id="uf"
+                                   name="uf" maxlength="2" required pattern="[A-Z]{2}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dados Bancários -->
+                <div class="form-section">
+                    <h5>Dados Bancários</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Código do Banco</label>
+                            <input type="text" class="form-control" id="codigo_banco"
+                                   name="codigo_banco" maxlength="3" required pattern="\d{3}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Agência</label>
+                            <input type="text" class="form-control" id="agencia"
+                                   name="agencia" maxlength="10" required>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">Dígito</label>
+                            <input type="text" class="form-control" id="digito_agencia"
+                                   name="digito_agencia" maxlength="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Conta</label>
+                            <input type="text" class="form-control" id="numero_conta"
+                                   name="numero_conta" maxlength="20" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label required-field">Dígito</label>
+                            <input type="text" class="form-control" id="digito_conta"
+                                   name="digito_conta" maxlength="1" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integração Own Financial -->
+                <div class="form-section">
+                    <h5>Integração Own Financial</h5>
+
+                    <div class="checkbox-own">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cadastrar_own"
+                                   name="cadastrar_own" value="1">
+                            <label class="form-check-label" for="cadastrar_own">
+                                <strong>Cadastrar esta loja na Own Financial</strong>
+                                <br>
+                                <small class="text-muted">
+                                    Ao marcar esta opção, a loja será cadastrada automaticamente
+                                    na adquirente Own Financial para processar transações.
+                                </small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="campos_own">
+                        <!-- Atividade Econômica -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Buscar Atividade (CNAE)</label>
+                                <input type="text" class="form-control" id="busca_cnae"
+                                       placeholder="Digite para buscar...">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label required-field">CNAE</label>
+                                <select class="form-select" id="cnae" name="cnae">
+                                    <option value="">Carregando...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required-field">MCC</label>
+                                <input type="text" class="form-control" id="mcc"
+                                       name="mcc" maxlength="4" readonly>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Ramo de Atividade</label>
+                                <input type="text" class="form-control" id="ramo_atividade"
+                                       name="ramo_atividade" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Dados Financeiros -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label required-field">Faturamento Previsto (R$)</label>
+                                <input type="number" class="form-control" id="faturamento_previsto"
+                                       name="faturamento_previsto" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required-field">Faturamento Contratado (R$)</label>
+                                <input type="number" class="form-control" id="faturamento_contratado"
+                                       name="faturamento_contratado" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <!-- Cesta de Tarifas -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label required-field">Cesta de Tarifas</label>
+                                <select class="form-select" id="id_cesta" name="id_cesta">
+                                    <option value="">Carregando...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preview das Tarifas -->
+                        <div id="tarifas_preview" class="mb-3"></div>
+
+                        <!-- Responsável -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label required-field">Responsável pela Assinatura</label>
+                                <input type="text" class="form-control" id="responsavel_assinatura"
+                                       name="responsavel_assinatura" maxlength="256">
+                            </div>
+                        </div>
+
+                        <!-- Configurações -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Quantidade de POS</label>
+                                <input type="number" class="form-control" id="quantidade_pos"
+                                       name="quantidade_pos" value="1" min="1">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Antecipação Automática</label>
+                                <select class="form-select" id="antecipacao_automatica"
+                                        name="antecipacao_automatica">
+                                    <option value="N">Não</option>
+                                    <option value="S">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Taxa Antecipação (%)</label>
+                                <input type="number" class="form-control" id="taxa_antecipacao"
+                                       name="taxa_antecipacao" value="0" step="0.01" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões -->
+                <div class="form-section">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'portais_admin:lista_lojas' %}" class="btn btn-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Loja
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/cadastro_loja_own.js' %}"></script>
+{% endblock %}

@@ -28,7 +28,7 @@ logger = logging.getLogger('own.webhook')
 def webhook_transacao(request):
     """
     Recebe notificações de transações da Own em tempo real
-    
+
     Payload esperado:
     {
         "identificadorTransacao": "250106001859910574",
@@ -54,15 +54,15 @@ def webhook_transacao(request):
         # Parse payload
         payload = json.loads(request.body.decode('utf-8'))
         identificador = payload.get('identificadorTransacao')
-        
+
         registrar_log('adquirente_own', f'📥 Webhook transação recebido: {identificador}')
-        
+
         # Validar campos obrigatórios
         campos_obrigatorios = [
-            'identificadorTransacao', 'tipoTransacao', 'cnpjCliente', 
+            'identificadorTransacao', 'tipoTransacao', 'cnpjCliente',
             'docParceiro', 'valor', 'data', 'bandeira'
         ]
-        
+
         for campo in campos_obrigatorios:
             if campo not in payload:
                 registrar_log('adquirente_own', f'❌ Campo obrigatório ausente: {campo}', nivel='ERROR')
@@ -70,12 +70,12 @@ def webhook_transacao(request):
                     'sucesso': False,
                     'mensagem': f'Campo obrigatório ausente: {campo}'
                 }, status=400)
-        
+
         # Verificar se já existe
         if OwnExtratoTransacoes.objects.filter(identificadorTransacao=identificador).exists():
             registrar_log('adquirente_own', f'⚠️ Transação já existe: {identificador}', nivel='WARNING')
             return JsonResponse({'sucesso': True, 'mensagem': 'Transação já processada'}, status=200)
-        
+
         # Salvar transação
         with transaction.atomic():
             transacao = OwnExtratoTransacoes.objects.create(
@@ -95,19 +95,19 @@ def webhook_transacao(request):
                 lido=False,
                 processado=False
             )
-            
+
             registrar_log('adquirente_own', f'✅ Transação salva: {identificador} - R$ {payload.get("valor")}')
-        
+
         return JsonResponse({
             'sucesso': True,
             'mensagem': 'Transação recebida com sucesso',
             'identificador': identificador
         }, status=200)
-        
+
     except json.JSONDecodeError as e:
         registrar_log('adquirente_own', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
         return JsonResponse({'sucesso': False, 'mensagem': 'JSON inválido'}, status=400)
-        
+
     except Exception as e:
         registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
         return JsonResponse({
@@ -121,7 +121,7 @@ def webhook_transacao(request):
 def webhook_liquidacao(request):
     """
     Recebe notificações de liquidações da Own em tempo real
-    
+
     Payload esperado (array):
     [
         {
@@ -148,23 +148,23 @@ def webhook_liquidacao(request):
     try:
         # Parse payload (array)
         payload = json.loads(request.body.decode('utf-8'))
-        
+
         if not isinstance(payload, list):
             payload = [payload]  # Normalizar para array
-        
+
         registrar_log('adquirente_own', f'📥 Webhook liquidação recebido: {len(payload)} registros')
-        
+
         salvos = 0
         duplicados = 0
-        
+
         for liquidacao_data in payload:
             lancamento_id = liquidacao_data.get('lancamentoId')
-            
+
             # Verificar se já existe
             if OwnLiquidacoes.objects.filter(lancamentoId=lancamento_id).exists():
                 duplicados += 1
                 continue
-            
+
             # Salvar liquidação
             try:
                 with transaction.atomic():
@@ -186,24 +186,24 @@ def webhook_liquidacao(request):
                         processado=False
                     )
                     salvos += 1
-                    
+
             except Exception as e:
                 registrar_log('adquirente_own', f'❌ Erro ao salvar liquidação {lancamento_id}: {str(e)}', nivel='ERROR')
                 continue
-        
+
         registrar_log('adquirente_own', f'✅ Liquidações processadas: {salvos} salvos, {duplicados} duplicados')
-        
+
         return JsonResponse({
             'sucesso': True,
             'mensagem': f'{salvos} liquidações salvas, {duplicados} duplicadas',
             'salvos': salvos,
             'duplicados': duplicados
         }, status=200)
-        
+
     except json.JSONDecodeError as e:
         registrar_log('adquirente_own', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
         return JsonResponse({'sucesso': False, 'mensagem': 'JSON inválido'}, status=400)
-        
+
     except Exception as e:
         registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
         return JsonResponse({
@@ -217,7 +217,7 @@ def webhook_liquidacao(request):
 def webhook_cadastro(request):
     """
     Recebe notificações de cadastro de estabelecimentos
-    
+
     Payload esperado:
     {
         "protocoloCore": "000000002842",
@@ -231,13 +231,13 @@ def webhook_cadastro(request):
     """
     try:
         payload = json.loads(request.body.decode('utf-8'))
-        
+
         protocolo = payload.get('protocoloCore')
         status = payload.get('status')
         identificador = payload.get('identificadorCliente')
-        
+
         registrar_log('adquirente_own', f'📥 Webhook cadastro: {protocolo} - {status}')
-        
+
         # Log do resultado
         if status == 'SUCESSO':
             contrato = payload.get('contrato')
@@ -245,21 +245,21 @@ def webhook_cadastro(request):
         else:
             motivo = payload.get('motivo', 'Não informado')
             registrar_log('adquirente_own', f'❌ Cadastro reprovado: {identificador} - Motivo: {motivo}', nivel='WARNING')
-        
+
         # TODO: Implementar lógica de atualização de status do estabelecimento
         # Exemplo: atualizar tabela de lojas com status de credenciamento
-        
+
         return JsonResponse({
             'sucesso': True,
             'mensagem': 'Notificação de cadastro recebida',
             'protocolo': protocolo,
             'status': status
         }, status=200)
-        
+
     except json.JSONDecodeError as e:
         registrar_log('adquirente_own', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
         return JsonResponse({'sucesso': False, 'mensagem': 'JSON inválido'}, status=400)
-        
+
     except Exception as e:
         registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
         return JsonResponse({
@@ -303,3 +303,51 @@ def _parse_data_br(data_str):
         except ValueError:
             registrar_log('adquirente_own', f'⚠️ Formato de data inválido: {data_str}', nivel='WARNING')
             return datetime.now().date()
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def webhook_credenciamento(request):
+    """
+    Recebe notificações de status de credenciamento da Own
+
+    Payload esperado:
+    {
+        "protocolo": "PROTO123456",
+        "cnpj": "12345678000199",
+        "status": "APROVADO",
+        "conveniadaId": "OWN987654",
+        "dataCredenciamento": "2026-01-13T21:00:00Z",
+        "mensagem": "Credenciamento aprovado com sucesso"
+    }
+    """
+    try:
+        # Parse do JSON
+        try:
+            payload = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            registrar_log('own.webhook', '❌ JSON inválido no webhook de credenciamento', nivel='ERROR')
+            return JsonResponse({'erro': 'JSON inválido'}, status=400)
+
+        registrar_log('own.webhook', f'📥 Webhook credenciamento recebido: {payload.get("protocolo")} - {payload.get("status")}')
+
+        # Processar webhook
+        from adquirente_own.services_webhook import WebhookOwnService
+
+        service = WebhookOwnService()
+        resultado = service.processar_callback_credenciamento(payload)
+
+        if not resultado.get('sucesso'):
+            return JsonResponse(
+                {'erro': resultado.get('mensagem')},
+                status=400
+            )
+
+        return JsonResponse({
+            'sucesso': True,
+            'mensagem': resultado.get('mensagem')
+        })
+
+    except Exception as e:
+        registrar_log('own.webhook', f'❌ Erro ao processar webhook de credenciamento: {str(e)}', nivel='ERROR')
+        return JsonResponse({'erro': str(e)}, status=500)

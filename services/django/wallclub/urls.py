@@ -25,15 +25,15 @@ logger = logging.getLogger(__name__)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+
     # Portais (nova estrutura modular)
     path('portal_admin/', include('portais.admin.urls', namespace='portais_admin')),  # Portal administrativo
     path('portal_lojista/', include('portais.lojista.urls', namespace='lojista')),  # Portal lojista padrão (wallclub)
     path('portal_lojista/<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),  # Portal lojista por marca
     path('portal_corporativo/', include('portais.corporativo.urls')),  # Portal corporativo
     path('portal_vendas/', include('portais.vendas.urls')),  # Portal de vendas (checkout)
-    
-    
+
+
     # APIs Externas
     path('api/oauth/', include('apps.oauth.urls')),  # OAuth 2.0 endpoints - PRECISA SER CRIADO
     path('api/v1/', include('apps.urls')),  # Health check e outras rotas gerais
@@ -47,7 +47,10 @@ urlpatterns = [
     path('api/v1/checkout/', include('checkout.link_pagamento_web.urls')),  # Link de pagamento web
     path('api/v1/checkout/recorrencia/', include('checkout.link_recorrencia_web.urls')),  # Cadastro de cartão para recorrência
     path('api/v1/posp2/', include('posp2.urls')),  # Endpoints POSP2
-    
+
+    # APIs Own Financial
+    path('api/own/', include('adquirente_own.urls_cadastro')),  # APIs de cadastro Own
+
     # Webhooks Own Financial
     path('', include('adquirente_own.urls_webhook')),  # Webhooks Own
 ]

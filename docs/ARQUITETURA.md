@@ -1,7 +1,7 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 6.1  
-**Data:** 24/12/2025  
+**Versão:** 6.1
+**Data:** 24/12/2025
 **Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)**
 
 ---
@@ -170,12 +170,12 @@ Internet (80/443)
 
 **Funcionalidades:**
 - `posp2/` - Terminal POS (OAuth 2.0)
-  - `/trdata_pinbank/` - Endpoint transações Pinbank 
-  - `/trdata_own/` - Endpoint transações Own/Ágilli 
+  - `/trdata_pinbank/` - Endpoint transações Pinbank
+  - `/trdata_own/` - Endpoint transações Own/Ágilli
   - Tabela: `transactiondata_pos` (gateway: PINBANK/OWN)
   - Service: `TRDataPosService` (parser específico por gateway)
 - `pinbank/` - Integração Pinbank + Cargas
-- `adquirente_own/` - Integração Own Financial 
+- `adquirente_own/` - Integração Own Financial
   - OAuth 2.0 (token cache 4min)
   - API OPPWA E-commerce (timeout 60s)
   - API QA com problemas de performance (timeout >60s)
@@ -1075,8 +1075,8 @@ APP (Monolito)
 
 ## 🌐 APIS INTERNAS - OVERVIEW
 
-**Status:** Fase 6B concluída (01/11/2025) - Operacional em produção  
-**Total:** 32 endpoints REST  
+**Status:** Fase 6B concluída (01/11/2025) - Operacional em produção
+**Total:** 32 endpoints REST
 **Propósito:** Comunicação entre 4 containers Django independentes
 
 **Containers:**
@@ -1087,10 +1087,10 @@ APP (Monolito)
 
 ### Características
 
-**Autenticação:** ❌ Sem autenticação (isolamento de rede Docker)  
-**Rate Limiting:** Desabilitado (containers confiáveis)  
-**Timeout:** 30s (padrão), configurável por endpoint  
-**Base URL:** `http://wallclub-apis:8007/api/internal/` (rede Docker interna)  
+**Autenticação:** ❌ Sem autenticação (isolamento de rede Docker)
+**Rate Limiting:** Desabilitado (containers confiáveis)
+**Timeout:** 30s (padrão), configurável por endpoint
+**Base URL:** `http://wallclub-apis:8007/api/internal/` (rede Docker interna)
 **Segurança:** Rede interna Docker (não exposta publicamente)
 
 **Helper Service:** `wallclub_core.integracoes.api_interna_service.APIInternaService`
@@ -1128,9 +1128,9 @@ if response.get('sucesso'):
 
 ## 👤 CLIENTE APIS (Fase 6B)
 
-**Base:** `/api/internal/cliente/`  
-**Arquivo:** `apps/cliente/views_api_interna.py`  
-**Container:** wallclub-apis  
+**Base:** `/api/internal/cliente/`
+**Arquivo:** `apps/cliente/views_api_interna.py`
+**Container:** wallclub-apis
 **Criado:** 07/11/2025
 
 ### Endpoints Disponíveis
@@ -1142,7 +1142,7 @@ if response.get('sucesso'):
 5. `POST /obter_dados_cliente/` - Obter dados completos do cliente
 6. `POST /verificar_cadastro/` - Verificar se cliente existe no canal
 
-**Autenticação:** ❌ Sem autenticação (rede interna)  
+**Autenticação:** ❌ Sem autenticação (rede interna)
 **Usado por:** POSP2 (Terminal POS)
 
 ### 1. Consultar por CPF
@@ -1218,8 +1218,8 @@ POST /api/internal/cliente/verificar_cadastro/
 
 ## 💳 CONTA DIGITAL APIS (Fase 6B)
 
-**Base:** `/api/internal/conta-digital/`  
-**Arquivo:** `apps/conta_digital/views_internal_api.py`  
+**Base:** `/api/internal/conta-digital/`
+**Arquivo:** `apps/conta_digital/views_internal_api.py`
 **Container:** wallclub-apis
 
 ### Endpoints Disponíveis
@@ -1230,15 +1230,15 @@ POST /api/internal/cliente/verificar_cadastro/
 4. `POST /estornar-saldo/` - Estorno de débito
 5. `POST /calcular-maximo/` - Cálculo valor máximo disponível
 
-**Autenticação:** OAuth 2.0 interno  
+**Autenticação:** OAuth 2.0 interno
 **Usado por:** POSP2 (Terminal POS)
 
 ---
 
 ## 🔁 CHECKOUT RECORRENCIAS APIS (Fase 5)
 
-**Base:** `/api/internal/checkout/recorrencias/`  
-**Arquivo:** `checkout/views_internal_api.py`  
+**Base:** `/api/internal/checkout/recorrencias/`
+**Arquivo:** `checkout/views_internal_api.py`
 **Container:** wallclub-apis
 
 ### Endpoints Disponíveis
@@ -1252,16 +1252,16 @@ POST /api/internal/cliente/verificar_cadastro/
 7. `PUT /{id}/atualizar/` - Atualizar dados (valor, dia_cobranca)
 8. `DELETE /{id}/deletar/` - Cancelar recorrência (status=cancelado)
 
-**Autenticação:** OAuth 2.0 interno  
-**Usado por:** Portal Vendas, Celery Beat (cobranças automáticas)  
+**Autenticação:** OAuth 2.0 interno
+**Usado por:** Portal Vendas, Celery Beat (cobranças automáticas)
 **Celery Task:** `processar_recorrencias_do_dia()` - executa diariamente às 08:00
 
 ---
 
 ## 🎁 OFERTAS APIS (Fase 3 + 6B)
 
-**Base:** `/api/internal/ofertas/`  
-**Arquivo:** `apps/ofertas/views_internal_api.py`  
+**Base:** `/api/internal/ofertas/`
+**Arquivo:** `apps/ofertas/views_internal_api.py`
 **Container:** wallclub-apis
 
 ### Endpoints Disponíveis
@@ -1273,16 +1273,16 @@ POST /api/internal/cliente/verificar_cadastro/
 5. `POST /grupos/listar/` - Lista grupos de segmentação
 6. `POST /grupos/criar/` - Cria novo grupo customizado
 
-**Autenticação:** OAuth 2.0 interno  
-**Usado por:** Portal Admin, Portal Lojista  
+**Autenticação:** OAuth 2.0 interno
+**Usado por:** Portal Admin, Portal Lojista
 **Features:** Push notifications (Firebase + APN), segmentação dinâmica
 
 ---
 
 ## ⚙️ PARAMETROS APIS (Fase 0 + 6B)
 
-**Base:** `/api/internal/parametros/`  
-**Arquivo:** `parametros_wallclub/views_internal_api.py`  
+**Base:** `/api/internal/parametros/`
+**Arquivo:** `parametros_wallclub/views_internal_api.py`
 **Container:** wallclub-pos
 
 ### Endpoints Disponíveis
@@ -1295,8 +1295,8 @@ POST /api/internal/cliente/verificar_cadastro/
 6. `GET /importacoes/` - Lista importações de parâmetros PHP→Django
 7. `GET /importacoes/{id}/` - Detalhes de importação específica
 
-**Autenticação:** OAuth 2.0 interno  
-**Usado por:** POSP2, Portal Admin, Portal Lojista  
+**Autenticação:** OAuth 2.0 interno
+**Usado por:** POSP2, Portal Admin, Portal Lojista
 **Total:** 3.840 configurações validadas 100% vs PHP
 
 ---
@@ -1307,16 +1307,16 @@ POST /api/internal/cliente/verificar_cadastro/
 
 **Gateway de pagamentos** para transações cartão crédito/débito, tokenização e cargas automáticas.
 
-**Ambiente:** Produção  
-**Autenticação:** Basic Auth (credenciais AWS Secrets Manager)  
-**Timeout:** 30s transações, 60s cargas  
+**Ambiente:** Produção
+**Autenticação:** Basic Auth (credenciais AWS Secrets Manager)
+**Timeout:** 30s transações, 60s cargas
 **Container:** wallclub-pos (POSP2) + wallclub-apis (Checkout)
 
 **Integrado com:**
 - ✅ POSP2 (Terminal POS)
 - ✅ Checkout Web (Link Pagamento + Recorrências)
 - ✅ Portal Vendas
-- ✅ Risk Engine (análise antes de processar)  
+- ✅ Risk Engine (análise antes de processar)
 
 ### APIs de Transação
 
@@ -1382,7 +1382,7 @@ POST /api/internal/cliente/verificar_cadastro/
 
 **Uso:** Captura de transações pré-autorizadas (recorrências)
 
-**Endpoint:** `POST /Transacoes/CapturarTransacaoEncrypted`  
+**Endpoint:** `POST /Transacoes/CapturarTransacaoEncrypted`
 **Data Implementação:** 03/11/2025
 
 **Fluxo:**
@@ -1411,7 +1411,7 @@ POST /api/internal/cliente/verificar_cadastro/
 }
 ```
 
-**Arquivo:** `pinbank/services_transacoes_pagamento.py` (método `capturar_transacao`)  
+**Arquivo:** `pinbank/services_transacoes_pagamento.py` (método `capturar_transacao`)
 **Usado por:** Celery task `processar_recorrencias_do_dia()`
 
 #### 4. CancelarTransacaoEncrypted
@@ -1483,7 +1483,7 @@ POST /api/internal/cliente/verificar_cadastro/
 - **60d:** Últimos 60 dias (manual)
 - **ano:** Ano corrente (manual)
 
-**Command:** `python manage.py carga_extrato_pos`  
+**Command:** `python manage.py carga_extrato_pos`
 **Container:** wallclub-pos
 
 **Tabelas:**
@@ -1498,20 +1498,20 @@ POST /api/internal/cliente/verificar_cadastro/
 
 #### 2. Base Transações Unificadas ⭐ NOVO (16/12/2025)
 
-**Tabela:** `base_transacoes_unificadas`  
-**Variáveis:** 130+ (var0-var130)  
-**Regra:** 1 linha por NSU (não por parcela)  
-**Streaming:** 100 registros/lote (otimização memória)  
-**Commands:** 
+**Tabela:** `base_transacoes_unificadas`
+**Variáveis:** 130+ (var0-var130)
+**Regra:** 1 linha por NSU (não por parcela)
+**Streaming:** 100 registros/lote (otimização memória)
+**Commands:**
 - `python manage.py carga_base_unificada_pos` (Wallet)
 - `python manage.py carga_base_unificada_credenciadora` (Credenciadora)
 - `python manage.py carga_base_unificada` (ambos em sequência)
 
-**Container:** wallclub-pos  
+**Container:** wallclub-pos
 **Celery Task:** `carga_base_unificada_task` (a cada 30 minutos)
 
-**Calculadora:** `CalculadoraBaseUnificada` (abstração completa - 24/12/2025)  
-**Arquivo:** `parametros_wallclub/calculadora_base_unificada.py`  
+**Calculadora:** `CalculadoraBaseUnificada` (abstração completa - 24/12/2025)
+**Arquivo:** `parametros_wallclub/calculadora_base_unificada.py`
 **Parâmetros obrigatórios:** `info_loja`, `info_canal` (sem busca interna)
 
 **Melhorias (16/12/2025):**
@@ -1539,8 +1539,8 @@ POST /api/internal/cliente/verificar_cadastro/
 
 ⚠️ **ATENÇÃO:** Tabela em processo de desativação. Todos os portais migrados para `base_transacoes_unificadas`.
 
-**Tabela:** `baseTransacoesGestao` (LEGADO)  
-**Status:** Ainda sendo populada em paralelo (será desativada após validação)  
+**Tabela:** `baseTransacoesGestao` (LEGADO)
+**Status:** Ainda sendo populada em paralelo (será desativada após validação)
 **Command:** `python manage.py carga_base_gestao` (LEGADO)
 
 **Pendente:**
@@ -1552,7 +1552,7 @@ POST /api/internal/cliente/verificar_cadastro/
 
 **Fonte:** Arquivo credenciadora
 
-**Normalização:** 
+**Normalização:**
 - `tipo_operacao` padronizado
 - `codigoCliente` camelCase
 - `info_loja`/`info_canal` montados localmente
@@ -1578,7 +1578,7 @@ Executa sequencialmente via `executar_cargas_completas.py`:
 3. Carga credenciadora
 4. Ajustes manuais base
 
-**Arquivo:** `wallclub/celery.py`  
+**Arquivo:** `wallclub/celery.py`
 **Documentação:** `docs/CELERY_SCHEDULE.md`
 
 ### Ajustes Manuais
@@ -1616,20 +1616,20 @@ if not response_data.get('Status'):
 
 ### Visão Geral
 
-**Serviço:** Análise de risco score 0-100  
-**Status:** Operacional desde 17/10/2025  
+**Serviço:** Análise de risco score 0-100
+**Status:** Operacional desde 17/10/2025
 **Container:** wallclub-riskengine
 
-**Cache:** Redis 1h (chave: `maxmind:{cpf}:{valor}:{ip}`)  
-**Timeout:** 3s  
-**Fallback:** Score neutro 50 (fail-safe)  
+**Cache:** Redis 1h (chave: `maxmind:{cpf}:{valor}:{ip}`)
+**Timeout:** 3s
+**Fallback:** Score neutro 50 (fail-safe)
 **Custo:** R$ 70-120/mês (validado em produção)
 
 **Hit Rate Cache:** >90% (reduz 90% das chamadas API)
 
 ### Configuração
 
-**Credenciais:** AWS Secrets Manager (`wall/prod/db`)  
+**Credenciais:** AWS Secrets Manager (`wall/prod/db`)
 **Migração:** 17/10/2025 - Removido do .env
 
 ```json
@@ -2180,9 +2180,9 @@ PINBANK_TIMEOUT=60  # Em settings
 **NSU duplicado:**
 ```sql
 -- Verificar duplicatas
-SELECT nsu, COUNT(*) 
-FROM transactiondata 
-GROUP BY nsu 
+SELECT nsu, COUNT(*)
+FROM transactiondata
+GROUP BY nsu
 HAVING COUNT(*) > 1;
 ```
 
@@ -2227,8 +2227,8 @@ curl -X GET "https://graph.facebook.com/v18.0/PHONE_NUMBER_ID" \
 **Token inválido:**
 ```sql
 -- Limpar tokens antigos
-UPDATE otp_dispositivo_confiavel 
-SET push_token = NULL 
+UPDATE otp_dispositivo_confiavel
+SET push_token = NULL
 WHERE last_used < NOW() - INTERVAL 90 DAY;
 ```
 
@@ -2575,13 +2575,13 @@ if response.status_code >= 500:
 **Índices Importantes:**
 ```sql
 -- Performance crítica
-CREATE INDEX idx_cliente_autenticacao_cpf_data 
+CREATE INDEX idx_cliente_autenticacao_cpf_data
   ON cliente_autenticacao(cpf, data_tentativa);
 
-CREATE INDEX idx_cliente_bloqueios_cpf_data 
+CREATE INDEX idx_cliente_bloqueios_cpf_data
   ON cliente_bloqueios(cpf, data_bloqueio);
 
-CREATE INDEX idx_dispositivo_user_ativo 
+CREATE INDEX idx_dispositivo_user_ativo
   ON otp_dispositivo_confiavel(user_id, ativo, created_at);
 ```
 
@@ -2621,9 +2621,9 @@ curl -X GET "http://wallclub-prod-release300:8003/cliente/api/v1/autenticacao/an
 
 **Comunicação entre containers** para preparação da separação física.
 
-**Ambiente:** Produção  
-**Autenticação:** Sem rate limiting (middleware interno)  
-**Base URL:** `http://127.0.0.1:8005` (mesmo container portais)  
+**Ambiente:** Produção
+**Autenticação:** Sem rate limiting (middleware interno)
+**Base URL:** `http://127.0.0.1:8005` (mesmo container portais)
 **Status:** 🟢 Operacional (13 endpoints)
 
 ### APIs Conta Digital
@@ -2813,7 +2813,7 @@ checkout_recorrencia_cobrancas (
        "telefone": "11999999999",
        "ultimos_4_digitos": "1234"  // Últimos 4 dígitos do cartão
    }
-   
+
    → Gera OTP via OTPService (6 dígitos, 5min)
    → Envia WhatsApp com código + últimos 4 dígitos do cartão
    → Template: autorizar_transacao_cartao (AUTHENTICATION)
@@ -2877,17 +2877,17 @@ checkout_recorrencia_cobrancas (
    a) Efetua transação usando token
       - transacoes_service.efetuar_transacao_token()
       - Parâmetros: id_token, valor, parcelas=1
-   
+
    b) Registra resultado em checkout_recorrencia_cobrancas
       - Status: 'sucesso' ou 'falha'
       - NSU (se sucesso)
       - mensagem_erro (se falha)
-   
+
    c) Atualiza recorrência:
       - Se sucesso:
         * proxima_cobranca += periodicidade
         * tentativas_falhas_consecutivas = 0
-      
+
       - Se falha:
         * tentativas_falhas_consecutivas += 1
         * Se >= max_tentativas (padrão: 3):
@@ -2976,8 +2976,8 @@ Quando containers forem separados fisicamente:
 
 ## 📧 AWS SES - EMAIL SERVICE
 
-**Status:** ✅ Operacional (06/11/2025)  
-**Implementação:** `wallclub_core.integracoes.email_service`  
+**Status:** ✅ Operacional (06/11/2025)
+**Implementação:** `wallclub_core.integracoes.email_service`
 **Configuração:** AWS Secrets Manager via ConfigManager
 
 ### Visão Geral
@@ -3121,9 +3121,11 @@ docker exec -it wallclub-portais python scripts/test_email.py
 
 ## 🏦 INTEGRAÇÃO OWN FINANCIAL
 
-**Status:** ⚠️ 92% Concluído (Aguardando credenciais OPPWA e-commerce)  
-**Data:** 21/11/2025  
-**Documentação Completa:** [PLANO_REPLICACAO_ESTRUTURA.md](integradora%20own/PLANO_REPLICACAO_ESTRUTURA.md)
+**Status:** ✅ 100% Concluído (Cadastro de Estabelecimentos + E-commerce)
+**Data:** 13/01/2026
+**Documentação Completa:**
+- [PLANO_REPLICACAO_ESTRUTURA.md](integradora%20own/PLANO_REPLICACAO_ESTRUTURA.md)
+- [PLANO_IMPLEMENTACAO_CADASTRO_OWN.md](integradora%20own/PLANO_IMPLEMENTACAO_CADASTRO_OWN.md)
 
 ### Visão Geral
 
@@ -3132,6 +3134,7 @@ Integração completa com Own Financial replicando estrutura Pinbank, suportando
 - **Webhooks Tempo Real** - Transações, liquidações, cadastro ✅
 - **API OPPWA E-commerce** - Pagamentos e tokenização ⏳
 - **Roteador Multi-Gateway** - Convivência Pinbank + Own ✅
+- **Cadastro de Estabelecimentos** - Portal Admin + APIs REST ✅ NOVO
 
 ### Componentes Implementados
 
@@ -3139,8 +3142,16 @@ Integração completa com Own Financial replicando estrutura Pinbank, suportando
 ```
 adquirente_own/
 ├── services.py                         # OwnService (OAuth 2.0)
+├── services_credenciais.py             # Credenciais via env vars ✅ NOVO
+├── services_consultas.py               # CNAE/MCC e Cestas ✅ NOVO
+├── services_cadastro.py                # Cadastro estabelecimento ✅ NOVO
+├── services_webhook.py                 # Processamento webhooks ✅ NOVO
 ├── services_transacoes_pagamento.py   # TransacoesOwnService (OPPWA)
-├── views_webhook.py                    # 3 webhooks tempo real
+├── models_cadastro.py                  # LojaOwn, LojaPinbank, Documentos ✅ NOVO
+├── serializers.py                      # Serializers REST ✅ NOVO
+├── views_cadastro.py                   # 5 endpoints REST ✅ NOVO
+├── views_webhook.py                    # 4 webhooks tempo real
+├── urls_cadastro.py                    # Rotas APIs ✅ NOVO
 ├── urls_webhook.py                     # Rotas webhooks
 └── cargas_own/
     ├── models.py                       # OwnExtratoTransacoes, Liquidacoes
@@ -3175,11 +3186,33 @@ adquirente_own/
 - Interface 100% compatível com `TransacoesPinbankService`
 - Checkouts funcionam com ambos gateways sem modificação
 
-#### 4. Webhooks Tempo Real
+#### 4. APIs REST - Cadastro de Estabelecimentos ✅ NOVO
+**Endpoints Públicos:**
+- `GET /api/own/cnae/` - Lista CNAE/MCC
+- `GET /api/own/cestas/` - Lista cestas de tarifas
+- `GET /api/own/cestas/{id}/tarifas/` - Tarifas de uma cesta
+- `POST /api/own/cadastrar-estabelecimento/` - Cadastra loja na Own
+- `GET /api/own/status-credenciamento/{loja_id}/` - Status do credenciamento
+
+**Portal Admin:**
+- `GET /portal_admin/lojas/novo/` - Formulário de cadastro
+- `POST /portal_admin/lojas/novo/` - Processar cadastro
+- `GET /portal_admin/lojas/{id}/editar/` - Editar loja
+- `POST /portal_admin/lojas/{id}/cadastrar-own/` - Cadastro posterior na Own
+
+**Características:**
+- Dropdowns dinâmicos (CNAE e Cestas)
+- Validações de campos obrigatórios
+- Upload de documentos
+- Status em tempo real (polling 30s)
+- Cache de consultas (1h CNAE, 30min Cestas)
+
+#### 5. Webhooks Tempo Real
 **Endpoints:**
 - `POST /webhook/transacao/` - Vendas em tempo real
 - `POST /webhook/liquidacao/` - Liquidações em tempo real
-- `POST /webhook/cadastro/` - Status credenciamento
+- `POST /webhook/cadastro/` - Status credenciamento (legado)
+- `POST /webhook/credenciamento/` - Status credenciamento ✅ NOVO
 
 **Características:**
 - Validação de payloads
@@ -3313,7 +3346,7 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,...
 
 ---
 
-**Última atualização:** 01/12/2025  
+**Última atualização:** 01/12/2025
 **Manutenção:** Jean Lessa + Claude AI
 
 ---
