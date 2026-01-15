@@ -12,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 urlpatterns = [
     path('admin/', django_admin.site.urls),
-    
+
+    # APIs Own Financial (para portal admin)
+    path('api/own/', include('adquirente_own.urls_cadastro')),
+
     # Portal Admin na raiz
     path('', include('portais.admin.urls')),
 ]
