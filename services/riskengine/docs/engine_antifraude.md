@@ -1,8 +1,8 @@
 # 🛡️ WALLCLUB RISK ENGINE - MOTOR ANTIFRAUDE
 
-**Versão:** 1.2  
-**Data:** 30/10/2025  
-**Container:** Separado (porta 8004)
+**Versão:** 1.3
+**Data:** 15/01/2026
+**Container:** Separado (porta 8008)
 
 **Atualizações Recentes:**
 - **30/10:** `transaction_id` usa `checkout_transactions.id` (era token de 64 chars)
@@ -28,7 +28,7 @@ App Principal (8003)  →  Risk Engine (8004)  →  Decisão
               APROVADO            REPROVADO
                     │                   │
               (Processa)           (Bloqueia)
-                    
+
                     REVISAO
                       ↓
               ┌───────┴───────┐
@@ -215,7 +215,7 @@ MAS: Se alguma regra tem ação=REPROVAR → REPROVADO (independente do score)
 
 4. Analista vê no dashboard:
    GET /api/antifraude/revisao/pendentes/
-   
+
    {
      "transacao_id": "NSU123456",
      "cpf": "12345678900",
@@ -225,7 +225,7 @@ MAS: Se alguma regra tem ação=REPROVAR → REPROVADO (independente do score)
    }
 
 5. Analista DECIDE:
-   
+
    OPÇÃO A - APROVAR:
    POST /api/antifraude/revisao/1/aprovar/
    {
@@ -234,7 +234,7 @@ MAS: Se alguma regra tem ação=REPROVAR → REPROVADO (independente do score)
    }
    → Callback para app principal
    → App libera a compra
-   
+
    OPÇÃO B - REPROVAR:
    POST /api/antifraude/revisao/1/reprovar/
    {
@@ -269,7 +269,7 @@ MAS: Se alguma regra tem ação=REPROVAR → REPROVADO (independente do score)
 
 5. Analista APROVA com observação:
    "Cliente confirmou por telefone, é um presente de aniversário"
-   
+
 6. App libera todas as 4 transações
 ```
 
@@ -297,7 +297,7 @@ MAS: Se alguma regra tem ação=REPROVAR → REPROVADO (independente do score)
      "score_risco": 90,
      "motivo": "IP Suspeito..."
    }
-   
+
 6. App bloqueia transação e notifica cliente
 ```
 
@@ -328,18 +328,18 @@ def processar_transacao_posp2(nsu, cliente_id, valor, ...):
         },
         timeout=5
     )
-    
+
     decisao = response.json()
-    
+
     # 2. Tratar decisão
     if decisao['decisao'] == 'APROVADO':
         # Processar normalmente
         return processar_pagamento()
-    
+
     elif decisao['decisao'] == 'REPROVADO':
         # Bloquear
         return {'erro': 'Transação bloqueada por segurança'}
-    
+
     elif decisao['decisao'] == 'REVISAO':
         # Marcar como pendente
         return {
@@ -358,7 +358,7 @@ def processar_transacao_posp2(nsu, cliente_id, valor, ...):
 def callback_antifraude(request):
     """
     Recebe callback do Risk Engine após revisão manual
-    
+
     POST /api/antifraude/callback/
     {
         "transacao_id": "NSU123456",
@@ -369,22 +369,22 @@ def callback_antifraude(request):
     """
     transacao_id = request.data['transacao_id']
     decisao_final = request.data['decisao_final']
-    
+
     # Buscar transação pendente
     transacao = Transacao.objects.get(nsu=transacao_id, status='PENDENTE_REVISAO')
-    
+
     if decisao_final == 'APROVADO':
         # Liberar transação
         transacao.status = 'APROVADO'
         transacao.save()
         processar_pagamento(transacao)
-        
+
     else:  # REPROVADO
         # Cancelar transação
         transacao.status = 'CANCELADO'
         transacao.save()
         estornar_se_necessario(transacao)
-    
+
     return Response({'ok': True})
 ```
 
@@ -404,7 +404,7 @@ def processar_checkout_link_pagamento(
     user_agent: str
 ) -> Dict[str, Any]:
     # ... validações iniciais ...
-    
+
     # ========================================
     # ANÁLISE ANTIFRAUDE (RISK ENGINE)
     # ========================================
@@ -423,27 +423,27 @@ def processar_checkout_link_pagamento(
         cliente_nome=session.nome,
         transaction_id=f"CHECKOUT-{token}"
     )
-    
+
     # Salvar resultado na transação
     transacao.score_risco = resultado_antifraude.get('score_risco', 0)
     transacao.decisao_antifraude = resultado_antifraude.get('decisao', 'APROVADO')
     transacao.motivo_bloqueio = resultado_antifraude.get('motivo', '')
     transacao.antifraude_response = resultado_antifraude
-    
+
     # Tratar REPROVADO
     if not permitir or resultado_antifraude.get('decisao') == 'REPROVADO':
         transacao.status = 'BLOQUEADA_ANTIFRAUDE'
         transacao.save()
-        
+
         return {
             'sucesso': False,
             'mensagem': 'Transação bloqueada por segurança. Entre em contato com o vendedor.'
         }
-    
+
     # Tratar REVISAR (processar mas marcar)
     if resultado_antifraude.get('decisao') == 'REVISAR':
         transacao.status = 'PENDENTE_REVISAO'
-    
+
     # Continuar processamento no Pinbank
     resultado_transacao = transacoes_service.efetuar_transacao_cartao(dados_transacao)
     # ...
@@ -453,7 +453,7 @@ def processar_checkout_link_pagamento(
 ```python
 class CheckoutTransaction(models.Model):
     # ... campos existentes ...
-    
+
     # Antifraude (Risk Engine)
     score_risco = models.IntegerField(null=True, blank=True)  # 0-100
     decisao_antifraude = models.CharField(max_length=20, null=True)  # APROVADO/REPROVADO/REVISAR
@@ -462,7 +462,7 @@ class CheckoutTransaction(models.Model):
     revisado_por = models.BigIntegerField(null=True, blank=True)
     revisado_em = models.DateTimeField(null=True, blank=True)
     observacao_revisao = models.TextField(null=True, blank=True)
-    
+
     # Status
     STATUS_CHOICES = [
         # ... status existentes ...
@@ -474,7 +474,7 @@ class CheckoutTransaction(models.Model):
 **SQL Migration:**
 ```sql
 -- scripts/sql/adicionar_campos_antifraude_checkout.sql
-ALTER TABLE checkout_transactions 
+ALTER TABLE checkout_transactions
 MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'PENDENTE';
 
 ALTER TABLE checkout_transactions
