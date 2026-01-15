@@ -33,7 +33,7 @@
             <select name="canal" id="canal">
                 <option value="">Todos os canais</option>
                 {% for canal in canais %}
-                <option value="{{ canal }}" {% if filtros.canal==canal %}selected{% endif %}>
+                <option value="{{ canal }}" {% if filtros.canal == canal %}selected{% endif %}>
                     {{ canal }}
                 </option>
                 {% endfor %}
