@@ -4,18 +4,18 @@ Views para gestão de lojas com integração Own Financial
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
 from django.http import JsonResponse
 
+from portais.controle_acesso import require_funcionalidade
 from adquirente_own.services_cadastro import CadastroOwnService
 from adquirente_own.services_consultas import ConsultasOwnService
 from adquirente_own.models_cadastro import LojaOwn, LojaDocumentos
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
-@login_required
+@require_funcionalidade('hierarquia_create')
 @require_http_methods(["GET", "POST"])
 def cadastrar_loja(request):
     """View para cadastrar nova loja"""
@@ -106,7 +106,7 @@ def cadastrar_loja(request):
         return render(request, 'admin/cadastro_loja_own.html')
 
 
-@login_required
+@require_funcionalidade('hierarquia_edit')
 @require_http_methods(["GET", "POST"])
 def editar_loja(request, loja_id):
     """View para editar loja existente"""
@@ -134,7 +134,7 @@ def editar_loja(request, loja_id):
     pass
 
 
-@login_required
+@require_funcionalidade('hierarquia_edit')
 @require_http_methods(["POST"])
 def cadastrar_loja_own_posterior(request, loja_id):
     """Cadastra uma loja existente na Own Financial"""
@@ -177,7 +177,7 @@ def cadastrar_loja_own_posterior(request, loja_id):
         return redirect('portais_admin:editar_loja', loja_id=loja_id)
 
 
-@login_required
+@require_funcionalidade('hierarquia_list')
 def status_credenciamento_own(request, loja_id):
     """Retorna status de credenciamento da loja na Own (AJAX)"""
 
