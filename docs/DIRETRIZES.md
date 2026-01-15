@@ -653,7 +653,7 @@ Cadastro → Senha SMS (4 dígitos) → JWT 30 dias → Biometria
 
 ### Arquitetura Risk Engine
 
-**Container:** wallclub-riskengine:8004
+**Container:** wallclub-riskengine:8008
 **Latência:** <200ms média
 **Fail-open:** Erro não bloqueia transações
 

@@ -343,7 +343,7 @@ docker-compose logs -f riskengine
     │       │        │        │        │
 ┌───▼──┐ ┌─▼───┐ ┌──▼──┐ ┌───▼──┐ ┌──▼──┐
 │APP1  │ │APP2 │ │APP3 │ │APP4  │ │Redis│
-│8001  │ │8002 │ │8003 │ │8004  │ │6379 │
+│8005  │ │8006 │ │8007 │ │8008  │ │6379 │
 │Portal│ │POS  │ │APIs │ │Risk  │ │     │
 └──────┘ └─────┘ └─────┘ └──────┘ └─────┘
    │        │       │        │
@@ -380,7 +380,7 @@ docker-compose logs -f riskengine
 - **Deploy:** Médio
 - **Auth:** JWT customizado
 
-**APP4 - wallclub-riskengine (8004):** ✅ Já existe
+**APP4 - wallclub-riskengine (8008):** ✅ Já existe
 - Antifraude
 - MaxMind
 - Portal revisão
@@ -625,7 +625,7 @@ docker-compose logs -f riskengine
 
 ### Visão Geral
 
-**Container:** wallclub-riskengine:8004
+**Container:** wallclub-riskengine:8008
 **Latência:** <200ms média
 
 **Score:**
@@ -687,7 +687,7 @@ MaxMind (0-100) + Regras (+pontos) = Score Final
 
 **OAuth 2.0:**
 ```bash
-curl -X POST http://localhost:8004/oauth/token/ \
+curl -X POST http://localhost:8008/oauth/token/ \
   -d "grant_type=client_credentials" \
   -d "client_id=wallclub_django_internal" \
   -d "client_secret=..."
@@ -1076,7 +1076,7 @@ APP (Monolito)
 ## 🌐 APIS INTERNAS - OVERVIEW
 
 **Status:** Fase 6B concluída (01/11/2025) - Operacional em produção
-**Total:** 32 endpoints REST
+**Total:** 40 endpoints REST
 **Propósito:** Comunicação entre 4 containers Django independentes
 
 **Containers:**
@@ -2708,7 +2708,7 @@ CREATE INDEX idx_dispositivo_user_ativo
 **Script manual:**
 ```bash
 # 1. Obter token OAuth
-TOKEN=$(curl -X POST http://wallclub-riskengine:8004/oauth/token/ \
+TOKEN=$(curl -X POST http://wallclub-riskengine:8008/oauth/token/ \
   -d "grant_type=client_credentials" \
   -d "client_id=wallclub_django_internal" \
   -d "client_secret=SECRET" \
