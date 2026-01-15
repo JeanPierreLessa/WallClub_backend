@@ -1065,29 +1065,43 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
     comissao_total_pagar = resultado_financeiro * percentual_comissao
     comissao_liquida_pagar = comissao_total_pagar - total_lancamentos_manuais
 
+    # Função auxiliar para formatar valores monetários
+    def formatar_monetario(valor):
+        """Formata valor com separador de milhares e 2 casas decimais (padrão brasileiro)"""
+        if valor is None or valor == '':
+            return '0,00'
+        try:
+            valor_float = float(valor)
+            # Formatar com separador de milhares
+            formatted = f"{valor_float:,.2f}"
+            # Converter formato americano (1,234.56) para brasileiro (1.234,56)
+            formatted = formatted.replace(',', 'X').replace('.', ',').replace('X', '.')
+            return formatted
+        except (ValueError, TypeError):
+            return str(valor)
+
     # Retornar dados formatados para o resumo executivo
     return [
-        {'indicador': 'VOLUME TOTAL DE PAGAMENTOS', 'valor': float(volume_total), 'detalhamento': ''},
+        {'indicador': 'VOLUME TOTAL DE PAGAMENTOS', 'valor': formatar_monetario(volume_total), 'detalhamento': ''},
         {'indicador': 'Transações', 'valor': qtde_nsus_distintos, 'detalhamento': ''},
-        {'indicador': 'Ticket Médio', 'valor': float(ticket_medio), 'detalhamento': ''},
-        {'indicador': 'Lançamentos Manuais', 'valor': float(total_lancamentos_manuais), 'detalhamento': ''},
+        {'indicador': 'Ticket Médio', 'valor': formatar_monetario(ticket_medio), 'detalhamento': ''},
         {'indicador': '', 'valor': '', 'detalhamento': ''},
-        {'indicador': 'RECEITA FINANCEIRA TOTAL', 'valor': float(receita_financeira_total), 'detalhamento': ''},
-        {'indicador': 'Receita MDR', 'valor': float(receita_mdr_total), 'detalhamento': ''},
-        {'indicador': 'Receita Ant./Parc.', 'valor': float(receita_antecipacao_parcelamentos), 'detalhamento': ''},
-        {'indicador': 'Receita Outras Tarifas', 'valor': float(receita_outras_tarifas), 'detalhamento': ''},
+        {'indicador': 'RECEITA FINANCEIRA TOTAL', 'valor': formatar_monetario(receita_financeira_total), 'detalhamento': ''},
+        {'indicador': 'Receita MDR', 'valor': formatar_monetario(receita_mdr_total), 'detalhamento': ''},
+        {'indicador': 'Receita Ant./Parc.', 'valor': formatar_monetario(receita_antecipacao_parcelamentos), 'detalhamento': ''},
+        {'indicador': 'Receita Outras Tarifas', 'valor': formatar_monetario(receita_outras_tarifas), 'detalhamento': ''},
         {'indicador': '', 'valor': '', 'detalhamento': ''},
-        {'indicador': 'CUSTO DIRETO TOTAL', 'valor': float(custo_direto_total), 'detalhamento': ''},
-        {'indicador': 'Custo MDR Total', 'valor': float(custo_mdr_total), 'detalhamento': ''},
-        {'indicador': 'Custo Antecipação Total', 'valor': float(custo_antecipacao_total), 'detalhamento': ''},
-        {'indicador': 'Custos POS / Equip.', 'valor': float(custos_pos_equip), 'detalhamento': ''},
-        {'indicador': 'Impostos', 'valor': float(impostos_total), 'detalhamento': ''},
+        {'indicador': 'CUSTO DIRETO TOTAL', 'valor': formatar_monetario(custo_direto_total), 'detalhamento': ''},
+        {'indicador': 'Custo MDR Total', 'valor': formatar_monetario(custo_mdr_total), 'detalhamento': ''},
+        {'indicador': 'Custo Antecipação Total', 'valor': formatar_monetario(custo_antecipacao_total), 'detalhamento': ''},
+        {'indicador': 'Lançamentos Manuais', 'valor': formatar_monetario(total_lancamentos_manuais), 'detalhamento': ''},
+        {'indicador': 'Custos POS / Equip.', 'valor': formatar_monetario(custos_pos_equip), 'detalhamento': ''},
+        {'indicador': 'Impostos', 'valor': formatar_monetario(impostos_total), 'detalhamento': ''},
         {'indicador': '', 'valor': '', 'detalhamento': ''},
-        {'indicador': 'RESULTADO FINANCEIRO', 'valor': float(resultado_financeiro), 'detalhamento': ''},
-        {'indicador': 'Percentual de Comissão', 'valor': float(percentual_comissao * 100), 'detalhamento': '%'},
-        {'indicador': 'Comissão Total a Pagar', 'valor': float(comissao_total_pagar), 'detalhamento': ''},
-        {'indicador': 'Lançamentos Manuais', 'valor': float(total_lancamentos_manuais), 'detalhamento': ''},
-        {'indicador': 'Comissão Líquida a Pagar', 'valor': float(comissao_liquida_pagar), 'detalhamento': ''},
+        {'indicador': 'RESULTADO FINANCEIRO', 'valor': formatar_monetario(resultado_financeiro), 'detalhamento': ''},
+        {'indicador': 'Percentual de Comissão', 'valor': f"{float(percentual_comissao * 100):.2f}", 'detalhamento': '%'},
+        {'indicador': 'Comissão Total a Pagar', 'valor': formatar_monetario(comissao_total_pagar), 'detalhamento': ''},
+        {'indicador': 'Comissão Líquida a Pagar', 'valor': formatar_monetario(comissao_liquida_pagar), 'detalhamento': ''},
     ]
 
 
