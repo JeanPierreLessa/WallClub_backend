@@ -121,7 +121,7 @@ def exportar_excel(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, s
                         # Converte percentual para decimal (1.30% -> 0.013)
                         celula.value = float(valor_limpo) / 100
                         celula.number_format = '0.00%'
-                    elif isinstance(valor, (int, float)):
+                    elif isinstance(valor, (int, float, Decimal)):
                         # Valor já é numérico decimal (ex: -0.0622 = -6.22%)
                         celula.value = float(valor)
                         celula.number_format = '0.00%'
@@ -474,7 +474,7 @@ def criar_excel_em_arquivo(caminho_arquivo: str, dados: List[Dict], cabecalhos: 
                         # Converte percentual para decimal (1.30% -> 0.013)
                         celula.value = float(valor_limpo) / 100
                         celula.number_format = '0.00%'
-                    elif isinstance(valor, (int, float)):
+                    elif isinstance(valor, (int, float, Decimal)):
                         # Valor já é numérico decimal (ex: -0.0622 = -6.22%)
                         celula.value = float(valor)
                         celula.number_format = '0.00%'
