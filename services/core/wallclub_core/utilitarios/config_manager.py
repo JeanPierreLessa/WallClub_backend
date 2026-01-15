@@ -253,6 +253,7 @@ class ConfigManager:
         try:
             secret_string = self.get_secret(self._get_secret_name())
             if not secret_string:
+                print("⚠️ ConfigManager: Secret string vazio, credenciais Own não carregadas")
                 return
 
             secrets = json.loads(secret_string)
@@ -260,13 +261,18 @@ class ConfigManager:
             # Setar credenciais Own como variáveis de ambiente
             if 'OWN_CORE_ID' in secrets:
                 os.environ['OWN_CORE_ID'] = secrets['OWN_CORE_ID']
+                print(f"✅ ConfigManager: OWN_CORE_ID carregado: {secrets['OWN_CORE_ID'][:20]}...")
             if 'OWN_SECRET' in secrets:
                 os.environ['OWN_SECRET'] = secrets['OWN_SECRET']
+                print("✅ ConfigManager: OWN_SECRET carregado")
             if 'OWN_SCOPE' in secrets:
                 os.environ['OWN_SCOPE'] = secrets['OWN_SCOPE']
+                print(f"✅ ConfigManager: OWN_SCOPE carregado: {secrets['OWN_SCOPE']}")
 
         except Exception as e:
-            pass
+            print(f"❌ ConfigManager: Erro ao carregar credenciais Own: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
 
 # Instância global do gerenciador (lazy loading)

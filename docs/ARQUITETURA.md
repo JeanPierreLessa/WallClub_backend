@@ -2123,36 +2123,148 @@ payload["aps"]["category"] = template.tipo_push
 }
 ```
 
-### Uso no Django
+### Uso no Django - ConfigManager (PADRÃO ATUAL)
+
+**Arquivo:** `wallclub_core/utilitarios/config_manager.py`
+
+O projeto usa o **ConfigManager** para gerenciar credenciais de forma centralizada:
+
+```python
+from wallclub_core.utilitarios.config_manager import get_config_manager
+
+# No settings/base.py - Carregar credenciais no startup
+config_manager = get_config_manager()
+
+# Banco de dados
+DATABASES = {
+    'default': config_manager.get_database_config()
+}
+
+# Email
+email_config = config_manager.get_email_config()
+EMAIL_HOST = email_config.get('host')
+EMAIL_HOST_USER = email_config.get('username')
+EMAIL_HOST_PASSWORD = email_config.get('password')
+
+# Pinbank
+pinbank_config = config_manager.get_pinbank_config()
+PINBANK_URL = pinbank_config.get('url')
+PINBANK_USERNAME = pinbank_config.get('username')
+PINBANK_PASSWORD = pinbank_config.get('password')
+```
+
+### Como Adicionar Novas Credenciais
+
+**IMPORTANTE:** Siga este padrão para evitar problemas:
+
+#### 1. Adicionar credenciais no AWS Secrets Manager
+
+Edite o secret `wallclub/production` (ou nome configurado em `WALLCLUB_SECRET_NAME`):
+
+```json
+{
+  "DB_HOST": "10.0.1.107",
+  "DB_USER": "wclub",
+  "DB_PASS": "...",
+  "PINBANK_URL": "...",
+  "PINBANK_WALL_USERNAME": "...",
+  "PINBANK_WALL_PASSWD": "...",
+  "OWN_CORE_ID": "54430621000134-own-api.white_label",
+  "OWN_SECRET": "...",
+  "OWN_SCOPE": "own.api_wl.api"
+}
+```
+
+#### 2. Adicionar método no ConfigManager
+
+**Arquivo:** `wallclub_core/utilitarios/config_manager.py`
+
+```python
+def load_own_credentials(self) -> None:
+    """
+    Carrega credenciais Own do Secrets Manager e seta como variáveis de ambiente
+    """
+    try:
+        secret_string = self.get_secret(self._get_secret_name())
+        if not secret_string:
+            return
+
+        secrets = json.loads(secret_string)
+
+        # Setar credenciais como variáveis de ambiente
+        if 'OWN_CORE_ID' in secrets:
+            os.environ['OWN_CORE_ID'] = secrets['OWN_CORE_ID']
+        if 'OWN_SECRET' in secrets:
+            os.environ['OWN_SECRET'] = secrets['OWN_SECRET']
+        if 'OWN_SCOPE' in secrets:
+            os.environ['OWN_SCOPE'] = secrets['OWN_SCOPE']
+
+    except Exception as e:
+        print(f"❌ Erro ao carregar credenciais Own: {str(e)}")
+```
+
+#### 3. Chamar método no settings/base.py
 
 **Arquivo:** `wallclub/settings/base.py`
 
 ```python
-import boto3
-import json
+# No início do arquivo, após imports
+from wallclub_core.utilitarios.config_manager import get_config_manager
 
-def get_secret(secret_name):
-    client = boto3.client('secretsmanager', region_name='us-east-1')
-    response = client.get_secret_value(SecretId=secret_name)
-    return json.loads(response['SecretString'])
-
-# Database
-db_secrets = get_secret('wall/prod/db')
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': db_secrets['DB_NAME'],
-        'USER': db_secrets['DB_USER'],
-        'PASSWORD': db_secrets['DB_PASSWORD'],
-        'HOST': db_secrets['DB_HOST'],
-        'PORT': db_secrets['DB_PORT'],
-    }
-}
-
-# MaxMind
-MAXMIND_ACCOUNT_ID = db_secrets.get('MAXMIND_ACCOUNT_ID')
-MAXMIND_LICENSE_KEY = db_secrets.get('MAXMIND_LICENSE_KEY')
+# Carregar credenciais no startup
+get_config_manager().load_own_credentials()
 ```
+
+#### 4. Usar credenciais via os.getenv()
+
+**Arquivo:** `adquirente_own/services_credenciais.py`
+
+```python
+import os
+
+client_id = os.getenv('OWN_CORE_ID')
+client_secret = os.getenv('OWN_SECRET')
+scope = os.getenv('OWN_SCOPE')
+```
+
+### Padrão de Nomenclatura
+
+**Secrets Manager (JSON):**
+- Use SNAKE_CASE em maiúsculas
+- Seja descritivo: `OWN_CORE_ID`, `PINBANK_WALL_USERNAME`
+- Agrupe por serviço: `OWN_*`, `PINBANK_*`, `DB_*`
+
+**Variáveis de Ambiente:**
+- Mesmo nome do Secrets Manager
+- Carregadas automaticamente pelo ConfigManager
+- Acessíveis via `os.getenv('NOME_VARIAVEL')`
+
+### Troubleshooting
+
+**Credenciais não carregadas (retornam None):**
+
+1. Verificar se o método `load_*_credentials()` foi criado no ConfigManager
+2. Verificar se o método está sendo chamado no `settings/base.py`
+3. Verificar se as credenciais existem no Secrets Manager
+4. Verificar logs de startup do Django para erros
+
+**Teste de carregamento:**
+
+```bash
+# Dentro do container Django
+docker exec wallclub-portais python -c "
+import django
+django.setup()
+import os
+print('OWN_CORE_ID:', os.getenv('OWN_CORE_ID'))
+"
+```
+
+**Erro 403 Forbidden em APIs externas:**
+
+Verifique se o IP do servidor está autorizado:
+- Own Financial: IP `52.207.203.211` precisa estar na whitelist do Cloudflare
+- Outras APIs: Consultar documentação do provedor
 
 ### IAM Role
 

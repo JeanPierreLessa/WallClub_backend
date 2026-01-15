@@ -21,7 +21,7 @@ from wallclub_core.estr_organizacional.canal import Canal
 from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
 from gestao_financeira.models import LancamentoManual
 from .utils.column_mappings import (
-    obter_mapeamento_colunas_rpr, 
+    obter_mapeamento_colunas_rpr,
     obter_colunas_monetarias_rpr
 )
 from wallclub_core.utilitarios.export_utils import exportar_csv
@@ -33,13 +33,13 @@ def obter_nomes_canais_por_ids(canal_ids):
     Função auxiliar para obter nomes de canais a partir de IDs usando método centralizado
     """
     from wallclub_core.estr_organizacional.canal import Canal
-    
+
     nomes_canais = []
     for canal_id in canal_ids:
         canal_nome = Canal.get_canal_nome(canal_id)
         if canal_nome and canal_nome != f"Canal {canal_id}":
             nomes_canais.append(canal_nome)
-    
+
     return nomes_canais
 
 
@@ -47,7 +47,7 @@ def obter_estrutura_colunas_rpr():
     """
     ESTRUTURA COMPLETA DE COLUNAS RPR:
     ==================================
-    
+
     tipo_operacao
     var9
     var0
@@ -58,14 +58,14 @@ def obter_estrutura_colunas_rpr():
     var4
     var11
     var26
-    var36 
-    var37 
-    var89 
+    var36
+    var37
+    var89
     var90
     (formula) var36 - var89 nome_coluna: "Resultado MDR (%)"  #variavel_nova_1
     (formula) var37 - var90 nome_coluna: "Resultado MDR (R$)" #variavel_nova_2
-    var39 
-    var92 
+    var39
+    var92
     var40
     var93_A
     var41
@@ -76,7 +76,7 @@ def obter_estrutura_colunas_rpr():
     (formula) variavel_nova_5 / var11 nome_coluna: "Resultado Antecipação & Parcelamento (%)" #variavel_nova_6
     (formula) variavel_nova_4 - var94_A nome_coluna: "Resultado Antecipação & Parcelamento (R$)" #variavel_nova_5
     (formula) se var11<>0 entao variavel_nova_8/ var11 nome_coluna: "Resultado Operacional (projetado) %" #variavel_nova_7
-    (formula) variavel_nova_5 + variavel_nova_2 nome_coluna: "Resultado Operacional (projetado) R$" #variavel_nova_8 
+    (formula) variavel_nova_5 + variavel_nova_2 nome_coluna: "Resultado Operacional (projetado) R$" #variavel_nova_8
     var98
     var101
     (formula) Se var101=0 mostra "Não Finalizada", senao  var98-var101  nome_coluna: "Resultado Caixa (Rcebtos - Repasses) R$" #variavel_nova_9
@@ -103,14 +103,14 @@ def obter_estrutura_colunas_rpr():
         {'tipo': 'variavel', 'campo': 'var1', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var68', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var5', 'nome': 'Nome do Estabelecimento'},
-        
+
         # Modalidade (tipo_operacao movido para depois de var5)
         {'tipo': 'variavel', 'campo': 'tipo_operacao', 'nome': 'Modalidade'},
-        
+
         {'tipo': 'variavel', 'campo': 'var8', 'nome': None},  # Plano/Produto
         {'tipo': 'variavel', 'campo': 'var12', 'nome': None},  # Bandeira
         {'tipo': 'variavel', 'campo': 'var6', 'nome': None},
-        
+
         # Continuação variáveis base
         {'tipo': 'variavel', 'campo': 'var4', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var11', 'nome': None},
@@ -119,65 +119,65 @@ def obter_estrutura_colunas_rpr():
         {'tipo': 'variavel', 'campo': 'var37', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var89', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var90', 'nome': None},
-        
+
         # 14-15: Primeiras fórmulas MDR
         {'tipo': 'formula', 'campo': 'variavel_nova_1', 'nome': 'Resultado MDR (%)', 'formula': 'var36 - var89'},
         {'tipo': 'formula', 'campo': 'variavel_nova_2', 'nome': 'Resultado MDR (R$)', 'formula': 'var37 - var90'},
-        
+
         # 16-20: Mais variáveis
         {'tipo': 'variavel', 'campo': 'var39', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var92', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var40', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var93_A', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var41', 'nome': None},
-        
+
         # 21: Fórmula encargos
         {'tipo': 'formula', 'campo': 'variavel_nova_3', 'nome': 'Encargos Cobrados Clientes Finais (%)', 'formula': 'abs(var14)'},
-        
+
         # 22: Receita Encargos Cobrados Clientes Finais (R$) - baseado em var86
         {'tipo': 'formula', 'campo': 'var15', 'nome': 'Receita Encargos Cobrados Clientes Finais (R$)', 'formula': '-var86 if var86 < 0 else 0'},
-        
+
         # 23: Fórmula receita total
         {'tipo': 'formula', 'campo': 'variavel_nova_4', 'nome': 'Receita Total Antec. + Encargos (Total - R$)', 'formula': 'var15 + var41'},
-        
+
         # 24: var94_A
         {'tipo': 'variavel', 'campo': 'var94_A', 'nome': None},
-        
+
         # 25: Fórmula antecipação percentual (exibição)
         {'tipo': 'formula', 'campo': 'variavel_nova_6', 'nome': 'Resultado Antecipação & Parcelamento (%)', 'formula': 'variavel_nova_5 / var11 if var11 != 0 else 0'},
-        
+
         # 26: Fórmula antecipação monetária (cálculo)
         {'tipo': 'formula', 'campo': 'variavel_nova_5', 'nome': 'Resultado Antecipação & Parcelamento (R$)', 'formula': 'variavel_nova_4 - var94_A'},
-        
+
         # 27: Fórmula operacional percentual (exibição)
         {'tipo': 'formula', 'campo': 'variavel_nova_7', 'nome': 'Resultado Operacional (projetado) %', 'formula': 'variavel_nova_8 / var11 if var11 != 0 else 0'},
-        
+
         # 28: Fórmula operacional monetária (cálculo)
         {'tipo': 'formula', 'campo': 'variavel_nova_8', 'nome': 'Resultado Operacional (projetado) R$', 'formula': 'variavel_nova_5 + variavel_nova_2'},
-        
+
         # 29-30: var98, var101
         {'tipo': 'variavel', 'campo': 'var98', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var101', 'nome': None},
-        
+
         # 31-33: Fórmulas resultado caixa e operacional
         {'tipo': 'formula', 'campo': 'variavel_nova_9', 'nome': 'Resultado Caixa (Rcebtos - Repasses) R$', 'formula': '"Não Finalizada" if var101 == 0 else var98 - var101'},
         {'tipo': 'formula', 'campo': 'variavel_nova_11', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) R$', 'formula': '"Não Finalizada" if var101 == 0 else var113_A'},
         {'tipo': 'formula', 'campo': 'variavel_nova_10', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_11 / var11 if var11 != 0 else 0'},
-        
+
         # 34: Fórmula cashback
         {'tipo': 'formula', 'campo': 'variavel_nova_12', 'nome': 'Cashback pago à Loja (%)', 'formula': 'var58 / var11 if var11 != 0 else 0'},
-        
+
         # 35-36: var58, var111_A
         {'tipo': 'variavel', 'campo': 'var58', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var111_A', 'nome': None},
-        
+
         # 37-41: Fórmulas resultado final
         {'tipo': 'formula', 'campo': 'variavel_nova_13', 'nome': 'Impostos Diretos pagos (R$)', 'formula': '"Não Finalizada" if var101 == 0 else var109_A'},
         {'tipo': 'formula', 'campo': 'variavel_nova_14', 'nome': 'Resultado Final (pós impostos - sem POS) - Visão Gestão - %', 'formula': '"Não Finalizada" if var101 == 0 else var118_A'},
         {'tipo': 'formula', 'campo': 'variavel_nova_15', 'nome': 'Resultado Final (pós impostos - sem POS) - Visão Gestão - R$', 'formula': '"Não Finalizada" if var101 == 0 else var116_A'},
         {'tipo': 'formula', 'campo': 'variavel_nova_16', 'nome': 'Resultado Final (pós impostos - sem POS) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_17 / var26 if var26 != 0 else 0'},
         {'tipo': 'formula', 'campo': 'variavel_nova_17', 'nome': 'Resultado Final (pós impostos - sem POS) R$', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_11 - variavel_nova_13'},
-        
+
         # 42-46: Variáveis finais
         {'tipo': 'variavel', 'campo': 'var10', 'nome': None},
         {'tipo': 'variavel', 'campo': 'var8', 'nome': None},
@@ -190,10 +190,10 @@ def obter_estrutura_colunas_rpr():
 def obter_mapeamento_colunas_rpr_dinamico():
     """Retorna mapeamento específico para tabela RPR baseado na nova estrutura"""
     from .utils.column_mappings import obter_mapeamento_colunas_completo
-    
+
     mapeamento_completo = obter_mapeamento_colunas_completo()
     estrutura = obter_estrutura_colunas_rpr()
-    
+
     mapeamento = {}
     for item in estrutura:
         if item['tipo'] == 'variavel':
@@ -203,7 +203,7 @@ def obter_mapeamento_colunas_rpr_dinamico():
         elif item['tipo'] == 'formula':
             # Usar nome personalizado da fórmula
             mapeamento[item['campo']] = item['nome']
-    
+
     return mapeamento
 
 
@@ -211,7 +211,7 @@ def obter_colunas_monetarias_rpr_dinamico():
     """Retorna lista de colunas que devem ser formatadas como monetárias no RPR"""
     estrutura = obter_estrutura_colunas_rpr()
     colunas_monetarias = []
-    
+
     for item in estrutura:
         campo = item['campo']
         # Variáveis monetárias conhecidas
@@ -220,7 +220,7 @@ def obter_colunas_monetarias_rpr_dinamico():
         # Fórmulas que resultam em valores monetários (R$)
         elif item['tipo'] == 'formula' and 'R$' in item['nome']:
             colunas_monetarias.append(campo)
-    
+
     return colunas_monetarias
 
 
@@ -228,7 +228,7 @@ def obter_colunas_percentuais_rpr_dinamico():
     """Retorna lista de colunas que devem ser formatadas como percentuais no RPR"""
     estrutura = obter_estrutura_colunas_rpr()
     colunas_percentuais = []
-    
+
     for item in estrutura:
         campo = item['campo']
         # Variáveis percentuais conhecidas
@@ -237,31 +237,31 @@ def obter_colunas_percentuais_rpr_dinamico():
         # Fórmulas que resultam em percentuais (%)
         elif item['tipo'] == 'formula' and '%' in item['nome']:
             colunas_percentuais.append(campo)
-    
+
     return colunas_percentuais
 
 
 @require_acesso_padronizado('rpr_view')
 def relatorio_producao_receita(request):
     """View para Relatório de Produção e Receita (RPR)"""
-    
+
     # Validar acesso à loja se especificada
     loja_param = request.GET.get('loja', '')
     if loja_param:
         from portais.controle_acesso.filtros import FiltrosAcessoService
         from django.contrib import messages
         from django.shortcuts import redirect
-        
+
         try:
             FiltrosAcessoService.validar_acesso_loja_ou_403(request.portal_usuario, int(loja_param))
         except:
             messages.error(request, 'A tela que você tentou acessar não está disponível pro seu perfil.')
             return redirect('portais_admin:dashboard')
-    
+
     # Filtros padrão - mês corrente inteiro
     hoje = date.today()
     primeiro_dia_mes = hoje.replace(day=1)
-    
+
     filtros = {
         'data_inicial': request.GET.get('data_inicial', primeiro_dia_mes.strftime('%Y-%m-%d')),
         'data_final': request.GET.get('data_final', hoje.strftime('%Y-%m-%d')),
@@ -269,25 +269,25 @@ def relatorio_producao_receita(request):
         'loja': request.GET.get('loja', ''),
         'incluir_tef': request.GET.get('incluir_tef') == '1',
     }
-    
+
     # Construir WHERE clause para SQL direto
     from portais.controle_acesso.services import ControleAcessoService
-    
+
     where_conditions = ["var68 = 'TRANS. APROVADO'"]
     params = []
-    
+
     # Filtro de data
     if filtros['data_inicial']:
         where_conditions.append("data_transacao >= %s")
         params.append(f"{filtros['data_inicial']} 00:00:00")
-    
+
     if filtros['data_final']:
         where_conditions.append("data_transacao <= %s")
         params.append(f"{filtros['data_final']} 23:59:59")
-    
+
     # Filtro de canal
     canais_usuario = ControleAcessoService.obter_canais_usuario(request.portal_usuario)
-    
+
     if canais_usuario:
         nomes_canais = []
         for canal_id in canais_usuario:
@@ -297,7 +297,7 @@ def relatorio_producao_receita(request):
                     nomes_canais.append(canal.nome)
             except Exception:
                 continue
-        
+
         if nomes_canais:
             placeholders = ','.join(['%s'] * len(nomes_canais))
             where_conditions.append(f"var4 IN ({placeholders})")
@@ -305,21 +305,21 @@ def relatorio_producao_receita(request):
     elif filtros['canal']:
         where_conditions.append("var4 = %s")
         params.append(filtros['canal'])
-    
+
     # Filtro de loja
     if filtros['loja']:
         where_conditions.append("var6 = %s")
         params.append(filtros['loja'])
-    
+
     # Filtro tipo_operacao (Credenciadora/Wallet)
     if not filtros['incluir_tef']:
         where_conditions.append("tipo_operacao = 'Wallet'")
-    
+
     where_clause = " AND ".join(where_conditions)
-    
+
     # Query SQL consolidada com todas as agregações
     sql = f"""
-        SELECT 
+        SELECT
             COUNT(DISTINCT var9) as qtde_nsus_distintos,
             SUM(CAST(var11 AS DECIMAL(15,2))) as volume_total,
             SUM(CAST(var23 AS DECIMAL(15,2))) as receita_var23,
@@ -329,28 +329,28 @@ def relatorio_producao_receita(request):
             SUM(CAST(var90 AS DECIMAL(15,2))) as custo_mdr_direto,
             SUM(CAST(var94_A AS DECIMAL(15,2))) as custo_antecipacao_direto,
             SUM(CAST(var41 AS DECIMAL(15,2))) as receita_var41,
-            SUM(CASE WHEN CAST(var86 AS DECIMAL(15,2)) < 0 
-                     THEN ABS(CAST(var86 AS DECIMAL(15,2))) 
+            SUM(CASE WHEN CAST(var86 AS DECIMAL(15,2)) < 0
+                     THEN ABS(CAST(var86 AS DECIMAL(15,2)))
                      ELSE 0 END) as receita_var15_calculada,
             SUM(CAST(var109_A AS DECIMAL(15,2))) as impostos_total,
-            SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0 
-                     THEN CAST(var116_A AS DECIMAL(15,2)) 
+            SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0
+                     THEN CAST(var116_A AS DECIMAL(15,2))
                      ELSE 0 END) as resultado_financeiro
         FROM base_transacoes_unificadas
         WHERE {where_clause}
     """
-    
+
     registrar_log('portais.admin', f"RPR - Relatório gerado - Filtros: {filtros}")
-    
+
     # Executar query consolidada
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         resultado = cursor.fetchone()
-    
+
     # Extrair resultados
     qtde_nsus_distintos = resultado[0] or 0
     total_transacoes = qtde_nsus_distintos
-    
+
     volume_total = Decimal(str(resultado[1] or 0))
     receita_var23 = Decimal(str(resultado[2] or 0))
     receita_var21 = Decimal(str(resultado[3] or 0))
@@ -362,19 +362,19 @@ def relatorio_producao_receita(request):
     receita_var15_calculada = Decimal(str(resultado[9] or 0))
     impostos_total = Decimal(str(resultado[10] or 0))
     resultado_financeiro = Decimal(str(resultado[11] or 0))
-    
+
     # Cálculos derivados
     receita_antecipacao_parcelamentos = receita_var41 + receita_var15_calculada
     receita_outras_tarifas = Decimal('0.00')
     receita_financeira_total = receita_mdr_total + receita_antecipacao_parcelamentos + receita_outras_tarifas
-    
+
     custo_mdr_total = custo_mdr_direto
     custo_antecipacao_total = custo_antecipacao_direto
     custos_pos_equip = Decimal('0.00')
     custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total
-    
+
     receita_antecipacao = receita_var23 + receita_var21
-    
+
     # Manter compatibilidade com código legado
     metricas = {
         'volume_total': volume_total,
@@ -385,16 +385,16 @@ def relatorio_producao_receita(request):
         'custo_mdr_direto': custo_mdr_direto,
         'custo_antecipacao_direto': custo_antecipacao_direto
     }
-    
+
     # Calcular ticket médio
     volume_total = metricas['volume_total'] or Decimal('0.00')
     ticket_medio = Decimal('0.00')
     if qtde_nsus_distintos > 0 and volume_total > 0:
         ticket_medio = volume_total / qtde_nsus_distintos
-    
+
     # Calcular percentual de comissão usando nova tabela canal_comissao
     percentual_comissao = Decimal('0.00')
-    
+
     def obter_comissao_vigente_canal(canal_nome, data_referencia):
         """Busca comissão vigente do canal na data de referência"""
         with connection.cursor() as cursor:
@@ -402,33 +402,33 @@ def relatorio_producao_receita(request):
                 SELECT cc.comissao
                 FROM canal_comissao cc
                 JOIN canal c ON cc.canal_id = c.id
-                WHERE c.nome = %s 
+                WHERE c.nome = %s
                 AND cc.vigencia_inicio <= %s
                 AND (cc.vigencia_fim IS NULL OR cc.vigencia_fim >= %s)
                 ORDER BY cc.vigencia_inicio DESC
                 LIMIT 1
             """, [canal_nome, data_referencia, data_referencia])
-            
+
             result = cursor.fetchone()
             return Decimal(str(result[0])) if result else Decimal('0.00')
-    
+
     # Data de referência para buscar comissão (usar data final do filtro ou hoje)
     data_referencia = filtros.get('data_final') or date.today().strftime('%Y-%m-%d')
-    
+
     if filtros['canal']:
         # Filtro por canal específico - buscar comissão vigente
         percentual_comissao = obter_comissao_vigente_canal(filtros['canal'], data_referencia)
     else:
         # Sem filtro de canal - calcular média ponderada por volume via SQL
         sql_volume_canal = f"""
-            SELECT 
+            SELECT
                 var4 as canal_nome,
                 SUM(CAST(var26 AS DECIMAL(15,2))) as volume_canal
             FROM base_transacoes_unificadas
             WHERE {where_clause} AND var4 IS NOT NULL
             GROUP BY var4
         """
-        
+
         volume_por_canal = {}
         with connection.cursor() as cursor:
             cursor.execute(sql_volume_canal, params)
@@ -437,54 +437,54 @@ def relatorio_producao_receita(request):
                 volume = Decimal(str(row[1] or 0))
                 if canal_nome and volume > 0:
                     volume_por_canal[canal_nome] = volume
-        
+
         # Calcular comissão média ponderada usando nova tabela
         volume_total_canais = sum(volume_por_canal.values())
         comissao_ponderada = Decimal('0.00')
-        
+
         if volume_total_canais > 0:
             for canal_nome, volume in volume_por_canal.items():
                 comissao_canal = obter_comissao_vigente_canal(canal_nome, data_referencia)
                 if comissao_canal > 0:
                     peso = volume / volume_total_canais
                     comissao_ponderada += comissao_canal * peso
-            
+
             percentual_comissao = comissao_ponderada
-    
+
     # Calcular lançamentos manuais com filtros aplicados
     lancamentos_manuais_queryset = LancamentoManual.objects.filter(
         status='processado',
         tipo_lancamento='D'  # Apenas débitos
     )
-    
+
     # Aplicar filtros de data
     if filtros['data_inicial']:
         data_inicial = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').date()
         lancamentos_manuais_queryset = lancamentos_manuais_queryset.filter(
             data_lancamento__date__gte=data_inicial
         )
-    
+
     if filtros['data_final']:
         data_final = datetime.strptime(filtros['data_final'], '%Y-%m-%d').date()
         lancamentos_manuais_queryset = lancamentos_manuais_queryset.filter(
             data_lancamento__date__lte=data_final
         )
-    
+
     # Aplicar filtro de loja
     if filtros['loja']:
         lancamentos_manuais_queryset = lancamentos_manuais_queryset.filter(
             loja_id=filtros['loja']
         )
-    
+
     # Calcular total de lançamentos manuais
     total_lancamentos_manuais = lancamentos_manuais_queryset.aggregate(
         total=Sum('valor')
     )['total'] or Decimal('0.00')
-    
+
     # Calcular comissão líquida
     comissao_total_pagar = resultado_financeiro * percentual_comissao
     comissao_liquida_pagar = comissao_total_pagar - total_lancamentos_manuais
-    
+
     # Preparar dados para o template
     dados_metricas = {
         'volume_total': volume_total,
@@ -492,20 +492,20 @@ def relatorio_producao_receita(request):
         'ticket_medio': ticket_medio,
         'receita_antecipacao': receita_antecipacao,
         'total_transacoes': total_transacoes,
-        
+
         # Receita Financeira Total
         'receita_mdr_total': receita_mdr_total,
         'receita_antecipacao_parcelamentos': receita_antecipacao_parcelamentos,
         'receita_outras_tarifas': receita_outras_tarifas,
         'receita_financeira_total': receita_financeira_total,
-        
+
         # Custo Direto Total
         'custo_mdr_total': custo_mdr_total,
         'custo_antecipacao_total': custo_antecipacao_total,
         'custos_pos_equip': custos_pos_equip,
         'impostos_total': impostos_total,
         'custo_direto_total': custo_direto_total,
-        
+
         # Resultado Financeiro
         'resultado_financeiro': resultado_financeiro,
         'percentual_comissao': percentual_comissao * 100,  # Converter 0.2 para 20%
@@ -513,39 +513,39 @@ def relatorio_producao_receita(request):
         'total_lancamentos_manuais': total_lancamentos_manuais,
         'comissao_liquida_pagar': comissao_liquida_pagar,
     }
-    
+
     # Buscar opções para filtros - filtrar por vínculos do usuário
     from portais.controle_acesso.services import ControleAcessoService
     from portais.controle_acesso.filtros import FiltrosAcessoService
     from .services_rpr import RPRService
-    
+
     canais_usuario = ControleAcessoService.obter_canais_usuario(request.portal_usuario)
-    
+
     # Usar service para buscar canais
     canais = RPRService.buscar_canais_disponiveis(canais_usuario)
-    
+
     # Buscar lojas acessíveis
     lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(request.portal_usuario)
     lojas = lojas_acessiveis
-    
+
     context = {
         'filtros': filtros,
         'dados_metricas': dados_metricas,
         'canais': canais,
         'lojas': lojas,
     }
-    
+
     return render(request, 'portais/admin/relatorio_producao_receita.html', context)
 
 
 @require_funcionalidade('rpr_view')
 def tabela_rpr_ajax(request):
     """View AJAX para tabela RPR com paginação e filtros"""
-    
+
     # Parâmetros de paginação
     page = int(request.GET.get('page', 1))
     per_page = int(request.GET.get('per_page', 50))
-    
+
     # Filtros
     filtros = {
         'data_inicial': request.GET.get('data_inicial', ''),
@@ -555,17 +555,17 @@ def tabela_rpr_ajax(request):
         'nsu': request.GET.get('nsu', ''),
         'incluir_tef': request.GET.get('incluir_tef') == '1',
     }
-    
+
     # Buscar canais do usuário
     from portais.controle_acesso.services import ControleAcessoService
     from .services_rpr import RPRService
-    
+
     canais_usuario = ControleAcessoService.obter_canais_usuario(request.portal_usuario)
-    
+
     registrar_log('portais.admin', f"RPR AJAX - Filtros recebidos: {filtros}")
     registrar_log('portais.admin', f"RPR AJAX - Canais usuário: {canais_usuario}")
     registrar_log('portais.admin', f"RPR AJAX - Page: {page}, Per page: {per_page}")
-    
+
     # Usar service para buscar transações
     transacoes_list, total = RPRService.buscar_transacoes_rpr(
         filtros=filtros,
@@ -573,28 +573,28 @@ def tabela_rpr_ajax(request):
         page=page,
         per_page=per_page
     )
-    
+
     registrar_log('portais.admin', f"RPR AJAX - Transações retornadas: {len(transacoes_list)}, Total: {total}")
-    
+
     # Calcular totalizadora e linhas
     estrutura_colunas = obter_estrutura_colunas_rpr()
-    
+
     # Para totalizadora, usar agregação SQL direta (sem carregar tudo na memória)
     linha_totalizadora = calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas)
-    
+
     # Preparar dados para a tabela
     dados_tabela = []
     for transacao in transacoes_list:
         linha = calcular_linha_rpr(transacao, estrutura_colunas)
         dados_tabela.append(linha)
-    
+
     # Calcular paginação
     import math
     total_paginas = math.ceil(total / per_page) if total > 0 else 1
-    
+
     # Mapeamento de colunas
     mapeamento_colunas = obter_mapeamento_colunas_rpr_dinamico()
-    
+
     # Resposta JSON
     response_data = {
         'dados': dados_tabela,
@@ -610,9 +610,9 @@ def tabela_rpr_ajax(request):
         'colunas': mapeamento_colunas,
         'campos_monetarios': obter_colunas_monetarias_rpr_dinamico()
     }
-    
+
     registrar_log('portais.admin', f"RPR - Tabela página {page} - Filtros: {filtros}")
-    
+
     return JsonResponse(response_data)
 
 
@@ -622,13 +622,13 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
     Evita carregar todos os registros na memória (problema OOM)
     """
     from .services_rpr import RPRService
-    
+
     # Usar SQL direto para agregar valores
     with connection.cursor() as cursor:
         # Construir WHERE clause baseado nos filtros
         where_conditions = []
         params = []
-        
+
         # Filtro de data
         if filtros.get('data_inicial'):
             where_conditions.append("data_transacao >= %s")
@@ -636,32 +636,32 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
         if filtros.get('data_final'):
             where_conditions.append("data_transacao <= %s")
             params.append(filtros['data_final'])
-        
+
         # Filtro de canal
         if canais_usuario:
             placeholders = ','.join(['%s'] * len(canais_usuario))
             where_conditions.append(f"var68 IN ({placeholders})")
             params.extend(canais_usuario)
-        
+
         # Filtro de loja
         if filtros.get('loja'):
             where_conditions.append("var5 = %s")
             params.append(filtros['loja'])
-        
+
         # Filtro de NSU
         if filtros.get('nsu'):
             where_conditions.append("var9 = %s")
             params.append(filtros['nsu'])
-        
+
         # Filtro incluir_tef
         if not filtros.get('incluir_tef'):
             where_conditions.append("tipo_operacao = 'Wallet'")
-        
+
         where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
-        
+
         # Query de agregação - somar apenas campos numéricos relevantes
         query = f"""
-            SELECT 
+            SELECT
                 COUNT(*) as total_registros,
                 SUM(CAST(var11 AS DECIMAL(10,2))) as soma_var11,
                 SUM(CAST(var15 AS DECIMAL(10,2))) as soma_var15,
@@ -681,13 +681,13 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
             FROM base_transacoes_unificadas
             WHERE {where_clause}
         """
-        
+
         cursor.execute(query, params)
         row = cursor.fetchone()
-        
+
         # Criar linha totalizadora com valores agregados
         linha_totalizadora = {}
-        
+
         if row:
             totais_sql = {
                 'var11': row[1] or Decimal('0'),
@@ -708,25 +708,51 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
             }
         else:
             totais_sql = {}
-        
+
         # Preencher linha totalizadora
         for item in estrutura_colunas:
             campo = item['campo']
-            
+            tipo = item.get('tipo')
+
             if campo == 'var0':
                 linha_totalizadora[campo] = "TOTAL"
-            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var68']:
+            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var68', 'tipo_operacao']:
+                # Campos de texto/identificação - deixar vazio
+                linha_totalizadora[campo] = ""
+            elif campo in ['var13', 'var43']:
+                # Campos que não fazem sentido totalizar (Núm. Parcelas, Data Prev. Pgto)
                 linha_totalizadora[campo] = ""
             elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
                 # Percentuais - deixar vazio
                 linha_totalizadora[campo] = ""
-            elif campo.startswith('variavel_nova_'):
-                # Fórmulas - deixar vazio (não podemos calcular sem iterar)
-                linha_totalizadora[campo] = ""
+            elif tipo == 'formula':
+                # Calcular fórmulas monetárias
+                if campo == 'variavel_nova_2':  # Resultado MDR (R$)
+                    linha_totalizadora[campo] = totais_sql.get('var37', Decimal('0')) - totais_sql.get('var90', Decimal('0'))
+                elif campo == 'variavel_nova_4':  # Receita Total Antec. + Encargos
+                    linha_totalizadora[campo] = totais_sql.get('var15', Decimal('0')) + totais_sql.get('var41', Decimal('0'))
+                elif campo == 'variavel_nova_5':  # Resultado Antecipação & Parcelamento (R$)
+                    var15_total = totais_sql.get('var15', Decimal('0'))
+                    var41_total = totais_sql.get('var41', Decimal('0'))
+                    var94_A_total = totais_sql.get('var94_A', Decimal('0'))
+                    linha_totalizadora[campo] = (var15_total + var41_total) - var94_A_total
+                elif campo == 'variavel_nova_8':  # Resultado Operacional (projetado) R$
+                    # variavel_nova_5 + variavel_nova_2
+                    var15_total = totais_sql.get('var15', Decimal('0'))
+                    var41_total = totais_sql.get('var41', Decimal('0'))
+                    var94_A_total = totais_sql.get('var94_A', Decimal('0'))
+                    variavel_nova_5 = (var15_total + var41_total) - var94_A_total
+                    variavel_nova_2 = totais_sql.get('var37', Decimal('0')) - totais_sql.get('var90', Decimal('0'))
+                    linha_totalizadora[campo] = variavel_nova_5 + variavel_nova_2
+                elif campo == 'variavel_nova_11':  # Resultado Operacional (antes Cashback e Chargeback) R$
+                    linha_totalizadora[campo] = totais_sql.get('var113_A', Decimal('0'))
+                else:
+                    # Outras fórmulas (percentuais, etc) - deixar vazio
+                    linha_totalizadora[campo] = ""
             else:
                 # Usar valor agregado do SQL
                 linha_totalizadora[campo] = totais_sql.get(campo, Decimal('0'))
-        
+
         return linha_totalizadora
 
 
@@ -737,28 +763,28 @@ def calcular_linha_totalizadora_rpr(queryset, estrutura_colunas):
     """
     # Inicializar totais
     totais = {}
-    
+
     # Processar todas as transações para calcular totais
     for transacao in queryset:
         # Calcular linha individual SEM formatação para obter valores numéricos
         linha_individual = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
-        
+
         # Somar valores numéricos
         for campo, valor in linha_individual.items():
             if campo not in totais:
                 totais[campo] = Decimal('0.00')
-            
+
             # Identificar colunas percentuais que NÃO devem ser somadas
             colunas_percentuais = [
                 'var36', 'var89', 'var39', 'var92', 'var40', 'var93_A',  # Variáveis percentuais do banco
                 'variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7',  # Fórmulas percentuais
                 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16'
             ]
-            
+
             # Pular colunas percentuais
             if campo in colunas_percentuais:
                 continue
-            
+
             # Converter e somar valores (apenas colunas não percentuais)
             try:
                 if isinstance(valor, (int, float, Decimal)):
@@ -776,18 +802,18 @@ def calcular_linha_totalizadora_rpr(queryset, estrutura_colunas):
                                 pass
             except (ValueError, TypeError, decimal.InvalidOperation):
                 pass
-    
+
     # Criar linha totalizadora
     linha_totalizadora = {}
     for item in estrutura_colunas:
         campo = item['campo']
-        
+
         if campo == 'var0':  # Data - mostrar "TOTAL"
             linha_totalizadora[campo] = "TOTAL"
         elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12']:
             # Campos de texto - deixar vazio
             linha_totalizadora[campo] = ""
-        elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A', 
+        elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A',
                        'variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7',
                        'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
             # Campos percentuais - deixar vazio (não somar)
@@ -795,14 +821,14 @@ def calcular_linha_totalizadora_rpr(queryset, estrutura_colunas):
         else:
             # Campos numéricos - usar total calculado
             linha_totalizadora[campo] = totais.get(campo, Decimal('0.00'))
-    
+
     return linha_totalizadora
 
 
 def _obter_filtros_e_canais_rpr(request):
     """Auxiliar para obter filtros e canais do usuário"""
     from portais.controle_acesso.services import ControleAcessoService
-    
+
     usuario_logado = getattr(request, 'portal_usuario', None)
     if usuario_logado:
         nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
@@ -812,7 +838,7 @@ def _obter_filtros_e_canais_rpr(request):
             canais_usuario = None
     else:
         canais_usuario = None
-    
+
     # Aplicar mesmos filtros da tabela
     filtros = {
         'data_inicial': request.GET.get('data_inicial', ''),
@@ -822,14 +848,14 @@ def _obter_filtros_e_canais_rpr(request):
         'nsu': request.GET.get('nsu', ''),
         'incluir_tef': request.GET.get('incluir_tef') == '1',
     }
-    
+
     return filtros, canais_usuario
 
 
 def _contar_registros_rpr(filtros, canais_usuario):
     """Conta registros sem carregar na memória"""
     from .services_rpr import RPRService
-    
+
     # Usar service apenas para contar
     _, total = RPRService.buscar_transacoes_rpr(
         filtros=filtros,
@@ -837,26 +863,180 @@ def _contar_registros_rpr(filtros, canais_usuario):
         page=1,
         per_page=1  # Buscar apenas 1 para obter o total
     )
-    
+
     return total
+
+
+def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
+    """Gera dados do resumo executivo com os 4 totalizadores"""
+    from django.db import connection
+    from decimal import Decimal
+    from datetime import date, datetime
+    from gestao_financeira.models import LancamentoManual
+    from django.db.models import Sum
+
+    # Construir WHERE clause
+    where_conditions = ["var68 = 'TRANS. APROVADO'"]
+    params = []
+
+    if filtros.get('data_inicial'):
+        where_conditions.append("data_transacao >= %s")
+        params.append(f"{filtros['data_inicial']} 00:00:00")
+
+    if filtros.get('data_final'):
+        where_conditions.append("data_transacao <= %s")
+        params.append(f"{filtros['data_final']} 23:59:59")
+
+    if canais_usuario:
+        from portais.controle_acesso.services import ControleAcessoService
+        from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
+        nomes_canais = []
+        for canal_id in canais_usuario:
+            try:
+                canal = HierarquiaOrganizacionalService.get_canal(canal_id)
+                if canal and canal.nome:
+                    nomes_canais.append(canal.nome)
+            except:
+                continue
+        if nomes_canais:
+            placeholders = ','.join(['%s'] * len(nomes_canais))
+            where_conditions.append(f"var4 IN ({placeholders})")
+            params.extend(nomes_canais)
+    elif filtros.get('canal'):
+        where_conditions.append("var4 = %s")
+        params.append(filtros['canal'])
+
+    if filtros.get('loja'):
+        where_conditions.append("var6 = %s")
+        params.append(filtros['loja'])
+
+    if not filtros.get('incluir_tef'):
+        where_conditions.append("tipo_operacao = 'Wallet'")
+
+    where_clause = " AND ".join(where_conditions)
+
+    # Query SQL consolidada
+    sql = f"""
+        SELECT
+            COUNT(DISTINCT var9) as qtde_nsus_distintos,
+            SUM(CAST(var11 AS DECIMAL(15,2))) as volume_total,
+            SUM(CAST(var37 AS DECIMAL(15,2))) as receita_mdr_total,
+            SUM(CAST(var90 AS DECIMAL(15,2))) as custo_mdr_direto,
+            SUM(CAST(var94_A AS DECIMAL(15,2))) as custo_antecipacao_direto,
+            SUM(CAST(var41 AS DECIMAL(15,2))) as receita_var41,
+            SUM(CASE WHEN CAST(var86 AS DECIMAL(15,2)) < 0
+                     THEN ABS(CAST(var86 AS DECIMAL(15,2)))
+                     ELSE 0 END) as receita_var15_calculada,
+            SUM(CAST(var109_A AS DECIMAL(15,2))) as impostos_total,
+            SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0
+                     THEN CAST(var116_A AS DECIMAL(15,2))
+                     ELSE 0 END) as resultado_financeiro
+        FROM base_transacoes_unificadas
+        WHERE {where_clause}
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params)
+        resultado = cursor.fetchone()
+
+    qtde_nsus_distintos = resultado[0] or 0
+    volume_total = Decimal(str(resultado[1] or 0))
+    receita_mdr_total = Decimal(str(resultado[2] or 0))
+    custo_mdr_direto = Decimal(str(resultado[3] or 0))
+    custo_antecipacao_direto = Decimal(str(resultado[4] or 0))
+    receita_var41 = Decimal(str(resultado[5] or 0))
+    receita_var15_calculada = Decimal(str(resultado[6] or 0))
+    impostos_total = Decimal(str(resultado[7] or 0))
+    resultado_financeiro = Decimal(str(resultado[8] or 0))
+
+    # Cálculos derivados
+    ticket_medio = volume_total / qtde_nsus_distintos if qtde_nsus_distintos > 0 else Decimal('0.00')
+    receita_antecipacao_parcelamentos = receita_var41 + receita_var15_calculada
+    receita_outras_tarifas = Decimal('0.00')
+    receita_financeira_total = receita_mdr_total + receita_antecipacao_parcelamentos + receita_outras_tarifas
+
+    custo_mdr_total = custo_mdr_direto
+    custo_antecipacao_total = custo_antecipacao_direto
+    custos_pos_equip = Decimal('0.00')
+    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total
+
+    # Calcular lançamentos manuais
+    lancamentos_manuais_queryset = LancamentoManual.objects.filter(
+        status='processado',
+        tipo_lancamento='D'
+    )
+
+    if filtros.get('data_inicial'):
+        data_inicial = datetime.strptime(filtros['data_inicial'], '%Y-%m-%d').date()
+        lancamentos_manuais_queryset = lancamentos_manuais_queryset.filter(
+            data_lancamento__date__gte=data_inicial
+        )
+
+    if filtros.get('data_final'):
+        data_final = datetime.strptime(filtros['data_final'], '%Y-%m-%d').date()
+        lancamentos_manuais_queryset = lancamentos_manuais_queryset.filter(
+            data_lancamento__date__lte=data_final
+        )
+
+    if filtros.get('loja'):
+        lancamentos_manuais_queryset = lancamentos_manuais_queryset.filter(
+            loja_id=filtros['loja']
+        )
+
+    total_lancamentos_manuais = lancamentos_manuais_queryset.aggregate(
+        total=Sum('valor')
+    )['total'] or Decimal('0.00')
+
+    # Calcular percentual de comissão (simplificado para export)
+    percentual_comissao = Decimal('0.15')  # 15% padrão
+    comissao_total_pagar = resultado_financeiro * percentual_comissao
+    comissao_liquida_pagar = comissao_total_pagar - total_lancamentos_manuais
+
+    # Retornar dados formatados para o resumo executivo
+    return [
+        {'indicador': 'VOLUME TOTAL DE PAGAMENTOS', 'valor': float(volume_total), 'detalhamento': ''},
+        {'indicador': 'Transações', 'valor': qtde_nsus_distintos, 'detalhamento': ''},
+        {'indicador': 'Ticket Médio', 'valor': float(ticket_medio), 'detalhamento': ''},
+        {'indicador': 'Lançamentos Manuais', 'valor': float(total_lancamentos_manuais), 'detalhamento': ''},
+        {'indicador': '', 'valor': '', 'detalhamento': ''},
+        {'indicador': 'RECEITA FINANCEIRA TOTAL', 'valor': float(receita_financeira_total), 'detalhamento': ''},
+        {'indicador': 'Receita MDR', 'valor': float(receita_mdr_total), 'detalhamento': ''},
+        {'indicador': 'Receita Ant./Parc.', 'valor': float(receita_antecipacao_parcelamentos), 'detalhamento': ''},
+        {'indicador': 'Receita Outras Tarifas', 'valor': float(receita_outras_tarifas), 'detalhamento': ''},
+        {'indicador': '', 'valor': '', 'detalhamento': ''},
+        {'indicador': 'CUSTO DIRETO TOTAL', 'valor': float(custo_direto_total), 'detalhamento': ''},
+        {'indicador': 'Custo MDR Total', 'valor': float(custo_mdr_total), 'detalhamento': ''},
+        {'indicador': 'Custo Antecipação Total', 'valor': float(custo_antecipacao_total), 'detalhamento': ''},
+        {'indicador': 'Custos POS / Equip.', 'valor': float(custos_pos_equip), 'detalhamento': ''},
+        {'indicador': 'Impostos', 'valor': float(impostos_total), 'detalhamento': ''},
+        {'indicador': '', 'valor': '', 'detalhamento': ''},
+        {'indicador': 'RESULTADO FINANCEIRO', 'valor': float(resultado_financeiro), 'detalhamento': ''},
+        {'indicador': 'Percentual de Comissão', 'valor': float(percentual_comissao * 100), 'detalhamento': '%'},
+        {'indicador': 'Comissão Total a Pagar', 'valor': float(comissao_total_pagar), 'detalhamento': ''},
+        {'indicador': 'Lançamentos Manuais', 'valor': float(total_lancamentos_manuais), 'detalhamento': ''},
+        {'indicador': 'Comissão Líquida a Pagar', 'valor': float(comissao_liquida_pagar), 'detalhamento': ''},
+    ]
 
 
 @require_funcionalidade('rpr_export')
 def exportar_rpr_excel(request):
-    """Exportar dados RPR para Excel - direto ou por email se >5000 registros"""
+    """Exportar dados RPR para Excel com 3 abas: Resumo Executivo, Detalhamento e Linha Totalizadora"""
     try:
         from .services_rpr import RPRService
-        
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils import get_column_letter
+
         # Obter filtros e contar registros SEM carregar na memória
         filtros, canais_usuario = _obter_filtros_e_canais_rpr(request)
         total_registros = _contar_registros_rpr(filtros, canais_usuario)
-        
+
         registrar_log('portais.admin', f"RPR Excel - Total registros: {total_registros}")
-        
+
         # Se mais de 5000 registros, enviar por email (processamento em batches)
         if total_registros > 5000:
             return _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros)
-        
+
         # Export direto para menos de 5000 registros
         transacoes, _ = RPRService.buscar_transacoes_rpr(
             filtros=filtros,
@@ -864,27 +1044,73 @@ def exportar_rpr_excel(request):
             page=1,
             per_page=total_registros
         )
-        
+
         dados = []
         estrutura_colunas = obter_estrutura_colunas_rpr()
-        
+
         for transacao in transacoes:
-            # para_export=True já retorna percentuais como decimal
             linha = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             dados.append(linha)
-        
-        # Usar utilitário comum para exportar
-        nome_arquivo = f"rpr_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        titulo = "Relatório de Produção e Receita"
+
+        # Gerar linha totalizadora
+        linha_totalizadora = calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas)
+
+        # Criar workbook
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)  # Remover sheet padrão
+
+        # ABA 1: Resumo Executivo
+        ws_resumo = wb.create_sheet("Resumo Executivo")
+        dados_resumo = _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario)
+
+        # Cabeçalho
+        ws_resumo.append(['RESUMO EXECUTIVO - RPR'])
+        ws_resumo.append(['Período', f"{filtros.get('data_inicial', '')} a {filtros.get('data_final', '')}" ])
+        ws_resumo.append(['Canal', filtros.get('canal', 'Todos')])
+        ws_resumo.append(['Loja', filtros.get('loja', 'Todas')])
+        ws_resumo.append(['Incluir TEF', 'Sim' if filtros.get('incluir_tef') else 'Não'])
+        ws_resumo.append([])
+        ws_resumo.append(['Indicador', 'Valor', 'Detalhamento'])
+
+        for item in dados_resumo:
+            ws_resumo.append([item['indicador'], item['valor'], item['detalhamento']])
+
+        # Formatação
+        for row in ws_resumo.iter_rows(min_row=1, max_row=7):
+            for cell in row:
+                cell.font = Font(bold=True)
+
+        # ABA 2: Detalhamento
+        ws_detalhe = wb.create_sheet("Detalhamento")
         colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
-        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
-        
-        # Import direto da função
-        from wallclub_core.utilitarios.export_utils import exportar_excel
-        return exportar_excel(nome_arquivo, dados, colunas_rpr, titulo, colunas_monetarias, colunas_percentuais)
-        
+
+        # Cabeçalho
+        headers = [colunas_rpr.get(col, col) for col in estrutura_colunas[0].keys() if col in colunas_rpr]
+        ws_detalhe.append(headers)
+
+        # Dados
+        for linha in dados:
+            row_data = [linha.get(item['campo'], '') for item in estrutura_colunas]
+            ws_detalhe.append(row_data)
+
+        # ABA 3: Linha Totalizadora
+        ws_total = wb.create_sheet("Linha Totalizadora")
+        ws_total.append(headers)
+        row_data = [linha_totalizadora.get(item['campo'], '') for item in estrutura_colunas]
+        ws_total.append(row_data)
+
+        # Salvar e retornar
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        nome_arquivo = f"rpr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
+        wb.save(response)
+
+        return response
+
     except Exception as e:
+        registrar_log('portais.admin', f"Erro ao exportar RPR Excel: {str(e)}", nivel='ERROR')
         return JsonResponse({'erro': f'Erro ao exportar Excel: {str(e)}'}, status=500)
 
 
@@ -893,17 +1119,17 @@ def exportar_rpr_csv(request):
     """Exportar dados RPR para CSV - direto ou por email se >5000 registros"""
     try:
         from .services_rpr import RPRService
-        
+
         # Obter filtros e contar registros SEM carregar na memória
         filtros, canais_usuario = _obter_filtros_e_canais_rpr(request)
         total_registros = _contar_registros_rpr(filtros, canais_usuario)
-        
+
         registrar_log('portais.admin', f"RPR CSV - Total registros: {total_registros}")
-        
+
         # Se mais de 5000 registros, enviar por email (processamento em batches)
         if total_registros > 5000:
             return _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros)
-        
+
         # Export direto para menos de 5000 registros
         transacoes, _ = RPRService.buscar_transacoes_rpr(
             filtros=filtros,
@@ -911,20 +1137,20 @@ def exportar_rpr_csv(request):
             page=1,
             per_page=total_registros
         )
-        
+
         dados = []
         estrutura_colunas = obter_estrutura_colunas_rpr()
-        
+
         for transacao in transacoes:
             linha = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             dados.append(linha)
-        
+
         # Usar utilitário comum para exportar
         nome_arquivo = f"rpr_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
-        
+
         return exportar_csv(nome_arquivo, dados, colunas_rpr)
-        
+
     except Exception as e:
         return JsonResponse({'erro': f'Erro ao exportar CSV: {str(e)}'}, status=500)
 
@@ -935,7 +1161,7 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
     import threading
     import tempfile
     import os
-    
+
     # Capturar dados do usuário ANTES da thread
     portal_usuario = getattr(request, 'portal_usuario', None)
     if portal_usuario:
@@ -944,60 +1170,60 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
     else:
         usuario_email = None
         usuario_nome = 'Usuário'
-    
+
     def processar_e_enviar():
         try:
             from .services_rpr import RPRService
-            
+
             registrar_log('portais.admin', f"RPR CSV - Thread iniciada")
-            
+
             import csv
             import tempfile
-            
+
             with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as temp_file:
                 arquivo_path = temp_file.name
-            
+
             registrar_log('portais.admin', f"RPR CSV - Processando em batches de 1000")
-            
+
             # Processar em batches
             batch_size = 1000
             total_processados = 0
-            
+
             # Estrutura e mapeamento
             estrutura_colunas = obter_estrutura_colunas_rpr()
             colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
-            
+
             # Calcular número de páginas
             import math
             total_paginas = math.ceil(total_registros / batch_size)
-            
+
             # Função para remover acentos (mesma do gestão admin)
             def remover_acentos(texto):
                 import unicodedata
                 if not texto:
                     return texto
-                
+
                 texto_normalizado = unicodedata.normalize('NFD', str(texto))
                 texto_sem_acentos = ''.join(c for c in texto_normalizado if unicodedata.category(c) != 'Mn')
-                
+
                 substituicoes = {
                     'ç': 'c', 'Ç': 'C',
                     'ñ': 'n', 'Ñ': 'N'
                 }
-                
+
                 for original, substituto in substituicoes.items():
                     texto_sem_acentos = texto_sem_acentos.replace(original, substituto)
-                
+
                 return texto_sem_acentos
-            
+
             with open(arquivo_path, 'w', newline='', encoding='utf-8') as csvfile:
                 # colunas_rpr é um dict {campo: nome_exibicao}
                 campos_ordenados = list(colunas_rpr.keys())
                 writer = csv.DictWriter(csvfile, fieldnames=campos_ordenados)
-                
+
                 # Escrever cabeçalho com nomes de exibição
                 writer.writerow(colunas_rpr)
-                
+
                 # Processar em batches (paginação no banco)
                 for pagina in range(1, total_paginas + 1):
                     # Buscar batch do banco
@@ -1007,16 +1233,16 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                         page=pagina,
                         per_page=batch_size
                     )
-                    
+
                     for transacao in batch:
                         # Calcular linha RPR
                         linha_individual = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
-                        
+
                         # Escrever linha usando mesma ordem dos cabeçalhos
                         linha = {}
                         for campo in campos_ordenados:
                             valor = linha_individual.get(campo, '')
-                            
+
                             # Formatação para campos percentuais
                             if campo in obter_colunas_percentuais_rpr_dinamico() and valor:
                                 try:
@@ -1052,39 +1278,39 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                             # Remover acentos do valor
                             if isinstance(valor, str):
                                 valor = remover_acentos(valor)
-                            
+
                             linha[campo] = valor
-                        
+
                         writer.writerow(linha)
-                    
+
                     total_processados += len(batch)
                     registrar_log('portais.admin', f"RPR CSV - Processados {total_processados}/{total_registros}")
-            
+
             # Enviar por email
             nome_arquivo = f"rpr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            
+
             if usuario_email:
                 from wallclub_core.integracoes.email_service import EmailService
-                
+
                 assunto = f"Exportação RPR - {total_registros} registros"
                 corpo = f"""
                 Olá {usuario_nome},
-                
+
                 Sua exportação do Relatório de Produção e Receita foi concluída com sucesso.
-                
+
                 Total de registros: {total_registros:,}
                 Arquivo: {nome_arquivo}
-                
+
                 O arquivo está anexado a este email.
-                
+
                 Atenciosamente,
                 Sistema WallClub
                 """
-                
+
                 # Ler arquivo para anexo
                 with open(arquivo_path, 'rb') as f:
                     arquivo_conteudo = f.read()
-                
+
                 EmailService.enviar_email(
                     destinatarios=[usuario_email],
                     assunto=assunto,
@@ -1095,25 +1321,25 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                         'tipo': 'text/csv'
                     }]
                 )
-                
+
                 registrar_log('portais.admin', f"RPR CSV - Email enviado para {usuario_email}")
             else:
                 registrar_log('portais.admin', f"RPR CSV - Email não enviado (usuário sem email)")
-            
+
             # Limpar arquivo temporário
             try:
                 os.unlink(arquivo_path)
             except:
                 pass
-                
+
         except Exception as e:
             registrar_log('portais.admin', f"RPR CSV - Erro na thread: {str(e)}", nivel='ERROR')
-    
+
     # Iniciar thread
     thread = threading.Thread(target=processar_e_enviar)
     thread.daemon = True
     thread.start()
-    
+
     # Retornar HTML com script para mostrar alerta e redirecionar de volta
     html_response = f"""
     <!DOCTYPE html>
@@ -1130,7 +1356,7 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
     </body>
     </html>
     """
-    
+
     return HttpResponse(html_response, content_type='text/html')
 
 
@@ -1138,7 +1364,7 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
     """Calcula uma linha da tabela RPR com variáveis e fórmulas"""
     linha = {}
     variaveis_calculadas = {}  # Cache para variáveis novas
-    
+
     # FASE 1: Calcular todas as variáveis na ordem de dependências
     # Primeiro processar variáveis do banco
     for item in estrutura_colunas:
@@ -1154,7 +1380,7 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
                     variaveis_calculadas[campo] = float(valor) if valor else 0
             except (ValueError, TypeError):
                 variaveis_calculadas[campo] = 0
-    
+
     # Depois processar fórmulas na ordem correta de dependências
     formulas_ordenadas = [
         'variavel_nova_1', 'variavel_nova_2', 'variavel_nova_3', 'var15', 'variavel_nova_4',
@@ -1162,22 +1388,22 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
         'variavel_nova_9', 'variavel_nova_11', 'variavel_nova_10', 'variavel_nova_12',
         'variavel_nova_13', 'variavel_nova_14', 'variavel_nova_15', 'variavel_nova_17', 'variavel_nova_16'
     ]
-    
+
     for campo_formula in formulas_ordenadas:
         for item in estrutura_colunas:
             if item['tipo'] == 'formula' and item['campo'] == campo_formula:
                 resultado = calcular_formula(item['formula'], transacao, variaveis_calculadas)
                 variaveis_calculadas[campo_formula] = resultado
                 break
-    
+
     # FASE 2: Montar linha na ordem de exibição com formatação
     for item in estrutura_colunas:
         campo = item['campo']
-        
+
         if item['tipo'] == 'variavel':
             # Variável conhecida do banco
             valor = transacao.get(campo, '') if isinstance(transacao, dict) else getattr(transacao, campo, '')
-            
+
             # Formatação para exibição
             if not para_export and campo in obter_colunas_monetarias_rpr():
                 try:
@@ -1209,7 +1435,7 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
                 linha[campo] = f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
             else:
                 linha[campo] = str(valor) if valor else ''
-                
+
             # Guardar valor numérico para cálculos
             try:
                 if isinstance(valor, str):
@@ -1218,13 +1444,13 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
                     variaveis_calculadas[campo] = float(valor) if valor else 0
             except (ValueError, TypeError):
                 variaveis_calculadas[campo] = 0
-                
+
         elif item['tipo'] == 'formula':
             # Variável calculada - usar valor já calculado na FASE 1
             resultado = variaveis_calculadas.get(campo, 0)
-            
+
             # Formatação para exibição
-            if campo in ['variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7', 
+            if campo in ['variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7',
                         'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
                 # Fórmulas percentuais
                 try:
@@ -1253,8 +1479,8 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
                     linha[campo] = str(resultado) if resultado else ''
             else:
                 linha[campo] = str(resultado) if resultado else ''
-                
-    
+
+
     return linha
 
 
@@ -1262,14 +1488,14 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
     try:
         from decimal import Decimal
         import re
-        
+
         # Substituir variáveis do banco de dados
         formula_processada = formula
-        
+
         # Buscar todas as variáveis na fórmula (incluindo variavel_nova_X)
         import re
         vars_encontradas = re.findall(r'var\d+(?:_A)?|variavel_nova_\d+', formula_processada)
-        
+
         for var_name in vars_encontradas:
             if var_name in formula_processada:
                 # Se é variável calculada, buscar do cache primeiro
@@ -1281,12 +1507,12 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
                         except:
                             valor_num = Decimal('0')
                         formula_processada = formula_processada.replace(var_name, str(valor_num))
-                        
-                
+
+
                 # Se é variável do banco, buscar do objeto transacao
                 elif var_name.startswith('var'):
                     valor = transacao.get(var_name, 0) if isinstance(transacao, dict) else getattr(transacao, var_name, 0)
-                    
+
                     try:
                         from decimal import Decimal
                         if isinstance(valor, str):
@@ -1297,12 +1523,12 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
                             valor_num = Decimal(str(valor)) if valor else Decimal('0')
                     except (ValueError, TypeError):
                         valor_num = Decimal('0')
-                    
+
                     formula_processada = formula_processada.replace(var_name, str(valor_num))
-                    
-        
+
+
         # Substituir variáveis calculadas (remover seção duplicada - já processado acima)
-        
+
         # Processar função abs()
         if 'abs(' in formula_processada:
             abs_matches = re.findall(r'abs\(([^)]+)\)', formula_processada)
@@ -1312,13 +1538,13 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
                     formula_processada = formula_processada.replace(f'abs({match})', str(valor_abs))
                 except:
                     formula_processada = formula_processada.replace(f'abs({match})', '0')
-        
+
         # Processar condicionais simples
         if 'if' in formula_processada and 'else' in formula_processada:
             conditional_match = re.match(r'(.+?)\s+if\s+(.+?)\s+else\s+(.+)', formula_processada)
             if conditional_match:
                 expr_true, condition, expr_false = conditional_match.groups()
-                
+
                 try:
                     if eval(condition):
                         formula_processada = expr_true.strip()
@@ -1326,20 +1552,20 @@ def calcular_formula(formula, transacao, variaveis_calculadas):
                         formula_processada = expr_false.strip()
                 except:
                     formula_processada = '0'
-        
+
         # Avaliar expressão final
         try:
             # Usar eval com contexto Decimal para manter precisão
             from decimal import Decimal
             resultado = eval(formula_processada, {"__builtins__": {}, "Decimal": Decimal})
-            
-            
+
+
             # Converter para float apenas no final se necessário
             if isinstance(resultado, Decimal):
                 return float(resultado)
             return float(resultado) if isinstance(resultado, (int, float)) else resultado
         except Exception as e:
             return 0
-            
+
     except Exception:
         return 0
