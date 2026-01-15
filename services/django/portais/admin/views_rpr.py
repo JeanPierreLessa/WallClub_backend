@@ -727,7 +727,9 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 linha_totalizadora[campo] = ""
             elif tipo == 'formula':
                 # Calcular fórmulas monetárias
-                if campo == 'variavel_nova_2':  # Resultado MDR (R$)
+                if campo == 'var15':  # Receita Encargos Cobrados Clientes Finais (R$)
+                    linha_totalizadora[campo] = totais_sql.get('var15', Decimal('0'))
+                elif campo == 'variavel_nova_2':  # Resultado MDR (R$)
                     linha_totalizadora[campo] = totais_sql.get('var37', Decimal('0')) - totais_sql.get('var90', Decimal('0'))
                 elif campo == 'variavel_nova_4':  # Receita Total Antec. + Encargos
                     linha_totalizadora[campo] = totais_sql.get('var15', Decimal('0')) + totais_sql.get('var41', Decimal('0'))
@@ -752,6 +754,9 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 elif campo == 'variavel_nova_13':  # Impostos Diretos pagos (R$)
                     # var109_A (tratar "Não Finalizada" como 0)
                     linha_totalizadora[campo] = totais_sql.get('var109_A', Decimal('0'))
+                elif campo == 'variavel_nova_15':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - R$
+                    # var116_A (tratar "Não Finalizada" como 0)
+                    linha_totalizadora[campo] = totais_sql.get('var116_A', Decimal('0'))
                 elif campo == 'variavel_nova_17':  # Resultado Final (pós impostos - sem POS) R$
                     # variavel_nova_11 - variavel_nova_13
                     var113_A_total = totais_sql.get('var113_A', Decimal('0'))
@@ -1104,13 +1109,49 @@ def exportar_rpr_excel(request):
             cell.font = Font(bold=True)
             cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
-        # Dados
+        # Identificar colunas monetárias e percentuais
+        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
+
+        # Dados - converter valores para número quando necessário
         for linha in dados:
-            row_data = [linha.get(item['campo'], '') for item in estrutura_colunas]
+            row_data = []
+            for item in estrutura_colunas:
+                campo = item['campo']
+                valor = linha.get(campo, '')
+
+                # Converter para número se for campo monetário ou percentual
+                if campo in colunas_monetarias or campo in colunas_percentuais:
+                    if valor == '' or valor is None or valor == 'Não Finalizada':
+                        row_data.append(0)
+                    else:
+                        try:
+                            row_data.append(float(valor))
+                        except (ValueError, TypeError):
+                            row_data.append(valor)
+                else:
+                    row_data.append(valor)
+
             ws_detalhe.append(row_data)
 
-        # Linha totalizadora no final
-        row_totalizadora = [linha_totalizadora.get(item['campo'], '') for item in estrutura_colunas]
+        # Linha totalizadora no final - converter para número
+        row_totalizadora = []
+        for item in estrutura_colunas:
+            campo = item['campo']
+            valor = linha_totalizadora.get(campo, '')
+
+            # Converter para número se for campo monetário ou percentual
+            if campo in colunas_monetarias or campo in colunas_percentuais:
+                if valor == '' or valor is None:
+                    row_totalizadora.append(0)
+                else:
+                    try:
+                        row_totalizadora.append(float(valor))
+                    except (ValueError, TypeError):
+                        row_totalizadora.append(valor)
+            else:
+                row_totalizadora.append(valor)
+
         ws_detalhe.append(row_totalizadora)
 
         # Formatação da linha totalizadora (última linha)
@@ -1118,6 +1159,20 @@ def exportar_rpr_excel(request):
         for cell in ws_detalhe[ultima_linha]:
             cell.font = Font(bold=True)
             cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+        # Aplicar formato de número nas colunas monetárias
+        from openpyxl.styles import numbers
+        for row_idx in range(2, ws_detalhe.max_row + 1):  # Pular header
+            for col_idx, item in enumerate(estrutura_colunas, start=1):
+                campo = item['campo']
+                cell = ws_detalhe.cell(row=row_idx, column=col_idx)
+
+                if campo in colunas_monetarias:
+                    # Formato monetário brasileiro
+                    cell.number_format = '#,##0.00'
+                elif campo in colunas_percentuais:
+                    # Formato percentual
+                    cell.number_format = '0.00%'
 
         # Salvar e retornar
         response = HttpResponse(
