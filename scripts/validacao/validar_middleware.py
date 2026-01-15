@@ -11,7 +11,6 @@ MIDDLEWARE_DOCUMENTADO = [
     'security_middleware.py',
     'security_validation.py',
     'session_timeout.py',
-    'subdomain_router.py',
 ]
 
 MIDDLEWARE_RECOMENDADO = [

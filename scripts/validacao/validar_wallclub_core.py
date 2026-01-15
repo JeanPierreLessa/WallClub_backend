@@ -18,7 +18,6 @@ ESTRUTURA_DOCUMENTADA = {
         'firebase_service.py',
         'sms_service.py',
         'whatsapp_service.py',
-        'config_manager.py',
         'notification_service.py',
         'api_interna_service.py',
     ],
@@ -26,7 +25,6 @@ ESTRUTURA_DOCUMENTADA = {
         'security_middleware.py',
         'security_validation.py',
         'session_timeout.py',
-        'subdomain_router.py',
     ],
     'oauth': ['decorators.py', 'jwt_utils.py', 'models.py', 'services.py'],
     'seguranca': [

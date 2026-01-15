@@ -18,7 +18,7 @@ APIS_DOCUMENTADAS = {
 }
 
 def encontrar_endpoints_api_interna(base_path):
-    """Busca por @api_view(['POST']) em arquivos views_api_interna*.py ou api_interna*.py"""
+    """Busca por @api_view(['POST']) ou @require_http_methods(["POST"]) em arquivos de API interna"""
     endpoints = {}
 
     for root, dirs, files in os.walk(base_path):
@@ -26,14 +26,20 @@ def encontrar_endpoints_api_interna(base_path):
         dirs[:] = [d for d in dirs if d not in ['venv', '__pycache__', '.git', 'node_modules']]
 
         for file in files:
-            if ('api_interna' in file or 'views_api_interna' in file) and file.endswith('.py'):
+            # Buscar por views_api_interna.py OU views_internal_api.py
+            if (('api_interna' in file or 'internal_api' in file) and file.startswith('views_')) and file.endswith('.py'):
                 filepath = os.path.join(root, file)
                 try:
                     with open(filepath, 'r', encoding='utf-8') as f:
                         content = f.read()
 
                         # Contar @api_view(['POST']) ou @api_view(["POST"])
-                        count = len(re.findall(r"@api_view\(\[[\'\"]POST[\'\"]\]\)", content))
+                        count_api_view = len(re.findall(r"@api_view\(\[[\'\"]POST[\'\"]\]\)", content))
+
+                        # Contar @require_http_methods(["POST"])
+                        count_require = len(re.findall(r"@require_http_methods\(\[\"POST\"\]\)", content))
+
+                        count = count_api_view + count_require
 
                         if count > 0:
                             # Determinar módulo pelo caminho
@@ -70,7 +76,7 @@ def listar_arquivos_api_interna(base_path):
         dirs[:] = [d for d in dirs if d not in ['venv', '__pycache__', '.git', 'node_modules']]
 
         for file in files:
-            if ('api_interna' in file or 'views_api_interna' in file) and file.endswith('.py'):
+            if (('api_interna' in file or 'internal_api' in file) and file.startswith('views_')) and file.endswith('.py'):
                 filepath = os.path.join(root, file)
                 rel_path = os.path.relpath(filepath, base_path)
                 arquivos.append(rel_path)
