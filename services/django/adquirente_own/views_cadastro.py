@@ -5,8 +5,6 @@ Views para APIs de cadastro de estabelecimentos na Own Financial
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 
 from adquirente_own.services_consultas import ConsultasOwnService
 from adquirente_own.services_cadastro import CadastroOwnService
@@ -25,31 +23,6 @@ class ConsultarCnaeView(APIView):
     Consulta atividades CNAE/MCC
     """
 
-    @swagger_auto_schema(
-        operation_description="Consulta atividades CNAE/MCC na Own Financial",
-        manual_parameters=[
-            openapi.Parameter(
-                'descricao',
-                openapi.IN_QUERY,
-                description="Filtro por descrição (opcional)",
-                type=openapi.TYPE_STRING,
-                required=False
-            ),
-            openapi.Parameter(
-                'environment',
-                openapi.IN_QUERY,
-                description="Ambiente: LIVE ou TEST (padrão: LIVE)",
-                type=openapi.TYPE_STRING,
-                required=False
-            )
-        ],
-        responses={
-            200: openapi.Response(
-                description="Lista de atividades CNAE/MCC",
-                schema=CnaeSerializer(many=True)
-            )
-        }
-    )
     def get(self, request):
         try:
             descricao = request.query_params.get('descricao')
@@ -81,31 +54,6 @@ class ConsultarCestasView(APIView):
     Consulta cestas de tarifas
     """
 
-    @swagger_auto_schema(
-        operation_description="Consulta cestas de tarifas na Own Financial",
-        manual_parameters=[
-            openapi.Parameter(
-                'nome_cesta',
-                openapi.IN_QUERY,
-                description="Filtro por nome da cesta (opcional)",
-                type=openapi.TYPE_STRING,
-                required=False
-            ),
-            openapi.Parameter(
-                'environment',
-                openapi.IN_QUERY,
-                description="Ambiente: LIVE ou TEST (padrão: LIVE)",
-                type=openapi.TYPE_STRING,
-                required=False
-            )
-        ],
-        responses={
-            200: openapi.Response(
-                description="Lista de cestas disponíveis",
-                schema=CestaSerializer(many=True)
-            )
-        }
-    )
     def get(self, request):
         try:
             nome_cesta = request.query_params.get('nome_cesta')
@@ -144,34 +92,6 @@ class ConsultarTarifasCestaView(APIView):
     Consulta tarifas de uma cesta específica
     """
 
-    @swagger_auto_schema(
-        operation_description="Consulta tarifas de uma cesta específica",
-        manual_parameters=[
-            openapi.Parameter(
-                'environment',
-                openapi.IN_QUERY,
-                description="Ambiente: LIVE ou TEST (padrão: LIVE)",
-                type=openapi.TYPE_STRING,
-                required=False
-            )
-        ],
-        responses={
-            200: openapi.Response(
-                description="Tarifas da cesta",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'cesta_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                        'nome_cesta': openapi.Schema(type=openapi.TYPE_STRING),
-                        'tarifas': openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            items=openapi.Schema(type=openapi.TYPE_OBJECT)
-                        )
-                    }
-                )
-            )
-        }
-    )
     def get(self, request, cesta_id):
         try:
             environment = request.query_params.get('environment', 'LIVE')
@@ -201,15 +121,6 @@ class CadastrarEstabelecimentoView(APIView):
     Cadastra estabelecimento na Own Financial
     """
 
-    @swagger_auto_schema(
-        operation_description="Cadastra estabelecimento na Own Financial",
-        request_body=CadastroOwnRequestSerializer,
-        responses={
-            200: CadastroOwnResponseSerializer,
-            400: openapi.Response(description="Dados inválidos"),
-            500: openapi.Response(description="Erro no servidor")
-        }
-    )
     def post(self, request):
         try:
             # Validar dados de entrada
@@ -268,13 +179,6 @@ class StatusCredenciamentoView(APIView):
     Consulta status de credenciamento de uma loja
     """
 
-    @swagger_auto_schema(
-        operation_description="Consulta status de credenciamento de uma loja na Own",
-        responses={
-            200: LojaOwnSerializer,
-            404: openapi.Response(description="Loja não encontrada")
-        }
-    )
     def get(self, request, loja_id):
         try:
             loja_own = LojaOwn.objects.filter(loja_id=loja_id).first()
