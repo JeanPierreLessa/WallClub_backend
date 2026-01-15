@@ -25,6 +25,8 @@ ESTRUTURA_DOCUMENTADA = {
         'security_middleware.py',
         'security_validation.py',
         'session_timeout.py',
+        'correlation_middleware.py',
+        'request_logging_middleware.py',
     ],
     'oauth': ['decorators.py', 'jwt_utils.py', 'models.py', 'services.py'],
     'seguranca': [

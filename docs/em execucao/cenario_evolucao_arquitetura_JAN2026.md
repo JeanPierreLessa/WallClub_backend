@@ -1,19 +1,19 @@
 # CENÁRIO DE EVOLUÇÃO ARQUITETURAL - WALLCLUB FINTECH
 
-**Data da Análise:** 09/01/2026  
-**Arquiteto Responsável:** Análise Técnica Sênior  
-**Versão do Sistema:** 6.1 (Fase 7 - 95% concluída)  
+**Data da Análise:** 09/01/2026
+**Arquiteto Responsável:** Análise Técnica Sênior
+**Versão do Sistema:** 6.1 (Fase 7 - 95% concluída)
 **Validade:** 12 meses (revisão trimestral)
 
 ---
 
 ## 📋 SUMÁRIO EXECUTIVO
 
-Sistema fintech Django em produção desde outubro/2025, processando transações financeiras com 9 containers orquestrados. 
+Sistema fintech Django em produção desde outubro/2025, processando transações financeiras com 9 containers orquestrados.
 
 **Arquitetura atual:** Boa separação de responsabilidades mas com acoplamento ao banco de dados que limita evolução para microserviços verdadeiros.
 
-**Kubernetes:** ✅ Viável com refatorações incrementais (6-9 meses)  
+**Kubernetes:** ✅ Viável com refatorações incrementais (6-9 meses)
 **Microserviços:** ⚠️ Requerem redesenho significativo da camada de dados (18-36 meses)
 
 ### Pontuação Geral: 7.5/10
@@ -57,8 +57,8 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 
 **Problema:** Endpoint `validar_senha_e_saldo` (POS) permite tentativas ilimitadas com token OAuth válido.
 
-**Risco:** Brute force de senhas de clientes  
-**Prioridade:** 🔴 IMEDIATA  
+**Risco:** Brute force de senhas de clientes
+**Prioridade:** 🔴 IMEDIATA
 **Esforço:** 8 horas
 
 **Recomendações:**
@@ -76,8 +76,8 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 
 **Problema:** Código existe mas sem interface (`CartaoTokenizadoService.invalidar_cartao()`)
 
-**Risco:** Cartões comprometidos permanecem ativos  
-**Prioridade:** 🟠 ALTA  
+**Risco:** Cartões comprometidos permanecem ativos
+**Prioridade:** 🟠 ALTA
 **Esforço:** 12 horas
 
 **Recomendações:**
@@ -94,7 +94,7 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 - ❌ App Mobile: Sem 2FA no login
 - ❌ Revalidação celular: Não implementada (90 dias)
 
-**Prioridade:** 🟡 MÉDIA  
+**Prioridade:** 🟡 MÉDIA
 **Esforço:** 12 horas (8h 2FA + 4h revalidação)
 
 **Gatilhos 2FA Obrigatórios:**
@@ -150,8 +150,8 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 # - Deploy requer rebuild de todos containers
 ```
 
-**Recomendação:** Extrair para serviço dedicado com API REST  
-**Esforço:** 40 horas  
+**Recomendação:** Extrair para serviço dedicado com API REST
+**Esforço:** 40 horas
 **Benefícios:** Escalabilidade independente, deploy isolado
 
 ---
@@ -164,7 +164,7 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 # Quebra em microserviços verdadeiros
 ```
 
-**Recomendação:** Substituir por APIs REST  
+**Recomendação:** Substituir por APIs REST
 **Esforço:** 16 horas
 
 ---
@@ -173,8 +173,8 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 
 **Problema:** Lógica espalhada sem orquestrador unificado
 
-**Recomendação:** `NotificationOrchestrator` com retry/fallback  
-**Esforço:** 12 horas  
+**Recomendação:** `NotificationOrchestrator` com retry/fallback
+**Esforço:** 12 horas
 **Benefícios:** Candidato a microserviço (baixo acoplamento)
 
 ---
@@ -201,7 +201,7 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 - 25% SQL direto read-only (performance)
 - 5% Lazy imports (entidades compartilhadas)
 
-**Formato API:** `{"sucesso": bool, "mensagem": str, "dados": {...}}`  
+**Formato API:** `{"sucesso": bool, "mensagem": str, "dados": {...}}`
 **Regra:** SEMPRE POST (nunca GET/PUT/DELETE)
 
 ### 3.2 Inconsistências Identificadas ⚠️
@@ -210,7 +210,7 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 - Padrão: `datetime.now()`
 - Exceção: `timezone.now()` em CashbackService (não documentado)
 
-**Recomendação:** Documentar exceções explicitamente  
+**Recomendação:** Documentar exceções explicitamente
 **Esforço:** 1 hora
 
 ---
@@ -220,7 +220,7 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 - TransactionDataOwn (Own) - nova
 - transactiondata_pos - unificada (em migração)
 
-**Recomendação:** Finalizar migração e deprecar tabelas antigas  
+**Recomendação:** Finalizar migração e deprecar tabelas antigas
 **Esforço:** 24 horas
 
 ---
@@ -622,14 +622,14 @@ class CorrelationIDMiddleware(MiddlewareMixin):
         # Pegar do header ou gerar novo
         correlation_id = request.META.get('HTTP_X_CORRELATION_ID') or str(uuid.uuid4())
         request.correlation_id = correlation_id
-        
+
         # Adicionar a todos os logs
         import logging
         logger = logging.getLogger()
         logger.addFilter(lambda record: setattr(record, 'correlation_id', correlation_id) or True)
-        
+
         return None
-    
+
     def process_response(self, request, response):
         # Retornar no header
         if hasattr(request, 'correlation_id'):
@@ -656,11 +656,11 @@ class CircuitBreaker:
         self.failure_threshold = failure_threshold
         self.timeout = timeout
         self.cache_key = f'circuit_breaker:{service_name}'
-    
+
     def call(self, func, *args, **kwargs):
         # Verificar estado do circuit
         state = cache.get(self.cache_key, {'state': 'CLOSED', 'failures': 0})
-        
+
         if state['state'] == 'OPEN':
             # Circuit aberto, verificar timeout
             if datetime.now() < state['open_until']:
@@ -668,29 +668,29 @@ class CircuitBreaker:
             else:
                 # Tentar half-open
                 state['state'] = 'HALF_OPEN'
-        
+
         try:
             result = func(*args, **kwargs)
-            
+
             # Sucesso, fechar circuit
             if state['state'] == 'HALF_OPEN':
                 state = {'state': 'CLOSED', 'failures': 0}
                 cache.set(self.cache_key, state, 3600)
-            
+
             return result
-        
+
         except Exception as e:
             # Falha, incrementar contador
             state['failures'] += 1
-            
+
             if state['failures'] >= self.failure_threshold:
                 # Abrir circuit
                 state['state'] = 'OPEN'
                 state['open_until'] = datetime.now() + timedelta(seconds=self.timeout)
-                
+
                 # Alertar
                 self._send_alert(f'{self.service_name} circuit OPENED')
-            
+
             cache.set(self.cache_key, state, 3600)
             raise
 
@@ -720,11 +720,11 @@ logger = logging.getLogger('requests')
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-    
+
     def __call__(self, request):
         # Início
         start_time = time.time()
-        
+
         # Log request
         logger.info(
             f"Request started",
@@ -736,10 +736,10 @@ class RequestLoggingMiddleware:
                 'user_agent': request.META.get('HTTP_USER_AGENT'),
             }
         )
-        
+
         # Processar
         response = self.get_response(request)
-        
+
         # Log response
         duration = time.time() - start_time
         logger.info(
@@ -750,7 +750,7 @@ class RequestLoggingMiddleware:
                 'duration_ms': round(duration * 1000, 2),
             }
         )
-        
+
         return response
 ```
 
@@ -987,12 +987,12 @@ filter {
   json {
     source => "message"
   }
-  
+
   # Adicionar geolocalização (IP)
   geoip {
     source => "ip_address"
   }
-  
+
   # Enriquecer com dados
   if [correlation_id] {
     # Buscar outros logs da mesma requisição
@@ -1031,7 +1031,7 @@ groups:
       severity: warning
     annotations:
       summary: "API interna com latência P95 > 500ms"
-  
+
   # Integração externa falhando
   - alert: IntegracaoExternaFalhando
     expr: rate(wallclub_integracao_externa_requests_total{status="error"}[5m]) > 0.1
@@ -1040,7 +1040,7 @@ groups:
       severity: critical
     annotations:
       summary: "Integração {{ $labels.servico }} com taxa de erro > 10%"
-  
+
   # Circuit breaker aberto
   - alert: CircuitBreakerAberto
     expr: wallclub_circuit_breaker_state == 2
@@ -1049,7 +1049,7 @@ groups:
       severity: critical
     annotations:
       summary: "Circuit breaker {{ $labels.servico }} ABERTO"
-  
+
   # Taxa de aprovação baixa
   - alert: TaxaAprovacaoBaixa
     expr: rate(wallclub_transacoes_total{status="aprovado"}[10m]) / rate(wallclub_transacoes_total[10m]) < 0.7
@@ -1124,7 +1124,7 @@ class TestCalculadoraBaseUnificada:
     @pytest.fixture
     def calculadora(self):
         return CalculadoraBaseUnificada()
-    
+
     @pytest.fixture
     def dados_transacao(self):
         return {
@@ -1133,7 +1133,7 @@ class TestCalculadoraBaseUnificada:
             'modalidade': 'DEBITO',
             # ... outros campos
         }
-    
+
     @pytest.fixture
     def info_loja(self):
         return {
@@ -1141,7 +1141,7 @@ class TestCalculadoraBaseUnificada:
             'loja': 'Loja Teste',
             # ... outros campos
         }
-    
+
     def test_calcular_valores_primarios_debito(self, calculadora, dados_transacao, info_loja):
         """Testa cálculo de débito à vista"""
         resultado = calculadora.calcular_valores_primarios(
@@ -1150,28 +1150,28 @@ class TestCalculadoraBaseUnificada:
             info_loja=info_loja,
             info_canal={'canal': 1}
         )
-        
+
         # Assertions
         assert resultado[0] == Decimal('100.00')  # Valor bruto
         assert resultado[14] >= 0  # Desconto Wall
         assert resultado[19] > 0  # Valor líquido loja
-    
+
     def test_calcular_valores_primarios_credito_parcelado(self, calculadora, dados_transacao, info_loja):
         """Testa cálculo de crédito parcelado"""
         dados_transacao['modalidade'] = 'CREDITO'
         dados_transacao['parcelas'] = 3
-        
+
         resultado = calculadora.calcular_valores_primarios(
             dados_linha=dados_transacao,
             tabela='transactiondata_pos',
             info_loja=info_loja,
             info_canal={'canal': 1}
         )
-        
+
         # Assertions
         assert resultado[20] == Decimal('33.33')  # Valor parcela (arredondado)
         assert resultado[14] >= 0  # Desconto Wall
-    
+
     @pytest.mark.parametrize("modalidade,parcelas,esperado_tipo", [
         ('DEBITO', 1, 'DEBITO'),
         ('CREDITO', 1, 'CREDITO_AVISTA'),
@@ -1254,7 +1254,7 @@ class TestAPIInternaCliente:
         token = obter_token_oauth('wallclub_pos', 'secret')
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         return client
-    
+
     def test_consultar_por_cpf_sucesso(self, api_client):
         """Testa consulta de cliente por CPF"""
         response = api_client.post(
@@ -1262,11 +1262,11 @@ class TestAPIInternaCliente:
             {'cpf': '12345678900', 'canal_id': 1},
             format='json'
         )
-        
+
         assert response.status_code == 200
         assert response.json()['sucesso'] == True
         assert 'saldo_disponivel' in response.json()['dados']
-    
+
     def test_consultar_por_cpf_nao_encontrado(self, api_client):
         """Testa consulta de cliente inexistente"""
         response = api_client.post(
@@ -1274,10 +1274,10 @@ class TestAPIInternaCliente:
             {'cpf': '99999999999', 'canal_id': 1},
             format='json'
         )
-        
+
         assert response.status_code == 200
         assert response.json()['sucesso'] == False
-    
+
     def test_consultar_sem_autenticacao(self):
         """Testa que endpoint requer autenticação"""
         client = APIClient()  # Sem token
@@ -1286,7 +1286,7 @@ class TestAPIInternaCliente:
             {'cpf': '12345678900', 'canal_id': 1},
             format='json'
         )
-        
+
         assert response.status_code == 401
 ```
 
@@ -1312,24 +1312,24 @@ class TestPinbankService:
             'autorizacao': '789012'
         }
         mock_post.return_value = mock_response
-        
+
         # Executar
         resultado = PinbankService.efetuar_transacao(
             valor=Decimal('100.00'),
             parcelas=1,
             cartao='4111111111111111'
         )
-        
+
         # Assertions
         assert resultado['status'] == 'aprovado'
         assert resultado['nsu'] == '123456'
         mock_post.assert_called_once()
-    
+
     @patch('pinbank.services.requests.post')
     def test_efetuar_transacao_timeout(self, mock_post):
         """Testa tratamento de timeout"""
         mock_post.side_effect = requests.Timeout()
-        
+
         with pytest.raises(PinbankTimeoutError):
             PinbankService.efetuar_transacao(
                 valor=Decimal('100.00'),
@@ -1355,33 +1355,33 @@ class TestFluxoTransacional:
         driver = webdriver.Chrome()
         yield driver
         driver.quit()
-    
+
     def test_fluxo_completo_checkout(self, browser):
         """Testa fluxo completo de checkout"""
         # 1. Acessar link de pagamento
         browser.get('https://checkout.wallclub.com.br/link/abc123')
-        
+
         # 2. Preencher dados do cartão
         browser.find_element_by_id('numero_cartao').send_keys('4111111111111111')
         browser.find_element_by_id('cvv').send_keys('123')
         browser.find_element_by_id('validade').send_keys('12/25')
-        
+
         # 3. Validar OTP (2FA)
         browser.find_element_by_id('celular').send_keys('11999999999')
         browser.find_element_by_id('btn_enviar_otp').click()
-        
+
         # Mock OTP (ambiente de teste)
         otp = obter_otp_teste('11999999999')
         browser.find_element_by_id('otp').send_keys(otp)
-        
+
         # 4. Confirmar pagamento
         browser.find_element_by_id('btn_confirmar').click()
-        
+
         # 5. Aguardar processamento
         WebDriverWait(browser, 10).until(
             EC.presence_of_element_located((By.ID, 'status_transacao'))
         )
-        
+
         # 6. Verificar sucesso
         status = browser.find_element_by_id('status_transacao').text
         assert 'aprovado' in status.lower()
@@ -1404,7 +1404,7 @@ from locust import HttpUser, task, between
 
 class WallClubUser(HttpUser):
     wait_time = between(1, 3)
-    
+
     def on_start(self):
         """Autenticar usuário"""
         response = self.client.post('/api/oauth/token/', {
@@ -1413,7 +1413,7 @@ class WallClubUser(HttpUser):
             'client_secret': 'test_secret'
         })
         self.token = response.json()['access_token']
-    
+
     @task(3)
     def consultar_saldo(self):
         """Simula consulta de saldo (operação comum)"""
@@ -1422,7 +1422,7 @@ class WallClubUser(HttpUser):
             json={'cliente_id': 123},
             headers={'Authorization': f'Bearer {self.token}'}
         )
-    
+
     @task(1)
     def efetuar_transacao(self):
         """Simula transação (operação crítica)"""
@@ -1472,26 +1472,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
+
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
         pip install pytest pytest-cov pytest-django
-    
+
     - name: Run unit tests
       run: |
         pytest tests/unit/ --cov=. --cov-report=xml
-    
+
     - name: Upload coverage
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
-  
+
   integration-tests:
     runs-on: ubuntu-latest
     services:
@@ -1502,14 +1502,14 @@ jobs:
           MYSQL_DATABASE: wallclub_test
       redis:
         image: redis:7-alpine
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Run integration tests
       run: |
         pytest tests/integration/
-  
+
   quality-gate:
     needs: [unit-tests, integration-tests]
     runs-on: ubuntu-latest
@@ -1572,29 +1572,29 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-    
+
     - name: Build images
       run: |
         docker-compose -f docker-compose.yml build
-    
+
     - name: Run tests
       run: |
         docker-compose -f docker-compose.test.yml up --abort-on-container-exit
-    
+
     - name: Security scan
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: 'image'
         image-ref: 'wallclub-apis:latest'
         severity: 'CRITICAL,HIGH'
-    
+
     - name: Lint code
       run: |
         docker run --rm wallclub-apis:latest flake8 .
@@ -1618,72 +1618,72 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: staging
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
-    
+
     - name: Login to ECR
       run: |
         aws ecr get-login-password --region us-east-1 | \
         docker login --username AWS --password-stdin 123456789.dkr.ecr.us-east-1.amazonaws.com
-    
+
     - name: Build and push images
       run: |
         docker-compose -f docker-compose.yml build
         docker tag wallclub-apis:latest 123456789.dkr.ecr.us-east-1.amazonaws.com/wallclub-apis:${{ github.sha }}
         docker push 123456789.dkr.ecr.us-east-1.amazonaws.com/wallclub-apis:${{ github.sha }}
-    
+
     - name: Deploy to staging
       run: |
         # Atualizar deployment Kubernetes
         kubectl set image deployment/wallclub-apis \
           apis=123456789.dkr.ecr.us-east-1.amazonaws.com/wallclub-apis:${{ github.sha }} \
           -n staging
-        
+
         # Aguardar rollout
         kubectl rollout status deployment/wallclub-apis -n staging
-    
+
     - name: Run smoke tests
       run: |
         curl -f https://staging.wcapi.wallclub.com.br/health/ready/ || exit 1
-    
+
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
       with:
         status: ${{ job.status }}
         text: 'Deploy to staging: ${{ job.status }}'
         webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-  
+
   deploy-production:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
-    
+
     steps:
     # ... similar ao staging
-    
+
     - name: Deploy to production
       run: |
         # Blue-Green deployment
         kubectl apply -f k8s/production/blue-green.yaml
-        
+
         # Aguardar health checks
         sleep 30
-        
+
         # Switch traffic
         kubectl patch service wallclub-apis-service \
           -p '{"spec":{"selector":{"version":"green"}}}' \
           -n production
-    
+
     - name: Rollback on failure
       if: failure()
       run: |
@@ -1919,7 +1919,7 @@ deployment_frequency = Counter(
 | CI/CD | 2/10 | 112h | 🟠 Alta |
 | **TOTAL** | **3/10** | **472h** | - |
 
-**Esforço Total:** 472 horas (~12 semanas / 3 meses)  
+**Esforço Total:** 472 horas (~12 semanas / 3 meses)
 **Custo Adicional Mensal:** ~R$ 1.300 (monitoramento + ambientes)
 
 **Recomendação:** Implementar em paralelo com migração Kubernetes (Fase 2-3).
@@ -1929,15 +1929,15 @@ deployment_frequency = Counter(
 ## 9. CONCLUSÃO
 
 ### Pontos Fortes
-✅ Arquitetura modular bem estruturada  
-✅ Package `wallclub_core` exemplar  
-✅ 26 APIs REST internas funcionais  
+✅ Arquitetura modular bem estruturada
+✅ Package `wallclub_core` exemplar
+✅ 26 APIs REST internas funcionais
 ✅ Pronta para Kubernetes (6-9 meses)
 
 ### Pontos de Atenção
-⚠️ Gaps críticos de segurança (rate limiting, 2FA)  
-⚠️ Calculadoras centralizadas (ponto único de falha)  
-⚠️ Acoplamento ao banco de dados (limita microserviços)  
+⚠️ Gaps críticos de segurança (rate limiting, 2FA)
+⚠️ Calculadoras centralizadas (ponto único de falha)
+⚠️ Acoplamento ao banco de dados (limita microserviços)
 ⚠️ Transações distribuídas (requer Saga Pattern)
 
 ### Recomendação Final
@@ -1953,7 +1953,71 @@ deployment_frequency = Counter(
 
 ---
 
-**Responsável:** Jean Lessa  
-**Próxima Revisão:** Abril/2026  
+## 10. ITENS PENDENTES (Adicionados em 15/01/2026)
+
+### 10.1 Ativar Middlewares de Observabilidade
+
+**Status:** Arquivos criados, não ativados
+**Prioridade:** 🟡 MÉDIA
+**Esforço:** 4 horas
+
+**Middlewares disponíveis:**
+- `correlation_middleware.py` - Rastreia requisições entre containers via `X-Correlation-ID`
+- `request_logging_middleware.py` - Logging estruturado de requisições HTTP
+
+**Benefícios:**
+- Debugging facilitado de problemas entre containers
+- Monitoramento de performance por endpoint
+- Auditoria de requisições
+
+**Para ativar:** Adicionar ao `MIDDLEWARE` em `settings.py` de cada container:
+```python
+MIDDLEWARE = [
+    'wallclub_core.middleware.correlation_middleware.CorrelationIdMiddleware',
+    'wallclub_core.middleware.request_logging_middleware.RequestLoggingMiddleware',
+    # ... outros middlewares
+]
+```
+
+**Quando ativar:** Quando houver necessidade de debugging avançado ou monitoramento de performance.
+
+---
+
+### 10.2 Incluir Risk Engine na Análise Arquitetural
+
+**Status:** Não analisado neste documento
+**Prioridade:** 🟠 ALTA
+**Esforço:** 8 horas
+
+**Risk Engine atual:**
+- Container separado: `wallclub-riskengine` (porta 8008)
+- 9 regras antifraude ativas
+- Integração com MaxMind minFraud
+- OAuth 2.0 entre containers
+- Análise <200ms
+
+**Pontos a analisar:**
+1. **Segurança:** Validação de tokens OAuth, rate limiting
+2. **Escalabilidade:** Comportamento sob carga alta
+3. **Resiliência:** Circuit breaker, fallback quando indisponível
+4. **Monitoramento:** Métricas de decisões (aprovado/reprovado/revisão)
+5. **Evolução:** Machine learning, regras dinâmicas
+
+**Documentação existente:**
+- `services/riskengine/docs/engine_antifraude.md`
+- `services/riskengine/docs/integracao_autenticacao_fraude.md`
+
+**Tabelas relacionadas:**
+- `antifraude_regra` (9 regras)
+- `antifraude_decisao`
+- `antifraude_transacao_risco`
+- `antifraude_whitelist`
+- `antifraude_blacklist`
+- `antifraude_configuracao`
+
+---
+
+**Responsável:** Jean Lessa
+**Próxima Revisão:** Abril/2026
 **Aprovação:** Pendente
 

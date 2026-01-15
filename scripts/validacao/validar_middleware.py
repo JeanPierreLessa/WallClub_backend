@@ -11,12 +11,11 @@ MIDDLEWARE_DOCUMENTADO = [
     'security_middleware.py',
     'security_validation.py',
     'session_timeout.py',
+    'correlation_middleware.py',
+    'request_logging_middleware.py',
 ]
 
-MIDDLEWARE_RECOMENDADO = [
-    'correlation_middleware.py',       # Recomendado mas não implementado
-    'request_logging_middleware.py',   # Recomendado mas não implementado
-]
+MIDDLEWARE_RECOMENDADO = []  # Todos implementados
 
 def validar_middleware():
     print("=== VALIDAÇÃO: Middleware ===\n")
