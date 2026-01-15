@@ -317,7 +317,15 @@ def exportar_transacoes_excel(request):
         totais = {}
         if dados:
             for col in colunas_monetarias:
-                total = sum(float(item.get(col, 0) or 0) for item in dados)
+                total = 0
+                for item in dados:
+                    valor = item.get(col, 0)
+                    if valor:
+                        try:
+                            total += float(valor)
+                        except (ValueError, TypeError):
+                            # Ignorar valores não numéricos (ex: 'Agendado')
+                            pass
                 totais[col] = total
 
             # Criar linha de totais
@@ -551,7 +559,15 @@ def exportar_transacoes_csv(request):
     totais = {}
     if dados:
         for col in colunas_monetarias:
-            total = sum(float(item.get(col, 0) or 0) for item in dados)
+            total = 0
+            for item in dados:
+                valor = item.get(col, 0)
+                if valor:
+                    try:
+                        total += float(valor)
+                    except (ValueError, TypeError):
+                        # Ignorar valores não numéricos (ex: 'Agendado')
+                        pass
             totais[col] = total
 
         # Criar linha de totais

@@ -52,6 +52,12 @@ def formatar_valor_monetario(valor, incluir_simbolo=True):
     inteira = partes[0]
     decimal = partes[1]
 
+    # Separar sinal negativo se existir
+    sinal = ""
+    if inteira.startswith('-'):
+        sinal = "-"
+        inteira = inteira[1:]
+
     # Adicionar separador de milhares
     if len(inteira) > 3:
         inteira_formatada = ""
@@ -61,7 +67,7 @@ def formatar_valor_monetario(valor, incluir_simbolo=True):
             inteira_formatada = digito + inteira_formatada
         inteira = inteira_formatada
 
-    valor_formatado = f"{inteira},{decimal}"
+    valor_formatado = f"{sinal}{inteira},{decimal}"
 
     if incluir_simbolo:
         return f"R$ {valor_formatado}"
