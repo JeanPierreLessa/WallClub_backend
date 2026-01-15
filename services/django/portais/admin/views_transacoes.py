@@ -313,6 +313,26 @@ def exportar_transacoes_excel(request):
         colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
         colunas_percentuais = obter_colunas_percentuais_gestao_financeira()
 
+        # Calcular totais para colunas monetárias
+        totais = {}
+        if dados:
+            for col in colunas_monetarias:
+                total = sum(float(item.get(col, 0) or 0) for item in dados)
+                totais[col] = total
+
+            # Criar linha de totais
+            linha_totais = {}
+            for col in dados[0].keys():
+                if col in colunas_monetarias:
+                    linha_totais[col] = totais.get(col, 0)
+                elif col == 'var0':
+                    linha_totais[col] = 'TOTAIS'
+                else:
+                    linha_totais[col] = ''
+
+            # Inserir totais como primeira linha
+            dados.insert(0, linha_totais)
+
         nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         titulo = "Transacoes Gestao"
 
@@ -526,6 +546,26 @@ def exportar_transacoes_csv(request):
 
     cabecalhos = obter_mapeamento_colunas_completo()
     colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
+
+    # Calcular totais para colunas monetárias
+    totais = {}
+    if dados:
+        for col in colunas_monetarias:
+            total = sum(float(item.get(col, 0) or 0) for item in dados)
+            totais[col] = total
+
+        # Criar linha de totais
+        linha_totais = {}
+        for col in dados[0].keys():
+            if col in colunas_monetarias:
+                linha_totais[col] = totais.get(col, 0)
+            elif col == 'var0':
+                linha_totais[col] = 'TOTAIS'
+            else:
+                linha_totais[col] = ''
+
+        # Inserir totais como primeira linha
+        dados.insert(0, linha_totais)
 
     nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 

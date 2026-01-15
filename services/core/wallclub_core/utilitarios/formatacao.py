@@ -87,8 +87,8 @@ def formatar_percentual(valor, casas_decimais=2):
         if isinstance(valor, str):
             valor_limpo = re.sub(r'[^\d,.-]', '', valor)
 
-            # Se ficou vazio após limpeza, retornar 0
-            if not valor_limpo or valor_limpo in ['-', '.', ',']:
+            # Se ficou vazio após limpeza ou apenas símbolos, retornar 0
+            if not valor_limpo or valor_limpo in ['-', '.', ',', '-.', '-,']:
                 return "0,00%"
 
             if ',' in valor_limpo:
@@ -96,6 +96,9 @@ def formatar_percentual(valor, casas_decimais=2):
             valor = Decimal(valor_limpo)
         elif isinstance(valor, (int, float)):
             valor = Decimal(str(valor))
+        elif isinstance(valor, Decimal):
+            # Já é Decimal
+            pass
         else:
             # Tipo não suportado
             return "0,00%"
