@@ -45,7 +45,7 @@
             <select name="loja" id="loja">
                 <option value="">Todas as lojas</option>
                 {% for loja in lojas %}
-                <option value="{{ loja.id }}" {% if filtros.loja==loja.id|stringformat:"s" %}selected{% endif %}>
+                <option value="{{ loja.id }}" {% if filtros.loja == loja.id|stringformat:"s" %}selected{% endif %}>
                     {{ loja.razao_social }}
                 </option>
                 {% endfor %}
