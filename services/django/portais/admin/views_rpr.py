@@ -664,7 +664,9 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
             SELECT
                 COUNT(*) as total_registros,
                 SUM(CAST(var11 AS DECIMAL(10,2))) as soma_var11,
-                SUM(CAST(var15 AS DECIMAL(10,2))) as soma_var15,
+                SUM(CASE WHEN CAST(var86 AS DECIMAL(10,2)) < 0
+                     THEN ABS(CAST(var86 AS DECIMAL(10,2)))
+                     ELSE 0 END) as soma_var15,
                 SUM(CAST(var26 AS DECIMAL(10,2))) as soma_var26,
                 SUM(CAST(var37 AS DECIMAL(10,2))) as soma_var37,
                 SUM(CAST(var41 AS DECIMAL(10,2))) as soma_var41,
