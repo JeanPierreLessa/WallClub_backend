@@ -131,6 +131,10 @@
                     <span class="detail-value medium">R$ {{ dados_metricas.custo_antecipacao_total|add_thousands_separator }}</span>
                 </div>
                 <div class="metric-detail">
+                    <span class="detail-label">Lançamentos Manuais:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.total_lancamentos_manuais|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
                     <span class="detail-label">Custos POS / Equip.:</span>
                     <span class="detail-value medium">R$ {{ dados_metricas.custos_pos_equip|add_thousands_separator }}</span>
                 </div>
@@ -156,14 +160,6 @@
                 <div class="metric-detail">
                     <span class="detail-label">Comissão Total a pagar:</span>
                     <span class="detail-value medium">R$ {{ dados_metricas.comissao_total_pagar|add_thousands_separator }}</span>
-                </div>
-                <div class="metric-detail">
-                    <span class="detail-label">Lançamentos Manuais:</span>
-                    <span class="detail-value medium">
-                        <a href="#" id="link-lancamentos-manuais" class="text-decoration-none" style="color: inherit;">
-                            R$ {{ dados_metricas.total_lancamentos_manuais|add_thousands_separator }}
-                        </a>
-                    </span>
                 </div>
                 <div class="metric-detail">
                     <span class="detail-label">Comissão Total Líquida a Pagar:</span>
