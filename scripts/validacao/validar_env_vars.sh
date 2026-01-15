@@ -11,17 +11,13 @@ VARS_OBRIGATORIAS=(
     "CHECKOUT_BASE_URL"
     "PORTAL_LOJISTA_URL"
     "PORTAL_VENDAS_URL"
-    "MEDIA_BASE_URL"
-    "MERCHANT_URL"
     "DEBUG"
     "ALLOWED_HOSTS"
 )
 
-VARS_SEGURANCA=(
-    "RISK_ENGINE_ADMIN_CLIENT_ID"
-    "RISK_ENGINE_POS_CLIENT_ID"
-    "RISK_ENGINE_INTERNAL_CLIENT_ID"
-)
+# RISK_ENGINE_*_CLIENT_ID são carregadas via AWS Secrets Manager (get_riskengine_credentials)
+# Não precisam estar no .env
+VARS_SEGURANCA=()
 
 echo "📄 Variáveis de URL (Obrigatórias):"
 echo ""
@@ -75,13 +71,9 @@ for container in "${CONTAINERS[@]}"; do
     echo ""
 done
 
-echo "=== MERCHANT_URL (Crítica para Own Financial) ==="
-MERCHANT_URL=$(docker exec wallclub-pos printenv MERCHANT_URL 2>/dev/null)
-if [ -n "$MERCHANT_URL" ]; then
-    echo "✅ MERCHANT_URL definida: $MERCHANT_URL"
-else
-    echo "❌ MERCHANT_URL não definida (CRÍTICO para Own Financial)"
-fi
+echo "=== MERCHANT_URL (Own Financial) ==="
+echo "ℹ️  MERCHANT_URL agora é buscada da tabela 'loja' (campo url_loja)"
+echo "   Não é mais necessário definir como variável de ambiente"
 
 echo ""
 echo "=== Validação Concluída ==="
