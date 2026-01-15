@@ -19,7 +19,10 @@ urlpatterns = [
     path('portal_lojista/<str:marca>/', include('portais.lojista.urls', namespace='lojista_marca')),
     path('portal_corporativo/', include('portais.corporativo.urls')),
     path('portal_vendas/', include('portais.vendas.urls')),
-    
+
+    # APIs Own Financial (para portal admin)
+    path('api/own/', include('adquirente_own.urls_cadastro')),
+
     # APIs internas (chamadas entre containers)
     path('api/cupom/validar/', validar_cupom_checkout, name='validar_cupom_interno'),
 ]
