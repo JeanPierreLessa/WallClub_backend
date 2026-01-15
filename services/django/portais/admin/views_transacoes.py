@@ -18,7 +18,7 @@ from wallclub_core.utilitarios.log_control import registrar_log
 from ..controle_acesso.decorators import require_admin_access
 from portais.controle_acesso.controle_acesso import require_funcionalidade, require_acesso_padronizado, require_secao_permitida
 from portais.controle_acesso.filtros import FiltrosAcessoService
-from .utils.column_mappings import obter_mapeamento_colunas_completo, obter_colunas_monetarias_gestao_financeira
+from .utils.column_mappings import obter_mapeamento_colunas_completo, obter_colunas_monetarias_gestao_financeira, obter_colunas_percentuais_gestao_financeira
 from wallclub_core.utilitarios.export_utils import exportar_excel, exportar_csv
 from gestao_financeira.models import PagamentoEfetuado
 from django.apps import apps
@@ -178,6 +178,7 @@ def base_transacoes_gestao(request):
     # Remover data_transacao da tela (manter apenas no CSV)
     cabecalhos_tela = {k: v for k, v in cabecalhos.items() if k != 'data_transacao'}
     colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
+    colunas_percentuais = obter_colunas_percentuais_gestao_financeira()
 
     # Calcular totais no SQL
     totais = {}
@@ -203,6 +204,7 @@ def base_transacoes_gestao(request):
         'total_registros': total_registros,
         'cabecalhos': cabecalhos_tela,
         'colunas_monetarias': colunas_monetarias,
+        'colunas_percentuais': colunas_percentuais,
         'totais': totais,
     }
 
@@ -212,7 +214,7 @@ def base_transacoes_gestao(request):
 def exportar_transacoes_excel(request):
     """Exportar transações para Excel usando SQL direto"""
     import threading
-    
+
     try:
         # Aplicar os mesmos filtros da view principal
         filtros = {
@@ -251,7 +253,7 @@ def exportar_transacoes_excel(request):
         with connection.cursor() as cursor:
             cursor.execute(sql_count, params)
             total_registros = cursor.fetchone()[0]
-        
+
         LIMITE_DIRETO = 5000
 
         registrar_log('portais.admin', f"TRANSACOES - Export Excel - {total_registros} registros - Limite: {LIMITE_DIRETO}")
@@ -309,13 +311,14 @@ def exportar_transacoes_excel(request):
 
         cabecalhos = obter_mapeamento_colunas_completo()
         colunas_monetarias = obter_colunas_monetarias_gestao_financeira()
+        colunas_percentuais = obter_colunas_percentuais_gestao_financeira()
 
         nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         titulo = "Transacoes Gestao"
 
         registrar_log('portais.admin', f"TRANSACOES - Excel concluído - {len(dados)} registros")
 
-        return exportar_excel(nome_arquivo, dados, cabecalhos, titulo, colunas_monetarias)
+        return exportar_excel(nome_arquivo, dados, cabecalhos, titulo, colunas_monetarias, colunas_percentuais)
 
     except Exception as e:
         registrar_log('portais.admin', f"TRANSACOES - Erro Excel: {e}", nivel='ERROR')
@@ -371,7 +374,7 @@ def _processar_export_grande_admin(request, where_clause, params, total_registro
                     # Montar linha CSV
                     linha = []
                     linha.append(str(transacao.get('tipo_operacao', '')))
-                    
+
                     for col in cabecalhos.keys():
                         valor = transacao.get(col, '')
                         if valor is None:
@@ -381,20 +384,20 @@ def _processar_export_grande_admin(request, where_clause, params, total_registro
                         else:
                             valor = str(valor)
                         linha.append(valor)
-                    
+
                     temp_file.write(';'.join(linha) + '\n')
 
         # Enviar por email - pegar direto da sessão
         usuario_email = request.session.get('portal_usuario_email', '')
-        
+
         if not usuario_email:
             registrar_log('portais.admin', f"EXPORT GRANDE - ERRO: Email não encontrado na sessão. Arquivo gerado mas não enviado.", nivel='ERROR')
             # Limpar arquivo temporário
             os.unlink(temp_path)
             return
-        
+
         registrar_log('portais.admin', f"EXPORT GRANDE - Enviando para: {usuario_email}")
-        
+
         if usuario_email:
             nome_arquivo = f"transacoes_gestao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 

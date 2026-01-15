@@ -162,21 +162,21 @@ def obter_mapeamento_colunas_completo():
 def obter_mapeamento_colunas_rpr():
     """Retorna mapeamento específico para tabela RPR"""
     mapeamento_completo = obter_mapeamento_colunas_completo()
-    
+
     # Campos específicos da tabela RPR
     campos_rpr = [
-        'data_transacao', 'var68', 'var5', 'var6', 'var4', 'var11', 'var26', 
-        'var36', 'var37', 'var90', 'var39', 'var92', 'var40', 'var93_A', 
-        'var41', 'var15', 'var98', 'var101', 'var58', 'var111_A', 'var9', 
+        'data_transacao', 'var68', 'var5', 'var6', 'var4', 'var11', 'var26',
+        'var36', 'var37', 'var90', 'var39', 'var92', 'var40', 'var93_A',
+        'var41', 'var15', 'var98', 'var101', 'var58', 'var111_A', 'var9',
         'var10', 'var8', 'var12', 'var13', 'var43'
     ]
-    
+
     return {campo: mapeamento_completo[campo] for campo in campos_rpr if campo in mapeamento_completo}
 
 def obter_colunas_monetarias_rpr():
     """Retorna lista de colunas monetárias específicas da tabela RPR"""
     return [
-        'var11', 'var26', 'var37', 'var90', 'var41', 'var15', 'var98', 
+        'var11', 'var26', 'var37', 'var90', 'var41', 'var15', 'var98',
         'var101', 'var58', 'var111_A'
     ]
 
@@ -197,6 +197,15 @@ def obter_colunas_monetarias_gestao_financeira():
 def obter_colunas_percentuais_rpr():
     """Retorna lista de colunas percentuais específicas da tabela RPR"""
     return [
-        'variavel_nova_6', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 
+        'variavel_nova_6', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12',
         'variavel_nova_14', 'variavel_nova_16'
+    ]
+
+def obter_colunas_percentuais_gestao_financeira():
+    """Retorna lista de colunas percentuais para gestão financeira"""
+    return [
+        'var14', 'var17', 'var21', 'var24', 'var28', 'var31', 'var35', 'var36', 'var39', 'var40',
+        'var47', 'var48', 'var50', 'var52', 'var53', 'var56', 'var63', 'var64', 'var72', 'var74',
+        'var76', 'var78', 'var79', 'var83', 'var85', 'var87', 'var89', 'var91', 'var92', 'var93',
+        'var93_A', 'var108', 'var110', 'var117', 'var117_A', 'var118', 'var118_A', 'var127'
     ]

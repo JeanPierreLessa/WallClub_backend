@@ -1,6 +1,7 @@
 {% extends 'portais/admin/base.html' %}
 {% load static %}
 {% load admin_extras %}
+{% load formatacao_tags %}
 
 {% block title %}Gestão Admin{% endblock %}
 
@@ -25,12 +26,12 @@
             <label for="data_inicial">Data Inicial</label>
             <input type="date" name="data_inicial" id="data_inicial" value="{{ filtros.data_inicial }}">
         </div>
-        
+
         <div class="form-group">
             <label for="data_final">Data Final</label>
             <input type="date" name="data_final" id="data_final" value="{{ filtros.data_final }}">
         </div>
-        
+
         <div class="form-group">
             <label for="canal">Canal</label>
             <select name="canal" id="canal">
@@ -42,34 +43,34 @@
                 {% endfor %}
             </select>
         </div>
-        
+
         <!-- Filtro de loja removido para admin - deve ver todas as transações -->
-        
+
         <div class="form-group">
             <label for="nsu_filtro">NSU contém</label>
             <input type="text" name="nsu_filtro" id="nsu_filtro" value="{{ filtros.nsu_filtro }}" placeholder="Digite o NSU...">
         </div>
-        
+
         <div class="form-group" style="width: 100%; flex-basis: 100%;">
             <div class="checkbox-group">
                 <input type="checkbox" name="incluir_tef" id="incluir_tef" value="1" {% if filtros.incluir_tef %}checked{% endif %}>
                 <label for="incluir_tef" style="font-size: 0.85em;">Incluir transações Credenciadora</label>
             </div>
         </div>
-        
+
         <div class="form-group" style="width: 100%; flex-basis: 100%;">
             <div class="buttons-group">
                 <button type="submit" class="btn btn-success btn-colorido">
                     <i class="fas fa-search me-1"></i> Filtrar
                 </button>
-                <a href="{% url 'portais_admin:exportar_transacoes_excel' %}?{{ request.GET.urlencode }}" 
-                   class="btn btn-success btn-colorido btn-sm ms-2" 
+                <a href="{% url 'portais_admin:exportar_transacoes_excel' %}?{{ request.GET.urlencode }}"
+                   class="btn btn-success btn-colorido btn-sm ms-2"
                    style="background-color: #198754 !important; border-color: #198754 !important;"
                    title="Exportar para Excel">
                     <i class="fas fa-file-excel me-1"></i> Excel
                 </a>
-                <a href="{% url 'portais_admin:exportar_transacoes_csv' %}?{{ request.GET.urlencode }}" 
-                   class="btn btn-secondary btn-colorido btn-sm ms-1" 
+                <a href="{% url 'portais_admin:exportar_transacoes_csv' %}?{{ request.GET.urlencode }}"
+                   class="btn btn-secondary btn-colorido btn-sm ms-1"
                    title="Exportar para CSV">
                     <i class="fas fa-file-csv me-1"></i> CSV
                 </a>
@@ -98,7 +99,7 @@
                     {% for var_name, var_label in cabecalhos.items %}
                     <td{% if var_name in colunas_monetarias %} class="monetary"{% endif %} style="font-weight: bold;">
                         {% if var_name in colunas_monetarias and totais|lookup:var_name %}
-                            R$ {{ totais|lookup:var_name|floatformat:2 }}
+                            {{ totais|lookup:var_name|moeda }}
                         {% elif var_name == 'var0' %}
                             TOTAIS
                         {% else %}
@@ -108,13 +109,15 @@
                     {% endfor %}
                 </tr>
                 {% endif %}
-                
+
                 {% for transacao in transacoes %}
                 <tr>
                     {% for var_name, var_label in cabecalhos.items %}
                     <td{% if var_name in colunas_monetarias %} class="monetary"{% endif %}>
                         {% if var_name in colunas_monetarias and transacao|lookup:var_name %}
-                            R$ {{ transacao|lookup:var_name|floatformat:2 }}
+                            {{ transacao|lookup:var_name|moeda }}
+                        {% elif var_name in colunas_percentuais and transacao|lookup:var_name %}
+                            {{ transacao|lookup:var_name|percentual }}
                         {% else %}
                             {{ transacao|lookup:var_name|default:"-" }}
                         {% endif %}
@@ -142,17 +145,17 @@
             <a href="?page=1&{{ request.GET.urlencode }}">&laquo; Primeira</a>
             <a href="?page={{ transacoes.previous_page_number }}&{{ request.GET.urlencode }}">&lsaquo; Anterior</a>
         {% endif %}
-        
+
         <span class="current">
             Página {{ transacoes.number }} de {{ transacoes.paginator.num_pages }}
         </span>
-        
+
         {% if transacoes.has_next %}
             <a href="?page={{ transacoes.next_page_number }}&{{ request.GET.urlencode }}">Próxima &rsaquo;</a>
             <a href="?page={{ transacoes.paginator.num_pages }}&{{ request.GET.urlencode }}">Última &raquo;</a>
         {% endif %}
     </div>
-    
+
     <div class="pagination-total">
         <i class="fas fa-check-circle me-1 text-success"></i>
         <strong>Total de registros: {{ total_registros }}</strong>
@@ -177,7 +180,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-submit form quando mudar filtros importantes
     const autoSubmitFields = ['loja_id', 'canal'];
-    
+
     autoSubmitFields.forEach(fieldName => {
         const field = document.getElementById(fieldName);
         if (field) {
@@ -186,11 +189,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    
+
     // Validação de datas
     const dataInicial = document.getElementById('data_inicial');
     const dataFinal = document.getElementById('data_final');
-    
+
     function validarDatas() {
         if (dataInicial.value && dataFinal.value) {
             if (new Date(dataInicial.value) > new Date(dataFinal.value)) {
@@ -199,33 +202,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     if (dataInicial && dataFinal) {
         dataInicial.addEventListener('change', validarDatas);
         dataFinal.addEventListener('change', validarDatas);
     }
-    
+
     // Feedback visual para exportação com suporte a processamento em background
     const exportLinks = document.querySelectorAll('a[href*="export"]');
     exportLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            
+
             const icon = this.querySelector('i');
             const originalClass = icon.className;
             const originalText = this.textContent;
-            
+
             // Mostrar loading
             icon.className = 'fas fa-spinner fa-spin';
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
             this.style.pointerEvents = 'none';
-            
+
             // Fazer requisição AJAX
             fetch(this.href)
                 .then(response => {
                     console.log('Response headers:', response.headers);
                     console.log('Content-Type:', response.headers.get('content-type'));
-                    
+
                     if (response.headers.get('content-type')?.includes('application/json')) {
                         console.log('Detectado JSON - processando em background');
                         return response.json();
