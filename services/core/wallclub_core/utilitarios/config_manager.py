@@ -246,6 +246,28 @@ class ConfigManager:
             pass
             return {}
 
+    def load_own_credentials(self) -> None:
+        """
+        Carrega credenciais Own do Secrets Manager e seta como variáveis de ambiente
+        """
+        try:
+            secret_string = self.get_secret(self._get_secret_name())
+            if not secret_string:
+                return
+
+            secrets = json.loads(secret_string)
+
+            # Setar credenciais Own como variáveis de ambiente
+            if 'OWN_CORE_ID' in secrets:
+                os.environ['OWN_CORE_ID'] = secrets['OWN_CORE_ID']
+            if 'OWN_SECRET' in secrets:
+                os.environ['OWN_SECRET'] = secrets['OWN_SECRET']
+            if 'OWN_SCOPE' in secrets:
+                os.environ['OWN_SCOPE'] = secrets['OWN_SCOPE']
+
+        except Exception as e:
+            pass
+
 
 # Instância global do gerenciador (lazy loading)
 _config_manager_instance = None

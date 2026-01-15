@@ -10,6 +10,10 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Carregar credenciais Own do Secrets Manager
+from wallclub_core.utilitarios.config_manager import get_config_manager
+get_config_manager().load_own_credentials()
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -18,11 +22,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party apps
     'rest_framework',
     'corsheaders',
-    
+
     # Local apps
     'wallclub_core',
     'wallclub_core.oauth',
@@ -215,16 +219,16 @@ API_RATE_LIMITS = {
     # APIs de autenticação (mais restritivas)
     '/api/oauth/token/': {'requests': 10, 'window': 60},  # 10 req/min
     '/api/v1/cliente/login/': {'requests': 6, 'window': 60},  # 6 req/min (permite 5 falhas + 1 sucesso)
-    
+
     # APIs de transação (moderadas)
     '/api/v1/transacao/': {'requests': 30, 'window': 60},  # 30 req/min
     '/api/v1/cliente/extrato/': {'requests': 20, 'window': 60},  # 20 req/min
     '/api/v1/cliente/comprovante/': {'requests': 20, 'window': 60},  # 20 req/min
-    
+
     # POSP2 (crítico - mais permissivo)
     '/posp2/v1/checkout/': {'requests': 100, 'window': 60},  # 100 req/min
     '/posp2/v1/consulta/': {'requests': 50, 'window': 60},  # 50 req/min
-    
+
     # Default para outros endpoints
     'default': {'requests': 60, 'window': 60},  # 60 req/min
 }
