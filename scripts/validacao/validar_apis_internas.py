@@ -33,11 +33,11 @@ def encontrar_endpoints_api_interna(base_path):
                     with open(filepath, 'r', encoding='utf-8') as f:
                         content = f.read()
 
-                        # Contar @api_view(['POST']) ou @api_view(["POST"])
-                        count_api_view = len(re.findall(r"@api_view\(\[[\'\"]POST[\'\"]\]\)", content))
+                        # Contar @api_view(['POST']) ou @api_view(["POST"]) ou outros métodos
+                        count_api_view = len(re.findall(r"@api_view\(\[", content))
 
-                        # Contar @require_http_methods(["POST"])
-                        count_require = len(re.findall(r"@require_http_methods\(\[\"POST\"\]\)", content))
+                        # Contar @require_http_methods(["POST"]) ou outros métodos
+                        count_require = len(re.findall(r"@require_http_methods\(\[", content))
 
                         count = count_api_view + count_require
 
