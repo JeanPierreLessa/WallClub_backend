@@ -1,9 +1,9 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.1  
-**Data:** 24/12/2025  
-**Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md  
-**Mudanças:** 
+**Versão:** 5.1
+**Data:** 24/12/2025
+**Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
+**Mudanças:**
 - Abstração Calculadoras Base - Parâmetros obrigatórios, sem busca interna (24/12/2025)
 - Migração Pinbank para `transactiondata_pos` - Endpoint `/trdata/` agora grava em tabela unificada (23/12/2025)
 - Migração Terminais DATETIME - Campos `inicio`/`fim` convertidos de Unix timestamp para DATETIME (20/12/2025)
@@ -92,7 +92,7 @@ def minha_funcao():
 
 ### 3 Estratégias de Comunicação (Fase 6B)
 
-**1. APIs REST Internas (70% dos casos) - 32 endpoints**
+**1. APIs REST Internas (70% dos casos) - 40 endpoints**
 
 ```python
 # Exemplo: Consultar cliente (POS → APIs)
@@ -111,12 +111,15 @@ if response.get('sucesso'):
     saldo = data['saldo_disponivel']
 ```
 
-**32 Endpoints Disponíveis:**
+**40 Endpoints Disponíveis:**
 - **Cliente (API Interna):** 6 endpoints (consultar_por_cpf, cadastrar, obter_cliente_id, atualizar_celular, obter_dados_cliente, verificar_cadastro) ⭐ NOVO
-- Conta Digital: 5 endpoints (consultar-saldo, autorizar-uso, debitar-saldo, estornar-saldo, calcular-maximo)
-- Checkout Recorrências: 8 endpoints (listar, criar, obter, pausar, reativar, cobrar, atualizar, deletar)
-- Ofertas: 6 endpoints (listar, criar, obter, atualizar, grupos/listar, grupos/criar)
-- Parâmetros: 7 endpoints (configuracoes/loja, configuracoes/contar, configuracoes/ultima, loja/modalidades, planos, importacoes, importacoes/{id})
+- **Conta Digital:** 5 endpoints (consultar-saldo, autorizar-uso, debitar-saldo, estornar-saldo, calcular-maximo)
+- **Checkout:** 16 endpoints
+  - Recorrências: 8 endpoints (listar, criar, obter, pausar, reativar, cobrar, atualizar, deletar)
+  - Clientes: 4 endpoints (listar, criar, obter, atualizar)
+  - Tokens/Links: 4 endpoints (listar, criar, obter, validar)
+- **Ofertas:** 6 endpoints (listar, criar, obter, atualizar, grupos/listar, grupos/criar)
+- **Parâmetros:** 7 endpoints (configuracoes/loja, configuracoes/contar, configuracoes/ultima, loja/modalidades, planos, importacoes, importacoes/{id})
 
 **Características:**
 - ❌ Sem autenticação OAuth (isolamento de rede Docker)
@@ -238,23 +241,23 @@ CREATE TABLE nome_tabela (
 **Converter Existente:**
 ```sql
 -- Altera TUDO: estrutura + dados + colunas
-ALTER TABLE nome_tabela 
-  CONVERT TO CHARACTER SET utf8mb4 
+ALTER TABLE nome_tabela
+  CONVERT TO CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 ```
 
 **Verificar Inconsistências:**
 ```sql
 -- Tabelas com collation diferente
-SELECT TABLE_NAME, TABLE_COLLATION 
-FROM information_schema.TABLES 
-WHERE TABLE_SCHEMA = 'wallclub' 
+SELECT TABLE_NAME, TABLE_COLLATION
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = 'wallclub'
   AND TABLE_COLLATION != 'utf8mb4_unicode_ci';
 
 -- Colunas com collation diferente
-SELECT TABLE_NAME, COLUMN_NAME, COLLATION_NAME 
-FROM information_schema.COLUMNS 
-WHERE TABLE_SCHEMA = 'wallclub' 
+SELECT TABLE_NAME, COLUMN_NAME, COLLATION_NAME
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'wallclub'
   AND COLLATION_NAME IS NOT NULL
   AND COLLATION_NAME != 'utf8mb4_unicode_ci';
 ```
@@ -538,7 +541,7 @@ MERCHANT_URL = os.environ.get('MERCHANT_URL')  # Adicionar junto com outras URLs
 
 ### Sistema JWT Customizado ⭐ (Fase 1 + 4)
 
-**Status:** 18 cenários testados (28/10/2025)  
+**Status:** 18 cenários testados (28/10/2025)
 **Correção Crítica:** 26/10/2025 - Validação obrigatória contra tabela em produção**
 
 **Tokens:**
@@ -632,8 +635,8 @@ Cadastro → Senha SMS (4 dígitos) → JWT 30 dias → Biometria
 
 ### OAuth 2.0
 
-**Grant Type:** `client_credentials`  
-**Expiration:** 3600s (1h)  
+**Grant Type:** `client_credentials`
+**Expiration:** 3600s (1h)
 **Header:** `Authorization: Bearer <token>`
 
 **Contextos Separados:**
@@ -645,13 +648,13 @@ Cadastro → Senha SMS (4 dígitos) → JWT 30 dias → Biometria
 
 ## 🛡️ SISTEMA ANTIFRAUDE (Fase 2)
 
-**Status:** Operacional desde 16/10/2025  
+**Status:** Operacional desde 16/10/2025
 **Integrações:** POSP2 + Checkout Web + Portal Admin
 
 ### Arquitetura Risk Engine
 
-**Container:** wallclub-riskengine:8004  
-**Latência:** <200ms média  
+**Container:** wallclub-riskengine:8004
+**Latência:** <200ms média
 **Fail-open:** Erro não bloqueia transações
 
 **Score de Risco:**
@@ -706,9 +709,9 @@ Decisão:
 
 ### MaxMind minFraud
 
-**Cache:** Redis 1h  
-**Fallback:** Score neutro 50  
-**Timeout:** 3s  
+**Cache:** Redis 1h
+**Fallback:** Score neutro 50
+**Timeout:** 3s
 **Custo:** R$ 50-75/mês
 
 **Chave Redis:** `maxmind:{cpf}:{valor}:{ip}`
@@ -1035,20 +1038,20 @@ docker exec -it wallclub-redis redis-cli
 
 ```sql
 -- Verificar collation
-SELECT TABLE_NAME, TABLE_COLLATION 
-FROM information_schema.TABLES 
+SELECT TABLE_NAME, TABLE_COLLATION
+FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = 'wallclub';
 
 -- Tokens ativos
-SELECT COUNT(*) FROM cliente_jwt_tokens 
+SELECT COUNT(*) FROM cliente_jwt_tokens
 WHERE is_active = TRUE;
 
 -- Bloqueios ativos
-SELECT COUNT(*) FROM bloqueios_seguranca 
+SELECT COUNT(*) FROM bloqueios_seguranca
 WHERE ativo = TRUE;
 
 -- Transações últimas 24h
-SELECT COUNT(*) FROM baseTransacoesGestao 
+SELECT COUNT(*) FROM baseTransacoesGestao
 WHERE created_at >= NOW() - INTERVAL 24 HOUR;
 ```
 
@@ -1095,8 +1098,8 @@ docker exec wallclub-redis redis-cli ping
 
 ---
 
-**Última atualização:** 02/12/2025  
-**Próxima revisão:** Testes completos Cashback Loja  
+**Última atualização:** 02/12/2025
+**Próxima revisão:** Testes completos Cashback Loja
 **Manutenção:** Jean Lessa + Claude AI
 
 ---
@@ -1458,18 +1461,18 @@ ContaDigitalService.registrar_compra_informativa(
 ### Query Agrupada
 
 ```sql
-SELECT   
+SELECT
     x.nome AS nome_operador,
     SUM(x.var11) AS valor_total,
     COUNT(1) AS qtde_vendas
 FROM (
-    SELECT DISTINCT 
-        b.var9, b.var6, b.var11, 
+    SELECT DISTINCT
+        b.var9, b.var6, b.var11,
         t.operador_pos,
-        teops.nome 
+        teops.nome
     FROM baseTransacoesGestao b
-    INNER JOIN transactiondata t ON b.var9 = t.nsuPinbank 
-    LEFT JOIN terminais_operadores_pos tepos ON t.operador_pos = tepos.id 
+    INNER JOIN transactiondata t ON b.var9 = t.nsuPinbank
+    LEFT JOIN terminais_operadores_pos tepos ON t.operador_pos = tepos.id
     LEFT JOIN terminais_operadores teops ON tepos.operador = teops.operador
     WHERE {filtros}
         AND t.operador_pos IS NOT NULL

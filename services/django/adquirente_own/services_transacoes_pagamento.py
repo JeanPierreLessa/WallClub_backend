@@ -14,11 +14,11 @@ from wallclub_core.utilitarios.log_control import registrar_log
 
 class TransacoesOwnService:
     """Serviço para processamento de transações via API Own Financial (OPPWA)"""
-    
+
     # URLs base OPPWA
     BASE_URL_TEST = 'https://eu-test.oppwa.com'
     BASE_URL_LIVE = 'https://eu-prod.oppwa.com'
-    
+
     # Result codes de sucesso
     SUCCESS_CODES = [
         '000.000.000',  # Transaction succeeded
@@ -26,54 +26,110 @@ class TransacoesOwnService:
         '000.100.111',  # Request successfully processed (please review manually)
         '000.100.112',  # Request successfully processed (please review manually)
     ]
-    
+
     def __init__(self, loja_id: int = None, environment: str = 'TEST'):
         """
         Inicializa o serviço de transações Own
-        
+
         Args:
             loja_id: ID da loja
             environment: 'TEST' ou 'LIVE'
         """
         self.loja_id = loja_id
         self.own_service = OwnService(environment=environment)
-    
+
+    def _obter_dados_loja(self, loja_id: int = None) -> Optional[Dict[str, Any]]:
+        """Obtém dados da loja para envio à Own Financial"""
+        from django.db import connection
+
+        id_loja = loja_id or self.loja_id
+
+        if not id_loja:
+            raise ValueError("loja_id não fornecido")
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    url_loja,
+                    razao_social,
+                    mcc,
+                    logradouro,
+                    numero_endereco,
+                    municipio,
+                    uf,
+                    cep,
+                    ddd_telefone_comercial,
+                    telefone_comercial
+                FROM loja
+                WHERE id = %s
+                """,
+                [id_loja]
+            )
+            row = cursor.fetchone()
+
+            if not row:
+                raise ValueError(f"Loja {id_loja} não encontrada")
+
+            # Montar telefone completo
+            telefone = ''
+            if row[8] and row[9]:  # ddd + telefone
+                telefone = f"{row[8]}{row[9]}"
+            elif row[9]:  # só telefone
+                telefone = row[9]
+
+            # Montar endereço
+            endereco = row[3] or 'Av Paulista'  # logradouro
+            if row[4]:  # numero_endereco
+                endereco = f"{endereco} {row[4]}"
+
+            return {
+                'url': row[0] or 'https://wallclub.com.br',
+                'name': row[1] or 'WallClub',
+                'mcc': row[2] or '5462',  # Fallback: Padarias
+                'street': endereco,
+                'city': row[5] or 'Sao Paulo',
+                'state': row[6] or 'SP',
+                'postcode': row[7] or '01310100',
+                'phone': telefone or '1133334444',
+            }
+
     def _obter_credenciais_loja(self, loja_id: int = None) -> Optional[Dict[str, Any]]:
         """Obtém credenciais Own da loja"""
         id_loja = loja_id or self.loja_id
-        
+
         if not id_loja:
             raise ValueError("loja_id não fornecido")
-        
+
         credenciais = self.own_service.obter_credenciais_loja(id_loja)
-        
+
         if not credenciais:
             raise ValueError(f"Credenciais Own não encontradas para loja {id_loja}")
-        
+
         # Se não tem entity_id/access_token específicos, usa client_id e gera token OAuth
         if not credenciais.get('entity_id') or not credenciais.get('access_token'):
             registrar_log('own.transacao', '🔑 Gerando access_token via OAuth para OPPWA')
-            
+
             # Gerar token OAuth
             token_data = self.own_service.obter_token_oauth(
                 client_id=credenciais['client_id'],
                 client_secret=credenciais['client_secret'],
                 scope=credenciais['scope']
             )
-            
+
             if not token_data.get('access_token'):
                 raise ValueError("Falha ao obter access_token OAuth")
-            
+
             # Usar client_id como entity_id e token OAuth como access_token
             credenciais['entity_id'] = credenciais['client_id']
             credenciais['access_token'] = token_data['access_token']
-        
+
         return credenciais
-    
+
     def _get_base_url(self, environment: str) -> str:
         """Retorna URL base conforme ambiente"""
         return self.BASE_URL_LIVE if environment == 'LIVE' else self.BASE_URL_TEST
-    
+
     def _fazer_requisicao_oppwa(
         self,
         method: str,
@@ -85,7 +141,7 @@ class TransacoesOwnService:
     ) -> Dict[str, Any]:
         """
         Faz requisição à API OPPWA
-        
+
         Args:
             method: GET, POST ou DELETE
             endpoint: Endpoint da API (ex: '/v1/payments')
@@ -93,22 +149,22 @@ class TransacoesOwnService:
             access_token: Bearer token
             environment: TEST ou LIVE
             data: Dados do formulário (application/x-www-form-urlencoded)
-            
+
         Returns:
             Dict com resposta da API
         """
         base_url = self._get_base_url(environment)
         url = f'{base_url}{endpoint}'
-        
+
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        
+
         try:
             registrar_log('own.transacao', f'📡 {method} {endpoint}')
             registrar_log('own.transacao', f'📦 Payload: {data}')
-            
+
             if method.upper() == 'POST':
                 response = requests.post(url, data=data, headers=headers, timeout=60)
             elif method.upper() == 'GET':
@@ -117,14 +173,14 @@ class TransacoesOwnService:
                 response = requests.delete(url, headers=headers, params=data, timeout=60)
             else:
                 raise ValueError(f'Método não suportado: {method}')
-            
+
             response.raise_for_status()
             result = response.json()
-            
+
             registrar_log('own.transacao', f'✅ Resposta: {result.get("result", {}).get("code")}')
-            
+
             return result
-            
+
         except requests.exceptions.Timeout:
             registrar_log('own.transacao', f'⏱️ Timeout: {endpoint}', nivel='WARNING')
             return {
@@ -148,7 +204,7 @@ class TransacoesOwnService:
                     'description': f'Erro na comunicação: {str(e)}'
                 }
             }
-    
+
     def create_payment_debit(
         self,
         card_data: Dict[str, str],
@@ -159,28 +215,29 @@ class TransacoesOwnService:
         """
         Pagamento débito/crédito (captura imediata)
         Payment Type: DB (Debit)
-        
+
         Args:
             card_data: Dados do cartão (number, holder, expiry_month, expiry_year, cvv, brand)
             amount: Valor da transação
             parcelas: Número de parcelas (padrão: 1)
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com sucesso, own_payment_id, nsu, codigo_autorizacao, mensagem
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+        dados_loja = self._obter_dados_loja(loja_id)
+
         # Normalizar ano para 4 dígitos (OPPWA exige formato YYYY)
         expiry_year = card_data['expiry_year']
         if len(str(expiry_year)) == 2:
             expiry_year = f'20{expiry_year}'
-        
+
         # Normalizar bandeira (MASTERCARD -> MASTER)
         brand = card_data['brand'].upper()
         if brand == 'MASTERCARD':
             brand = 'MASTER'
-        
+
         data = {
             'entityId': credenciais['entity_id'],
             'amount': f'{amount:.2f}',
@@ -194,25 +251,25 @@ class TransacoesOwnService:
             'card.cvv': card_data['cvv'],
             'transactionCategory': 'EC',
             'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
-            'merchant.mcc': '5462',
-            'merchant.name': 'WallClub Channel Teste',
-            'merchant.street': 'Av Paulista 1000',
-            'merchant.city': 'Sao Paulo',
-            'merchant.state': 'SP',
+            'merchant.mcc': dados_loja['mcc'],
+            'merchant.name': dados_loja['name'],
+            'merchant.street': dados_loja['street'],
+            'merchant.city': dados_loja['city'],
+            'merchant.state': dados_loja['state'],
             'merchant.countryCode': '076',
-            'merchant.url': settings.MERCHANT_URL,
-            'merchant.postcode': '01310100',
-            'merchant.phone': '1133334444',
-            'merchant.customerContactPhone': '1133334444',
+            'merchant.url': dados_loja['url'],
+            'merchant.postcode': dados_loja['postcode'],
+            'merchant.phone': dados_loja['phone'],
+            'merchant.customerContactPhone': dados_loja['phone'],
             'customParameters[PAYMENT_METHOD]': 'CREDIT',
         }
-        
+
         # Parcelamento (se aplicável)
         if parcelas > 1:
             data['standingInstruction.numberOfInstallments'] = str(parcelas)
-        
+
         registrar_log('own.transacao', f'💳 Pagamento DB: R$ {amount:.2f} ({parcelas}x)')
-        
+
         response = self._fazer_requisicao_oppwa(
             method='POST',
             endpoint='/v1/payments',
@@ -221,11 +278,11 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data=data
         )
-        
+
         # Verificar sucesso
         result_code = response.get('result', {}).get('code', '')
         acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
-        
+
         # Sucesso se: código na lista OU acquirer aprovou (00)
         if result_code in self.SUCCESS_CODES or acquirer_response == '00':
             registrar_log('own.transacao', f'✅ Pagamento aprovado: {response.get("id")} (Acquirer: {acquirer_response})')
@@ -246,7 +303,7 @@ class TransacoesOwnService:
                 'codigo_erro': result_code,
                 'mensagem': response.get('result', {}).get('description', 'Erro desconhecido')
             }
-    
+
     def create_payment_with_tokenization(
         self,
         card_data: Dict[str, str],
@@ -256,27 +313,28 @@ class TransacoesOwnService:
         """
         Pagamento com tokenização (para recorrência)
         Payment Type: PA (Pre-authorization) + createRegistration
-        
+
         Args:
             card_data: Dados do cartão
             amount: Valor da transação
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com sucesso, own_payment_id, registration_id, card_last4
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+        dados_loja = self._obter_dados_loja(loja_id)
+
         # Normalizar ano para 4 dígitos (OPPWA exige formato YYYY)
         expiry_year = card_data['expiry_year']
         if len(str(expiry_year)) == 2:
             expiry_year = f'20{expiry_year}'
-        
+
         # Normalizar bandeira (MASTERCARD -> MASTER)
         brand = card_data['brand'].upper()
         if brand == 'MASTERCARD':
             brand = 'MASTER'
-        
+
         data = {
             'entityId': credenciais['entity_id'],
             'amount': f'{amount:.2f}',
@@ -293,21 +351,21 @@ class TransacoesOwnService:
             'standingInstruction.mode': 'INITIAL',
             'standingInstruction.type': 'UNSCHEDULED',
             'standingInstruction.source': 'CIT',
-            'merchant.mcc': '5462',
-            'merchant.name': 'WallClub Channel Teste',
-            'merchant.street': 'Av Paulista 1000',
-            'merchant.city': 'Sao Paulo',
-            'merchant.state': 'SP',
+            'merchant.mcc': dados_loja['mcc'],
+            'merchant.name': dados_loja['name'],
+            'merchant.street': dados_loja['street'],
+            'merchant.city': dados_loja['city'],
+            'merchant.state': dados_loja['state'],
             'merchant.countryCode': '076',
-            'merchant.url': settings.MERCHANT_URL,
-            'merchant.postcode': '01310100',
-            'merchant.phone': '1133334444',
-            'merchant.customerContactPhone': '1133334444',
+            'merchant.url': dados_loja['url'],
+            'merchant.postcode': dados_loja['postcode'],
+            'merchant.phone': dados_loja['phone'],
+            'merchant.customerContactPhone': dados_loja['phone'],
             'customParameters[PAYMENT_METHOD]': 'CREDIT'
         }
-        
+
         registrar_log('own.transacao', f'🔐 PA com tokenização: R$ {amount:.2f}')
-        
+
         response = self._fazer_requisicao_oppwa(
             method='POST',
             endpoint='/v1/payments',
@@ -316,10 +374,10 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data=data
         )
-        
+
         result_code = response.get('result', {}).get('code', '')
         acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
-        
+
         # Sucesso se: código na lista OU acquirer aprovou (00)
         if result_code in self.SUCCESS_CODES or acquirer_response == '00':
             registrar_log('own.transacao', f'✅ Tokenização aprovada: {response.get("registrationId")} (Acquirer: {acquirer_response})')
@@ -337,7 +395,7 @@ class TransacoesOwnService:
                 'sucesso': False,
                 'mensagem': response.get('result', {}).get('description', 'Erro na tokenização')
             }
-    
+
     def create_payment_with_registration(
         self,
         registration_id: str,
@@ -348,46 +406,48 @@ class TransacoesOwnService:
         """
         Pagamento com token existente (recorrência)
         Payment Type: DB com registrationId
-        
+
         Args:
             registration_id: ID do token de recorrência
             amount: Valor da transação
             parcelas: Número de parcelas (padrão: 1)
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com sucesso, own_payment_id, mensagem
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+        dados_loja = self._obter_dados_loja(loja_id)
+
         data = {
             'entityId': credenciais['entity_id'],
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
             'paymentType': 'DB',
+            'registrationId': registration_id,
             'transactionCategory': 'EC',
             'standingInstruction.mode': 'REPEATED',
             'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
             'standingInstruction.source': 'MIT',
-            'merchant.mcc': '5462',
-            'merchant.name': 'WallClub Channel Teste',
-            'merchant.street': 'Av Paulista 1000',
-            'merchant.city': 'Sao Paulo',
-            'merchant.state': 'SP',
+            'merchant.mcc': dados_loja['mcc'],
+            'merchant.name': dados_loja['name'],
+            'merchant.street': dados_loja['street'],
+            'merchant.city': dados_loja['city'],
+            'merchant.state': dados_loja['state'],
             'merchant.countryCode': '076',
-            'merchant.url': settings.MERCHANT_URL,
-            'merchant.postcode': '01310100',
-            'merchant.phone': '1133334444',
-            'merchant.customerContactPhone': '1133334444',
+            'merchant.url': dados_loja['url'],
+            'merchant.postcode': dados_loja['postcode'],
+            'merchant.phone': dados_loja['phone'],
+            'merchant.customerContactPhone': dados_loja['phone'],
             'customParameters[PAYMENT_METHOD]': 'CREDIT',
         }
-        
+
         # Parcelamento (se aplicável)
         if parcelas > 1:
             data['standingInstruction.numberOfInstallments'] = str(parcelas)
-        
+
         registrar_log('own.transacao', f'🔁 Pagamento recorrente: R$ {amount:.2f} ({parcelas}x)')
-        
+
         # Pagamento com token usa endpoint diferente
         response = self._fazer_requisicao_oppwa(
             method='POST',
@@ -397,10 +457,10 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data=data
         )
-        
+
         result_code = response.get('result', {}).get('code', '')
         acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
-        
+
         # Sucesso se: código na lista OU acquirer aprovou (00)
         if result_code in self.SUCCESS_CODES or acquirer_response == '00':
             registrar_log('own.transacao', f'✅ Recorrência aprovada: {response.get("id")} (Acquirer: {acquirer_response})')
@@ -415,7 +475,7 @@ class TransacoesOwnService:
                 'sucesso': False,
                 'mensagem': response.get('result', {}).get('description', 'Erro na recorrência')
             }
-    
+
     def refund_payment(
         self,
         payment_id: str,
@@ -425,26 +485,26 @@ class TransacoesOwnService:
         """
         Estorno total ou parcial
         Payment Type: RF (Refund)
-        
+
         Args:
             payment_id: ID do pagamento original
             amount: Valor a estornar
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com sucesso, refund_id, mensagem
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+
         data = {
             'entityId': credenciais['entity_id'],
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
             'paymentType': 'RF'  # Refund
         }
-        
+
         registrar_log('own.transacao', f'↩️ Estorno: {payment_id} - R$ {amount:.2f}')
-        
+
         response = self._fazer_requisicao_oppwa(
             method='POST',
             endpoint=f'/v1/payments/{payment_id}',
@@ -453,9 +513,9 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data=data
         )
-        
+
         result_code = response.get('result', {}).get('code', '')
-        
+
         if result_code in self.SUCCESS_CODES:
             registrar_log('own.transacao', f'✅ Estorno aprovado: {response.get("id")}')
             return {
@@ -468,7 +528,7 @@ class TransacoesOwnService:
                 'sucesso': False,
                 'mensagem': response.get('result', {}).get('description', 'Erro no estorno')
             }
-    
+
     def consultar_status_pagamento(
         self,
         payment_id: str,
@@ -476,18 +536,18 @@ class TransacoesOwnService:
     ) -> Dict[str, Any]:
         """
         Consulta status de um pagamento
-        
+
         Args:
             payment_id: ID do pagamento
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com dados do pagamento
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+
         registrar_log('own.transacao', f'🔍 Consultando: {payment_id}')
-        
+
         response = self._fazer_requisicao_oppwa(
             method='GET',
             endpoint=f'/v1/payments/{payment_id}',
@@ -496,7 +556,7 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data={'entityId': credenciais['entity_id']}
         )
-        
+
         return {
             'sucesso': True,
             'payment_id': response.get('id'),
@@ -508,11 +568,11 @@ class TransacoesOwnService:
             'payment_brand': response.get('paymentBrand'),
             'timestamp': response.get('timestamp')
         }
-    
+
     # ========================================================================
     # MÉTODOS DE GERENCIAMENTO DE REGISTRATION TOKENS
     # ========================================================================
-    
+
     def delete_registration(
         self,
         registration_id: str,
@@ -520,18 +580,18 @@ class TransacoesOwnService:
     ) -> Dict[str, Any]:
         """
         Exclui (deregistra) um token de cartão
-        
+
         Args:
             registration_id: ID do token de registro
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com sucesso e mensagem
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+
         registrar_log('own.transacao', f'🗑️ Excluindo registration: {registration_id}')
-        
+
         response = self._fazer_requisicao_oppwa(
             method='DELETE',
             endpoint=f'/v1/registrations/{registration_id}',
@@ -540,9 +600,9 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data={'entityId': credenciais['entity_id']}
         )
-        
+
         result_code = response.get('result', {}).get('code', '')
-        
+
         if result_code in self.SUCCESS_CODES:
             registrar_log('own.transacao', f'✅ Registration excluído: {registration_id}')
             return {
@@ -554,7 +614,7 @@ class TransacoesOwnService:
                 'sucesso': False,
                 'mensagem': response.get('result', {}).get('description', 'Erro ao excluir token')
             }
-    
+
     def get_registration_details(
         self,
         registration_id: str,
@@ -562,18 +622,18 @@ class TransacoesOwnService:
     ) -> Dict[str, Any]:
         """
         Consulta detalhes de um token de registro
-        
+
         Args:
             registration_id: ID do token de registro
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com dados do token
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+
         registrar_log('own.transacao', f'🔍 Consultando registration: {registration_id}')
-        
+
         response = self._fazer_requisicao_oppwa(
             method='GET',
             endpoint=f'/v1/registrations/{registration_id}',
@@ -582,9 +642,9 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data={'entityId': credenciais['entity_id']}
         )
-        
+
         result_code = response.get('result', {}).get('code', '')
-        
+
         if result_code in self.SUCCESS_CODES or response.get('id'):
             return {
                 'sucesso': True,
@@ -601,7 +661,7 @@ class TransacoesOwnService:
                 'sucesso': False,
                 'mensagem': response.get('result', {}).get('description', 'Token não encontrado')
             }
-    
+
     def list_registrations(
         self,
         shopper_id: str = None,
@@ -609,22 +669,22 @@ class TransacoesOwnService:
     ) -> Dict[str, Any]:
         """
         Lista tokens de registro
-        
+
         Args:
             shopper_id: ID do comprador (opcional, filtra por comprador)
             loja_id: ID da loja (opcional)
-            
+
         Returns:
             Dict com lista de tokens
         """
         credenciais = self._obter_credenciais_loja(loja_id)
-        
+
         registrar_log('own.transacao', f'📋 Listando registrations (shopper: {shopper_id})')
-        
+
         data = {'entityId': credenciais['entity_id']}
         if shopper_id:
             data['merchantTransactionId'] = shopper_id
-        
+
         response = self._fazer_requisicao_oppwa(
             method='GET',
             endpoint='/v1/registrations',
@@ -633,12 +693,12 @@ class TransacoesOwnService:
             environment=credenciais['environment'],
             data=data
         )
-        
+
         # A resposta pode vir como lista ou objeto com 'registrations'
         registrations = response.get('registrations', [])
         if not registrations and isinstance(response, list):
             registrations = response
-        
+
         tokens = []
         for reg in registrations:
             tokens.append({
@@ -650,22 +710,22 @@ class TransacoesOwnService:
                 'card_expiry_month': reg.get('card', {}).get('expiryMonth'),
                 'card_expiry_year': reg.get('card', {}).get('expiryYear')
             })
-        
+
         return {
             'sucesso': True,
             'total': len(tokens),
             'tokens': tokens
         }
-    
+
     # ========================================================================
     # MÉTODOS ADAPTER - COMPATIBILIDADE COM INTERFACE PINBANK
     # ========================================================================
-    
+
     def efetuar_transacao_cartao(self, dados_transacao: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adapter: Compatibilidade com interface Pinbank
         Converte chamada Pinbank para Own (create_payment_debit)
-        
+
         Args:
             dados_transacao: Dict com dados no formato Pinbank
                 - numero_cartao
@@ -675,7 +735,7 @@ class TransacoesOwnService:
                 - valor
                 - quantidade_parcelas
                 - forma_pagamento (1=vista, 2=parcelado)
-                
+
         Returns:
             Dict com sucesso, nsu, codigo_autorizacao, mensagem, dados
         """
@@ -688,10 +748,10 @@ class TransacoesOwnService:
             'cvv': dados_transacao['codigo_seguranca'],
             'brand': dados_transacao.get('bandeira', 'VISA').upper()
         }
-        
+
         amount = Decimal(str(dados_transacao['valor']))
         parcelas = int(dados_transacao.get('quantidade_parcelas', 1))
-        
+
         # Chamar método Own
         resultado = self.create_payment_debit(
             card_data=card_data,
@@ -699,7 +759,7 @@ class TransacoesOwnService:
             parcelas=parcelas,
             loja_id=self.loja_id
         )
-        
+
         # Converter resposta Own → Pinbank
         if resultado.get('sucesso'):
             return {
@@ -721,14 +781,14 @@ class TransacoesOwnService:
                 'mensagem': resultado.get('mensagem'),
                 'codigo_erro': resultado.get('codigo_erro')
             }
-    
+
     def incluir_cartao_tokenizado(self, dados_cartao: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adapter: Compatibilidade com interface Pinbank
         Converte chamada Pinbank para Own (create_payment_with_tokenization)
-        
+
         IMPORTANTE: Own tokeniza JUNTO com pré-autorização de R$ 1,00
-        
+
         Args:
             dados_cartao: Dict com dados no formato Pinbank
                 - numero_cartao
@@ -736,7 +796,7 @@ class TransacoesOwnService:
                 - codigo_seguranca
                 - nome_impresso
                 - cpf_comprador
-                
+
         Returns:
             Dict com sucesso, cartao_id (registration_id), mensagem
         """
@@ -749,14 +809,14 @@ class TransacoesOwnService:
             'cvv': dados_cartao['codigo_seguranca'],
             'brand': dados_cartao.get('bandeira', 'VISA').upper()
         }
-        
+
         # Own: Pré-autorização R$ 1,00 + tokenização
         resultado = self.create_payment_with_tokenization(
             card_data=card_data,
             amount=Decimal('1.00'),
             loja_id=self.loja_id
         )
-        
+
         # Converter resposta Own → Pinbank
         if resultado.get('sucesso'):
             return {
@@ -772,15 +832,15 @@ class TransacoesOwnService:
                 'sucesso': False,
                 'mensagem': resultado.get('mensagem')
             }
-    
+
     def excluir_cartao_tokenizado(self, cartao_id: str) -> Dict[str, Any]:
         """
         Adapter: Compatibilidade com interface Pinbank
         Converte chamada Pinbank para Own (delete_registration)
-        
+
         Args:
             cartao_id: ID do token (registration_id)
-            
+
         Returns:
             Dict com sucesso e mensagem
         """
@@ -788,15 +848,15 @@ class TransacoesOwnService:
             registration_id=cartao_id,
             loja_id=self.loja_id
         )
-    
+
     def consulta_dados_cartao_tokenizado(self, cartao_id: str) -> Dict[str, Any]:
         """
         Adapter: Compatibilidade com interface Pinbank
         Converte chamada Pinbank para Own (get_registration_details)
-        
+
         Args:
             cartao_id: ID do token (registration_id)
-            
+
         Returns:
             Dict com dados do cartão
         """
@@ -804,7 +864,7 @@ class TransacoesOwnService:
             registration_id=cartao_id,
             loja_id=self.loja_id
         )
-        
+
         # Converter resposta Own → Pinbank
         if resultado.get('sucesso'):
             return {
@@ -817,21 +877,21 @@ class TransacoesOwnService:
             }
         else:
             return resultado
-    
+
     def consultar_cartoes(self, status_cartao: str = "Todos", numero_truncado: str = "") -> Dict[str, Any]:
         """
         Adapter: Compatibilidade com interface Pinbank
         Converte chamada Pinbank para Own (list_registrations)
-        
+
         Args:
             status_cartao: Filtro de status (ignorado na Own)
             numero_truncado: Filtro por número (ignorado na Own)
-            
+
         Returns:
             Dict com lista de cartões
         """
         resultado = self.list_registrations(loja_id=self.loja_id)
-        
+
         if resultado.get('sucesso'):
             # Converter formato Own → Pinbank
             cartoes = []
@@ -844,7 +904,7 @@ class TransacoesOwnService:
                     'validade': f"{token.get('card_expiry_month')}/{token.get('card_expiry_year')}",
                     'status': 'Ativo'
                 })
-            
+
             return {
                 'sucesso': True,
                 'total': len(cartoes),
@@ -852,16 +912,16 @@ class TransacoesOwnService:
             }
         else:
             return resultado
-    
+
     def cancelar_transacao(self, nsu_operacao: str, valor: Decimal) -> Dict[str, Any]:
         """
         Adapter: Compatibilidade com interface Pinbank
         Converte chamada Pinbank para Own (refund_payment)
-        
+
         Args:
             nsu_operacao: NSU/Payment ID da transação
             valor: Valor a estornar
-            
+
         Returns:
             Dict com sucesso e mensagem
         """
@@ -870,7 +930,7 @@ class TransacoesOwnService:
             amount=valor,
             loja_id=self.loja_id
         )
-        
+
         # Converter resposta Own → Pinbank
         if resultado.get('sucesso'):
             return {

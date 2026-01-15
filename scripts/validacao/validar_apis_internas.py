@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
 scripts/validacao/validar_apis_internas.py
-Valida APIs REST internas conforme documentação (26 endpoints)
+Valida APIs REST internas conforme documentação (40 endpoints)
 """
 
 import os
 import re
 from pathlib import Path
 
-# Documentado em DIRETRIZES.md: 26 APIs REST internas
+# Documentado em DIRETRIZES.md: 40 APIs REST internas
 APIS_DOCUMENTADAS = {
     'cliente': 6,        # consultar_por_cpf, cadastrar, obter_cliente_id, atualizar_celular, obter_dados_cliente, verificar_cadastro
     'conta_digital': 5,  # consultar-saldo, autorizar-uso, debitar-saldo, estornar-saldo, calcular-maximo
-    'checkout': 8,       # listar, criar, obter, pausar, reativar, cobrar, atualizar, deletar
+    'checkout': 16,      # Recorrências (8) + Clientes (4) + Tokens/Links (4)
     'ofertas': 6,        # listar, criar, obter, atualizar, grupos/listar, grupos/criar
     'parametros': 7,     # configuracoes/loja, configuracoes/contar, configuracoes/ultima, loja/modalidades, planos, importacoes, importacoes/{id}
 }
