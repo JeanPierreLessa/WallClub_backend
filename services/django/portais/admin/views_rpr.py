@@ -744,8 +744,19 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                     variavel_nova_5 = (var15_total + var41_total) - var94_A_total
                     variavel_nova_2 = totais_sql.get('var37', Decimal('0')) - totais_sql.get('var90', Decimal('0'))
                     linha_totalizadora[campo] = variavel_nova_5 + variavel_nova_2
+                elif campo == 'variavel_nova_9':  # Resultado Caixa (Rcebtos - Repasses) R$
+                    # var98 - var101 (tratar "Não Finalizada" como 0)
+                    linha_totalizadora[campo] = totais_sql.get('var98', Decimal('0')) - totais_sql.get('var101', Decimal('0'))
                 elif campo == 'variavel_nova_11':  # Resultado Operacional (antes Cashback e Chargeback) R$
                     linha_totalizadora[campo] = totais_sql.get('var113_A', Decimal('0'))
+                elif campo == 'variavel_nova_13':  # Impostos Diretos pagos (R$)
+                    # var109_A (tratar "Não Finalizada" como 0)
+                    linha_totalizadora[campo] = totais_sql.get('var109_A', Decimal('0'))
+                elif campo == 'variavel_nova_17':  # Resultado Final (pós impostos - sem POS) R$
+                    # variavel_nova_11 - variavel_nova_13
+                    var113_A_total = totais_sql.get('var113_A', Decimal('0'))
+                    var109_A_total = totais_sql.get('var109_A', Decimal('0'))
+                    linha_totalizadora[campo] = var113_A_total - var109_A_total
                 else:
                     # Outras fórmulas (percentuais, etc) - deixar vazio
                     linha_totalizadora[campo] = ""
@@ -1080,24 +1091,33 @@ def exportar_rpr_excel(request):
             for cell in row:
                 cell.font = Font(bold=True)
 
-        # ABA 2: Detalhamento
+        # ABA 2: Detalhamento (com linha totalizadora no final)
         ws_detalhe = wb.create_sheet("Detalhamento")
         colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
 
-        # Cabeçalho
-        headers = [colunas_rpr.get(col, col) for col in estrutura_colunas[0].keys() if col in colunas_rpr]
+        # Cabeçalho - usar nomes das colunas do mapeamento
+        headers = [colunas_rpr.get(item['campo'], item['campo']) for item in estrutura_colunas]
         ws_detalhe.append(headers)
+
+        # Formatação do header
+        for cell in ws_detalhe[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
         # Dados
         for linha in dados:
             row_data = [linha.get(item['campo'], '') for item in estrutura_colunas]
             ws_detalhe.append(row_data)
 
-        # ABA 3: Linha Totalizadora
-        ws_total = wb.create_sheet("Linha Totalizadora")
-        ws_total.append(headers)
-        row_data = [linha_totalizadora.get(item['campo'], '') for item in estrutura_colunas]
-        ws_total.append(row_data)
+        # Linha totalizadora no final
+        row_totalizadora = [linha_totalizadora.get(item['campo'], '') for item in estrutura_colunas]
+        ws_detalhe.append(row_totalizadora)
+
+        # Formatação da linha totalizadora (última linha)
+        ultima_linha = ws_detalhe.max_row
+        for cell in ws_detalhe[ultima_linha]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
         # Salvar e retornar
         response = HttpResponse(
