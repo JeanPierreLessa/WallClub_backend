@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.db import connection
 from datetime import datetime, date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import decimal
 import json
 from ..controle_acesso.decorators import require_admin_access
@@ -579,14 +579,65 @@ def tabela_rpr_ajax(request):
     # Calcular totalizadora e linhas
     estrutura_colunas = obter_estrutura_colunas_rpr()
 
-    # Para totalizadora, usar agregação SQL direta (sem carregar tudo na memória)
-    linha_totalizadora = calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas)
-
     # Preparar dados para a tabela
     dados_tabela = []
     for transacao in transacoes_list:
         linha = calcular_linha_rpr(transacao, estrutura_colunas)
         dados_tabela.append(linha)
+
+    # Para totalizadora, buscar TODAS as transações e somar valores calculados
+    # (não usar SQL agregado pois valores são calculados por fórmulas)
+    if total <= 5000:  # Limite de segurança
+        todas_transacoes, _ = RPRService.buscar_transacoes_rpr(
+            filtros=filtros,
+            canais_usuario=canais_usuario,
+            page=1,
+            per_page=total
+        )
+
+        linha_totalizadora = {}
+        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
+
+        # Calcular todas as linhas
+        todas_linhas = []
+        for transacao in todas_transacoes:
+            linha_calc = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+            todas_linhas.append(linha_calc)
+
+        # Somar valores
+        for item in estrutura_colunas:
+            campo = item['campo']
+
+            if campo == 'var0':
+                linha_totalizadora[campo] = "TOTAL"
+            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var13', 'var43', 'var68', 'tipo_operacao']:
+                linha_totalizadora[campo] = ""
+            elif campo in colunas_percentuais:
+                linha_totalizadora[campo] = ""
+            elif campo in colunas_monetarias or item.get('tipo') == 'formula':
+                total_campo = Decimal('0')
+                for linha in todas_linhas:
+                    valor = linha.get(campo, 0)
+                    if valor and valor != '' and valor != 'Não Finalizada':
+                        try:
+                            total_campo += Decimal(str(valor))
+                        except (ValueError, TypeError, InvalidOperation):
+                            pass
+                linha_totalizadora[campo] = float(total_campo)
+            else:
+                total_campo = Decimal('0')
+                for linha in todas_linhas:
+                    valor = linha.get(campo, 0)
+                    if valor and valor != '':
+                        try:
+                            total_campo += Decimal(str(valor))
+                        except (ValueError, TypeError, InvalidOperation):
+                            pass
+                linha_totalizadora[campo] = float(total_campo) if total_campo != 0 else ""
+    else:
+        # Se mais de 5000 registros, usar SQL agregado (fallback)
+        linha_totalizadora = calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas)
 
     # Calcular paginação
     import math
@@ -1070,8 +1121,44 @@ def exportar_rpr_excel(request):
             linha = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             dados.append(linha)
 
-        # Gerar linha totalizadora
-        linha_totalizadora = calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas)
+        # Gerar linha totalizadora somando valores das linhas processadas
+        linha_totalizadora = {}
+        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
+
+        for item in estrutura_colunas:
+            campo = item['campo']
+
+            if campo == 'var0':
+                linha_totalizadora[campo] = "TOTAL"
+            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var13', 'var43', 'var68', 'tipo_operacao']:
+                # Campos de texto/identificação ou que não fazem sentido totalizar
+                linha_totalizadora[campo] = ""
+            elif campo in colunas_percentuais:
+                # Percentuais - deixar vazio
+                linha_totalizadora[campo] = ""
+            elif campo in colunas_monetarias or item.get('tipo') == 'formula':
+                # Somar valores numéricos das linhas
+                total = Decimal('0')
+                for linha in dados:
+                    valor = linha.get(campo, 0)
+                    if valor and valor != '' and valor != 'Não Finalizada':
+                        try:
+                            total += Decimal(str(valor))
+                        except (ValueError, TypeError, InvalidOperation):
+                            pass
+                linha_totalizadora[campo] = total
+            else:
+                # Outros campos - somar se numérico
+                total = Decimal('0')
+                for linha in dados:
+                    valor = linha.get(campo, 0)
+                    if valor and valor != '':
+                        try:
+                            total += Decimal(str(valor))
+                        except (ValueError, TypeError, InvalidOperation):
+                            pass
+                linha_totalizadora[campo] = total if total != 0 else ""
 
         # Criar workbook
         wb = openpyxl.Workbook()
