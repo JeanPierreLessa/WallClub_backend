@@ -624,7 +624,11 @@ def tabela_rpr_ajax(request):
                             total_campo += Decimal(str(valor))
                         except (ValueError, TypeError, InvalidOperation):
                             pass
-                linha_totalizadora[campo] = float(total_campo)
+                # Formatar como monetário brasileiro: R$ 1.234.567,89
+                if total_campo != 0:
+                    linha_totalizadora[campo] = f"R$ {float(total_campo):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+                else:
+                    linha_totalizadora[campo] = "R$ 0,00"
             else:
                 total_campo = Decimal('0')
                 for linha in todas_linhas:
