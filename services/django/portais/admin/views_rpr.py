@@ -1283,6 +1283,65 @@ def exportar_rpr_excel(request):
 
 
 @require_funcionalidade('rpr_export')
+def exportar_rpr_resumo_excel(request):
+    """Exportar apenas Resumo Executivo RPR para Excel"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill
+
+        # Obter filtros
+        filtros, canais_usuario = _obter_filtros_e_canais_rpr(request)
+
+        registrar_log('portais.admin', f"RPR Resumo Excel - Filtros: {filtros}")
+
+        # Gerar dados do resumo executivo
+        dados_resumo = _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario)
+
+        # Criar workbook
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)  # Remover sheet padrão
+
+        # ABA: Resumo Executivo
+        ws_resumo = wb.create_sheet("Resumo Executivo")
+
+        # Cabeçalho
+        ws_resumo.append(['RESUMO EXECUTIVO - RPR'])
+        ws_resumo.append(['Período', f"{filtros.get('data_inicial', '')} a {filtros.get('data_final', '')}" ])
+        ws_resumo.append(['Canal', filtros.get('canal', 'Todos')])
+        ws_resumo.append(['Loja', filtros.get('loja', 'Todas')])
+        ws_resumo.append(['Incluir TEF', 'Sim' if filtros.get('incluir_tef') else 'Não'])
+        ws_resumo.append([])
+        ws_resumo.append(['Indicador', 'Valor', 'Detalhamento'])
+
+        for item in dados_resumo:
+            ws_resumo.append([item['indicador'], item['valor'], item['detalhamento']])
+
+        # Formatação
+        for row in ws_resumo.iter_rows(min_row=1, max_row=7):
+            for cell in row:
+                cell.font = Font(bold=True)
+
+        # Ajustar largura das colunas
+        ws_resumo.column_dimensions['A'].width = 50
+        ws_resumo.column_dimensions['B'].width = 20
+        ws_resumo.column_dimensions['C'].width = 15
+
+        # Salvar e retornar
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        nome_arquivo = f"rpr_resumo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
+        wb.save(response)
+
+        return response
+
+    except Exception as e:
+        registrar_log('portais.admin', f"Erro ao exportar RPR Resumo Excel: {str(e)}", nivel='ERROR')
+        return JsonResponse({'erro': f'Erro ao exportar Resumo Excel: {str(e)}'}, status=500)
+
+
+@require_funcionalidade('rpr_export')
 def exportar_rpr_csv(request):
     """Exportar dados RPR para CSV - direto ou por email se >5000 registros"""
     try:

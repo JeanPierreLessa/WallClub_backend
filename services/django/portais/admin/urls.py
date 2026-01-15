@@ -64,6 +64,7 @@ urlpatterns = [
     path('rpr/', views_rpr.relatorio_producao_receita, name='relatorio_producao_receita'),
     path('rpr/tabela/', views_rpr.tabela_rpr_ajax, name='tabela_rpr_ajax'),
     path('rpr/export/excel/', views_rpr.exportar_rpr_excel, name='exportar_rpr_excel'),
+    path('rpr/export/resumo/', views_rpr.exportar_rpr_resumo_excel, name='exportar_rpr_resumo_excel'),
     path('rpr/export/csv/', views_rpr.exportar_rpr_csv, name='exportar_rpr_csv'),
 
     # Gestão Financeira
