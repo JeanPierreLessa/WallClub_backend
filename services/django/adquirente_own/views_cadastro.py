@@ -4,14 +4,14 @@ Views para APIs de cadastro de estabelecimentos na Own Financial
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from portais.controle_acesso import require_funcionalidade
+from django.contrib.auth.decorators import login_required
 from adquirente_own.services_consultas import ConsultasOwnService
 from adquirente_own.services_cadastro import CadastroOwnService
 from adquirente_own.models_cadastro import LojaOwn
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
-@require_funcionalidade('hierarquia_create')
+@login_required
 @require_http_methods(["GET"])
 def consultar_cnae(request):
     """
@@ -41,7 +41,7 @@ def consultar_cnae(request):
         )
 
 
-@require_funcionalidade('hierarquia_create')
+@login_required
 @require_http_methods(["GET"])
 def consultar_cestas(request):
     """
@@ -78,7 +78,7 @@ def consultar_cestas(request):
         )
 
 
-@require_funcionalidade('hierarquia_create')
+@login_required
 @require_http_methods(["GET"])
 def consultar_tarifas_cesta(request, cesta_id):
     """
