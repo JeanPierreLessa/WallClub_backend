@@ -4,20 +4,22 @@ Views para APIs de cadastro de estabelecimentos na Own Financial
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
 from adquirente_own.services_consultas import ConsultasOwnService
 from adquirente_own.services_cadastro import CadastroOwnService
 from adquirente_own.models_cadastro import LojaOwn
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
-@login_required
 @require_http_methods(["GET"])
 def consultar_cnae(request):
     """
     GET /api/own/cnae/
     Consulta atividades CNAE/MCC
     """
+    # Verificar autenticação sem redirect
+    if not request.user.is_authenticated:
+        return JsonResponse({'erro': 'Não autenticado'}, status=401)
+
     try:
         descricao = request.GET.get('descricao')
         environment = request.GET.get('environment', 'LIVE')
@@ -41,13 +43,16 @@ def consultar_cnae(request):
         )
 
 
-@login_required
 @require_http_methods(["GET"])
 def consultar_cestas(request):
     """
     GET /api/own/cestas/
     Consulta cestas de tarifas
     """
+    # Verificar autenticação sem redirect
+    if not request.user.is_authenticated:
+        return JsonResponse({'erro': 'Não autenticado'}, status=401)
+
     try:
         nome_cesta = request.GET.get('nome_cesta')
         environment = request.GET.get('environment', 'LIVE')
@@ -78,13 +83,16 @@ def consultar_cestas(request):
         )
 
 
-@login_required
 @require_http_methods(["GET"])
 def consultar_tarifas_cesta(request, cesta_id):
     """
     GET /api/own/cestas/{cesta_id}/tarifas/
     Consulta tarifas de uma cesta específica
     """
+    # Verificar autenticação sem redirect
+    if not request.user.is_authenticated:
+        return JsonResponse({'erro': 'Não autenticado'}, status=401)
+
     try:
         environment = request.GET.get('environment', 'LIVE')
 
