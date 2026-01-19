@@ -81,18 +81,26 @@ class CadastroLojaOwn {
 
     async carregarCNAE() {
         try {
+            console.log('🔍 Carregando CNAE da API...');
             const response = await fetch(`${this.apiBaseUrl}/cnae/`, {
                 credentials: 'same-origin',
                 headers: {
                     'X-CSRFToken': this.csrfToken
                 }
             });
-            if (!response.ok) throw new Error('Erro ao carregar CNAE');
+            console.log('📡 Response CNAE:', response.status, response.ok);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Erro na resposta:', errorText);
+                throw new Error('Erro ao carregar CNAE');
+            }
 
             this.cnaeData = await response.json();
+            console.log('✅ CNAE carregados:', this.cnaeData.length);
             this.renderizarCNAE(this.cnaeData);
         } catch (error) {
-            console.error('Erro ao carregar CNAE:', error);
+            console.error('❌ Erro ao carregar CNAE:', error);
             this.mostrarErro('Erro ao carregar lista de atividades CNAE');
         }
     }
@@ -112,8 +120,12 @@ class CadastroLojaOwn {
     }
 
     renderizarCNAE(dados) {
+        console.log('🎨 Renderizando CNAE...', dados.length, 'itens');
         const select = document.getElementById('cnae');
-        if (!select) return;
+        if (!select) {
+            console.error('❌ Select CNAE não encontrado!');
+            return;
+        }
 
         select.innerHTML = '<option value="">Selecione uma atividade</option>';
 
@@ -125,6 +137,8 @@ class CadastroLojaOwn {
             option.textContent = `${cnae.codCnae} - ${cnae.descCnae}`;
             select.appendChild(option);
         });
+
+        console.log('✅ CNAE renderizados no select');
 
         // Atualizar MCC quando CNAE for selecionado
         select.addEventListener('change', (e) => {
