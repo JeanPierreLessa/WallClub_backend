@@ -2,127 +2,114 @@
 Views para APIs de cadastro de estabelecimentos na Own Financial
 """
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import SessionAuthentication
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from portais.controle_acesso import require_funcionalidade
 from adquirente_own.services_consultas import ConsultasOwnService
 from adquirente_own.services_cadastro import CadastroOwnService
-from adquirente_own.serializers import (
-    CnaeSerializer, CestaSerializer, CestaTarifaSerializer,
-    CadastroOwnRequestSerializer, CadastroOwnResponseSerializer,
-    LojaOwnSerializer
-)
 from adquirente_own.models_cadastro import LojaOwn
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
-class ConsultarCnaeView(APIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+@require_funcionalidade('hierarquia_create')
+@require_http_methods(["GET"])
+def consultar_cnae(request):
     """
     GET /api/own/cnae/
     Consulta atividades CNAE/MCC
     """
+    try:
+        descricao = request.GET.get('descricao')
+        environment = request.GET.get('environment', 'LIVE')
 
-    def get(self, request):
-        try:
-            descricao = request.query_params.get('descricao')
-            environment = request.query_params.get('environment', 'LIVE')
+        service = ConsultasOwnService(environment=environment)
+        resultado = service.consultar_atividades(descricao=descricao)
 
-            service = ConsultasOwnService(environment=environment)
-            resultado = service.consultar_atividades(descricao=descricao)
-
-            if not resultado.get('sucesso'):
-                return Response(
-                    {'erro': resultado.get('mensagem')},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-            serializer = CnaeSerializer(resultado.get('dados', []), many=True)
-            return Response(serializer.data)
-
-        except Exception as e:
-            registrar_log('own.api', f'❌ Erro ao consultar CNAE: {str(e)}', nivel='ERROR')
-            return Response(
-                {'erro': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        if not resultado.get('sucesso'):
+            return JsonResponse(
+                {'erro': resultado.get('mensagem')},
+                status=500
             )
 
+        return JsonResponse(resultado.get('dados', []), safe=False)
 
-class ConsultarCestasView(APIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    except Exception as e:
+        registrar_log('own.api', f'❌ Erro ao consultar CNAE: {str(e)}', nivel='ERROR')
+        return JsonResponse(
+            {'erro': str(e)},
+            status=500
+        )
+
+
+@require_funcionalidade('hierarquia_create')
+@require_http_methods(["GET"])
+def consultar_cestas(request):
     """
     GET /api/own/cestas/
     Consulta cestas de tarifas
     """
+    try:
+        nome_cesta = request.GET.get('nome_cesta')
+        environment = request.GET.get('environment', 'LIVE')
 
-    def get(self, request):
-        try:
-            nome_cesta = request.query_params.get('nome_cesta')
-            environment = request.query_params.get('environment', 'LIVE')
+        service = ConsultasOwnService(environment=environment)
 
-            service = ConsultasOwnService(environment=environment)
+        # Se não houver filtro, retornar lista de cestas únicas
+        if not nome_cesta:
+            cestas = service.listar_todas_cestas()
+            return JsonResponse(cestas, safe=False)
 
-            # Se não houver filtro, retornar lista de cestas únicas
-            if not nome_cesta:
-                cestas = service.listar_todas_cestas()
-                serializer = CestaSerializer(cestas, many=True)
-                return Response(serializer.data)
+        # Com filtro, retornar todas as tarifas
+        resultado = service.consultar_cestas(nome_cesta=nome_cesta)
 
-            # Com filtro, retornar todas as tarifas
-            resultado = service.consultar_cestas(nome_cesta=nome_cesta)
-
-            if not resultado.get('sucesso'):
-                return Response(
-                    {'erro': resultado.get('mensagem')},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-            return Response(resultado.get('dados', []))
-
-        except Exception as e:
-            registrar_log('own.api', f'❌ Erro ao consultar cestas: {str(e)}', nivel='ERROR')
-            return Response(
-                {'erro': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        if not resultado.get('sucesso'):
+            return JsonResponse(
+                {'erro': resultado.get('mensagem')},
+                status=500
             )
 
+        return JsonResponse(resultado.get('dados', []), safe=False)
 
-class ConsultarTarifasCestaView(APIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    except Exception as e:
+        registrar_log('own.api', f'❌ Erro ao consultar cestas: {str(e)}', nivel='ERROR')
+        return JsonResponse(
+            {'erro': str(e)},
+            status=500
+        )
+
+
+@require_funcionalidade('hierarquia_create')
+@require_http_methods(["GET"])
+def consultar_tarifas_cesta(request, cesta_id):
     """
     GET /api/own/cestas/{cesta_id}/tarifas/
     Consulta tarifas de uma cesta específica
     """
+    try:
+        environment = request.GET.get('environment', 'LIVE')
 
-    def get(self, request, cesta_id):
-        try:
-            environment = request.query_params.get('environment', 'LIVE')
+        service = ConsultasOwnService(environment=environment)
+        resultado = service.obter_tarifas_cesta(cesta_id=int(cesta_id))
 
-            service = ConsultasOwnService(environment=environment)
-            resultado = service.obter_tarifas_cesta(cesta_id=int(cesta_id))
-
-            if not resultado.get('sucesso'):
-                return Response(
-                    {'erro': resultado.get('mensagem')},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            return Response(resultado)
-
-        except Exception as e:
-            registrar_log('own.api', f'❌ Erro ao consultar tarifas da cesta: {str(e)}', nivel='ERROR')
-            return Response(
-                {'erro': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        if not resultado.get('sucesso'):
+            return JsonResponse(
+                {'erro': resultado.get('mensagem')},
+                status=500
             )
 
+        return JsonResponse(resultado)
 
-class CadastrarEstabelecimentoView(APIView):
+    except Exception as e:
+        registrar_log('own.api', f'❌ Erro ao consultar tarifas da cesta: {str(e)}', nivel='ERROR')
+        return JsonResponse(
+            {'erro': str(e)},
+            status=500
+        )
+
+
+@require_funcionalidade('hierarquia_create')
+@require_http_methods(["POST"])
+def cadastrar_estabelecimento(request):
     """
     POST /api/own/cadastrar-estabelecimento/
     Cadastra estabelecimento na Own Financial
