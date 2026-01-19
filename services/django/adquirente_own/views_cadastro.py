@@ -5,7 +5,8 @@ Views para APIs de cadastro de estabelecimentos na Own Financial
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import SessionAuthentication
 from adquirente_own.services_consultas import ConsultasOwnService
 from adquirente_own.services_cadastro import CadastroOwnService
 from adquirente_own.serializers import (
@@ -18,6 +19,8 @@ from wallclub_core.utilitarios.log_control import registrar_log
 
 
 class ConsultarCnaeView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     """
     GET /api/own/cnae/
     Consulta atividades CNAE/MCC
@@ -49,6 +52,8 @@ class ConsultarCnaeView(APIView):
 
 
 class ConsultarCestasView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     """
     GET /api/own/cestas/
     Consulta cestas de tarifas
@@ -87,6 +92,8 @@ class ConsultarCestasView(APIView):
 
 
 class ConsultarTarifasCestaView(APIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     """
     GET /api/own/cestas/{cesta_id}/tarifas/
     Consulta tarifas de uma cesta específica
