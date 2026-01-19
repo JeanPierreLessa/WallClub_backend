@@ -47,7 +47,7 @@
                 <div class="form-section">
                     <h5>Hierarquia WallClub</h5>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label required-field">Canal</label>
                             <select class="form-select" id="canal_id" name="canal_id" required>
                                 <option value="">Selecione um canal</option>
@@ -56,7 +56,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label required-field">Grupo Econômico</label>
                             <select class="form-select" id="GrupoEconomicoId" name="GrupoEconomicoId" required>
                                 <option value="">Selecione um grupo econômico</option>
@@ -66,6 +66,14 @@
                                 </option>
                                 {% endfor %}
                             </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Gateway Ativo</label>
+                            <select class="form-select" id="gateway_ativo" name="gateway_ativo" required>
+                                <option value="PINBANK" selected>PINBANK</option>
+                                <option value="OWN">OWN</option>
+                            </select>
+                            <small class="text-muted">Gateway de pagamento padrão</small>
                         </div>
                     </div>
                 </div>
@@ -96,6 +104,14 @@
                             <label class="form-label required-field">Email</label>
                             <input type="email" class="form-control" id="email"
                                    name="email" maxlength="256" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label class="form-label">URL da Loja</label>
+                            <input type="url" class="form-control" id="url_loja"
+                                   name="url_loja" maxlength="256" placeholder="https://www.minhaloja.com.br">
+                            <small class="text-muted">URL do site da loja (se houver)</small>
                         </div>
                     </div>
                 </div>
@@ -299,12 +315,12 @@
 
                         <!-- Configurações -->
                         <div class="row mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Quantidade de POS</label>
                                 <input type="number" class="form-control" id="quantidade_pos"
                                        name="quantidade_pos" value="1" min="1">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Antecipação Automática</label>
                                 <select class="form-select" id="antecipacao_automatica"
                                         name="antecipacao_automatica">
@@ -312,10 +328,19 @@
                                     <option value="S">Sim</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Taxa Antecipação (%)</label>
                                 <input type="number" class="form-control" id="taxa_antecipacao"
                                        name="taxa_antecipacao" value="0" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="aceita_ecommerce"
+                                           name="aceita_ecommerce" value="1">
+                                    <label class="form-check-label" for="aceita_ecommerce">
+                                        Aceita E-commerce
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
