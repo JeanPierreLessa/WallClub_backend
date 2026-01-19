@@ -53,37 +53,77 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 
 ### 1.2 Vulnerabilidades Críticas 🚨
 
-#### CRÍTICO - Rate Limiting Incompleto
+#### ✅ IMPLEMENTADO - Rate Limiting em Endpoints POS (16/01/2026)
 
-**Problema:** Endpoint `validar_senha_e_saldo` (POS) permite tentativas ilimitadas com token OAuth válido.
+**Status:** ✅ Implementado com defesa em profundidade (dupla camada)
 
-**Risco:** Brute force de senhas de clientes
-**Prioridade:** 🔴 IMEDIATA
-**Esforço:** 8 horas
+**Arquitetura Implementada:**
+- **Camada 1 (Middleware):** Rate limiting por IP em todos endpoints `/api/*`
+- **Camada 2 (Decorator POS):** Rate limiting adicional por `terminal_id`
 
-**Recomendações:**
-1. Rate limiting por CPF: 3 tentativas/5min
-2. Rate limiting por terminal: 10 validações/min
-3. Rate limiting por IP: 20 validações/min
-4. Auditoria em tabela `auditoria_validacao_senha`
-5. Push notification ao cliente após 3 falhas
+**Justificativa da dupla camada:**
+- POS: Múltiplos terminais compartilham mesmo token OAuth
+- Terminal comprometido não pode afetar outros terminais da mesma loja
+- Outras APIs (Mobile, Checkout) não precisam dessa camada adicional
 
-**Referência:** `/services/django/docs/seguranca/recomendacoes_seguranca_futura.md`
+**Endpoints protegidos:**
+- `/api/v1/posp2/valida_cpf/` - 50 req/min por terminal
+- `/api/v1/posp2/solicitar_autorizacao_saldo/` - 30 req/min por terminal (critical)
+- `/api/v1/posp2/verificar_autorizacao/` - 50 req/min por terminal
+- `/api/v1/posp2/trdata/` e `/trdata_own/` - 30 req/min por terminal (critical)
+- `/api/v1/cupons/validar/` - 30 req/min por terminal (critical)
+
+**Implementação:**
+1. ✅ Configuração em `settings.API_RATE_LIMITS`
+2. ✅ Decorator `@require_pos_rate_limit()` criado
+3. ✅ Auditoria de atividades suspeitas
+4. ✅ Alertas automáticos após 10 atividades suspeitas/dia
+5. ✅ Bloqueio temporário automático
 
 ---
 
-#### ALTO - Gerenciamento de Cartões Tokenizados
+#### 🚨 CRÍTICO - Webhooks Own Financial (Pendente)
 
-**Problema:** Código existe mas sem interface (`CartaoTokenizadoService.invalidar_cartao()`)
+**Problema:** Webhooks da Own Financial (`/webhook/*`) não possuem validação de origem.
 
-**Risco:** Cartões comprometidos permanecem ativos
-**Prioridade:** 🟠 ALTA
-**Esforço:** 12 horas
+**Risco:** Alto - Dados falsos podem ser inseridos no sistema
+**Prioridade:** 🔴 ALTA
+**Esforço:** 4-8 horas (após resposta da Own)
 
-**Recomendações:**
-1. Interface Portal Vendas: `/portal_vendas/cliente/{id}/cartoes/`
-2. Invalidação automática após 5 tentativas falhas
-3. Campos adicionais: `tentativas_falhas_consecutivas`, `motivo_invalidacao`
+**Ação Necessária:**
+1. Solicitar à Own Financial: Lista de IPs de origem dos webhooks
+2. Implementar IP whitelist ou validação de assinatura
+
+**Referência:** `/docs/PENDENCIAS_SEGURANCA.md`
+
+---
+
+#### ✅ IMPLEMENTADO - Gerenciamento de Cartões Tokenizados (16/01/2026)
+
+**Status:** ✅ Implementado completo (backend + frontend)
+
+**Implementação:**
+1. ✅ APIs REST criadas (`/api/v1/checkout/cartoes/`)
+   - GET `/{cpf}/` - Listar cartões do cliente
+   - POST `/{cartao_id}/invalidar/` - Invalidar cartão
+   - POST `/{cartao_id}/reativar/` - Reativar cartão
+2. ✅ Service `CartaoTokenizadoService.invalidar_cartao()` melhorado
+   - Aceita motivo e usuario_id
+   - Registra timestamp e auditoria completa
+3. ✅ Interface Portal Vendas implementada
+   - Página `/portal_vendas/cliente/{id}/cartoes/`
+   - Modal de confirmação com seleção de motivo
+   - Histórico de invalidações visível
+4. ✅ Model já possuía todos os campos necessários
+   - `tentativas_falhas_consecutivas`
+   - `motivo_invalidacao`
+   - `invalidado_por`, `invalidado_em`
+
+**Funcionalidades:**
+- Listar todos os cartões (ativos e invalidados)
+- Invalidar cartão com motivo obrigatório
+- Visualizar histórico de invalidações
+- Auditoria completa de ações
 
 ---
 
@@ -107,14 +147,19 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 
 ### 1.3 Resumo de Segurança
 
-**Pontuação:** 7/10
+**Pontuação:** 8/10 (atualizada em 16/01/2026)
 
-**Prioridades Imediatas:**
-1. 🔴 Rate limiting validação senha (8h)
-2. 🟠 Gerenciamento cartões (12h)
-3. 🟡 2FA app móvel (12h)
+**Implementações Concluídas (16/01/2026):**
+1. ✅ Rate limiting endpoints POS (4h) - Completo
+2. ✅ Gerenciamento cartões tokenizados (12h) - Completo
+3. 🔴 Webhooks Own Financial - Pendente (aguardando Own)
 
-**Total Esforço:** 32 horas (~1 semana)
+**Pendências:**
+1. 🟡 2FA app móvel (8h) - Adiado
+2. 🔴 Validação webhooks Own (4-8h) - Aguardando informações da Own
+
+**Total Implementado:** 16 horas de 24 horas (67%)
+**Total Pendente:** 8-16 horas
 
 ---
 

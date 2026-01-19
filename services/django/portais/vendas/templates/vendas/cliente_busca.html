@@ -94,6 +94,9 @@
                                         <a href="{% url 'vendas:cliente_editar' cliente.id %}" class="btn btn-outline-primary" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <a href="{% url 'vendas:cliente_cartoes' cliente.id %}" class="btn btn-outline-info" title="Gerenciar Cartões">
+                                            <i class="fas fa-credit-card"></i>
+                                        </a>
                                         {% if cliente.ativo %}
                                         <form method="post" action="{% url 'vendas:cliente_inativar' cliente.id %}" style="display: inline;">
                                             {% csrf_token %}

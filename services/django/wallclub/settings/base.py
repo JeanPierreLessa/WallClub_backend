@@ -225,7 +225,15 @@ API_RATE_LIMITS = {
     '/api/v1/cliente/extrato/': {'requests': 20, 'window': 60},  # 20 req/min
     '/api/v1/cliente/comprovante/': {'requests': 20, 'window': 60},  # 20 req/min
 
-    # POSP2 (crítico - mais permissivo)
+    # POSP2 - Endpoints Críticos (Step 1 Segurança - Jan 2026)
+    '/api/v1/posp2/valida_cpf/': {'requests': 50, 'window': 60},  # 50 req/min
+    '/api/v1/posp2/solicitar_autorizacao_saldo/': {'requests': 30, 'window': 60},  # 30 req/min
+    '/api/v1/posp2/verificar_autorizacao/': {'requests': 50, 'window': 60},  # 50 req/min
+    '/api/v1/posp2/trdata/': {'requests': 50, 'window': 60},  # 50 req/min (Pinbank)
+    '/api/v1/posp2/trdata_own/': {'requests': 50, 'window': 60},  # 50 req/min (Own)
+    '/api/v1/cupons/validar/': {'requests': 30, 'window': 60},  # 30 req/min
+
+    # POSP2 - Outros endpoints (mais permissivo)
     '/posp2/v1/checkout/': {'requests': 100, 'window': 60},  # 100 req/min
     '/posp2/v1/consulta/': {'requests': 50, 'window': 60},  # 50 req/min
 

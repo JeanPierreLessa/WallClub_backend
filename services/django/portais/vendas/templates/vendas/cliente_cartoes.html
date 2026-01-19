@@ -1,0 +1,236 @@
+{% extends 'vendas/base.html' %}
+
+{% block title %}Gerenciar Cartões - Portal de Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-credit-card me-2"></i>Gerenciar Cartões Tokenizados</h2>
+    <p class="text-muted mb-0">Cliente: {{ cliente.nome }} - CPF: {{ cliente.cpf }}</p>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Cartões Salvos</h5>
+                <a href="{% url 'vendas:cliente_busca' %}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+            <div class="card-body">
+                {% if cartoes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cartão</th>
+                                <th>Bandeira</th>
+                                <th>Validade</th>
+                                <th>Apelido</th>
+                                <th>Status</th>
+                                <th>Falhas</th>
+                                <th>Cadastrado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cartao in cartoes %}
+                            <tr class="{% if not cartao.valido %}table-secondary{% endif %}">
+                                <td>{{ cartao.id }}</td>
+                                <td><code>{{ cartao.cartao_mascarado }}</code></td>
+                                <td>
+                                    <span class="badge bg-primary">{{ cartao.bandeira }}</span>
+                                </td>
+                                <td>{{ cartao.validade }}</td>
+                                <td>
+                                    {% if cartao.apelido %}
+                                        {{ cartao.apelido }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cartao.valido %}
+                                        <span class="badge bg-success">Ativo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Invalidado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cartao.tentativas_falhas_consecutivas > 0 %}
+                                        <span class="badge bg-warning text-dark">
+                                            {{ cartao.tentativas_falhas_consecutivas }} falha(s)
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ cartao.created_at|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if cartao.valido %}
+                                        <button class="btn btn-sm btn-danger" onclick="invalidarCartao({{ cartao.id }}, '{{ cartao.cartao_mascarado }}')">
+                                            <i class="fas fa-ban me-1"></i>Invalidar
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-secondary" disabled title="Motivo: {{ cartao.motivo_invalidacao }}">
+                                            <i class="fas fa-info-circle me-1"></i>Invalidado
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if not cartao.valido and cartao.motivo_invalidacao %}
+                            <tr class="table-secondary">
+                                <td colspan="9">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <strong>Motivo da invalidação:</strong> {{ cartao.motivo_invalidacao }}
+                                        {% if cartao.invalidado_em %}
+                                        | <strong>Data:</strong> {{ cartao.invalidado_em|date:"d/m/Y H:i" }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Total:</strong> {{ total_cartoes }} cartão(ões) |
+                    <strong>Ativos:</strong> {{ cartoes_ativos }} |
+                    <strong>Invalidados:</strong> {{ cartoes_invalidados }}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Este cliente não possui cartões salvos.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Invalidação -->
+<div class="modal fade" id="modalInvalidar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-ban me-2"></i>Invalidar Cartão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Você está prestes a invalidar o cartão:</p>
+                <p class="text-center"><strong><code id="cartaoMascarado"></code></strong></p>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Esta ação não pode ser desfeita. O cliente não poderá mais usar este cartão para pagamentos.
+                </div>
+
+                <form id="formInvalidar">
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">Motivo da Invalidação *</label>
+                        <select class="form-select" id="motivo" required>
+                            <option value="">Selecione um motivo...</option>
+                            <option value="Cartão comprometido - fraude detectada">Cartão comprometido - fraude detectada</option>
+                            <option value="Múltiplas tentativas falhas">Múltiplas tentativas falhas</option>
+                            <option value="Solicitação do cliente">Solicitação do cliente</option>
+                            <option value="Cartão expirado">Cartão expirado</option>
+                            <option value="Outro">Outro motivo</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="divMotivoOutro" style="display: none;">
+                        <label for="motivoOutro" class="form-label">Especifique o motivo</label>
+                        <input type="text" class="form-control" id="motivoOutro" maxlength="255">
+                    </div>
+
+                    <input type="hidden" id="cartaoId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarInvalidacao()">
+                    <i class="fas fa-ban me-2"></i>Confirmar Invalidação
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mostrar campo "Outro motivo" quando selecionado
+document.getElementById('motivo').addEventListener('change', function() {
+    const divOutro = document.getElementById('divMotivoOutro');
+    if (this.value === 'Outro') {
+        divOutro.style.display = 'block';
+        document.getElementById('motivoOutro').required = true;
+    } else {
+        divOutro.style.display = 'none';
+        document.getElementById('motivoOutro').required = false;
+    }
+});
+
+function invalidarCartao(cartaoId, cartaoMascarado) {
+    document.getElementById('cartaoId').value = cartaoId;
+    document.getElementById('cartaoMascarado').textContent = cartaoMascarado;
+    document.getElementById('motivo').value = '';
+    document.getElementById('motivoOutro').value = '';
+    document.getElementById('divMotivoOutro').style.display = 'none';
+
+    const modal = new bootstrap.Modal(document.getElementById('modalInvalidar'));
+    modal.show();
+}
+
+function confirmarInvalidacao() {
+    const cartaoId = document.getElementById('cartaoId').value;
+    let motivo = document.getElementById('motivo').value;
+
+    if (!motivo) {
+        alert('Por favor, selecione um motivo para a invalidação.');
+        return;
+    }
+
+    if (motivo === 'Outro') {
+        const motivoOutro = document.getElementById('motivoOutro').value.trim();
+        if (!motivoOutro) {
+            alert('Por favor, especifique o motivo da invalidação.');
+            return;
+        }
+        motivo = motivoOutro;
+    }
+
+    // Fazer requisição AJAX para invalidar
+    fetch(`/api/v1/checkout/cartoes/${cartaoId}/invalidar/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            motivo: motivo,
+            usuario_id: {{ request.user.id }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sucesso) {
+            alert('Cartão invalidado com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao invalidar cartão: ' + data.mensagem);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao invalidar cartão. Tente novamente.');
+    });
+}
+</script>
+{% endblock %}

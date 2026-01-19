@@ -46,6 +46,7 @@ urlpatterns = [
     path('api/cupom/', include('apps.cupom.urls')),  # Endpoints de cupom (interno)
     path('api/v1/checkout/', include('checkout.link_pagamento_web.urls')),  # Link de pagamento web
     path('api/v1/checkout/recorrencia/', include('checkout.link_recorrencia_web.urls')),  # Cadastro de cartão para recorrência
+    path('api/v1/checkout/', include('checkout.urls_cartoes')),  # Gerenciamento de cartões tokenizados
     path('api/v1/posp2/', include('posp2.urls')),  # Endpoints POSP2
 
     # APIs Own Financial

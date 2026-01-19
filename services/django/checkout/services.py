@@ -351,14 +351,28 @@ class CartaoTokenizadoService:
         return CheckoutCartaoTokenizado.objects.filter(**filtros).order_by('-created_at')
 
     @staticmethod
-    def invalidar_cartao(cartao_id: int):
-        """Invalida cartão (soft delete)"""
+    def invalidar_cartao(cartao_id: int, motivo: str = None, usuario_id: int = None):
+        """
+        Invalida cartão (soft delete)
+
+        Args:
+            cartao_id: ID do cartão
+            motivo: Motivo da invalidação (ex: "Múltiplas falhas", "Solicitação do cliente")
+            usuario_id: ID do usuário que invalidou (null se automático)
+        """
+        from django.utils import timezone
+
         try:
             cartao = CheckoutCartaoTokenizado.objects.get(id=cartao_id)
             cartao.valido = False
+            cartao.motivo_invalidacao = motivo or "Invalidação manual"
+            cartao.invalidado_por = usuario_id
+            cartao.invalidado_em = timezone.now()
             cartao.save()
 
-            registrar_log('checkout', f"Cartão invalidado: {cartao_id}")
+            registrar_log('checkout',
+                         f"Cartão invalidado: {cartao_id} - Motivo: {motivo} - Usuário: {usuario_id}",
+                         nivel='INFO')
 
         except CheckoutCartaoTokenizado.DoesNotExist:
             raise ValidationError('Cartão não encontrado')
@@ -420,7 +434,7 @@ class CheckoutService:
     ) -> Dict[str, Any]:
         """
         Processa pagamento com cartão tokenizado.
-        
+
         Args:
             cliente_id: ID do cliente checkout
             cartao_id: ID do cartão tokenizado
@@ -435,7 +449,7 @@ class CheckoutService:
             portais_usuarios_id: ID do vendedor (se origem portal)
             valor_transacao_original: Valor original sem desconto/juros
             valor_transacao_final: Valor final com desconto/juros aplicados
-            
+
         Returns:
             Dict com sucesso, transacao_id, nsu, codigo_autorizacao, status, mensagem
         """
@@ -443,15 +457,15 @@ class CheckoutService:
         cliente = None
         cartao = None
         bandeira_cartao = bandeira or 'MASTERCARD'
-        
+
         try:
             # Buscar cliente e cartão
             cliente = CheckoutCliente.objects.get(id=cliente_id, ativo=True)
             cartao = CheckoutCartaoTokenizado.objects.get(id=cartao_id, cliente=cliente, valido=True)
-            
+
             # Determinar bandeira do cartão
             bandeira_cartao = bandeira or cartao.bandeira or 'MASTERCARD'
-            
+
             # Preparar dados da transação
             pinbank_service = TransacoesPinbankService(loja_id=cliente.loja_id)
 
@@ -482,7 +496,7 @@ class CheckoutService:
 
             # Processar via Pinbank
             resultado = pinbank_service.efetuar_transacao_cartao_tokenizado(payload_transacao)
-            
+
             registrar_log('checkout', f"Resultado Pinbank: sucesso={resultado.get('sucesso')}, mensagem={resultado.get('mensagem')}")
 
             # Determinar status
@@ -545,7 +559,7 @@ class CheckoutService:
             import traceback
             erro_completo = traceback.format_exc()
             registrar_log('checkout', f"Erro ao processar pagamento: {str(e)}\n{erro_completo}", nivel='ERROR')
-            
+
             # Salvar transação com erro para auditoria
             try:
                 from datetime import datetime
@@ -567,7 +581,7 @@ class CheckoutService:
                 )
             except Exception as save_error:
                 registrar_log('checkout', f"Erro ao salvar transação com erro: {str(save_error)}", nivel='ERROR')
-            
+
             raise
 
     @staticmethod
@@ -1093,7 +1107,7 @@ class LinkPagamentoTransactionService:
         """
         Cria transação inicial quando vendedor gera link de pagamento.
         Status inicial: PENDENTE (aguardando cliente pagar)
-        
+
         Args:
             token: Token do link de pagamento
             loja_id: ID da loja
@@ -1101,7 +1115,7 @@ class LinkPagamentoTransactionService:
             cliente_id: ID do cliente (opcional)
             vendedor_id: ID do vendedor que criou
             pedido_origem_loja: Pedido de origem da loja
-            
+
         Returns:
             CheckoutTransaction criada
         """
@@ -1117,7 +1131,7 @@ class LinkPagamentoTransactionService:
             pedido_origem_loja=pedido_origem_loja,
             created_at=timezone.now()
         )
-        
+
         registrar_log('checkout', f"Transação inicial criada - Token: {token[:8]}... - Valor: {valor}")
-        
+
         return transacao

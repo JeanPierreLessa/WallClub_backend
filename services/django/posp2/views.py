@@ -17,6 +17,7 @@ from .services_transacao import TRDataService
 from .services_sync import TransactionSyncService
 from wallclub_core.oauth.decorators import require_oauth_posp2
 from wallclub_core.decorators.api_decorators import handle_api_errors, validate_required_params
+from wallclub_core.seguranca.rate_limiter_pos import require_pos_rate_limit
 
 
 @csrf_exempt
@@ -28,10 +29,10 @@ def validar_versao_terminal(request):
     """Valida se versão do terminal é permitida"""
     data = json.loads(request.body)
     versao = data.get('versao')
-    
+
     service = POSP2Service()
     resultado = service.validar_versao_terminal(versao)
-    
+
     return JsonResponse({
         'sucesso': resultado['sucesso'],
         'permitida': resultado.get('dados', {}).get('permitida', False),
@@ -48,10 +49,10 @@ def listar_operadores_pos(request):
     """Lista operadores disponíveis para um terminal"""
     data = json.loads(request.body)
     terminal = data.get('terminal')
-    
+
     service = POSP2Service()
     resultado = service.listar_operadores_pos(terminal)
-    
+
     return JsonResponse(resultado)
 
 
@@ -66,10 +67,10 @@ def simular_parcelas(request):
     valor = data.get('valor')
     terminal = data.get('terminal')
     wall = data.get('wall', 's')
-    
+
     service = POSP2Service()
     resultado = service.simular_parcelas(valor, terminal, wall)
-    
+
     return JsonResponse(resultado)
 
 
@@ -85,11 +86,11 @@ def simular_parcelas_v2(request):
     terminal = data.get('terminal')
     wall = data.get('wall', 's')
     cliente_id = data.get('cliente_id', 0)
-    
+
     from .services_v2 import POSP2ServiceV2
     service = POSP2ServiceV2()
     resultado = service.simular_parcelas_v2(valor, terminal, wall, cliente_id)
-    
+
     return JsonResponse(resultado)
 
 
@@ -106,17 +107,18 @@ def calcular_desconto_parcela(request):
     parcelas = data.get('parcelas', 1)
     terminal = data.get('terminal')
     wall = data.get('wall', 's')
-    
+
     service = POSP2Service()
     valor_decimal = Decimal(str(valoro)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     resultado = service.calcular_desconto_parcela(valor_decimal, forma, int(parcelas), terminal, wall)
-    
+
     return JsonResponse(resultado)
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
+@require_pos_rate_limit('default')
 @handle_api_errors
 @validate_required_params('cpf')
 def valida_cpf(request):
@@ -124,14 +126,14 @@ def valida_cpf(request):
     data = json.loads(request.body)
     cpf = data.get('cpf')
     terminal = data.get('terminal')
-    
+
     service = POSP2Service()
     resultado = service.valida_cpf(cpf, terminal)
-    
+
     # Ajustar resposta do service para usar 'sucesso' ao invés de 'valido'
     if 'valido' in resultado:
         resultado['sucesso'] = resultado.pop('valido')
-    
+
     return JsonResponse(resultado)
 
 
@@ -144,10 +146,10 @@ def obter_logo_pos(request):
     """Retorna logo para terminal POS"""
     dados = json.loads(request.body)
     terminal = dados.get('terminal')
-    
+
     service = POSP2Service()
     resultado = service.obter_logo_pos(terminal)
-    
+
     return JsonResponse(resultado)
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -155,21 +157,21 @@ def obter_logo_pos(request):
 @method_decorator(handle_api_errors, name='dispatch')
 class TransactionSyncView(View):
     """View para sincronização de transações do app Android"""
-    
+
     def post(self, request):
         """Processa sincronização de transações"""
         data = json.loads(request.body)
         transacoes = data.get('transacoes', [])
-        
+
         if not transacoes:
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'Array de transações obrigatório'
             })
-        
+
         service = TransactionSyncService()
         resultado = service.sincronizar_transacoes(transacoes)
-        
+
         return JsonResponse(resultado)
 
 @csrf_exempt
@@ -183,10 +185,10 @@ def atualiza_celular_envia_msg_app(request):
     cpf = data.get('cpf')
     terminal = data.get('terminal')
     celular = data.get('celular')
-    
+
     service = POSP2Service()
     resultado = service.atualiza_celular_envia_msg_app(cpf, terminal, celular)
-    
+
     return JsonResponse(resultado)
 
 
@@ -194,46 +196,49 @@ def atualiza_celular_envia_msg_app(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
+@require_pos_rate_limit('critical')
 @handle_api_errors
 def processar_dados_transacao(request):
     """Processa dados de transação Pinbank e gera comprovante"""
     dados_json = request.body.decode('utf-8')
-    
+
     service = TRDataService()
     resultado = service.processar_dados_transacao(dados_json)
-    
+
     return JsonResponse(resultado)
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
+@require_pos_rate_limit('critical')
 @handle_api_errors
 def processar_dados_transacao_pinbank(request):
     """Processa dados de transação Pinbank V2 (com cupom + cashback centralizado)"""
     from .services_transacao_pos import TRDataPosService
-    
+
     dados_json = request.body.decode('utf-8')
-    
+
     service = TRDataPosService()
     resultado = service.processar_transacao_pinbank(dados_json)
-    
+
     return JsonResponse(resultado)
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
+@require_pos_rate_limit('critical')
 @handle_api_errors
 def processar_dados_transacao_own(request):
     """Processa dados de transação Own/Ágilli V2 (com cupom + cashback centralizado)"""
     from .services_transacao_pos import TRDataPosService
-    
+
     dados_json = request.body.decode('utf-8')
-    
+
     service = TRDataPosService()
     resultado = service.processar_transacao_own(dados_json)
-    
+
     return JsonResponse(resultado)
 
 
@@ -255,7 +260,7 @@ def consultar_saldo_cashback(request):
     cpf = data.get('cpf')
     terminal = data.get('terminal')
     valor_compra = data.get('valor_compra')
-    
+
     # Converter e validar valor_compra
     valor_compra = Decimal(str(valor_compra)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     if valor_compra <= 0:
@@ -263,10 +268,10 @@ def consultar_saldo_cashback(request):
             'sucesso': False,
             'mensagem': 'valor_compra deve ser maior que zero'
         })
-    
+
     service = SaldoService()
     resultado = service.consultar_saldo_cashback(cpf, terminal, valor_compra)
-    
+
     return JsonResponse(resultado)
 
 
@@ -277,7 +282,7 @@ def consultar_saldo(request):
     """
     Consulta saldo do cliente sem validar senha.
     Calcula o valor máximo permitido para uso baseado no valor da compra.
-    
+
     ⚠️ DEPRECATED: Remover após deploy da versão 2.5.0 do POS
     ⚠️ Usar consultar_saldo_cashback para cashback
     """
@@ -285,7 +290,7 @@ def consultar_saldo(request):
     cpf = data.get('cpf')
     terminal = data.get('terminal')
     valor_compra = data.get('valor_compra')
-    
+
     # Converter e validar valor_compra
     valor_compra = Decimal(str(valor_compra)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     if valor_compra <= 0:
@@ -293,16 +298,17 @@ def consultar_saldo(request):
             'sucesso': False,
             'mensagem': 'valor_compra deve ser maior que zero'
         })
-    
+
     service = SaldoService()
     resultado = service.consultar_saldo_cliente(cpf, terminal, valor_compra)
-    
+
     return JsonResponse(resultado)
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
+@require_pos_rate_limit('critical')
 @handle_api_errors
 @validate_required_params('cpf', 'validation_token', 'valor_usar', 'terminal')
 def solicitar_autorizacao_saldo(request):
@@ -312,25 +318,26 @@ def solicitar_autorizacao_saldo(request):
     validation_token = data.get('validation_token')
     valor_usar = data.get('valor_usar')
     terminal = data.get('terminal')
-    
+
     service = SaldoService()
     resultado = service.solicitar_autorizacao_uso_saldo(cpf, validation_token, valor_usar, terminal)
-    
+
     return JsonResponse(resultado)
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 @require_oauth_posp2
+@require_pos_rate_limit('default')
 @handle_api_errors
 @validate_required_params('autorizacao_id')
 def verificar_autorizacao(request):
     """POS verifica status da autorização (polling)"""
     from apps.conta_digital.services_autorizacao import AutorizacaoService
-    
+
     data = json.loads(request.body)
     autorizacao_id = data.get('autorizacao_id')
-    
+
     resultado = AutorizacaoService.verificar_autorizacao(autorizacao_id)
     return JsonResponse(resultado)
 
@@ -343,16 +350,16 @@ def verificar_autorizacao(request):
 def debitar_saldo_transacao(request):
     """POS debita saldo após autorização aprovada"""
     from apps.conta_digital.services_autorizacao import AutorizacaoService
-    
+
     data = json.loads(request.body)
     autorizacao_id = data.get('autorizacao_id')
     nsu_transacao = data.get('nsu_transacao')
-    
+
     resultado = AutorizacaoService.debitar_saldo_autorizado(
         autorizacao_id=autorizacao_id,
         nsu_transacao=nsu_transacao
     )
-    
+
     return JsonResponse(resultado)
 
 
@@ -366,7 +373,7 @@ def finalizar_transacao_saldo(request):
     data = json.loads(request.body)
     nsu_transacao = data.get('nsu_transacao')
     status = data.get('status', 'APROVADA')
-    
+
     return JsonResponse({
         'sucesso': True,
         'mensagem': 'Transação finalizada'
@@ -381,16 +388,16 @@ def finalizar_transacao_saldo(request):
 def estornar_saldo_transacao(request):
     """Estorna saldo se transação foi negada (idempotente)"""
     from apps.conta_digital.services_autorizacao import AutorizacaoService
-    
+
     data = json.loads(request.body)
     nsu_transacao = data.get('nsu_transacao')
     motivo = data.get('motivo', 'Transação negada')
-    
+
     resultado = AutorizacaoService.estornar_transacao_saldo(
         nsu_transacao=nsu_transacao,
         motivo=motivo
     )
-    
+
     return JsonResponse(resultado)
 
 

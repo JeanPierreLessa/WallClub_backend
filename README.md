@@ -136,8 +136,8 @@ WallClub_backend/
 
 ### 1. Container Portais (wallclub-portais)
 
-**Porta:** 8005 (interna)  
-**Subdomínios:** 
+**Porta:** 8005 (interna)
+**Subdomínios:**
 - wcadmin.wallclub.com.br (responde na raiz `/`)
 - wcvendas.wallclub.com.br
 - wclojista.wallclub.com.br
@@ -189,7 +189,7 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,htt
 
 ### 2. Container POS (wallclub-pos)
 
-**Porta:** 8006 (interna)  
+**Porta:** 8006 (interna)
 **Subdomínio:** wcapipos.wallclub.com.br (REMOVIDO - agora usa wcapi.wallclub.com.br)
 
 **Módulos:**
@@ -208,8 +208,8 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,htt
 
 ### 3. Container APIs Mobile (wallclub-apis)
 
-**Porta:** 8007 (interna)  
-**Subdomínios:** 
+**Porta:** 8007 (interna)
+**Subdomínios:**
 - api.wallclub.com.br / wcapi.wallclub.com.br
 - checkout.wallclub.com.br / wccheckout.wallclub.com.br
 
@@ -231,7 +231,7 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,htt
 
 ### 4. Container Risk Engine (wallclub-riskengine)
 
-**Porta:** 8008 (interna)  
+**Porta:** 8008 (interna)
 **Acesso:** Interno (chamado por outros containers via API REST)
 
 **Módulos:**
@@ -251,7 +251,7 @@ CORS_ALLOWED_ORIGINS=https://wallclub.com.br,https://wcadmin.wallclub.com.br,htt
 
 ### 3. Core (services/core/)
 
-**Descrição:** Package Python compartilhado entre serviços  
+**Descrição:** Package Python compartilhado entre serviços
 **Instalação:** `wallclub_core @ file:///../core`
 
 **Componentes:**
@@ -653,8 +653,8 @@ Proprietary - WallClub © 2025
 
 ---
 
-**Criado em:** 02/11/2025  
-**Última atualização:** 08/12/2025  
+**Criado em:** 02/11/2025
+**Última atualização:** 08/12/2025
 **Responsável:** Equipe WallClub
 
 ### Atualizações Recentes (08/12/2025)
@@ -762,3 +762,25 @@ Proprietary - WallClub © 2025
 - **Services Criados:** 22
 - **Queries SQL Eliminadas:** 25
 - **Arquivos Migrados (Fase 6C):** 113
+
+---
+
+## 📚 Documentação Adicional
+
+### Documentação Técnica
+- **[ARQUITETURA.md](docs/ARQUITETURA.md)** - Estrutura técnica detalhada do sistema
+- **[DIRETRIZES.md](docs/DIRETRIZES.md)** - Regras e padrões de desenvolvimento
+- **[PENDENCIAS_SEGURANCA.md](docs/PENDENCIAS_SEGURANCA.md)** - Pendências e melhorias de segurança
+
+### Risk Engine (Antifraude)
+- **[Motor Antifraude](docs/riskengine/engine_antifraude.md)** - Documentação completa do sistema antifraude
+- **[Integração Autenticação](docs/riskengine/integracao_autenticacao_fraude.md)** - Integração com sistema de autenticação
+
+### Deploy e Setup
+- **[Setup Local](docs/setup/local.md)** - Configuração ambiente de desenvolvimento
+- **[Deploy Produção](docs/deployment/producao.md)** - Procedimentos de deploy
+- **[Arquivos Estáticos](docs/deployment/arquivos-estaticos.md)** - Gestão de assets
+
+### Roadmaps e Evoluções
+- **[Roadmap Infraestrutura](docs/em%20execucao/ROADMAP_EVOLUCAO_INFRAESTRUTURA.md)** - Plano de evolução da infraestrutura
+- **[Cenário Evolução Arquitetura](docs/em%20execucao/cenario_evolucao_arquitetura_JAN2026.md)** - Análise arquitetural e melhorias

@@ -14,37 +14,38 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('primeiro_acesso/<str:token>/', views.primeiro_acesso_view, name='primeiro_acesso'),
     path('reset_senha/<str:token>/', views.reset_senha_view, name='reset_senha'),
-    
+
     # Dashboard
     path('home/', views.dashboard, name='dashboard'),
-    
+
     # Perfil e Troca de Senha
     path('perfil/', views_perfil.perfil_view, name='perfil'),
     path('perfil/trocar-senha/', views_perfil.VendasTrocarSenhaView.as_view(), name='trocar_senha'),
     path('perfil/confirmar-troca-senha/', views_perfil.VendasConfirmarTrocaSenhaView.as_view(), name='confirmar_troca_senha'),
-    
+
     # Gestão de Clientes
     path('cliente/novo/', views.cliente_form, name='cliente_novo'),
     path('cliente/busca/', views.cliente_busca, name='cliente_busca'),
     path('cliente/<int:cliente_id>/editar/', views.cliente_editar, name='cliente_editar'),
+    path('cliente/<int:cliente_id>/cartoes/', views.cliente_cartoes, name='cliente_cartoes'),
     path('cliente/<int:cliente_id>/inativar/', views.cliente_inativar, name='cliente_inativar'),
     path('cliente/<int:cliente_id>/reativar/', views.cliente_reativar, name='cliente_reativar'),
-    
-    
+
+
     # Checkout Direto
     path('checkout/', views.checkout_view, name='checkout'),
     path('checkout/processar/', views.checkout_processar, name='checkout_processar'),
     path('checkout/resultado/<int:transacao_id>/', views.checkout_resultado, name='checkout_resultado'),
-    
+
     # Buscar Pedidos
     path('pedidos/buscar/', views.buscar_pedido, name='buscar_pedido'),
-    
+
     # AJAX
     path('ajax/buscar-cliente/', views.ajax_buscar_cliente, name='ajax_buscar_cliente'),
     path('ajax/calcular-parcelas/', views.ajax_calcular_parcelas, name='ajax_calcular_parcelas'),
     path('ajax/simular-parcelas/', views.ajax_simular_parcelas, name='ajax_simular_parcelas'),
     path('ajax/pesquisar-cpf/', views.ajax_pesquisar_cpf, name='ajax_pesquisar_cpf'),
-    
+
     # Recorrencia (Fase 5 - Unificacao)
     path('recorrencia/agendar/', views_recorrencia.recorrencia_agendar, name='recorrencia_agendar'),
     path('recorrencia/lista/', views_recorrencia.recorrencia_listar, name='recorrencia_listar'),

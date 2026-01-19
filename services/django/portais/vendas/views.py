@@ -27,11 +27,11 @@ def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         senha = request.POST.get('senha')
-        
+
         from .services import CheckoutVendasService
-        
+
         resultado = CheckoutVendasService.autenticar_vendedor(email, senha)
-        
+
         if resultado['sucesso']:
             # Criar sessão
             usuario = resultado['usuario']
@@ -39,13 +39,13 @@ def login_view(request):
             request.session['vendedor_id'] = usuario['id']
             request.session['vendedor_nome'] = usuario['nome']
             request.session['vendedor_email'] = usuario['email']
-            
+
             messages.success(request, resultado['mensagem'])
             return redirect('vendas:dashboard')
         else:
             messages.error(request, resultado['mensagem'])
             return render(request, 'vendas/login.html')
-    
+
     # GET - exibir formulário
     return render(request, 'vendas/login.html')
 
@@ -53,12 +53,12 @@ def login_view(request):
 def logout_view(request):
     """Logout do portal"""
     vendedor_nome = request.session.get('vendedor_nome', 'Usuário')
-    
+
     request.session.flush()
-    
+
     registrar_log('portais.vendas', f"Logout: {vendedor_nome}")
     messages.info(request, 'Logout realizado com sucesso')
-    
+
     return redirect('vendas:login')
 
 
@@ -70,7 +70,7 @@ def logout_view(request):
 def dashboard(request):
     """Dashboard principal do portal de vendas"""
     from .services import CheckoutVendasService
-    
+
     # Buscar vendedor da sessão
     vendedor = getattr(request, 'vendedor', None)
     if not vendedor and request.session.get('vendedor_id'):
@@ -79,17 +79,17 @@ def dashboard(request):
             vendedor = PortalUsuario.objects.get(id=request.session.get('vendedor_id'))
         except:
             vendedor = None
-    
+
     # Buscar lojas e estatísticas via service
     lojas = CheckoutVendasService.obter_lojas_vendedor(vendedor.id)
     estatisticas = CheckoutVendasService.obter_estatisticas_dashboard(vendedor.id)
-    
+
     context = {
         'vendedor': vendedor,
         'lojas': lojas,
         **estatisticas
     }
-    
+
     return render(request, 'vendas/dashboard.html', context)
 
 
@@ -102,42 +102,42 @@ def dashboard(request):
 def cliente_form(request):
     """Formulário de cadastro de cliente"""
     from .services import CheckoutVendasService
-    
+
     vendedor = request.vendedor
     lojas = CheckoutVendasService.obter_lojas_vendedor(vendedor.id)
-    
+
     if request.method == 'POST':
         try:
             loja_id = int(request.POST.get('loja_id'))
             tipo_documento = request.POST.get('tipo_documento')
-            
+
             dados = {
                 'nome': request.POST.get('nome'),
                 'email': request.POST.get('email'),
                 'endereco': request.POST.get('endereco'),
                 'cep': request.POST.get('cep', '').replace('-', ''),
             }
-            
+
             if tipo_documento == 'cpf':
                 dados['cpf'] = request.POST.get('cpf', '').replace('.', '').replace('-', '')
             else:
                 dados['cnpj'] = request.POST.get('cnpj', '').replace('.', '').replace('/', '').replace('-', '')
-            
+
             # Verificar se cliente já existe antes de criar
             from checkout.services import ClienteService
             cpf_limpo = dados.get('cpf', '')
             cnpj_limpo = dados.get('cnpj', '')
-            
+
             cliente_existente = ClienteService.buscar_cliente(
                 loja_id=loja_id,
                 cpf=cpf_limpo if cpf_limpo else None,
                 cnpj=cnpj_limpo if cnpj_limpo else None
             )
-            
+
             if cliente_existente:
                 messages.info(request, f'Cliente {cliente_existente.nome} já cadastrado. Redirecionando para edição...')
                 return redirect('vendas:cliente_editar', cliente_id=cliente_existente.id)
-            
+
             # Cliente não existe, criar novo
             resultado = CheckoutVendasService.criar_cliente_checkout(
                 loja_id=loja_id,
@@ -146,22 +146,22 @@ def cliente_form(request):
                 ip_address=request.META.get('REMOTE_ADDR'),
                 user_agent=request.META.get('HTTP_USER_AGENT', '')
             )
-            
+
             if resultado['sucesso']:
                 messages.success(request, resultado['mensagem'])
                 return redirect('vendas:cliente_busca')
             else:
                 messages.error(request, resultado['mensagem'])
-                
+
         except Exception as e:
             messages.error(request, f'Erro ao cadastrar cliente: {str(e)}')
             registrar_log('portais.vendas', f"Erro ao cadastrar: {str(e)}", nivel='ERROR')
-    
+
     context = {
         'vendedor': vendedor,
         'lojas': lojas,
     }
-    
+
     return render(request, 'vendas/cliente_form.html', context)
 
 
@@ -169,22 +169,22 @@ def cliente_form(request):
 def cliente_busca(request):
     """Busca e listagem de clientes"""
     from .services import CheckoutVendasService
-    
+
     vendedor = request.vendedor
     busca = request.GET.get('q', '').strip()
-    
+
     registrar_log('portais.vendas', f"[BUSCA CLIENTES] Vendedor ID: {vendedor.id}, Email: {vendedor.email}, Busca: '{busca}'")
-    
+
     clientes = CheckoutVendasService.buscar_clientes(vendedor.id, busca)
-    
+
     registrar_log('portais.vendas', f"[BUSCA CLIENTES] Retornou {len(clientes)} clientes")
-    
+
     context = {
         'vendedor': vendedor,
         'clientes': clientes,
         'busca': busca,
     }
-    
+
     return render(request, 'vendas/cliente_busca.html', context)
 
 
@@ -194,29 +194,29 @@ def cliente_editar(request, cliente_id):
     """Editar dados do cliente"""
     from .services import CheckoutVendasService
     CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
-    
+
     cliente = get_object_or_404(CheckoutCliente, id=cliente_id)
-    
+
     if request.method == 'POST':
         dados = {
             'email': request.POST.get('email'),
             'endereco': request.POST.get('endereco'),
             'cep': request.POST.get('cep'),
         }
-        
+
         resultado = CheckoutVendasService.atualizar_cliente_checkout(cliente_id, dados)
-        
+
         if resultado['sucesso']:
             messages.success(request, resultado['mensagem'])
             return redirect('vendas:cliente_busca')
         else:
             messages.error(request, resultado['mensagem'])
-    
+
     context = {
         'vendedor': request.vendedor,
         'cliente': cliente,
     }
-    
+
     return render(request, 'vendas/cliente_editar.html', context)
 
 
@@ -225,14 +225,14 @@ def cliente_editar(request, cliente_id):
 def cliente_inativar(request, cliente_id):
     """Inativar cliente"""
     from .services import CheckoutVendasService
-    
+
     resultado = CheckoutVendasService.inativar_cliente_checkout(cliente_id)
-    
+
     if resultado['sucesso']:
         messages.success(request, resultado['mensagem'])
     else:
         messages.error(request, resultado['mensagem'])
-    
+
     return redirect('vendas:cliente_busca')
 
 
@@ -241,14 +241,14 @@ def cliente_inativar(request, cliente_id):
 def cliente_reativar(request, cliente_id):
     """Reativar cliente"""
     from .services import CheckoutVendasService
-    
+
     resultado = CheckoutVendasService.reativar_cliente_checkout(cliente_id)
-    
+
     if resultado['sucesso']:
         messages.success(request, resultado['mensagem'])
     else:
         messages.error(request, resultado['mensagem'])
-    
+
     return redirect('vendas:cliente_busca')
 
 
@@ -260,15 +260,15 @@ def cliente_reativar(request, cliente_id):
 def checkout_view(request):
     """Interface de checkout direto"""
     from .services import CheckoutVendasService
-    
+
     vendedor = request.vendedor
     lojas = CheckoutVendasService.obter_lojas_vendedor(vendedor.id)
-    
+
     context = {
         'vendedor': vendedor,
         'lojas': lojas,
     }
-    
+
     return render(request, 'vendas/checkout.html', context)
 
 
@@ -278,35 +278,35 @@ def checkout_processar(request):
     """Processar pagamento do checkout direto"""
     from .services import CheckoutVendasService
     from decimal import Decimal
-    
+
     try:
         tipo_cartao = request.POST.get('tipo_cartao', '')
-        
+
         # ENVIAR LINK
         if tipo_cartao == 'enviar_link':
             return processar_envio_link(request)
-        
+
         # CARTÃO SALVO
         if tipo_cartao == 'salvo':
             forma_pagamento = request.POST.get('forma_pagamento', '')
-            
+
             if not forma_pagamento.startswith('cartao_'):
                 messages.error(request, 'Cartão não selecionado corretamente')
                 return redirect('vendas:checkout')
-            
+
             cartao_id = forma_pagamento.replace('cartao_', '')
             parcelas_str = request.POST.get('parcelas', '').strip()
-            
+
             if not parcelas_str:
                 messages.error(request, 'Parcelas obrigatórias')
                 return redirect('vendas:checkout')
-            
+
             cliente_id = int(request.POST.get('cliente_id'))
             valor_str = request.POST.get('valor', '').replace('.', '').replace(',', '.')
             valor_original = Decimal(valor_str)
             valor_total_str = request.POST.get('valor_total_parcela', '').replace(',', '.')
             valor_final = Decimal(valor_total_str) if valor_total_str else valor_original
-            
+
             resultado = CheckoutVendasService.processar_pagamento_cartao_salvo(
                 cliente_id=cliente_id,
                 cartao_id=cartao_id,
@@ -324,7 +324,7 @@ def checkout_processar(request):
         else:
             messages.error(request, 'Tipo de cartão inválido')
             return redirect('vendas:checkout')
-        
+
         if resultado.get('sucesso'):
             messages.success(request, f"Pagamento aprovado! NSU: {resultado.get('nsu')}")
             return redirect('vendas:checkout_resultado', transacao_id=resultado.get('transacao_id'))
@@ -343,7 +343,7 @@ def processar_envio_link(request):
     """Gera token, cria transação PENDENTE e envia link de pagamento por email"""
     from .services import CheckoutVendasService
     from decimal import Decimal
-    
+
     try:
         cliente_id = int(request.POST.get('cliente_id'))
         loja_id = int(request.POST.get('loja_id'))
@@ -352,7 +352,7 @@ def processar_envio_link(request):
         descricao = request.POST.get('descricao', 'Venda')
         pedido_origem = request.POST.get('pedido_origem')
         cod_item_origem = request.POST.get('cod_item_origem')
-        
+
         resultado = CheckoutVendasService.processar_envio_link_pagamento(
             cliente_id=cliente_id,
             loja_id=loja_id,
@@ -362,12 +362,12 @@ def processar_envio_link(request):
             cod_item_origem=cod_item_origem,
             vendedor_id=request.vendedor.id
         )
-        
+
         if resultado['sucesso']:
             messages.success(request, resultado['mensagem'])
         else:
             messages.error(request, resultado['mensagem'])
-        
+
         return redirect('vendas:checkout')
     except Exception as e:
         messages.error(request, f'Erro: {str(e)}')
@@ -380,12 +380,12 @@ def checkout_resultado(request, transacao_id):
     """Exibir resultado da transação"""
     CheckoutTransaction = apps.get_model('checkout', 'CheckoutTransaction')
     transacao = get_object_or_404(CheckoutTransaction, id=transacao_id, origem='CHECKOUT')
-    
+
     context = {
         'vendedor': request.vendedor,
         'transacao': transacao,
     }
-    
+
     return render(request, 'vendas/checkout_resultado.html', context)
 
 
@@ -395,9 +395,9 @@ def buscar_pedido(request):
     from .services import CheckoutVendasService
     from django.core.paginator import Paginator
     CheckoutTransaction = apps.get_model('checkout', 'CheckoutTransaction')
-    
+
     vendedor = request.vendedor
-    
+
     # Buscar transações via service
     transacoes = CheckoutVendasService.buscar_transacoes(
         vendedor_id=vendedor.id,
@@ -406,7 +406,7 @@ def buscar_pedido(request):
         data_inicio=request.GET.get('data_inicio', '').strip(),
         data_fim=request.GET.get('data_fim', '').strip()
     )
-    
+
     # Filtros ativos para exibição
     filtros_ativos = {}
     if request.GET.get('cpf'):
@@ -417,12 +417,12 @@ def buscar_pedido(request):
         filtros_ativos['data_inicio'] = request.GET.get('data_inicio')
     if request.GET.get('data_fim'):
         filtros_ativos['data_fim'] = request.GET.get('data_fim')
-    
+
     # Paginação
     paginator = Paginator(transacoes, 20)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'vendedor': vendedor,
         'page_obj': page_obj,
@@ -431,7 +431,7 @@ def buscar_pedido(request):
         'total_resultados': paginator.count,
         'current_page': 'buscar_pedido',
     }
-    
+
     return render(request, 'vendas/buscar_pedido.html', context)
 
 
@@ -443,11 +443,11 @@ def buscar_pedido(request):
 def ajax_buscar_cliente(request):
     """AJAX: Buscar cliente por CPF/CNPJ"""
     from .services import CheckoutVendasService
-    
+
     try:
         loja_id = int(request.GET.get('loja_id'))
         documento = request.GET.get('documento', '')
-        
+
         resultado = CheckoutVendasService.buscar_cliente_por_documento(loja_id, documento)
         return JsonResponse(resultado)
     except Exception as e:
@@ -459,14 +459,14 @@ def ajax_buscar_cliente(request):
 def ajax_calcular_parcelas(request):
     """AJAX: Calcular parcelas usando CheckoutService (com suporte a bandeira)"""
     from .services import CheckoutVendasService
-    
+
     try:
         valor = float(request.GET.get('valor'))
         loja_id = int(request.GET.get('loja_id'))
         bandeira = request.GET.get('bandeira', 'MASTERCARD')
-        
+
         resultado = CheckoutVendasService.simular_parcelas(valor, loja_id, bandeira)
-        
+
         if resultado.get('sucesso'):
             return JsonResponse({
                 'sucesso': True,
@@ -487,12 +487,12 @@ def ajax_calcular_parcelas(request):
 def ajax_simular_parcelas(request):
     """AJAX: Simular parcelas para o valor informado"""
     from .services import CheckoutVendasService
-    
+
     try:
         valor = float(request.GET.get('valor'))
         loja_id = int(request.GET.get('loja_id'))
         bandeira = request.GET.get('bandeira', 'MASTERCARD')
-        
+
         resultado = CheckoutVendasService.simular_parcelas(valor, loja_id, bandeira)
         return JsonResponse(resultado)
     except Exception as e:
@@ -507,16 +507,16 @@ def ajax_pesquisar_cpf(request):
     Retorna nome oficial (não editável) para preencher o formulário de novo cliente.
     """
     from .services import CheckoutVendasService
-    
+
     try:
         import json
         payload = json.loads(request.body.decode('utf-8')) if request.body else {}
         cpf = payload.get('cpf', '')
         loja_id = int(payload.get('loja_id')) if payload.get('loja_id') else None
-        
+
         if not loja_id:
             return JsonResponse({'sucesso': False, 'mensagem': 'Loja não informada'})
-        
+
         resultado = CheckoutVendasService.pesquisar_cpf_bureau(cpf, loja_id)
         return JsonResponse(resultado)
     except Exception as e:
@@ -532,7 +532,7 @@ def reset_senha_view(request, token):
     """View para reset de senha do vendedor com token"""
     from portais.controle_acesso.models import PortalUsuario
     from datetime import datetime
-    
+
     if request.method == 'POST':
         try:
             usuario = PortalUsuario.objects.get(
@@ -542,10 +542,10 @@ def reset_senha_view(request, token):
         except PortalUsuario.DoesNotExist:
             messages.error(request, 'Token inválido ou expirado.')
             return redirect('vendas:login')
-        
+
         nova_senha = request.POST.get('nova_senha')
         confirmar_senha = request.POST.get('confirmar_senha')
-        
+
         if nova_senha != confirmar_senha:
             messages.error(request, 'Nova senha e confirmação não coincidem.')
         else:
@@ -561,17 +561,17 @@ def reset_senha_view(request, token):
                 usuario.token_reset_senha = None
                 usuario.reset_senha_expira = None
                 usuario.save()
-                
+
                 registrar_log('portais.vendas', f'RESET_SENHA - Concluído - Usuário: {usuario.email}')
                 messages.success(request, 'Senha alterada com sucesso! Você já pode fazer login.')
                 return redirect('vendas:login')
-        
+
         context = {
             'usuario': usuario,
             'token': token
         }
         return render(request, 'vendas/reset_senha.html', context)
-    
+
     # GET
     try:
         usuario = PortalUsuario.objects.get(
@@ -581,7 +581,7 @@ def reset_senha_view(request, token):
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Token inválido ou expirado.')
         return redirect('vendas:login')
-    
+
     context = {
         'usuario': usuario,
         'token': token
@@ -596,7 +596,7 @@ def primeiro_acesso_view(request, token):
     """View para primeiro acesso do vendedor com token"""
     from portais.controle_acesso.models import PortalUsuario
     from datetime import datetime
-    
+
     if request.method == 'POST':
         try:
             usuario = PortalUsuario.objects.get(
@@ -606,11 +606,11 @@ def primeiro_acesso_view(request, token):
         except PortalUsuario.DoesNotExist:
             messages.error(request, 'Token inválido ou expirado.')
             return redirect('vendas:login')
-        
+
         senha_atual = request.POST.get('senha_temporaria')
         nova_senha = request.POST.get('nova_senha')
         confirmar_senha = request.POST.get('confirmar_senha')
-        
+
         # Validar senha atual
         if not usuario.verificar_senha(senha_atual):
             messages.error(request, 'Senha temporária incorreta.')
@@ -630,17 +630,17 @@ def primeiro_acesso_view(request, token):
                 usuario.token_primeiro_acesso = None
                 usuario.primeiro_acesso_expira = None
                 usuario.save()
-                
+
                 registrar_log('portais.vendas', f'PRIMEIRO_ACESSO - Concluído - Usuário: {usuario.email}')
                 messages.success(request, 'Senha alterada com sucesso! Você já pode fazer login normalmente.')
                 return redirect('vendas:login')
-        
+
         context = {
             'usuario': usuario,
             'token': token
         }
         return render(request, 'vendas/primeiro_acesso.html', context)
-    
+
     # GET
     try:
         usuario = PortalUsuario.objects.get(
@@ -650,9 +650,61 @@ def primeiro_acesso_view(request, token):
     except PortalUsuario.DoesNotExist:
         messages.error(request, 'Token inválido ou expirado.')
         return redirect('vendas:login')
-    
+
     context = {
         'usuario': usuario,
         'token': token
     }
     return render(request, 'vendas/primeiro_acesso.html', context)
+
+
+@requer_checkout_vendedor
+def cliente_cartoes(request, cliente_id):
+    """Gerenciar cartões tokenizados do cliente"""
+    import requests
+    CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
+
+    # Buscar cliente
+    cliente = get_object_or_404(CheckoutCliente, id=cliente_id)
+
+    # Buscar cartões via API
+    try:
+        response = requests.get(
+            f'http://localhost:8002/api/v1/checkout/cartoes/{cliente.cpf}/',
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('sucesso'):
+                cartoes = data['dados']['cartoes']
+                total_cartoes = data['dados']['total']
+                cartoes_ativos = data['dados']['ativos']
+                cartoes_invalidados = data['dados']['invalidados']
+            else:
+                cartoes = []
+                total_cartoes = 0
+                cartoes_ativos = 0
+                cartoes_invalidados = 0
+        else:
+            cartoes = []
+            total_cartoes = 0
+            cartoes_ativos = 0
+            cartoes_invalidados = 0
+
+    except Exception as e:
+        registrar_log('portais.vendas', f'Erro ao buscar cartões: {str(e)}', nivel='ERROR')
+        cartoes = []
+        total_cartoes = 0
+        cartoes_ativos = 0
+        cartoes_invalidados = 0
+
+    context = {
+        'cliente': cliente,
+        'cartoes': cartoes,
+        'total_cartoes': total_cartoes,
+        'cartoes_ativos': cartoes_ativos,
+        'cartoes_invalidados': cartoes_invalidados,
+    }
+
+    return render(request, 'vendas/cliente_cartoes.html', context)
