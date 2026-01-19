@@ -8,7 +8,24 @@ class CadastroLojaOwn {
         this.cnaeData = [];
         this.cestasData = [];
         this.tarifasData = [];
+        this.csrfToken = this.getCsrfToken();
         this.init();
+    }
+
+    getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 
     init() {
@@ -64,7 +81,12 @@ class CadastroLojaOwn {
 
     async carregarCNAE() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/cnae/`);
+            const response = await fetch(`${this.apiBaseUrl}/cnae/`, {
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': this.csrfToken
+                }
+            });
             if (!response.ok) throw new Error('Erro ao carregar CNAE');
 
             this.cnaeData = await response.json();
@@ -116,7 +138,12 @@ class CadastroLojaOwn {
 
     async carregarCestas() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/cestas/`);
+            const response = await fetch(`${this.apiBaseUrl}/cestas/`, {
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': this.csrfToken
+                }
+            });
             if (!response.ok) throw new Error('Erro ao carregar cestas');
 
             this.cestasData = await response.json();
@@ -148,7 +175,12 @@ class CadastroLojaOwn {
         }
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/cestas/${cestaId}/tarifas/`);
+            const response = await fetch(`${this.apiBaseUrl}/cestas/${cestaId}/tarifas/`, {
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': this.csrfToken
+                }
+            });
             if (!response.ok) throw new Error('Erro ao carregar tarifas');
 
             const data = await response.json();
