@@ -5,7 +5,7 @@ Views para gestão de lojas com integração Own Financial
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
-from django.db import transaction
+from django.db import transaction, connection
 from django.http import JsonResponse
 
 from portais.controle_acesso import require_funcionalidade
@@ -21,7 +21,39 @@ def cadastrar_loja(request):
     """View para cadastrar nova loja"""
 
     if request.method == 'GET':
-        return render(request, 'admin/cadastro_loja_own.html')
+        # Buscar canais disponíveis
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, nome
+                FROM canal
+                ORDER BY nome
+            """)
+            canais = [{'id': row[0], 'nome': row[1]} for row in cursor.fetchall()]
+
+        # Buscar grupos econômicos disponíveis
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT g.id, g.nome, v.nome as vendedor_nome,
+                       r.nome as regional_nome, c.nome as canal_nome
+                FROM gruposeconomicos g
+                JOIN vendedores v ON g.vendedorId = v.id
+                JOIN regionais r ON v.regionalId = r.id
+                JOIN canal c ON r.canalId = c.id
+                ORDER BY c.nome, r.nome, v.nome, g.nome
+            """)
+            grupos = [{
+                'id': row[0],
+                'nome': row[1],
+                'vendedor_nome': row[2],
+                'regional_nome': row[3],
+                'canal_nome': row[4]
+            } for row in cursor.fetchall()]
+
+        context = {
+            'canais': canais,
+            'grupos': grupos
+        }
+        return render(request, 'admin/cadastro_loja_own.html', context)
 
     # POST - processar cadastro
     try:

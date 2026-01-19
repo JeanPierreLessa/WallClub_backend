@@ -43,6 +43,33 @@
             <form id="form_cadastro_loja" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
+                <!-- Hierarquia WallClub -->
+                <div class="form-section">
+                    <h5>Hierarquia WallClub</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Canal</label>
+                            <select class="form-select" id="canal_id" name="canal_id" required>
+                                <option value="">Selecione um canal</option>
+                                {% for canal in canais %}
+                                <option value="{{ canal.id }}">{{ canal.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Grupo Econômico</label>
+                            <select class="form-select" id="GrupoEconomicoId" name="GrupoEconomicoId" required>
+                                <option value="">Selecione um grupo econômico</option>
+                                {% for grupo in grupos %}
+                                <option value="{{ grupo.id }}">
+                                    {{ grupo.nome }} ({{ grupo.vendedor_nome }} - {{ grupo.regional_nome }} - {{ grupo.canal_nome }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Dados Básicos -->
                 <div class="form-section">
                     <h5>Dados Básicos</h5>
@@ -173,6 +200,14 @@
                             <label class="form-label required-field">Dígito</label>
                             <input type="text" class="form-control" id="digito_conta"
                                    name="digito_conta" maxlength="1" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">PIX</label>
+                            <input type="text" class="form-control" id="pix"
+                                   name="pix" maxlength="256" placeholder="Chave PIX">
+                            <small class="text-muted">Chave PIX para recebimentos</small>
                         </div>
                     </div>
                 </div>
