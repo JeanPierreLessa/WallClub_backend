@@ -4,6 +4,7 @@ Autenticação OAuth 2.0 e utilitários
 """
 
 import requests
+import json
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from django.conf import settings

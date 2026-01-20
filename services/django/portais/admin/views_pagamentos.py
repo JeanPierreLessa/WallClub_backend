@@ -528,31 +528,29 @@ def pagamentos_bulk_create(request):
                 'created': created_count
             })
 
-        # Executar carga automática da base de gestão após criar pagamentos
+        # Executar carga da base unificada após criar pagamentos
         if created_count > 0:
             try:
-                registrar_log('portais.admin', f'🔄 Iniciando carga automática da base de gestão para {created_count} pagamento(s)...')
-                from pinbank.cargas_pinbank.services import CargaBaseGestaoService
+                registrar_log('portais.admin', f'🔄 Iniciando carga base unificada para {created_count} pagamento(s)...')
+                from django.core.management import call_command
+                from io import StringIO
 
-                service = CargaBaseGestaoService()
-                registros_processados = service.carregar_valores_primarios(limite=created_count * 2)
+                # Capturar output do comando
+                out = StringIO()
+                call_command('carga_base_unificada', '--limite=1000', stdout=out)
+                output = out.getvalue()
 
-                registrar_log('portais.admin', f'✅ Carga base gestão concluída: {registros_processados} registros processados')
+                registrar_log('portais.admin', f'✅ Carga base unificada concluída: {output}')
 
                 return JsonResponse({
                     'success': True,
-                    'message': f'{created_count} pagamento(s) criado(s) e {registros_processados} registro(s) processado(s) na base de gestão',
+                    'message': f'{created_count} pagamento(s) criado(s) e base unificada atualizada',
                     'created': created_count,
-                    'processed': registros_processados
+                    'carga_output': output
                 })
             except Exception as e:
                 registrar_log('portais.admin', f'⚠️ Pagamentos criados mas erro na carga: {str(e)}', nivel='WARNING')
-                return JsonResponse({
-                    'success': True,
-                    'message': f'{created_count} pagamento(s) criado(s) com sucesso (carga automática falhou)',
-                    'created': created_count,
-                    'warning': f'Erro na carga: {str(e)}'
-                })
+                # Continua mesmo com erro na carga
 
         return JsonResponse({
             'success': True,

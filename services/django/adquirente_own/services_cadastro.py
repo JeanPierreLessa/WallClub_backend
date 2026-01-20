@@ -4,6 +4,7 @@ Endpoint: POST /parceiro/v2/cadastrarConveniada
 """
 
 import base64
+import json
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from adquirente_own.services import OwnService
