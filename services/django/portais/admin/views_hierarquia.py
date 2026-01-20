@@ -1163,6 +1163,8 @@ def loja_edit(request, loja_id):
                                 'quantidade_pos': quantidade_pos,
                                 'antecipacao_automatica': antecipacao_automatica,
                                 'taxa_antecipacao': taxa_antecipacao,
+                                'tipo_antecipacao': 'ROTATIVO',
+                                'tarifacao': [],
                                 'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1'
                             }
 
