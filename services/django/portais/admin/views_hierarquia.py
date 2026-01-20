@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.db import connection
+from django.db import connection, transaction
 from ..controle_acesso.decorators import require_admin_access
 from portais.controle_acesso import require_funcionalidade
 
