@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_seguranca, views_perfil, views_lojas
+from . import views, views_usuarios, views_terminais, views_parametros, views_hierarquia, views_pagamentos, views_transacoes, views_importacao, views_rpr, views_ofertas, views_grupos_segmentacao, views_antifraude, views_seguranca, views_perfil
 
 app_name = 'portais_admin'
 
@@ -89,12 +89,6 @@ urlpatterns = [
     path('hierarquia/loja/novo/', views_hierarquia.loja_create, name='loja_create'),
     path('hierarquia/loja/<int:loja_id>/editar/', views_hierarquia.loja_edit, name='loja_edit'),
 
-    # Gestão de Lojas com Own Financial
-    path('lojas/', views_lojas.cadastrar_loja, name='lista_lojas'),  # Lista e cadastro
-    path('lojas/novo/', views_lojas.cadastrar_loja, name='cadastrar_loja'),
-    path('lojas/<int:loja_id>/editar/', views_lojas.editar_loja, name='editar_loja'),
-    path('lojas/<int:loja_id>/cadastrar-own/', views_lojas.cadastrar_loja_own_posterior, name='cadastrar_loja_own_posterior'),
-    path('lojas/<int:loja_id>/status-own/', views_lojas.status_credenciamento_own, name='status_credenciamento_own'),
 
     # Terminais (REFATORADO - usando views_terminais.py)
     path('terminais/', views_terminais.terminais_list, name='terminais_list'),
