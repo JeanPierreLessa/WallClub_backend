@@ -108,32 +108,32 @@
                         <div class="col-md-6">
                             <label class="form-label required-field">CNPJ</label>
                             <input type="text" class="form-control" id="cnpj" name="cnpj"
-                                   maxlength="14" required pattern="\d{14}" value="{{ loja.cnpj }}">
+                                   maxlength="14" required pattern="\d{14}" value="{{ loja.cnpj|default:'' }}">
                             <small class="text-muted">Apenas números</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label required-field">Razão Social</label>
                             <input type="text" class="form-control" id="razao_social"
-                                   name="razao_social" maxlength="256" required value="{{ loja.razao_social }}">
+                                   name="razao_social" maxlength="256" required value="{{ loja.razao_social|default:'' }}">
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <label class="form-label required-field">Nome Fantasia</label>
                             <input type="text" class="form-control" id="nome_fantasia"
-                                   name="nome_fantasia" maxlength="256" required value="{{ loja.nome_fantasia }}">
+                                   name="nome_fantasia" maxlength="256" required value="{{ loja.nome_fantasia|default:'' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label required-field">Email</label>
                             <input type="email" class="form-control" id="email"
-                                   name="email" maxlength="256" required value="{{ loja.email }}">
+                                   name="email" maxlength="256" required value="{{ loja.email|default:'' }}">
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-12">
                             <label class="form-label">URL da Loja</label>
                             <input type="url" class="form-control" id="url_loja"
-                                   name="url_loja" maxlength="256" placeholder="https://www.minhaloja.com.br" value="{{ loja.url_loja }}">
+                                   name="url_loja" maxlength="256" placeholder="https://www.minhaloja.com.br" value="{{ loja.url_loja|default:'' }}">
                             <small class="text-muted">URL do site da loja (se houver)</small>
                         </div>
                     </div>
@@ -146,22 +146,22 @@
                         <div class="col-md-3">
                             <label class="form-label required-field">DDD Comercial</label>
                             <input type="text" class="form-control" id="ddd_telefone_comercial"
-                                   name="ddd_telefone_comercial" maxlength="2" required pattern="\d{2}" value="{{ loja.ddd_telefone_comercial }}">
+                                   name="ddd_telefone_comercial" maxlength="2" required pattern="\d{2}" value="{{ loja.ddd_telefone_comercial|default:'' }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label required-field">Telefone Comercial</label>
                             <input type="text" class="form-control" id="telefone_comercial"
-                                   name="telefone_comercial" maxlength="20" required value="{{ loja.telefone_comercial }}">
+                                   name="telefone_comercial" maxlength="20" required value="{{ loja.telefone_comercial|default:'' }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label required-field">DDD Celular</label>
                             <input type="text" class="form-control" id="ddd_celular"
-                                   name="ddd_celular" maxlength="2" required pattern="\d{2}" value="{{ loja.ddd_celular }}">
+                                   name="ddd_celular" maxlength="2" required pattern="\d{2}" value="{{ loja.ddd_celular|default:'' }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label required-field">Celular</label>
                             <input type="text" class="form-control" id="celular"
-                                   name="celular" maxlength="20" required value="{{ loja.celular }}">
+                                   name="celular" maxlength="20" required value="{{ loja.celular|default:'' }}">
                         </div>
                     </div>
                 </div>
@@ -173,40 +173,40 @@
                         <div class="col-md-3">
                             <label class="form-label required-field">CEP</label>
                             <input type="text" class="form-control" id="cep" name="cep"
-                                   maxlength="8" required pattern="\d{8}" value="{{ loja.cep }}">
+                                   maxlength="8" required pattern="\d{8}" value="{{ loja.cep|default:'' }}">
                             <small class="text-muted">Apenas números</small>
                         </div>
                         <div class="col-md-7">
                             <label class="form-label required-field">Logradouro</label>
                             <input type="text" class="form-control" id="logradouro"
-                                   name="logradouro" maxlength="256" required value="{{ loja.logradouro }}">
+                                   name="logradouro" maxlength="256" required value="{{ loja.logradouro|default:'' }}">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label required-field">Número</label>
                             <input type="number" class="form-control" id="numero_endereco"
-                                   name="numero_endereco" required value="{{ loja.numero_endereco }}">
+                                   name="numero_endereco" required value="{{ loja.numero_endereco|default:'' }}">
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-4">
                             <label class="form-label">Complemento</label>
                             <input type="text" class="form-control" id="complemento"
-                                   name="complemento" maxlength="256" value="{{ loja.complemento }}">
+                                   name="complemento" maxlength="256" value="{{ loja.complemento|default:'' }}">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label required-field">Bairro</label>
                             <input type="text" class="form-control" id="bairro"
-                                   name="bairro" maxlength="100" required value="{{ loja.bairro }}">
+                                   name="bairro" maxlength="100" required value="{{ loja.bairro|default:'' }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label required-field">Município</label>
                             <input type="text" class="form-control" id="municipio"
-                                   name="municipio" maxlength="100" required value="{{ loja.municipio }}">
+                                   name="municipio" maxlength="100" required value="{{ loja.municipio|default:'' }}">
                         </div>
                         <div class="col-md-1">
                             <label class="form-label required-field">UF</label>
                             <input type="text" class="form-control" id="uf"
-                                   name="uf" maxlength="2" required pattern="[A-Z]{2}" value="{{ loja.uf }}">
+                                   name="uf" maxlength="2" required pattern="[A-Z]{2}" value="{{ loja.uf|default:'' }}">
                         </div>
                     </div>
                 </div>
@@ -218,34 +218,34 @@
                         <div class="col-md-3">
                             <label class="form-label required-field">Código do Banco</label>
                             <input type="text" class="form-control" id="codigo_banco"
-                                   name="codigo_banco" maxlength="3" required pattern="\d{3}" value="{{ loja.codigo_banco }}">
+                                   name="codigo_banco" maxlength="3" required pattern="\d{3}" value="{{ loja.codigo_banco|default:'' }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label required-field">Agência</label>
                             <input type="text" class="form-control" id="agencia"
-                                   name="agencia" maxlength="10" required value="{{ loja.agencia }}">
+                                   name="agencia" maxlength="10" required value="{{ loja.agencia|default:'' }}">
                         </div>
                         <div class="col-md-1">
                             <label class="form-label">Dígito</label>
                             <input type="text" class="form-control" id="digito_agencia"
-                                   name="digito_agencia" maxlength="1" value="{{ loja.digito_agencia }}">
+                                   name="digito_agencia" maxlength="1" value="{{ loja.digito_agencia|default:'' }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label required-field">Conta</label>
                             <input type="text" class="form-control" id="numero_conta"
-                                   name="numero_conta" maxlength="20" required value="{{ loja.numero_conta }}">
+                                   name="numero_conta" maxlength="20" required value="{{ loja.numero_conta|default:'' }}">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label required-field">Dígito</label>
                             <input type="text" class="form-control" id="digito_conta"
-                                   name="digito_conta" maxlength="1" required value="{{ loja.digito_conta }}">
+                                   name="digito_conta" maxlength="1" required value="{{ loja.digito_conta|default:'' }}">
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <label class="form-label">PIX</label>
                             <input type="text" class="form-control" id="pix"
-                                   name="pix" maxlength="256" placeholder="Chave PIX" value="{{ loja.pix }}">
+                                   name="pix" maxlength="256" placeholder="Chave PIX" value="{{ loja.pix|default:'' }}">
                             <small class="text-muted">Chave PIX para recebimentos</small>
                         </div>
                     </div>
@@ -295,14 +295,14 @@
                             <div class="col-md-4">
                                 <label class="form-label required-field">MCC</label>
                                 <input type="text" class="form-control" id="mcc"
-                                       name="mcc" maxlength="4" readonly value="{{ loja.mcc }}">
+                                       name="mcc" maxlength="4" readonly value="{{ loja.mcc|default:'' }}">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <label class="form-label">Ramo de Atividade</label>
                                 <input type="text" class="form-control" id="ramo_atividade"
-                                       name="ramo_atividade" readonly value="{{ loja.ramo_atividade }}">
+                                       name="ramo_atividade" readonly value="{{ loja.ramo_atividade|default:'' }}">
                             </div>
                         </div>
 
@@ -311,12 +311,12 @@
                             <div class="col-md-6">
                                 <label class="form-label required-field">Faturamento Previsto (R$)</label>
                                 <input type="number" class="form-control" id="faturamento_previsto"
-                                       name="faturamento_previsto" step="0.01" min="0" value="{{ loja.faturamento_previsto }}">
+                                       name="faturamento_previsto" step="0.01" min="0" value="{{ loja.faturamento_previsto|default:'' }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label required-field">Faturamento Contratado (R$)</label>
                                 <input type="number" class="form-control" id="faturamento_contratado"
-                                       name="faturamento_contratado" step="0.01" min="0" value="{{ loja.faturamento_contratado }}">
+                                       name="faturamento_contratado" step="0.01" min="0" value="{{ loja.faturamento_contratado|default:'' }}">
                             </div>
                         </div>
 
@@ -341,7 +341,7 @@
                             <div class="col-md-12">
                                 <label class="form-label required-field">Responsável pela Assinatura</label>
                                 <input type="text" class="form-control" id="responsavel_assinatura"
-                                       name="responsavel_assinatura" maxlength="256" value="{{ loja.responsavel_assinatura }}">
+                                       name="responsavel_assinatura" maxlength="256" value="{{ loja.responsavel_assinatura|default:'' }}">
                             </div>
                         </div>
 
