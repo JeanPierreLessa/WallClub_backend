@@ -874,6 +874,18 @@ def loja_create(request):
             cadastrar_own = request.POST.get('cadastrar_own') == '1'
 
             if cadastrar_own:
+                # Coletar tarifas editadas do formulário
+                total_tarifas = int(request.POST.get('total_tarifas', 0))
+                tarifacao = []
+                for i in range(total_tarifas):
+                    tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                    tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                    if tarifa_id and tarifa_valor:
+                        tarifacao.append({
+                            'id': int(tarifa_id),
+                            'valor': float(tarifa_valor)
+                        })
+
                 # Montar dados para Own
                 loja_data = {
                     'cnpj': cnpj,
@@ -907,7 +919,7 @@ def loja_create(request):
                     'antecipacao_automatica': antecipacao_automatica,
                     'taxa_antecipacao': taxa_antecipacao,
                     'tipo_antecipacao': 'ROTATIVO',
-                    'tarifacao': []
+                    'tarifacao': tarifacao
                 }
 
                 # Cadastrar na Own
@@ -1150,6 +1162,18 @@ def loja_edit(request, loja_id):
                                 messages.warning(request, 'Loja atualizada, mas é necessário informar o Responsável pela Assinatura para cadastrar na Own.')
                                 return redirect('portais_admin:loja_detail', loja_id=loja_id)
 
+                            # Coletar tarifas editadas do formulário
+                            total_tarifas = int(request.POST.get('total_tarifas', 0))
+                            tarifacao = []
+                            for i in range(total_tarifas):
+                                tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                                tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                                if tarifa_id and tarifa_valor:
+                                    tarifacao.append({
+                                        'id': int(tarifa_id),
+                                        'valor': float(tarifa_valor)
+                                    })
+
                             loja_data = {
                                 'razao_social': razao_social,
                                 'nome_fantasia': nome_fantasia,
@@ -1182,7 +1206,7 @@ def loja_edit(request, loja_id):
                                 'antecipacao_automatica': antecipacao_automatica,
                                 'taxa_antecipacao': taxa_antecipacao,
                                 'tipo_antecipacao': 'ROTATIVO',
-                                'tarifacao': [],
+                                'tarifacao': tarifacao,
                                 'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1'
                             }
 

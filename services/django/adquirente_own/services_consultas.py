@@ -231,7 +231,8 @@ class ConsultasOwnService:
             tarifas = [
                 {
                     'cesta_valor_id': t.get('cestaValorId'),
-                    'valor': t.get('valor'),
+                    'valor': t.get('valor') if t.get('valor') != 0 else t.get('valorMinimo', 0),  # Usar valorMinimo se valor for 0
+                    'valor_minimo': t.get('valorMinimo', 0),  # Incluir valor mínimo para validação
                     'descricao': t.get('produto', '')  # API Own retorna 'produto', não 'descricao'
                 }
                 for t in tarifas_cesta

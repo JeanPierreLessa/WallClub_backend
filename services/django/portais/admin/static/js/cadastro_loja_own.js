@@ -221,23 +221,44 @@ class CadastroLojaOwn {
             <div class="card">
                 <div class="card-header">
                     <h6 class="mb-0">Tarifas da Cesta: ${data.nome_cesta}</h6>
+                    <small class="text-muted">Ajuste os valores conforme necessário (respeitando o valor mínimo)</small>
                 </div>
                 <div class="card-body">
                     <table class="table table-sm">
                         <thead>
                             <tr>
                                 <th>Descrição</th>
-                                <th class="text-end">Valor</th>
+                                <th class="text-end" style="width: 200px;">Valor (R$)</th>
+                                <th class="text-end" style="width: 150px;">Mínimo (R$)</th>
                             </tr>
                         </thead>
                         <tbody>
         `;
 
-        data.tarifas.forEach(tarifa => {
+        data.tarifas.forEach((tarifa, index) => {
+            const valorMinimo = parseFloat(tarifa.valor_minimo || 0);
+            const valorAtual = parseFloat(tarifa.valor || valorMinimo);
+
             html += `
                 <tr>
-                    <td>${tarifa.descricao || 'Tarifa'}</td>
-                    <td class="text-end">R$ ${parseFloat(tarifa.valor).toFixed(2)}</td>
+                    <td>
+                        ${tarifa.descricao || 'Tarifa'}
+                        <input type="hidden" name="tarifa_id_${index}" value="${tarifa.cesta_valor_id}">
+                    </td>
+                    <td class="text-end">
+                        <input type="number"
+                               class="form-control form-control-sm text-end tarifa-valor"
+                               name="tarifa_valor_${index}"
+                               data-tarifa-id="${tarifa.cesta_valor_id}"
+                               data-valor-minimo="${valorMinimo}"
+                               value="${valorAtual.toFixed(2)}"
+                               min="${valorMinimo}"
+                               step="0.01"
+                               style="width: 100%;">
+                    </td>
+                    <td class="text-end text-muted">
+                        ${valorMinimo.toFixed(2)}
+                    </td>
                 </tr>
             `;
         });
@@ -245,11 +266,30 @@ class CadastroLojaOwn {
         html += `
                         </tbody>
                     </table>
+                    <input type="hidden" id="total_tarifas" name="total_tarifas" value="${data.tarifas.length}">
                 </div>
             </div>
         `;
 
         container.innerHTML = html;
+
+        // Adicionar validação de valor mínimo
+        this.adicionarValidacaoTarifas();
+    }
+
+    adicionarValidacaoTarifas() {
+        const inputs = document.querySelectorAll('.tarifa-valor');
+        inputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const valorMinimo = parseFloat(this.dataset.valorMinimo);
+                const valorAtual = parseFloat(this.value);
+
+                if (valorAtual < valorMinimo) {
+                    alert(`O valor não pode ser menor que o mínimo: R$ ${valorMinimo.toFixed(2)}`);
+                    this.value = valorMinimo.toFixed(2);
+                }
+            });
+        });
     }
 
     async buscarCEP(cep) {
