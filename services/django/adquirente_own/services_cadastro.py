@@ -5,6 +5,7 @@ Endpoint: POST /parceiro/v2/cadastrarConveniada
 
 import base64
 import json
+import hashlib
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from adquirente_own.services import OwnService
@@ -97,7 +98,7 @@ class CadastroOwnService:
 
             # Protocolo e hash
             "protocoloCore": "",
-            "hashAceite": "",
+            "hashAceite": self._gerar_hash_aceite(loja_data),
 
             # Terminais
             "terminais": loja_data.get('terminais', []),
@@ -111,6 +112,32 @@ class CadastroOwnService:
         }
 
         return payload
+
+    def _gerar_hash_aceite(self, loja_data: Dict[str, Any]) -> str:
+        """
+        Gera hash SHA256 do termo de aceite
+
+        Args:
+            loja_data: Dados da loja
+
+        Returns:
+            Hash SHA256 em hexadecimal
+        """
+        # Termo de aceite padrão WallClub para Own Financial
+        termo_aceite = f"""
+        TERMO DE ACEITE - CREDENCIAMENTO OWN FINANCIAL
+
+        Eu, {loja_data.get('responsavel_assinatura', '')}, na qualidade de representante legal da empresa
+        {loja_data.get('razao_social', '')}, inscrita no CNPJ {loja_data.get('cnpj', '')},
+        declaro estar ciente e de acordo com os termos e condições do credenciamento junto à Own Financial
+        para utilização dos serviços de adquirência e meios de pagamento.
+
+        Data: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
+        """
+
+        # Gerar hash SHA256
+        hash_obj = hashlib.sha256(termo_aceite.encode('utf-8'))
+        return hash_obj.hexdigest()
 
     def converter_arquivo_base64(self, caminho_arquivo: str) -> Optional[str]:
         """
