@@ -1132,6 +1132,24 @@ def loja_edit(request, loja_id):
                     # Se checkbox Own marcado e ainda não cadastrado, cadastrar
                     if cadastrar_own and not loja_own:
                         try:
+                            # Validar campos obrigatórios para Own
+                            id_cesta = request.POST.get('id_cesta')
+                            if not id_cesta:
+                                messages.warning(request, 'Loja atualizada, mas é necessário selecionar uma Cesta de Tarifas para cadastrar na Own.')
+                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
+
+                            if not cnae or not mcc or not ramo_atividade:
+                                messages.warning(request, 'Loja atualizada, mas é necessário selecionar um CNAE para cadastrar na Own.')
+                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
+
+                            if not faturamento_previsto or not faturamento_contratado:
+                                messages.warning(request, 'Loja atualizada, mas é necessário informar os faturamentos para cadastrar na Own.')
+                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
+
+                            if not responsavel_assinatura:
+                                messages.warning(request, 'Loja atualizada, mas é necessário informar o Responsável pela Assinatura para cadastrar na Own.')
+                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
+
                             loja_data = {
                                 'razao_social': razao_social,
                                 'nome_fantasia': nome_fantasia,

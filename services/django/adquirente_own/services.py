@@ -169,6 +169,16 @@ class OwnService:
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code
 
+            # Tentar obter corpo da resposta de erro
+            try:
+                erro_detalhes = e.response.json()
+                mensagem_erro = erro_detalhes.get('message', erro_detalhes.get('error', str(erro_detalhes)))
+                registrar_log('adquirente_own', f'❌ Erro HTTP {status_code}: {endpoint} - Detalhes: {json.dumps(erro_detalhes, ensure_ascii=False)}', nivel='ERROR')
+            except:
+                erro_detalhes = e.response.text
+                mensagem_erro = erro_detalhes[:200] if erro_detalhes else 'Sem detalhes'
+                registrar_log('adquirente_own', f'❌ Erro HTTP {status_code}: {endpoint} - Resposta: {mensagem_erro}', nivel='ERROR')
+
             # Tratamento específico para rate limiting
             if status_code == 429:
                 registrar_log('adquirente_own', f'⚠️ Rate limit atingido (429): {endpoint}', nivel='WARNING')
@@ -179,11 +189,11 @@ class OwnService:
                     'codigo_erro': 'RATE_LIMIT'
                 }
 
-            registrar_log('adquirente_own', f'❌ Erro HTTP {status_code}: {endpoint}', nivel='ERROR')
             return {
                 'sucesso': False,
-                'mensagem': f'Erro HTTP {status_code}',
-                'status_code': status_code
+                'mensagem': f'Erro HTTP {status_code}: {mensagem_erro}',
+                'status_code': status_code,
+                'detalhes': erro_detalhes
             }
         except requests.exceptions.RequestException as e:
             registrar_log('adquirente_own', f'❌ Erro na requisição: {str(e)}', nivel='ERROR')

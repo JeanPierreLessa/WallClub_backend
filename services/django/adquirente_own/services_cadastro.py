@@ -243,6 +243,7 @@ class CadastroOwnService:
             payload = self.preparar_payload_cadastro(loja_data)
 
             registrar_log('own.cadastro', f'📦 Payload preparado: CNPJ={payload["cnpj"]}, Cesta={payload["idCesta"]}')
+            registrar_log('own.cadastro', f'📋 Payload completo: {json.dumps(payload, indent=2, ensure_ascii=False)}', nivel='DEBUG')
 
             # Fazer requisição
             resultado = self.own_service.fazer_requisicao_autenticada(
