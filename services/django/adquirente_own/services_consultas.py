@@ -232,7 +232,7 @@ class ConsultasOwnService:
                 {
                     'cesta_valor_id': t.get('cestaValorId'),
                     'valor': t.get('valor'),
-                    'descricao': t.get('descricao', '')
+                    'descricao': t.get('produto', '')  # API Own retorna 'produto', não 'descricao'
                 }
                 for t in tarifas_cesta
             ]

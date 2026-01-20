@@ -240,6 +240,28 @@ class CadastroOwnService:
             loja_data['documentos_socios'] = self.preparar_documentos_socios(loja_id)
             loja_data['anexos'] = self.preparar_anexos_empresa(loja_id)
 
+            # Buscar tarifas da cesta se não foram fornecidas
+            if not loja_data.get('tarifacao') or len(loja_data.get('tarifacao', [])) == 0:
+                id_cesta = loja_data.get('id_cesta')
+                if id_cesta:
+                    from adquirente_own.services_consultas import ConsultasOwnService
+                    consultas_service = ConsultasOwnService(environment=self.environment)
+                    resultado_tarifas = consultas_service.obter_tarifas_cesta(int(id_cesta))
+
+                    if resultado_tarifas.get('sucesso'):
+                        tarifas = resultado_tarifas.get('tarifas', [])
+                        # Formatar tarifas para o formato esperado pela API
+                        loja_data['tarifacao'] = [
+                            {
+                                'id': t['cesta_valor_id'],
+                                'valor': t['valor']
+                            }
+                            for t in tarifas
+                        ]
+                        registrar_log('own.cadastro', f'📋 {len(loja_data["tarifacao"])} tarifas carregadas da cesta {id_cesta}')
+                    else:
+                        registrar_log('own.cadastro', f'⚠️ Não foi possível carregar tarifas da cesta {id_cesta}', nivel='WARNING')
+
             # Preparar payload
             payload = self.preparar_payload_cadastro(loja_data)
 
