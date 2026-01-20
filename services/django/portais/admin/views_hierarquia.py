@@ -1019,20 +1019,53 @@ def loja_edit(request, loja_id):
 
     # POST - processar edição
     if request.method == 'POST':
+        # Dados básicos
         razao_social = request.POST.get('razao_social', '').strip()
+        nome_fantasia = request.POST.get('nome_fantasia', '').strip()
         cnpj_raw = request.POST.get('cnpj', '').strip()
-        # Remove formatação do CNPJ/CPF (mantém apenas números)
         cnpj = ''.join(filter(str.isdigit, cnpj_raw)) if cnpj_raw else ''
         complemento = request.POST.get('complemento', '').strip()
-        email = request.POST.get('email', '').strip()
-        celular = request.POST.get('celular', '').strip()
-        nomebanco = request.POST.get('nomebanco', '').strip()
-        numerobanco = request.POST.get('numerobanco', '').strip()
-        agencia = request.POST.get('agencia', '').strip()
-        conta = request.POST.get('conta', '').strip()
-        pix = request.POST.get('pix', '').strip()
-        grupo_id = request.POST.get('GrupoEconomicoId')
+        canal_id = request.POST.get('canal_id', '').strip()
         gateway_ativo = request.POST.get('gateway_ativo', 'PINBANK').strip()
+
+        # Contato
+        email = request.POST.get('email', '').strip()
+        url_loja = request.POST.get('url_loja', '').strip()
+        ddd_telefone_comercial = request.POST.get('ddd_telefone_comercial', '').strip()
+        telefone_comercial = request.POST.get('telefone_comercial', '').strip()
+        ddd_celular = request.POST.get('ddd_celular', '').strip()
+        celular = request.POST.get('celular', '').strip()
+
+        # Endereço
+        cep = request.POST.get('cep', '').strip()
+        logradouro = request.POST.get('logradouro', '').strip()
+        numero_endereco = request.POST.get('numero_endereco', '').strip()
+        bairro = request.POST.get('bairro', '').strip()
+        municipio = request.POST.get('municipio', '').strip()
+        uf = request.POST.get('uf', '').strip()
+
+        # Dados bancários
+        codigo_banco = request.POST.get('codigo_banco', '').strip()
+        agencia = request.POST.get('agencia', '').strip()
+        digito_agencia = request.POST.get('digito_agencia', '').strip()
+        numero_conta = request.POST.get('numero_conta', '').strip()
+        digito_conta = request.POST.get('digito_conta', '').strip()
+        pix = request.POST.get('pix', '').strip()
+
+        # Hierarquia
+        grupo_id = request.POST.get('GrupoEconomicoId')
+
+        # Campos Own Financial
+        cnae = request.POST.get('cnae', '').strip()
+        mcc = request.POST.get('mcc', '').strip()
+        ramo_atividade = request.POST.get('ramo_atividade', '').strip()
+        faturamento_previsto = request.POST.get('faturamento_previsto', '').strip()
+        faturamento_contratado = request.POST.get('faturamento_contratado', '').strip()
+        quantidade_pos = request.POST.get('quantidade_pos', '1').strip()
+        antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N').strip()
+        taxa_antecipacao = request.POST.get('taxa_antecipacao', '0').strip()
+        responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
+        cadastrar_own = request.POST.get('cadastrar_own') == '1'
 
         # Validações
         if not cnpj:
@@ -1056,28 +1089,106 @@ def loja_edit(request, loja_id):
                             'edit_mode': True
                         })
 
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        UPDATE loja SET
-                            razao_social = %s, cnpj = %s, complemento = %s,
-                            email = %s, celular = %s,
-                            nomebanco = %s, numerobanco = %s, agencia = %s,
-                            conta = %s, pix = %s, GrupoEconomicoId = %s, gateway_ativo = %s
-                        WHERE id = %s
-                    """, [razao_social or None, cnpj,
-                          complemento or None, email or None, celular or None,
-                          nomebanco or None, numerobanco or None, agencia or None,
-                          conta or None, pix or None, grupo_id, gateway_ativo, loja_id])
+                with transaction.atomic():
+                    with connection.cursor() as cursor:
+                        cursor.execute("""
+                            UPDATE loja SET
+                                razao_social = %s, nome_fantasia = %s, cnpj = %s, complemento = %s,
+                                canal_id = %s, gateway_ativo = %s,
+                                email = %s, url_loja = %s,
+                                ddd_telefone_comercial = %s, telefone_comercial = %s,
+                                ddd_celular = %s, celular = %s,
+                                cep = %s, logradouro = %s, numero_endereco = %s,
+                                bairro = %s, municipio = %s, uf = %s,
+                                codigo_banco = %s, agencia = %s, digito_agencia = %s,
+                                numero_conta = %s, digito_conta = %s, pix = %s,
+                                GrupoEconomicoId = %s,
+                                cnae = %s, mcc = %s, ramo_atividade = %s,
+                                faturamento_previsto = %s, faturamento_contratado = %s,
+                                quantidade_pos = %s, antecipacao_automatica = %s,
+                                taxa_antecipacao = %s, responsavel_assinatura = %s
+                            WHERE id = %s
+                        """, [
+                            razao_social or None, nome_fantasia or None, cnpj, complemento or None,
+                            int(canal_id) if canal_id else None, gateway_ativo,
+                            email or None, url_loja or None,
+                            ddd_telefone_comercial or None, telefone_comercial or None,
+                            ddd_celular or None, celular or None,
+                            cep or None, logradouro or None, int(numero_endereco) if numero_endereco else None,
+                            bairro or None, municipio or None, uf or None,
+                            codigo_banco or None, agencia or None, digito_agencia or None,
+                            numero_conta or None, digito_conta or None, pix or None,
+                            grupo_id,
+                            cnae or None, mcc or None, ramo_atividade or None,
+                            float(faturamento_previsto) if faturamento_previsto else None,
+                            float(faturamento_contratado) if faturamento_contratado else None,
+                            int(quantidade_pos) if quantidade_pos else 1,
+                            antecipacao_automatica,
+                            float(taxa_antecipacao) if taxa_antecipacao else 0,
+                            responsavel_assinatura or None,
+                            loja_id
+                        ])
 
-                messages.success(request, f'Loja "{razao_social or "Loja"}" atualizada com sucesso!')
+                    # Se checkbox Own marcado e ainda não cadastrado, cadastrar
+                    if cadastrar_own and not loja_own:
+                        try:
+                            loja_data = {
+                                'loja_id': loja_id,
+                                'razao_social': razao_social,
+                                'nome_fantasia': nome_fantasia,
+                                'cnpj': cnpj,
+                                'email': email,
+                                'ddd_telefone_comercial': ddd_telefone_comercial,
+                                'telefone_comercial': telefone_comercial,
+                                'ddd_celular': ddd_celular,
+                                'celular': celular,
+                                'cep': cep,
+                                'logradouro': logradouro,
+                                'numero_endereco': numero_endereco,
+                                'complemento': complemento,
+                                'bairro': bairro,
+                                'municipio': municipio,
+                                'uf': uf,
+                                'codigo_banco': codigo_banco,
+                                'agencia': agencia,
+                                'digito_agencia': digito_agencia,
+                                'numero_conta': numero_conta,
+                                'digito_conta': digito_conta,
+                                'cnae': cnae,
+                                'mcc': mcc,
+                                'ramo_atividade': ramo_atividade,
+                                'faturamento_previsto': faturamento_previsto,
+                                'faturamento_contratado': faturamento_contratado,
+                                'id_cesta': request.POST.get('id_cesta'),
+                                'responsavel_assinatura': responsavel_assinatura,
+                                'quantidade_pos': quantidade_pos,
+                                'antecipacao_automatica': antecipacao_automatica,
+                                'taxa_antecipacao': taxa_antecipacao,
+                                'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1'
+                            }
+
+                            resultado = CadastroOwnService.cadastrar_estabelecimento(loja_data)
+
+                            if resultado.get('sucesso'):
+                                messages.success(request, f'Loja "{razao_social}" atualizada e cadastrada na Own Financial!')
+                            else:
+                                messages.warning(request, f'Loja atualizada, mas houve erro ao cadastrar na Own: {resultado.get("mensagem")}')
+                        except Exception as e:
+                            registrar_log('admin.hierarquia', f'❌ Erro ao cadastrar loja na Own: {str(e)}', nivel='ERROR')
+                            messages.warning(request, f'Loja atualizada, mas houve erro ao cadastrar na Own: {str(e)}')
+                    else:
+                        messages.success(request, f'Loja "{razao_social}" atualizada com sucesso!')
+
                 return redirect('portais_admin:loja_detail', loja_id=loja_id)
             except Exception as e:
+                registrar_log('admin.hierarquia', f'❌ Erro ao atualizar loja: {str(e)}', nivel='ERROR')
                 messages.error(request, f'Erro ao atualizar loja: {str(e)}')
 
     context = {
-        'grupos': grupos,
         'loja': loja,
-        'edit_mode': True
+        'loja_own': loja_own,
+        'canais': canais,
+        'grupos': grupos
     }
 
     return render(request, 'portais/admin/loja_edit.html', context)
