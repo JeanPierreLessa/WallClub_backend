@@ -937,13 +937,22 @@ def loja_create(request):
 
 @require_funcionalidade('hierarquia_edit')
 def loja_edit(request, loja_id):
-    """Editar loja existente"""
+    """Editar loja existente com integração Own Financial"""
+    from adquirente_own.models_cadastro import LojaOwn
+    from adquirente_own.services_cadastro import CadastroOwnService
+    from wallclub_core.utilitarios.log_control import registrar_log
 
-    # Buscar dados da loja
+    # Buscar dados completos da loja
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT id, razao_social, cnpj, complemento, email, celular,
-                   nomebanco, numerobanco, agencia, conta, pix, GrupoEconomicoId, gateway_ativo
+            SELECT id, razao_social, nome_fantasia, cnpj, complemento, canal_id, gateway_ativo,
+                   email, url_loja, ddd_telefone_comercial, telefone_comercial,
+                   ddd_celular, celular, cep, logradouro, numero_endereco,
+                   bairro, municipio, uf, codigo_banco, agencia, digito_agencia,
+                   numero_conta, digito_conta, pix, GrupoEconomicoId,
+                   cnae, mcc, ramo_atividade, faturamento_previsto, faturamento_contratado,
+                   quantidade_pos, antecipacao_automatica, taxa_antecipacao, responsavel_assinatura,
+                   nomebanco, numerobanco, conta
             FROM loja
             WHERE id = %s
         """, [loja_id])
@@ -954,12 +963,31 @@ def loja_edit(request, loja_id):
             return redirect('portais_admin:hierarquia_geral')
 
         loja = {
-            'id': row[0], 'razao_social': row[1], 'cnpj': row[2],
-            'complemento': row[3], 'email': row[4], 'celular': row[5],
-            'nomebanco': row[6], 'numerobanco': row[7],
-            'agencia': row[8], 'conta': row[9], 'pix': row[10],
-            'GrupoEconomicoId': row[11], 'gateway_ativo': row[12]
+            'id': row[0], 'razao_social': row[1], 'nome_fantasia': row[2], 'cnpj': row[3],
+            'complemento': row[4], 'canal_id': row[5], 'gateway_ativo': row[6],
+            'email': row[7], 'url_loja': row[8], 'ddd_telefone_comercial': row[9], 'telefone_comercial': row[10],
+            'ddd_celular': row[11], 'celular': row[12], 'cep': row[13], 'logradouro': row[14], 'numero_endereco': row[15],
+            'bairro': row[16], 'municipio': row[17], 'uf': row[18], 'codigo_banco': row[19], 'agencia': row[20], 'digito_agencia': row[21],
+            'numero_conta': row[22], 'digito_conta': row[23], 'pix': row[24], 'GrupoEconomicoId': row[25],
+            'cnae': row[26], 'mcc': row[27], 'ramo_atividade': row[28], 'faturamento_previsto': row[29], 'faturamento_contratado': row[30],
+            'quantidade_pos': row[31], 'antecipacao_automatica': row[32], 'taxa_antecipacao': row[33], 'responsavel_assinatura': row[34],
+            'nomebanco': row[35], 'numerobanco': row[36], 'conta': row[37]
         }
+
+    # Buscar dados Own se existir
+    try:
+        loja_own = LojaOwn.objects.filter(loja_id=loja_id).first()
+    except:
+        loja_own = None
+
+    # Buscar canais disponíveis
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, nome
+            FROM canal
+            ORDER BY nome
+        """)
+        canais = [{'id': row[0], 'nome': row[1]} for row in cursor.fetchall()]
 
     # Buscar grupos econômicos disponíveis
     with connection.cursor() as cursor:
@@ -980,6 +1008,16 @@ def loja_edit(request, loja_id):
             'canal_nome': row[4]
         } for row in cursor.fetchall()]
 
+    if request.method == 'GET':
+        context = {
+            'loja': loja,
+            'loja_own': loja_own,
+            'canais': canais,
+            'grupos': grupos
+        }
+        return render(request, 'portais/admin/loja_edit.html', context)
+
+    # POST - processar edição
     if request.method == 'POST':
         razao_social = request.POST.get('razao_social', '').strip()
         cnpj_raw = request.POST.get('cnpj', '').strip()

@@ -1,4 +1,4 @@
-{% extends 'portais/admin/base.html' %}
+{% extends "portais/admin/base.html" %}
 {% load static %}
 
 {% block title %}Editar Loja{% endblock %}
@@ -14,276 +14,387 @@
 </button>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-section h5 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .required-field::after {
+        content: " *";
+        color: #e74c3c;
+    }
+    #campos_own {
+        display: none;
+    }
+    .checkbox-own {
+        background: #ecf0f1;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="page-header-compact">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-store me-2" style="color: var(--primary-color);"></i>
-            <h1 class="mb-0">Editar Loja</h1>
-        </div>
-    </div>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'portais_admin:loja_detail' loja.id %}">{{ loja.razao_social }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Editar</li>
+                </ol>
+            </nav>
 
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="{% url 'portais_admin:hierarquia_geral' %}">Hierarquia</a>
-            </li>
-            <li class="breadcrumb-item">
-                <a href="{% url 'portais_admin:loja_detail' loja.id %}">{{ loja.razao_social }}</a>
-            </li>
-            <li class="breadcrumb-item active">Editar</li>
-        </ol>
-    </nav>
+            <h2 class="mb-4">Editar Loja</h2>
 
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-store me-2"></i>
-                        Informações da Loja
-                    </h5>
+            <form id="form_cadastro_loja" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Hierarquia WallClub -->
+                <div class="form-section">
+                    <h5>Hierarquia WallClub</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Canal</label>
+                            <select class="form-select" id="canal_id" name="canal_id" required>
+                                <option value="">Selecione um canal</option>
+                                {% for canal in canais %}
+                                <option value="{{ canal.id }}" {% if canal.id == loja.canal_id %}selected{% endif %}>{{ canal.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Grupo Econômico</label>
+                            <select class="form-select" id="GrupoEconomicoId" name="GrupoEconomicoId" required>
+                                <option value="">Selecione um grupo econômico</option>
+                                {% for grupo in grupos %}
+                                <option value="{{ grupo.id }}" {% if grupo.id == loja.GrupoEconomicoId %}selected{% endif %}>
+                                    {{ grupo.nome }} ({{ grupo.vendedor_nome }} - {{ grupo.regional_nome }} - {{ grupo.canal_nome }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Gateway Ativo</label>
+                            <select class="form-select" id="gateway_ativo" name="gateway_ativo" required>
+                                <option value="PINBANK" {% if loja.gateway_ativo == 'PINBANK' %}selected{% endif %}>PINBANK</option>
+                                <option value="OWN" {% if loja.gateway_ativo == 'OWN' %}selected{% endif %}>OWN</option>
+                            </select>
+                            <small class="text-muted">Gateway de pagamento padrão</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label for="razao_social" class="form-label">
-                                    <i class="fas fa-building me-1"></i>
-                                    Razão Social
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="razao_social" 
-                                       name="razao_social" 
-                                       placeholder="Ex: Empresa ABC Ltda"
-                                       value="{{ request.POST.razao_social|default:loja.razao_social }}">
-                                <div class="form-text">Nome empresarial da loja</div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label for="GrupoEconomicoId" class="form-label">
-                                    <i class="fas fa-users me-1"></i>
-                                    Grupo Econômico *
-                                </label>
-                                <select class="form-select" id="GrupoEconomicoId" name="GrupoEconomicoId" required>
-                                    <option value="">Selecione um grupo econômico</option>
-                                    {% for grupo in grupos %}
-                                    <option value="{{ grupo.id }}" 
-                                            {% if request.POST.GrupoEconomicoId == grupo.id|stringformat:"s" or loja.GrupoEconomicoId == grupo.id %}selected{% endif %}>
-                                        {{ grupo.nome }} ({{ grupo.vendedor_nome }} - {{ grupo.regional_nome }} - {{ grupo.canal_nome }})
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <div class="form-text">Grupo econômico ao qual a loja pertence</div>
-                            </div>
+                <!-- Dados Básicos -->
+                <div class="form-section">
+                    <h5>Dados Básicos</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">CNPJ</label>
+                            <input type="text" class="form-control" id="cnpj" name="cnpj"
+                                   maxlength="14" required pattern="\d{14}" value="{{ loja.cnpj }}">
+                            <small class="text-muted">Apenas números</small>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="cnpj" class="form-label">
-                                    <i class="fas fa-id-card me-1"></i>
-                                    CNPJ/CPF
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="cnpj" 
-                                       name="cnpj" 
-                                       placeholder="00.000.000/0000-00 ou 000.000.000-00"
-                                       value="{{ request.POST.cnpj|default:loja.cnpj }}"
-                                       maxlength="18">
-                                <div class="form-text">CNPJ ou CPF da empresa</div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="gateway_ativo" class="form-label">
-                                    <i class="fas fa-credit-card me-1"></i>
-                                    Gateway Ativo
-                                </label>
-                                <select class="form-select" id="gateway_ativo" name="gateway_ativo">
-                                    <option value="PINBANK" {% if request.POST.gateway_ativo == 'PINBANK' or loja.gateway_ativo == 'PINBANK' %}selected{% endif %}>PINBANK</option>
-                                    <option value="OWN" {% if request.POST.gateway_ativo == 'OWN' or loja.gateway_ativo == 'OWN' %}selected{% endif %}>OWN</option>
-                                </select>
-                                <div class="form-text">Gateway de pagamento ativo</div>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Razão Social</label>
+                            <input type="text" class="form-control" id="razao_social"
+                                   name="razao_social" maxlength="256" required value="{{ loja.razao_social }}">
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label for="complemento" class="form-label">
-                                    <i class="fas fa-align-left me-1"></i>
-                                    Complemento
-                                </label>
-                                <textarea class="form-control" 
-                                          id="complemento" 
-                                          name="complemento" 
-                                          rows="3"
-                                          placeholder="Informações complementares da loja">{{ request.POST.complemento|default:loja.complemento }}</textarea>
-                                <div class="form-text">Informações adicionais sobre a loja</div>
-                            </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Nome Fantasia</label>
+                            <input type="text" class="form-control" id="nome_fantasia"
+                                   name="nome_fantasia" maxlength="256" required value="{{ loja.nome_fantasia }}">
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">
-                                    <i class="fas fa-envelope me-1"></i>
-                                    Email
-                                </label>
-                                <input type="email" 
-                                       class="form-control" 
-                                       id="email" 
-                                       name="email" 
-                                       placeholder="loja@exemplo.com"
-                                       value="{{ request.POST.email|default:loja.email }}">
-                                <div class="form-text">Email de contato da loja</div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="celular" class="form-label">
-                                    <i class="fas fa-mobile-alt me-1"></i>
-                                    Celular
-                                </label>
-                                <input type="tel" 
-                                       class="form-control" 
-                                       id="celular" 
-                                       name="celular" 
-                                       placeholder="(11) 99999-9999"
-                                       value="{{ request.POST.celular|default:loja.celular }}">
-                                <div class="form-text">Número de celular para contato</div>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Email</label>
+                            <input type="email" class="form-control" id="email"
+                                   name="email" maxlength="256" required value="{{ loja.email }}">
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="nomebanco" class="form-label">
-                                    <i class="fas fa-university me-1"></i>
-                                    Nome Banco
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="nomebanco" 
-                                       name="nomebanco" 
-                                       placeholder="Ex: Banco do Brasil"
-                                       value="{{ request.POST.nomebanco|default:loja.nomebanco }}">
-                                <div class="form-text">Nome do banco</div>
-                            </div>
-                            
-                            <div class="col-md-3 mb-3">
-                                <label for="numerobanco" class="form-label">
-                                    <i class="fas fa-hashtag me-1"></i>
-                                    Número Banco
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="numerobanco" 
-                                       name="numerobanco" 
-                                       placeholder="001"
-                                       value="{{ request.POST.numerobanco|default:loja.numerobanco }}">
-                                <div class="form-text">Código do banco</div>
-                            </div>
-                            
-                            <div class="col-md-3 mb-3">
-                                <label for="agencia" class="form-label">
-                                    <i class="fas fa-building me-1"></i>
-                                    Agência
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="agencia" 
-                                       name="agencia" 
-                                       placeholder="1234-5"
-                                       value="{{ request.POST.agencia|default:loja.agencia }}">
-                                <div class="form-text">Número da agência</div>
-                            </div>
-                            
-                            <div class="col-md-3 mb-3">
-                                <label for="conta" class="form-label">
-                                    <i class="fas fa-credit-card me-1"></i>
-                                    Conta
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="conta" 
-                                       name="conta" 
-                                       placeholder="12345-6"
-                                       value="{{ request.POST.conta|default:loja.conta }}">
-                                <div class="form-text">Número da conta</div>
-                            </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label class="form-label">URL da Loja</label>
+                            <input type="url" class="form-control" id="url_loja"
+                                   name="url_loja" maxlength="256" placeholder="https://www.minhaloja.com.br" value="{{ loja.url_loja }}">
+                            <small class="text-muted">URL do site da loja (se houver)</small>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label for="pix" class="form-label">
-                                    <i class="fas fa-qrcode me-1"></i>
-                                    PIX
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="pix" 
-                                       name="pix" 
-                                       placeholder="chave PIX"
-                                       value="{{ request.POST.pix|default:loja.pix }}">
-                                <div class="form-text">Chave PIX para recebimentos</div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a href="{% url 'portais_admin:loja_detail' loja.id %}" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-times me-1"></i>Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-success btn-sm">
-                                <i class="fas fa-save me-1"></i>
-                                Salvar Alterações
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Contato -->
+                <div class="form-section">
+                    <h5>Contato</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label required-field">DDD Comercial</label>
+                            <input type="text" class="form-control" id="ddd_telefone_comercial"
+                                   name="ddd_telefone_comercial" maxlength="2" required pattern="\d{2}" value="{{ loja.ddd_telefone_comercial }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Telefone Comercial</label>
+                            <input type="text" class="form-control" id="telefone_comercial"
+                                   name="telefone_comercial" maxlength="20" required value="{{ loja.telefone_comercial }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">DDD Celular</label>
+                            <input type="text" class="form-control" id="ddd_celular"
+                                   name="ddd_celular" maxlength="2" required pattern="\d{2}" value="{{ loja.ddd_celular }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Celular</label>
+                            <input type="text" class="form-control" id="celular"
+                                   name="celular" maxlength="20" required value="{{ loja.celular }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Endereço -->
+                <div class="form-section">
+                    <h5>Endereço</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label required-field">CEP</label>
+                            <input type="text" class="form-control" id="cep" name="cep"
+                                   maxlength="8" required pattern="\d{8}" value="{{ loja.cep }}">
+                            <small class="text-muted">Apenas números</small>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label required-field">Logradouro</label>
+                            <input type="text" class="form-control" id="logradouro"
+                                   name="logradouro" maxlength="256" required value="{{ loja.logradouro }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label required-field">Número</label>
+                            <input type="number" class="form-control" id="numero_endereco"
+                                   name="numero_endereco" required value="{{ loja.numero_endereco }}">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Complemento</label>
+                            <input type="text" class="form-control" id="complemento"
+                                   name="complemento" maxlength="256" value="{{ loja.complemento }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Bairro</label>
+                            <input type="text" class="form-control" id="bairro"
+                                   name="bairro" maxlength="100" required value="{{ loja.bairro }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Município</label>
+                            <input type="text" class="form-control" id="municipio"
+                                   name="municipio" maxlength="100" required value="{{ loja.municipio }}">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label required-field">UF</label>
+                            <input type="text" class="form-control" id="uf"
+                                   name="uf" maxlength="2" required pattern="[A-Z]{2}" value="{{ loja.uf }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dados Bancários -->
+                <div class="form-section">
+                    <h5>Dados Bancários</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Código do Banco</label>
+                            <input type="text" class="form-control" id="codigo_banco"
+                                   name="codigo_banco" maxlength="3" required pattern="\d{3}" value="{{ loja.codigo_banco }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Agência</label>
+                            <input type="text" class="form-control" id="agencia"
+                                   name="agencia" maxlength="10" required value="{{ loja.agencia }}">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">Dígito</label>
+                            <input type="text" class="form-control" id="digito_agencia"
+                                   name="digito_agencia" maxlength="1" value="{{ loja.digito_agencia }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label required-field">Conta</label>
+                            <input type="text" class="form-control" id="numero_conta"
+                                   name="numero_conta" maxlength="20" required value="{{ loja.numero_conta }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label required-field">Dígito</label>
+                            <input type="text" class="form-control" id="digito_conta"
+                                   name="digito_conta" maxlength="1" required value="{{ loja.digito_conta }}">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">PIX</label>
+                            <input type="text" class="form-control" id="pix"
+                                   name="pix" maxlength="256" placeholder="Chave PIX" value="{{ loja.pix }}">
+                            <small class="text-muted">Chave PIX para recebimentos</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integração Own Financial -->
+                <div class="form-section">
+                    <h5>Integração Own Financial</h5>
+
+                    <div class="checkbox-own">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cadastrar_own"
+                                   name="cadastrar_own" value="1" {% if loja_own %}checked{% endif %}>
+                            <label class="form-check-label" for="cadastrar_own">
+                                <strong>{% if loja_own %}Loja cadastrada na Own Financial{% else %}Cadastrar esta loja na Own Financial{% endif %}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    {% if loja_own %}
+                                        Status: {{ loja_own.status_credenciamento|default:"Pendente" }} | Protocolo: {{ loja_own.protocolo|default:"-" }}
+                                    {% else %}
+                                        Ao marcar esta opção, a loja será cadastrada automaticamente na adquirente Own Financial.
+                                    {% endif %}
+                                </small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="campos_own">
+                        <!-- Atividade Econômica -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Buscar Atividade (CNAE)</label>
+                                <input type="text" class="form-control" id="busca_cnae"
+                                       placeholder="Digite para buscar...">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label required-field">CNAE</label>
+                                <select class="form-select" id="cnae" name="cnae">
+                                    <option value="">Carregando...</option>
+                                    {% if loja.cnae %}
+                                    <option value="{{ loja.cnae }}" selected>{{ loja.cnae }}</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required-field">MCC</label>
+                                <input type="text" class="form-control" id="mcc"
+                                       name="mcc" maxlength="4" readonly value="{{ loja.mcc }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Ramo de Atividade</label>
+                                <input type="text" class="form-control" id="ramo_atividade"
+                                       name="ramo_atividade" readonly value="{{ loja.ramo_atividade }}">
+                            </div>
+                        </div>
+
+                        <!-- Dados Financeiros -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label required-field">Faturamento Previsto (R$)</label>
+                                <input type="number" class="form-control" id="faturamento_previsto"
+                                       name="faturamento_previsto" step="0.01" min="0" value="{{ loja.faturamento_previsto }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required-field">Faturamento Contratado (R$)</label>
+                                <input type="number" class="form-control" id="faturamento_contratado"
+                                       name="faturamento_contratado" step="0.01" min="0" value="{{ loja.faturamento_contratado }}">
+                            </div>
+                        </div>
+
+                        <!-- Cesta de Tarifas -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label required-field">Cesta de Tarifas</label>
+                                <select class="form-select" id="id_cesta" name="id_cesta">
+                                    <option value="">Carregando...</option>
+                                    {% if loja_own.id_cesta %}
+                                    <option value="{{ loja_own.id_cesta }}" selected>Cesta {{ loja_own.id_cesta }}</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preview das Tarifas -->
+                        <div id="tarifas_preview" class="mb-3"></div>
+
+                        <!-- Responsável -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label required-field">Responsável pela Assinatura</label>
+                                <input type="text" class="form-control" id="responsavel_assinatura"
+                                       name="responsavel_assinatura" maxlength="256" value="{{ loja.responsavel_assinatura }}">
+                            </div>
+                        </div>
+
+                        <!-- Configurações -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Quantidade de POS</label>
+                                <input type="number" class="form-control" id="quantidade_pos"
+                                       name="quantidade_pos" value="{{ loja.quantidade_pos|default:1 }}" min="1">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Antecipação Automática</label>
+                                <select class="form-select" id="antecipacao_automatica"
+                                        name="antecipacao_automatica">
+                                    <option value="N" {% if loja.antecipacao_automatica == 'N' %}selected{% endif %}>Não</option>
+                                    <option value="S" {% if loja.antecipacao_automatica == 'S' %}selected{% endif %}>Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Taxa Antecipação (%)</label>
+                                <input type="number" class="form-control" id="taxa_antecipacao"
+                                       name="taxa_antecipacao" value="{{ loja.taxa_antecipacao|default:0 }}" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="aceita_ecommerce"
+                                           name="aceita_ecommerce" value="1" {% if loja_own.aceita_ecommerce %}checked{% endif %}>
+                                    <label class="form-check-label" for="aceita_ecommerce">
+                                        Aceita E-commerce
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões -->
+                <div class="form-section">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'portais_admin:loja_detail' loja.id %}" class="btn btn-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const cnpjInput = document.getElementById('cnpj');
-    
-    // Formatar CNPJ/CPF ao carregar a página
-    if (cnpjInput.value) {
-        cnpjInput.value = formatarCnpjCpf(cnpjInput.value);
-    }
-    
-    // Formatar enquanto digita
-    cnpjInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        e.target.value = formatarCnpjCpf(value);
-    });
-    
-    function formatarCnpjCpf(value) {
-        // Remove tudo que não é dígito
-        value = value.replace(/\D/g, '');
-        
-        if (value.length <= 11) {
-            // CPF: 000.000.000-00
-            value = value.replace(/(\d{3})(\d)/, '$1.$2');
-            value = value.replace(/(\d{3})(\d)/, '$1.$2');
-            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-        } else {
-            // CNPJ: 00.000.000/0000-00
-            value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-            value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-            value = value.replace(/(\d{4})(\d)/, '$1-$2');
-        }
-        
-        return value;
-    }
-});
-</script>
+{% block extra_js %}
+<script src="{% static 'js/cadastro_loja_own.js' %}"></script>
 {% endblock %}
