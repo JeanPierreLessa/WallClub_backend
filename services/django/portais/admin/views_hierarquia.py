@@ -830,6 +830,7 @@ def loja_create(request):
             antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N').strip()
             taxa_antecipacao = request.POST.get('taxa_antecipacao', '0').strip()
             responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
+            responsavel_assinatura_cpf = request.POST.get('responsavel_assinatura_cpf', '').strip()
 
             if not grupo_id:
                 messages.error(request, 'Grupo econômico é obrigatório.')
@@ -848,9 +849,9 @@ def loja_create(request):
                         bairro, municipio, uf, codigo_banco, agencia, digito_agencia,
                         numero_conta, digito_conta, pix, GrupoEconomicoId,
                         cnae, mcc, ramo_atividade, faturamento_previsto, faturamento_contratado,
-                        quantidade_pos, antecipacao_automatica, taxa_antecipacao, responsavel_assinatura
+                        quantidade_pos, antecipacao_automatica, taxa_antecipacao, responsavel_assinatura, responsavel_assinatura_cpf
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, [
                     razao_social or None, nome_fantasia or None, cnpj or None, complemento or None,
                     int(canal_id), gateway_ativo,
@@ -863,7 +864,7 @@ def loja_create(request):
                     float(faturamento_contratado) if faturamento_contratado else None,
                     int(quantidade_pos) if quantidade_pos else 1,
                     antecipacao_automatica, float(taxa_antecipacao) if taxa_antecipacao else 0,
-                    responsavel_assinatura or None
+                    responsavel_assinatura or None, responsavel_assinatura_cpf or None
                 ])
 
                 # Obter ID da loja criada
@@ -915,6 +916,7 @@ def loja_create(request):
                     'faturamento_contratado': faturamento_contratado,
                     'id_cesta': request.POST.get('id_cesta'),
                     'responsavel_assinatura': responsavel_assinatura,
+                    'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
                     'quantidade_pos': quantidade_pos,
                     'antecipacao_automatica': antecipacao_automatica,
                     'taxa_antecipacao': taxa_antecipacao,
@@ -1077,6 +1079,7 @@ def loja_edit(request, loja_id):
         antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N').strip()
         taxa_antecipacao = request.POST.get('taxa_antecipacao', '0').strip()
         responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
+        responsavel_assinatura_cpf = request.POST.get('responsavel_assinatura_cpf', '').strip()
         cadastrar_own = request.POST.get('cadastrar_own') == '1'
 
         # Validações
@@ -1118,7 +1121,7 @@ def loja_edit(request, loja_id):
                                 cnae = %s, mcc = %s, ramo_atividade = %s,
                                 faturamento_previsto = %s, faturamento_contratado = %s,
                                 quantidade_pos = %s, antecipacao_automatica = %s,
-                                taxa_antecipacao = %s, responsavel_assinatura = %s
+                                taxa_antecipacao = %s, responsavel_assinatura = %s, responsavel_assinatura_cpf = %s
                             WHERE id = %s
                         """, [
                             razao_social or None, nome_fantasia or None, cnpj, complemento or None,
@@ -1137,7 +1140,7 @@ def loja_edit(request, loja_id):
                             int(quantidade_pos) if quantidade_pos else 1,
                             antecipacao_automatica,
                             float(taxa_antecipacao) if taxa_antecipacao else 0,
-                            responsavel_assinatura or None,
+                            responsavel_assinatura or None, responsavel_assinatura_cpf or None,
                             loja_id
                         ])
 
@@ -1202,6 +1205,7 @@ def loja_edit(request, loja_id):
                                 'faturamento_contratado': faturamento_contratado,
                                 'id_cesta': request.POST.get('id_cesta'),
                                 'responsavel_assinatura': responsavel_assinatura,
+                                'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
                                 'quantidade_pos': quantidade_pos,
                                 'antecipacao_automatica': antecipacao_automatica,
                                 'taxa_antecipacao': taxa_antecipacao,

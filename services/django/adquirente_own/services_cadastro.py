@@ -41,7 +41,7 @@ class CadastroOwnService:
             "cnpj": loja_data['cnpj'],
             "cnpjCanalWL": loja_data.get('cnpj_canal_wl', ''),
             "cnpjOrigem": loja_data.get('cnpj_origem', ''),
-            "identificadorCliente": f"{loja_data.get('responsavel_assinatura', '')} - {loja_data.get('email', '')}",
+            "identificadorCliente": loja_data.get('responsavel_assinatura_cpf', loja_data.get('email', '')),
             "urlCallback": loja_data.get('url_callback', 'https://wcapi.wallclub.com.br/webhook/own/credenciamento/'),
 
             # Razão social e nome fantasia
