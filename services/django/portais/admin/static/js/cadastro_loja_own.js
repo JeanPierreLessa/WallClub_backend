@@ -71,10 +71,25 @@ class CadastroLojaOwn {
         if (camposOwn) {
             camposOwn.style.display = mostrar ? 'block' : 'none';
 
-            // Marcar campos como obrigatórios
-            const inputs = camposOwn.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                input.required = mostrar;
+            // Marcar apenas campos específicos como obrigatórios (excluir campos de busca e readonly)
+            const camposObrigatorios = ['cnae', 'mcc', 'faturamento_previsto', 'faturamento_contratado',
+                'id_cesta', 'responsavel_assinatura'];
+
+            camposObrigatorios.forEach(id => {
+                const campo = document.getElementById(id);
+                if (campo) {
+                    campo.required = mostrar;
+                }
+            });
+
+            // Remover required de campos que não devem ser obrigatórios
+            const camposNaoObrigatorios = ['busca_cnae', 'ramo_atividade', 'quantidade_pos',
+                'antecipacao_automatica', 'taxa_antecipacao', 'aceita_ecommerce'];
+            camposNaoObrigatorios.forEach(id => {
+                const campo = document.getElementById(id);
+                if (campo) {
+                    campo.required = false;
+                }
             });
         }
     }
