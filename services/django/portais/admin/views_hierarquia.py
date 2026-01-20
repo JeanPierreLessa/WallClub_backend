@@ -1133,7 +1133,6 @@ def loja_edit(request, loja_id):
                     if cadastrar_own and not loja_own:
                         try:
                             loja_data = {
-                                'loja_id': loja_id,
                                 'razao_social': razao_social,
                                 'nome_fantasia': nome_fantasia,
                                 'cnpj': cnpj,
@@ -1167,7 +1166,8 @@ def loja_edit(request, loja_id):
                                 'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1'
                             }
 
-                            resultado = CadastroOwnService.cadastrar_estabelecimento(loja_data)
+                            service = CadastroOwnService()
+                            resultado = service.cadastrar_estabelecimento(loja_id, loja_data)
 
                             if resultado.get('sucesso'):
                                 messages.success(request, f'Loja "{razao_social}" atualizada e cadastrada na Own Financial!')
