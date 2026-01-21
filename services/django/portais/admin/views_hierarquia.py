@@ -862,7 +862,7 @@ def loja_create(request):
                     cnae or None, mcc or None, ramo_atividade or None,
                     float(faturamento_previsto) if faturamento_previsto else None,
                     float(faturamento_contratado) if faturamento_contratado else None,
-                    int(quantidade_pos) if quantidade_pos else 1,
+                    int(quantidade_pos) if quantidade_pos else 0,
                     antecipacao_automatica, float(taxa_antecipacao) if taxa_antecipacao else 0,
                     responsavel_assinatura or None, responsavel_assinatura_cpf or None
                 ])
@@ -1230,7 +1230,7 @@ def loja_edit(request, loja_id):
                             cnae or None, mcc or None, ramo_atividade or None,
                             float(faturamento_previsto) if faturamento_previsto else None,
                             float(faturamento_contratado) if faturamento_contratado else None,
-                            int(quantidade_pos) if quantidade_pos else 1,
+                            int(quantidade_pos) if quantidade_pos else 0,
                             antecipacao_automatica,
                             float(taxa_antecipacao) if taxa_antecipacao else 0,
                             responsavel_assinatura or None, responsavel_assinatura_cpf or None,
