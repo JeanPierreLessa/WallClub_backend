@@ -871,13 +871,13 @@ def loja_create(request):
                 cursor.execute("SELECT LAST_INSERT_ID()")
                 loja_id = cursor.fetchone()[0]
 
-            # Processar upload de documentos do responsável
+            # Processar upload de documentos do responsável e da empresa
             from adquirente_own.models_cadastro import LojaDocumentos
             import os
             from django.core.files.storage import default_storage
 
             if responsavel_assinatura_cpf:
-                # RG Frente
+                # RG ou CNH - Frente
                 if 'doc_rg_frente' in request.FILES:
                     arquivo = request.FILES['doc_rg_frente']
                     caminho = f'documentos/loja_{loja_id}/rg_frente_{arquivo.name}'
@@ -895,7 +895,7 @@ def loja_create(request):
                         ativo=True
                     )
 
-                # RG Verso
+                # RG ou CNH - Verso
                 if 'doc_rg_verso' in request.FILES:
                     arquivo = request.FILES['doc_rg_verso']
                     caminho = f'documentos/loja_{loja_id}/rg_verso_{arquivo.name}'
@@ -912,6 +912,57 @@ def loja_create(request):
                         nome_socio=responsavel_assinatura,
                         ativo=True
                     )
+
+                # Comprovante de Residência do Sócio
+                if 'doc_comprovante_residencia_socio' in request.FILES:
+                    arquivo = request.FILES['doc_comprovante_residencia_socio']
+                    caminho = f'documentos/loja_{loja_id}/comprovante_residencia_socio_{arquivo.name}'
+                    caminho_salvo = default_storage.save(caminho, arquivo)
+
+                    LojaDocumentos.objects.create(
+                        loja_id=loja_id,
+                        tipo_documento='COMPROVANTE_ENDERECO',
+                        nome_arquivo=arquivo.name,
+                        caminho_arquivo=caminho_salvo,
+                        tamanho_bytes=arquivo.size,
+                        mime_type=arquivo.content_type,
+                        cpf_socio=responsavel_assinatura_cpf,
+                        nome_socio=responsavel_assinatura,
+                        ativo=True
+                    )
+
+            # Documentos da Empresa
+            # Contrato Social
+            if 'doc_contrato_social' in request.FILES:
+                arquivo = request.FILES['doc_contrato_social']
+                caminho = f'documentos/loja_{loja_id}/contrato_social_{arquivo.name}'
+                caminho_salvo = default_storage.save(caminho, arquivo)
+
+                LojaDocumentos.objects.create(
+                    loja_id=loja_id,
+                    tipo_documento='CONTRATO_SOCIAL',
+                    nome_arquivo=arquivo.name,
+                    caminho_arquivo=caminho_salvo,
+                    tamanho_bytes=arquivo.size,
+                    mime_type=arquivo.content_type,
+                    ativo=True
+                )
+
+            # Comprovante de Endereço da Empresa
+            if 'doc_comprovante_endereco_empresa' in request.FILES:
+                arquivo = request.FILES['doc_comprovante_endereco_empresa']
+                caminho = f'documentos/loja_{loja_id}/comprovante_endereco_empresa_{arquivo.name}'
+                caminho_salvo = default_storage.save(caminho, arquivo)
+
+                LojaDocumentos.objects.create(
+                    loja_id=loja_id,
+                    tipo_documento='COMPROVANTE_ENDERECO',
+                    nome_arquivo=arquivo.name,
+                    caminho_arquivo=caminho_salvo,
+                    tamanho_bytes=arquivo.size,
+                    mime_type=arquivo.content_type,
+                    ativo=True
+                )
 
             # Verificar se deve cadastrar na Own
             cadastrar_own = request.POST.get('cadastrar_own') == '1'
@@ -1186,14 +1237,13 @@ def loja_edit(request, loja_id):
                             loja_id
                         ])
 
-                    # Processar upload de documentos do responsável
+                    # Processar upload de documentos do responsável e da empresa
                     from adquirente_own.models_cadastro import LojaDocumentos
                     from django.core.files.storage import default_storage
 
                     if responsavel_assinatura_cpf:
-                        # RG Frente
+                        # RG ou CNH - Frente
                         if 'doc_rg_frente' in request.FILES:
-                            # Desativar documentos antigos do mesmo tipo
                             LojaDocumentos.objects.filter(
                                 loja_id=loja_id,
                                 tipo_documento='RGFRENTE',
@@ -1216,9 +1266,8 @@ def loja_edit(request, loja_id):
                                 ativo=True
                             )
 
-                        # RG Verso
+                        # RG ou CNH - Verso
                         if 'doc_rg_verso' in request.FILES:
-                            # Desativar documentos antigos do mesmo tipo
                             LojaDocumentos.objects.filter(
                                 loja_id=loja_id,
                                 tipo_documento='RGVERSO',
@@ -1240,6 +1289,75 @@ def loja_edit(request, loja_id):
                                 nome_socio=responsavel_assinatura,
                                 ativo=True
                             )
+
+                        # Comprovante de Residência do Sócio
+                        if 'doc_comprovante_residencia_socio' in request.FILES:
+                            LojaDocumentos.objects.filter(
+                                loja_id=loja_id,
+                                tipo_documento='COMPROVANTE_ENDERECO',
+                                cpf_socio=responsavel_assinatura_cpf
+                            ).update(ativo=False)
+
+                            arquivo = request.FILES['doc_comprovante_residencia_socio']
+                            caminho = f'documentos/loja_{loja_id}/comprovante_residencia_socio_{arquivo.name}'
+                            caminho_salvo = default_storage.save(caminho, arquivo)
+
+                            LojaDocumentos.objects.create(
+                                loja_id=loja_id,
+                                tipo_documento='COMPROVANTE_ENDERECO',
+                                nome_arquivo=arquivo.name,
+                                caminho_arquivo=caminho_salvo,
+                                tamanho_bytes=arquivo.size,
+                                mime_type=arquivo.content_type,
+                                cpf_socio=responsavel_assinatura_cpf,
+                                nome_socio=responsavel_assinatura,
+                                ativo=True
+                            )
+
+                    # Documentos da Empresa
+                    # Contrato Social
+                    if 'doc_contrato_social' in request.FILES:
+                        LojaDocumentos.objects.filter(
+                            loja_id=loja_id,
+                            tipo_documento='CONTRATO_SOCIAL',
+                            cpf_socio__isnull=True
+                        ).update(ativo=False)
+
+                        arquivo = request.FILES['doc_contrato_social']
+                        caminho = f'documentos/loja_{loja_id}/contrato_social_{arquivo.name}'
+                        caminho_salvo = default_storage.save(caminho, arquivo)
+
+                        LojaDocumentos.objects.create(
+                            loja_id=loja_id,
+                            tipo_documento='CONTRATO_SOCIAL',
+                            nome_arquivo=arquivo.name,
+                            caminho_arquivo=caminho_salvo,
+                            tamanho_bytes=arquivo.size,
+                            mime_type=arquivo.content_type,
+                            ativo=True
+                        )
+
+                    # Comprovante de Endereço da Empresa
+                    if 'doc_comprovante_endereco_empresa' in request.FILES:
+                        LojaDocumentos.objects.filter(
+                            loja_id=loja_id,
+                            tipo_documento='COMPROVANTE_ENDERECO',
+                            cpf_socio__isnull=True
+                        ).update(ativo=False)
+
+                        arquivo = request.FILES['doc_comprovante_endereco_empresa']
+                        caminho = f'documentos/loja_{loja_id}/comprovante_endereco_empresa_{arquivo.name}'
+                        caminho_salvo = default_storage.save(caminho, arquivo)
+
+                        LojaDocumentos.objects.create(
+                            loja_id=loja_id,
+                            tipo_documento='COMPROVANTE_ENDERECO',
+                            nome_arquivo=arquivo.name,
+                            caminho_arquivo=caminho_salvo,
+                            tamanho_bytes=arquivo.size,
+                            mime_type=arquivo.content_type,
+                            ativo=True
+                        )
 
                     # Se checkbox Own marcado e ainda não cadastrado, cadastrar
                     if cadastrar_own and not loja_own:
@@ -1308,7 +1426,8 @@ def loja_edit(request, loja_id):
                                 'taxa_antecipacao': taxa_antecipacao,
                                 'tipo_antecipacao': 'ROTATIVO',
                                 'tarifacao': tarifacao,
-                                'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1'
+                                'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1',
+                                'protocolo': loja_own.protocolo if loja_own else ''  # Protocolo salvo para alterações
                             }
 
                             service = CadastroOwnService()

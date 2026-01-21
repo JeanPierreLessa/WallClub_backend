@@ -354,19 +354,49 @@
                         <!-- Documentos do Responsável -->
                         <div class="row mb-3">
                             <div class="col-md-12">
-                                <label class="form-label required-field">Documentos do Responsável (RG Frente e Verso)</label>
+                                <label class="form-label required-field">Documentos do Responsável</label>
                                 <small class="text-muted d-block mb-2">Obrigatório para cadastro na Own Financial</small>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">RG Frente</label>
+                                <label class="form-label">RG ou CNH - Frente</label>
                                 <input type="file" class="form-control" id="doc_rg_frente"
                                        name="doc_rg_frente" accept="image/*,.pdf">
                                 <small class="text-muted">Deixe em branco para manter o documento atual</small>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">RG Verso</label>
+                                <label class="form-label">RG ou CNH - Verso</label>
                                 <input type="file" class="form-control" id="doc_rg_verso"
                                        name="doc_rg_verso" accept="image/*,.pdf">
+                                <small class="text-muted">Deixe em branco para manter o documento atual</small>
+                            </div>
+                        </div>
+
+                        <!-- Comprovante de Residência do Sócio -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label required-field">Comprovante de Residência do Responsável</label>
+                                <input type="file" class="form-control" id="doc_comprovante_residencia_socio"
+                                       name="doc_comprovante_residencia_socio" accept="image/*,.pdf">
+                                <small class="text-muted">Deixe em branco para manter o documento atual</small>
+                            </div>
+                        </div>
+
+                        <!-- Documentos da Empresa -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label required-field">Documentos da Empresa</label>
+                                <small class="text-muted d-block mb-2">Obrigatório para cadastro na Own Financial</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contrato Social</label>
+                                <input type="file" class="form-control" id="doc_contrato_social"
+                                       name="doc_contrato_social" accept="image/*,.pdf">
+                                <small class="text-muted">Deixe em branco para manter o documento atual</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Comprovante de Endereço da Empresa</label>
+                                <input type="file" class="form-control" id="doc_comprovante_endereco_empresa"
+                                       name="doc_comprovante_endereco_empresa" accept="image/*,.pdf">
                                 <small class="text-muted">Deixe em branco para manter o documento atual</small>
                             </div>
                         </div>

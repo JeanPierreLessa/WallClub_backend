@@ -97,18 +97,18 @@ class CadastroOwnService:
             "tarifacao": loja_data['tarifacao'],  # Lista de tarifas
 
             # Protocolo e hash
-            "protocoloCore": "",
-            "hashAceite": self._gerar_hash_aceite(loja_data),
+            "protocoloCore": loja_data.get('protocolo', ''),  # Protocolo salvo (vazio na criação, preenchido na alteração)
+            # hashAceite removido - será gerado pela Own na consulta do protocolo
 
-            # Terminais
-            "terminais": loja_data.get('terminais', []),
+            # Terminais - sempre vazio
+            "terminais": [],
 
             # Documentos
             "documentosSocios": loja_data.get('documentos_socios', []),
             "anexos": loja_data.get('anexos', []),
 
-            # Outros meios de captura
-            "outrosMeiosCaptura": loja_data.get('outros_meios_captura', [])
+            # Outros meios de captura - sempre vazio
+            "outrosMeiosCaptura": []
         }
 
         return payload
