@@ -98,7 +98,7 @@ class CadastroOwnService:
 
             # Protocolo e hash
             "protocoloCore": loja_data.get('protocolo', ''),  # Protocolo salvo (vazio na criação, preenchido na alteração)
-            # hashAceite removido - será gerado pela Own na consulta do protocolo
+            "hashAceite": self._gerar_hash_aceite(loja_data),
 
             # Terminais - sempre vazio
             "terminais": [],
