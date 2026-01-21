@@ -41,7 +41,7 @@ class CadastroOwnService:
             "cnpj": loja_data['cnpj'],
             "cnpjCanalWL": loja_data.get('cnpj_canal_wl', ''),
             "cnpjOrigem": loja_data.get('cnpj_origem', ''),
-            "identificadorCliente": loja_data['cnpj'],  # Usar CNPJ como identificador
+            "identificadorCliente": loja_data.get('responsavel_assinatura_cpf', ''),
             "urlCallback": loja_data.get('url_callback', 'https://wcapi.wallclub.com.br/webhook/own/credenciamento/'),
 
             # Razão social e nome fantasia
@@ -144,17 +144,22 @@ class CadastroOwnService:
         Converte arquivo para base64
 
         Args:
-            caminho_arquivo: Caminho do arquivo (S3 ou local)
+            caminho_arquivo: Caminho do arquivo no storage
 
         Returns:
             String base64 ou None
         """
         try:
-            # TODO: Implementar leitura do S3 se necessário
-            # Por enquanto, assumindo arquivo local
-            with open(caminho_arquivo, 'rb') as f:
-                conteudo = f.read()
-                return base64.b64encode(conteudo).decode('utf-8')
+            from django.core.files.storage import default_storage
+
+            # Ler arquivo do storage (funciona com S3 ou filesystem)
+            if default_storage.exists(caminho_arquivo):
+                with default_storage.open(caminho_arquivo, 'rb') as f:
+                    conteudo = f.read()
+                    return base64.b64encode(conteudo).decode('utf-8')
+            else:
+                registrar_log('own.cadastro', f'⚠️ Arquivo não encontrado: {caminho_arquivo}', nivel='WARNING')
+                return None
         except Exception as e:
             registrar_log('own.cadastro', f'❌ Erro ao converter arquivo para base64: {str(e)}', nivel='ERROR')
             return None
@@ -197,20 +202,8 @@ class CadastroOwnService:
                         'tipo': doc.tipo_documento
                     })
 
-            # Se não houver documentos mas temos CPF do responsável, adicionar com anexo em branco
-            if not socios_dict and cpf_responsavel:
-                socios_dict[cpf_responsavel] = {
-                    'identificacao': cpf_responsavel,
-                    'anexos': [
-                        {
-                            'nomeArquivo': 'semAnexo.jpg',
-                            'conteudo': 'EM BRANCO',
-                            'tipo': 'BRANCO'
-                        }
-                    ]
-                }
-                registrar_log('own.cadastro', f'📄 CPF do responsável adicionado aos documentos: {cpf_responsavel}')
-
+            # Retornar lista vazia se não houver documentos reais
+            # API Own em produção não aceita anexos em branco
             return list(socios_dict.values())
 
         except Exception as e:

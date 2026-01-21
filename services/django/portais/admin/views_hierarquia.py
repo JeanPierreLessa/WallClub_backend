@@ -871,6 +871,48 @@ def loja_create(request):
                 cursor.execute("SELECT LAST_INSERT_ID()")
                 loja_id = cursor.fetchone()[0]
 
+            # Processar upload de documentos do responsável
+            from adquirente_own.models_cadastro import LojaDocumentos
+            import os
+            from django.core.files.storage import default_storage
+
+            if responsavel_assinatura_cpf:
+                # RG Frente
+                if 'doc_rg_frente' in request.FILES:
+                    arquivo = request.FILES['doc_rg_frente']
+                    caminho = f'documentos/loja_{loja_id}/rg_frente_{arquivo.name}'
+                    caminho_salvo = default_storage.save(caminho, arquivo)
+
+                    LojaDocumentos.objects.create(
+                        loja_id=loja_id,
+                        tipo_documento='RGFRENTE',
+                        nome_arquivo=arquivo.name,
+                        caminho_arquivo=caminho_salvo,
+                        tamanho_bytes=arquivo.size,
+                        mime_type=arquivo.content_type,
+                        cpf_socio=responsavel_assinatura_cpf,
+                        nome_socio=responsavel_assinatura,
+                        ativo=True
+                    )
+
+                # RG Verso
+                if 'doc_rg_verso' in request.FILES:
+                    arquivo = request.FILES['doc_rg_verso']
+                    caminho = f'documentos/loja_{loja_id}/rg_verso_{arquivo.name}'
+                    caminho_salvo = default_storage.save(caminho, arquivo)
+
+                    LojaDocumentos.objects.create(
+                        loja_id=loja_id,
+                        tipo_documento='RGVERSO',
+                        nome_arquivo=arquivo.name,
+                        caminho_arquivo=caminho_salvo,
+                        tamanho_bytes=arquivo.size,
+                        mime_type=arquivo.content_type,
+                        cpf_socio=responsavel_assinatura_cpf,
+                        nome_socio=responsavel_assinatura,
+                        ativo=True
+                    )
+
             # Verificar se deve cadastrar na Own
             cadastrar_own = request.POST.get('cadastrar_own') == '1'
 
@@ -1143,6 +1185,61 @@ def loja_edit(request, loja_id):
                             responsavel_assinatura or None, responsavel_assinatura_cpf or None,
                             loja_id
                         ])
+
+                    # Processar upload de documentos do responsável
+                    from adquirente_own.models_cadastro import LojaDocumentos
+                    from django.core.files.storage import default_storage
+
+                    if responsavel_assinatura_cpf:
+                        # RG Frente
+                        if 'doc_rg_frente' in request.FILES:
+                            # Desativar documentos antigos do mesmo tipo
+                            LojaDocumentos.objects.filter(
+                                loja_id=loja_id,
+                                tipo_documento='RGFRENTE',
+                                cpf_socio=responsavel_assinatura_cpf
+                            ).update(ativo=False)
+
+                            arquivo = request.FILES['doc_rg_frente']
+                            caminho = f'documentos/loja_{loja_id}/rg_frente_{arquivo.name}'
+                            caminho_salvo = default_storage.save(caminho, arquivo)
+
+                            LojaDocumentos.objects.create(
+                                loja_id=loja_id,
+                                tipo_documento='RGFRENTE',
+                                nome_arquivo=arquivo.name,
+                                caminho_arquivo=caminho_salvo,
+                                tamanho_bytes=arquivo.size,
+                                mime_type=arquivo.content_type,
+                                cpf_socio=responsavel_assinatura_cpf,
+                                nome_socio=responsavel_assinatura,
+                                ativo=True
+                            )
+
+                        # RG Verso
+                        if 'doc_rg_verso' in request.FILES:
+                            # Desativar documentos antigos do mesmo tipo
+                            LojaDocumentos.objects.filter(
+                                loja_id=loja_id,
+                                tipo_documento='RGVERSO',
+                                cpf_socio=responsavel_assinatura_cpf
+                            ).update(ativo=False)
+
+                            arquivo = request.FILES['doc_rg_verso']
+                            caminho = f'documentos/loja_{loja_id}/rg_verso_{arquivo.name}'
+                            caminho_salvo = default_storage.save(caminho, arquivo)
+
+                            LojaDocumentos.objects.create(
+                                loja_id=loja_id,
+                                tipo_documento='RGVERSO',
+                                nome_arquivo=arquivo.name,
+                                caminho_arquivo=caminho_salvo,
+                                tamanho_bytes=arquivo.size,
+                                mime_type=arquivo.content_type,
+                                cpf_socio=responsavel_assinatura_cpf,
+                                nome_socio=responsavel_assinatura,
+                                ativo=True
+                            )
 
                     # Se checkbox Own marcado e ainda não cadastrado, cadastrar
                     if cadastrar_own and not loja_own:
