@@ -159,12 +159,13 @@ class CadastroOwnService:
             registrar_log('own.cadastro', f'❌ Erro ao converter arquivo para base64: {str(e)}', nivel='ERROR')
             return None
 
-    def preparar_documentos_socios(self, loja_id: int) -> List[Dict[str, Any]]:
+    def preparar_documentos_socios(self, loja_id: int, cpf_responsavel: str = None) -> List[Dict[str, Any]]:
         """
         Prepara documentos dos sócios para envio
 
         Args:
             loja_id: ID da loja
+            cpf_responsavel: CPF do responsável pela assinatura (obrigatório para API Own)
 
         Returns:
             Lista de documentos formatados
@@ -195,6 +196,20 @@ class CadastroOwnService:
                         'conteudo': conteudo_base64,
                         'tipo': doc.tipo_documento
                     })
+
+            # Se não houver documentos mas temos CPF do responsável, adicionar com anexo em branco
+            if not socios_dict and cpf_responsavel:
+                socios_dict[cpf_responsavel] = {
+                    'identificacao': cpf_responsavel,
+                    'anexos': [
+                        {
+                            'nomeArquivo': 'semAnexo.jpg',
+                            'conteudo': 'EM BRANCO',
+                            'tipo': 'BRANCO'
+                        }
+                    ]
+                }
+                registrar_log('own.cadastro', f'📄 CPF do responsável adicionado aos documentos: {cpf_responsavel}')
 
             return list(socios_dict.values())
 
@@ -264,7 +279,7 @@ class CadastroOwnService:
                 }
 
             # Preparar documentos
-            loja_data['documentos_socios'] = self.preparar_documentos_socios(loja_id)
+            loja_data['documentos_socios'] = self.preparar_documentos_socios(loja_id, loja_data.get('responsavel_assinatura_cpf'))
             loja_data['anexos'] = self.preparar_anexos_empresa(loja_id)
 
             # Preparar payload
