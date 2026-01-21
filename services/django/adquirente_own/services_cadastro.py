@@ -41,7 +41,7 @@ class CadastroOwnService:
             "cnpj": loja_data['cnpj'],
             "cnpjCanalWL": loja_data.get('cnpj_canal_wl', ''),
             "cnpjOrigem": loja_data.get('cnpj_origem', ''),
-            # identificadorCliente removido - campo não obrigatório e causando erro de validação
+            "identificadorCliente": loja_data['cnpj'],  # Usar CNPJ como identificador
             "urlCallback": loja_data.get('url_callback', 'https://wcapi.wallclub.com.br/webhook/own/credenciamento/'),
 
             # Razão social e nome fantasia
