@@ -225,10 +225,10 @@ class CadastroOwnService:
                     conteudo = f.read()
                     return base64.b64encode(conteudo).decode('utf-8')
             else:
-                registrar_log('own.cadastro', f'⚠️ Arquivo não encontrado: {caminho_arquivo}', nivel='WARNING')
+                registrar_log('adquirente_own', f'⚠️ Arquivo não encontrado: {caminho_arquivo}', nivel='WARNING')
                 return None
         except Exception as e:
-            registrar_log('own.cadastro', f'❌ Erro ao converter arquivo para base64: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao converter arquivo para base64: {str(e)}', nivel='ERROR')
             return None
 
     def preparar_documentos_socios(self, loja_id: int, cpf_responsavel: str = None) -> List[Dict[str, Any]]:
@@ -274,7 +274,7 @@ class CadastroOwnService:
             return list(socios_dict.values())
 
         except Exception as e:
-            registrar_log('own.cadastro', f'❌ Erro ao preparar documentos de sócios: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao preparar documentos de sócios: {str(e)}', nivel='ERROR')
             return []
 
     def preparar_anexos_empresa(self, loja_id: int) -> List[Dict[str, Any]]:
@@ -309,7 +309,7 @@ class CadastroOwnService:
             return anexos
 
         except Exception as e:
-            registrar_log('own.cadastro', f'❌ Erro ao preparar anexos da empresa: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao preparar anexos da empresa: {str(e)}', nivel='ERROR')
             return []
 
     def cadastrar_estabelecimento(self, loja_id: int, loja_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -328,7 +328,7 @@ class CadastroOwnService:
             }
         """
         try:
-            registrar_log('own.cadastro', f'🏪 Iniciando cadastro da loja {loja_id} na Own')
+            registrar_log('adquirente_own', f'🏪 Iniciando cadastro da loja {loja_id} na Own')
 
             # Obter credenciais
             credenciais = self.own_service.obter_credenciais_white_label(self.environment)
@@ -345,8 +345,8 @@ class CadastroOwnService:
             # Preparar payload
             payload = self.preparar_payload_cadastro(loja_data)
 
-            registrar_log('own.cadastro', f'📦 Payload preparado: CNPJ={payload["cnpj"]}, Cesta={payload["idCesta"]}')
-            registrar_log('own.cadastro', f'📋 Payload completo: {json.dumps(payload, indent=2, ensure_ascii=False)}', nivel='DEBUG')
+            registrar_log('adquirente_own', f'📦 Payload preparado: CNPJ={payload["cnpj"]}, Cesta={payload["idCesta"]}')
+            registrar_log('adquirente_own', f'📋 Payload completo: {json.dumps(payload, indent=2, ensure_ascii=False)}', nivel='DEBUG')
 
             # Fazer requisição
             resultado = self.own_service.fazer_requisicao_autenticada(
@@ -359,7 +359,7 @@ class CadastroOwnService:
             )
 
             if not resultado.get('sucesso'):
-                registrar_log('own.cadastro', f'❌ Falha no cadastro: {resultado.get("mensagem")}', nivel='ERROR')
+                registrar_log('adquirente_own', f'❌ Falha no cadastro: {resultado.get("mensagem")}', nivel='ERROR')
                 return resultado
 
             # Processar resposta
@@ -380,7 +380,7 @@ class CadastroOwnService:
                 }
             )
 
-            registrar_log('own.cadastro', f'✅ Cadastro enviado: protocolo={protocolo}, conveniada_id={conveniada_id}')
+            registrar_log('adquirente_own', f'✅ Cadastro enviado: protocolo={protocolo}, conveniada_id={conveniada_id}')
 
             return {
                 'sucesso': True,
@@ -390,7 +390,7 @@ class CadastroOwnService:
             }
 
         except Exception as e:
-            registrar_log('own.cadastro', f'❌ Erro ao cadastrar estabelecimento: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao cadastrar estabelecimento: {str(e)}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao cadastrar: {str(e)}'

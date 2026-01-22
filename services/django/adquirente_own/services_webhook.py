@@ -47,14 +47,14 @@ class WebhookOwnService:
 
             # Validar campos obrigatórios
             if not protocolo and not cnpj:
-                registrar_log('own.webhook', '❌ Webhook sem protocolo ou CNPJ', nivel='ERROR')
+                registrar_log('adquirente_own', '❌ Webhook sem protocolo ou CNPJ', nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': 'Protocolo ou CNPJ obrigatório'
                 }
 
             if not status_credenciamento:
-                registrar_log('own.webhook', '❌ Webhook sem status', nivel='ERROR')
+                registrar_log('adquirente_own', '❌ Webhook sem status', nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': 'Status obrigatório'
@@ -62,7 +62,7 @@ class WebhookOwnService:
 
             # Validar status
             if status_credenciamento not in self.STATUS_VALIDOS:
-                registrar_log('own.webhook', f'⚠️ Status desconhecido: {status_credenciamento}', nivel='WARNING')
+                registrar_log('adquirente_own', f'⚠️ Status desconhecido: {status_credenciamento}', nivel='WARNING')
 
             # Buscar loja por protocolo ou CNPJ
             loja_own = None
@@ -73,10 +73,10 @@ class WebhookOwnService:
             if not loja_own and cnpj:
                 # Buscar por CNPJ (precisa fazer join com tabela loja)
                 # TODO: Implementar busca por CNPJ quando model Loja estiver disponível
-                registrar_log('own.webhook', f'⚠️ Busca por CNPJ não implementada: {cnpj}', nivel='WARNING')
+                registrar_log('adquirente_own', f'⚠️ Busca por CNPJ não implementada: {cnpj}', nivel='WARNING')
 
             if not loja_own:
-                registrar_log('own.webhook', f'❌ Loja não encontrada: protocolo={protocolo}, cnpj={cnpj}', nivel='ERROR')
+                registrar_log('adquirente_own', f'❌ Loja não encontrada: protocolo={protocolo}, cnpj={cnpj}', nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': 'Loja não encontrada'
@@ -88,7 +88,7 @@ class WebhookOwnService:
                 try:
                     data_credenciamento = datetime.fromisoformat(data_credenciamento_str.replace('Z', '+00:00'))
                 except Exception as e:
-                    registrar_log('own.webhook', f'⚠️ Erro ao parsear data: {str(e)}', nivel='WARNING')
+                    registrar_log('adquirente_own', f'⚠️ Erro ao parsear data: {str(e)}', nivel='WARNING')
 
             # Atualizar status
             loja_own.status_credenciamento = status_credenciamento
@@ -105,7 +105,7 @@ class WebhookOwnService:
             loja_own.save()
 
             registrar_log(
-                'own.webhook',
+                'adquirente_own',
                 f'✅ Status atualizado: loja_id={loja_own.loja_id}, status={status_credenciamento}, conveniada_id={conveniada_id}'
             )
 
@@ -119,7 +119,7 @@ class WebhookOwnService:
             }
 
         except Exception as e:
-            registrar_log('own.webhook', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao processar webhook: {str(e)}'

@@ -326,10 +326,10 @@ def webhook_credenciamento(request):
         try:
             payload = json.loads(request.body.decode('utf-8'))
         except json.JSONDecodeError:
-            registrar_log('own.webhook', '❌ JSON inválido no webhook de credenciamento', nivel='ERROR')
+            registrar_log('adquirente_own', '❌ JSON inválido no webhook de credenciamento', nivel='ERROR')
             return JsonResponse({'erro': 'JSON inválido'}, status=400)
 
-        registrar_log('own.webhook', f'📥 Webhook credenciamento recebido: {payload.get("protocolo")} - {payload.get("status")}')
+        registrar_log('adquirente_own', f'📥 Webhook credenciamento recebido: {payload.get("protocolo")} - {payload.get("status")}')
 
         # Processar webhook
         from adquirente_own.services_webhook import WebhookOwnService
@@ -349,5 +349,5 @@ def webhook_credenciamento(request):
         })
 
     except Exception as e:
-        registrar_log('own.webhook', f'❌ Erro ao processar webhook de credenciamento: {str(e)}', nivel='ERROR')
+        registrar_log('adquirente_own', f'❌ Erro ao processar webhook de credenciamento: {str(e)}', nivel='ERROR')
         return JsonResponse({'erro': str(e)}, status=500)

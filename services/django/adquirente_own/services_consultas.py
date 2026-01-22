@@ -53,7 +53,7 @@ class ConsultasOwnService:
                 cache_key = f'own_cnae_all_{self.environment}'
                 cached = cache.get(cache_key)
                 if cached:
-                    registrar_log('own.cnae', '✅ CNAE em cache (lista completa)')
+                    registrar_log('adquirente_own', '✅ CNAE em cache (lista completa)')
                     return {'sucesso': True, 'dados': cached}
 
             # Obter credenciais
@@ -70,7 +70,7 @@ class ConsultasOwnService:
                 params['descCnae'] = descricao
 
             # Fazer requisição
-            registrar_log('own.cnae', f'🔍 Consultando atividades CNAE/MCC: {descricao or "todas"}')
+            registrar_log('adquirente_own', f'🔍 Consultando atividades CNAE/MCC: {descricao or "todas"}')
 
             resultado = self.own_service.fazer_requisicao_autenticada(
                 method='GET',
@@ -90,9 +90,9 @@ class ConsultasOwnService:
             if not descricao and dados:
                 cache_key = f'own_cnae_all_{self.environment}'
                 cache.set(cache_key, dados, timeout=self.CACHE_TIMEOUT_CNAE)
-                registrar_log('own.cnae', f'💾 {len(dados)} atividades CNAE cacheadas')
+                registrar_log('adquirente_own', f'💾 {len(dados)} atividades CNAE cacheadas')
 
-            registrar_log('own.cnae', f'✅ {len(dados)} atividades encontradas')
+            registrar_log('adquirente_own', f'✅ {len(dados)} atividades encontradas')
 
             return {
                 'sucesso': True,
@@ -100,7 +100,7 @@ class ConsultasOwnService:
             }
 
         except Exception as e:
-            registrar_log('own.cnae', f'❌ Erro ao consultar atividades: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao consultar atividades: {str(e)}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao consultar atividades: {str(e)}'
@@ -135,7 +135,7 @@ class ConsultasOwnService:
                 cache_key = f'own_cestas_all_{self.environment}'
                 cached = cache.get(cache_key)
                 if cached:
-                    registrar_log('own.cestas', '✅ Cestas em cache (lista completa)')
+                    registrar_log('adquirente_own', '✅ Cestas em cache (lista completa)')
                     return {'sucesso': True, 'dados': cached}
 
             # Obter credenciais
@@ -152,7 +152,7 @@ class ConsultasOwnService:
                 params['nomeCesta'] = nome_cesta
 
             # Fazer requisição
-            registrar_log('own.cestas', f'🔍 Consultando cestas de tarifas: {nome_cesta or "todas"}')
+            registrar_log('adquirente_own', f'🔍 Consultando cestas de tarifas: {nome_cesta or "todas"}')
 
             resultado = self.own_service.fazer_requisicao_autenticada(
                 method='GET',
@@ -172,9 +172,9 @@ class ConsultasOwnService:
             if not nome_cesta and dados:
                 cache_key = f'own_cestas_all_{self.environment}'
                 cache.set(cache_key, dados, timeout=self.CACHE_TIMEOUT_CESTAS)
-                registrar_log('own.cestas', f'💾 {len(dados)} cestas cacheadas')
+                registrar_log('adquirente_own', f'💾 {len(dados)} cestas cacheadas')
 
-            registrar_log('own.cestas', f'✅ {len(dados)} cestas encontradas')
+            registrar_log('adquirente_own', f'✅ {len(dados)} cestas encontradas')
 
             return {
                 'sucesso': True,
@@ -182,7 +182,7 @@ class ConsultasOwnService:
             }
 
         except Exception as e:
-            registrar_log('own.cestas', f'❌ Erro ao consultar cestas: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao consultar cestas: {str(e)}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao consultar cestas: {str(e)}'
@@ -238,7 +238,7 @@ class ConsultasOwnService:
                 for t in tarifas_cesta
             ]
 
-            registrar_log('own.cestas', f'✅ {len(tarifas)} tarifas encontradas para cesta {cesta_id}')
+            registrar_log('adquirente_own', f'✅ {len(tarifas)} tarifas encontradas para cesta {cesta_id}')
 
             return {
                 'sucesso': True,
@@ -248,7 +248,7 @@ class ConsultasOwnService:
             }
 
         except Exception as e:
-            registrar_log('own.cestas', f'❌ Erro ao obter tarifas da cesta: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao obter tarifas da cesta: {str(e)}', nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao obter tarifas: {str(e)}'
