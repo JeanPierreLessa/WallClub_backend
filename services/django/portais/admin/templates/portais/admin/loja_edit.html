@@ -369,16 +369,22 @@
 
                         <!-- Responsável pela Assinatura -->
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label required-field">Responsável pela Assinatura</label>
                                 <input type="text" class="form-control" id="responsavel_assinatura"
                                        name="responsavel_assinatura" maxlength="256" value="{{ loja_own.responsavel_assinatura|default:'' }}">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label required-field">CPF do Responsável</label>
                                 <input type="text" class="form-control" id="responsavel_assinatura_cpf"
                                        name="responsavel_assinatura_cpf" maxlength="11"
                                        placeholder="Apenas números" value="{{ loja_own.responsavel_assinatura_cpf|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Email do Responsável</label>
+                                <input type="email" class="form-control" id="responsavel_assinatura_email"
+                                       name="responsavel_assinatura_email" maxlength="256"
+                                       placeholder="email@exemplo.com" value="{{ loja_own.responsavel_assinatura_email|default:'' }}">
                             </div>
                         </div>
 

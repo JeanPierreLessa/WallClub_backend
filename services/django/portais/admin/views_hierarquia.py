@@ -831,6 +831,8 @@ def loja_create(request):
             taxa_antecipacao = request.POST.get('taxa_antecipacao', '0').strip()
             responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
             responsavel_assinatura_cpf = request.POST.get('responsavel_assinatura_cpf', '').strip()
+            responsavel_assinatura_email = request.POST.get('responsavel_assinatura_email', '').strip()
+            aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
 
             if not grupo_id:
                 messages.error(request, 'Grupo econômico é obrigatório.')
@@ -877,6 +879,10 @@ def loja_create(request):
             loja_own.tipo_antecipacao = 'ROTATIVO'
             loja_own.responsavel_assinatura = responsavel_assinatura or None
             loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
+            loja_own.responsavel_assinatura_email = responsavel_assinatura_email or None
+            loja_own.aceita_ecommerce = aceita_ecommerce
+            id_cesta = request.POST.get('id_cesta', '').strip()
+            loja_own.id_cesta = int(id_cesta) if id_cesta else None
             loja_own.save()
 
             # Processar upload de documentos do responsável e da empresa
@@ -1177,6 +1183,8 @@ def loja_edit(request, loja_id):
         taxa_antecipacao = request.POST.get('taxa_antecipacao', '0').strip()
         responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
         responsavel_assinatura_cpf = request.POST.get('responsavel_assinatura_cpf', '').strip()
+        responsavel_assinatura_email = request.POST.get('responsavel_assinatura_email', '').strip()
+        aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
         cadastrar_own = request.POST.get('cadastrar_own') == '1'
 
         # Validações
@@ -1244,6 +1252,10 @@ def loja_edit(request, loja_id):
                     loja_own.tipo_antecipacao = 'ROTATIVO'
                     loja_own.responsavel_assinatura = responsavel_assinatura or None
                     loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
+                    loja_own.responsavel_assinatura_email = responsavel_assinatura_email or None
+                    loja_own.aceita_ecommerce = aceita_ecommerce
+                    id_cesta = request.POST.get('id_cesta', '').strip()
+                    loja_own.id_cesta = int(id_cesta) if id_cesta else None
                     loja_own.save()
 
                     # Processar upload de documentos do responsável e da empresa
