@@ -221,13 +221,13 @@ class OwnService:
             credenciais = credenciais_service.obter_credenciais_core()
 
             if not credenciais:
-                registrar_log('own.credenciais', f'❌ Credenciais não encontradas no Secrets Manager para ambiente {environment}', nivel='ERROR')
+                registrar_log('adquirente_own', f'❌ Credenciais não encontradas no Secrets Manager para ambiente {environment}', nivel='ERROR')
                 return None
 
             return credenciais
 
         except Exception as e:
-            registrar_log('own.credenciais', f'❌ Erro ao buscar credenciais: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao buscar credenciais: {str(e)}', nivel='ERROR')
             return None
 
     def obter_credenciais_loja(self, loja_id: int) -> Optional[Dict[str, Any]]:

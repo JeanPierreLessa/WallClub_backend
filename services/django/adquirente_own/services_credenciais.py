@@ -44,7 +44,7 @@ class CredenciaisOwnService:
 
             # Validar se todas as credenciais estão presentes
             if not all([client_id, client_secret, scope]):
-                registrar_log('own.credenciais', '❌ Credenciais Own não encontradas nas variáveis de ambiente', nivel='ERROR')
+                registrar_log('adquirente_own', '❌ Credenciais Own não encontradas nas variáveis de ambiente', nivel='ERROR')
                 return None
 
             credenciais = {
@@ -54,10 +54,10 @@ class CredenciaisOwnService:
                 'environment': self.environment
             }
 
-            registrar_log('own.credenciais', f'✅ Credenciais Own obtidas: {client_id[:15]}...')
+            registrar_log('adquirente_own', f'✅ Credenciais Own obtidas: {client_id[:15]}...')
 
             return credenciais
 
         except Exception as e:
-            registrar_log('own.credenciais', f'❌ Erro ao buscar credenciais: {str(e)}', nivel='ERROR')
+            registrar_log('adquirente_own', f'❌ Erro ao buscar credenciais: {str(e)}', nivel='ERROR')
             return None
