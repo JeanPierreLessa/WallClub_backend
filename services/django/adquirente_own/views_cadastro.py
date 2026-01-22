@@ -115,4 +115,84 @@ def consultar_tarifas_cesta(request, cesta_id):
         )
 
 
-# Funções de cadastro e status removidas - não são usadas pelas URLs atuais
+@require_http_methods(["GET"])
+def consultar_protocolo(request):
+    """
+    GET /api/own/protocolo/
+    Consulta status de protocolo de cadastro Own
+
+    Params:
+        loja_id: ID da loja (obrigatório)
+    """
+    try:
+        loja_id = request.GET.get('loja_id')
+
+        if not loja_id:
+            return JsonResponse(
+                {'erro': 'loja_id é obrigatório'},
+                status=400
+            )
+
+        # Buscar dados da loja
+        try:
+            loja_own = LojaOwn.objects.get(loja_id=loja_id)
+        except LojaOwn.DoesNotExist:
+            return JsonResponse(
+                {'erro': 'Loja não possui dados Own'},
+                status=404
+            )
+
+        # Buscar CNPJ da loja
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT cnpj FROM loja WHERE id = %s", [loja_id])
+            row = cursor.fetchone()
+            if not row or not row[0]:
+                return JsonResponse(
+                    {'erro': 'CNPJ da loja não encontrado'},
+                    status=404
+                )
+            cnpj = row[0]
+
+        environment = request.GET.get('environment', 'LIVE')
+
+        service = ConsultasOwnService(environment=environment)
+        resultado = service.consultar_protocolo(
+            cnpj_estabelecimento=cnpj,
+            protocolo=loja_own.protocolo
+        )
+
+        if not resultado.get('sucesso'):
+            return JsonResponse(
+                {'erro': resultado.get('mensagem')},
+                status=500
+            )
+
+        dados = resultado.get('dados', [])
+
+        # Se encontrou protocolo, retornar o primeiro (mais recente)
+        if dados:
+            protocolo_info = dados[0]
+            return JsonResponse({
+                'sucesso': True,
+                'protocolo': protocolo_info.get('protocoloCore'),
+                'status': protocolo_info.get('status'),
+                'dataRecebimento': protocolo_info.get('dataRecebimento'),
+                'motivo': protocolo_info.get('motivo'),
+                'tipo': protocolo_info.get('tipo'),
+                'reenvio': protocolo_info.get('reenvio'),
+                'contrato': protocolo_info.get('contrato'),
+                'podeReenviar': protocolo_info.get('status') in ['ERRO', 'REPROVED']
+            })
+
+        return JsonResponse({
+            'sucesso': False,
+            'erro': 'Protocolo não encontrado na Own'
+        }, status=404)
+
+    except Exception as e:
+        registrar_log('adquirente_own', f'❌ Erro ao consultar protocolo: {str(e)}', nivel='ERROR')
+        return JsonResponse(
+            {'erro': str(e)},
+            status=500
+        )

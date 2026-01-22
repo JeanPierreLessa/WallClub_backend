@@ -295,3 +295,86 @@ class ConsultasOwnService:
                 }
 
         return list(cestas_dict.values())
+
+    def consultar_protocolo(self, cnpj_estabelecimento: str = None, protocolo: str = None) -> Dict[str, Any]:
+        """
+        Consulta status de protocolo de cadastro na API Own
+
+        Endpoint: GET /parceiro/consultarProtocolos
+
+        Args:
+            cnpj_estabelecimento: CNPJ ou CPF do estabelecimento
+            protocolo: Número do protocolo (será usado como filtro no cnpj)
+
+        Returns:
+            Dict com:
+            {
+                'sucesso': bool,
+                'dados': [
+                    {
+                        'protocoloCore': str,
+                        'dataRecebimento': str,
+                        'status': str,  # EM ANALISE, ERRO, SUCESSO, REPROVED, APPROVED
+                        'motivo': str,
+                        'tipo': str,  # CREDENCIAMENTO ou ADITIVO
+                        'reenvio': str,  # S ou N
+                        'contrato': str,
+                        'cnpjEstabelecimento': str
+                    }
+                ]
+            }
+        """
+        try:
+            if not cnpj_estabelecimento:
+                return {
+                    'sucesso': False,
+                    'mensagem': 'CNPJ do estabelecimento é obrigatório'
+                }
+
+            # Obter credenciais
+            credenciais = self.own_service.obter_credenciais_white_label(self.environment)
+            if not credenciais:
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Credenciais não encontradas'
+                }
+
+            # Montar params
+            params = {
+                'cnpjEstabelecimento': cnpj_estabelecimento
+            }
+
+            registrar_log('adquirente_own', f'🔍 Consultando protocolo: CNPJ={cnpj_estabelecimento}')
+
+            # Fazer requisição
+            resultado = self.own_service.fazer_requisicao_autenticada(
+                method='GET',
+                endpoint='/parceiro/consultarProtocolos',
+                client_id=credenciais['client_id'],
+                client_secret=credenciais['client_secret'],
+                scope=credenciais['scope'],
+                params=params
+            )
+
+            if not resultado.get('sucesso'):
+                return resultado
+
+            dados = resultado.get('dados', [])
+
+            # Se protocolo específico foi informado, filtrar
+            if protocolo and dados:
+                dados = [p for p in dados if p.get('protocoloCore') == protocolo]
+
+            registrar_log('adquirente_own', f'✅ {len(dados)} protocolo(s) encontrado(s)')
+
+            return {
+                'sucesso': True,
+                'dados': dados
+            }
+
+        except Exception as e:
+            registrar_log('adquirente_own', f'❌ Erro ao consultar protocolo: {str(e)}', nivel='ERROR')
+            return {
+                'sucesso': False,
+                'mensagem': f'Erro ao consultar protocolo: {str(e)}'
+            }

@@ -41,6 +41,12 @@ class CadastroLojaOwn {
             checkboxOwn.addEventListener('change', (e) => this.toggleCamposOwn(e.target.checked));
         }
 
+        // Botão consultar protocolo
+        const btnConsultarProtocolo = document.getElementById('btn-consultar-protocolo');
+        if (btnConsultarProtocolo) {
+            btnConsultarProtocolo.addEventListener('click', () => this.consultarProtocolo());
+        }
+
         // Busca CNAE
         const inputCnae = document.getElementById('busca_cnae');
         if (inputCnae) {
@@ -280,7 +286,7 @@ class CadastroLojaOwn {
     adicionarValidacaoTarifas() {
         const inputs = document.querySelectorAll('.tarifa-valor');
         inputs.forEach(input => {
-            input.addEventListener('change', function() {
+            input.addEventListener('change', function () {
                 const valorMinimo = parseFloat(this.dataset.valorMinimo);
                 const valorAtual = parseFloat(this.value);
 
@@ -399,6 +405,83 @@ class CadastroLojaOwn {
         setTimeout(() => {
             toast.remove();
         }, 5000);
+    }
+
+    async consultarProtocolo() {
+        const btn = document.getElementById('btn-consultar-protocolo');
+        const resultadoDiv = document.getElementById('resultado-protocolo');
+
+        // Pegar loja_id da URL
+        const urlParts = window.location.pathname.split('/');
+        const lojaId = urlParts[urlParts.indexOf('loja') + 1];
+
+        if (!lojaId) {
+            this.showToast('Erro ao identificar loja', 'error');
+            return;
+        }
+
+        // Desabilitar botão e mostrar loading
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+        resultadoDiv.innerHTML = '';
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/protocolo/?loja_id=${lojaId}`);
+            const data = await response.json();
+
+            if (response.ok && data.sucesso) {
+                // Montar HTML com resultado
+                const statusClass = this.getStatusClass(data.status);
+                const podeReenviar = data.podeReenviar ?
+                    '<span class="badge bg-warning">Pode reenviar</span>' :
+                    '<span class="badge bg-info">Aguardando processamento</span>';
+
+                resultadoDiv.innerHTML = `
+                    <div class="alert alert-${statusClass} mb-0">
+                        <h6 class="mb-2"><strong>Status do Protocolo ${data.protocolo}</strong></h6>
+                        <p class="mb-1"><strong>Status:</strong> ${data.status} ${podeReenviar}</p>
+                        <p class="mb-1"><strong>Data Recebimento:</strong> ${data.dataRecebimento}</p>
+                        <p class="mb-1"><strong>Tipo:</strong> ${data.tipo}</p>
+                        ${data.contrato ? `<p class="mb-1"><strong>Contrato:</strong> ${data.contrato}</p>` : ''}
+                        ${data.motivo && data.motivo.trim() ? `<p class="mb-1"><strong>Motivo:</strong> ${data.motivo}</p>` : ''}
+                        ${data.reenvio === 'S' ? '<p class="mb-0"><span class="badge bg-secondary">Reenvio</span></p>' : ''}
+                    </div>
+                `;
+
+                this.showToast('Status consultado com sucesso!', 'success');
+            } else {
+                resultadoDiv.innerHTML = `
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> ${data.erro || 'Protocolo não encontrado'}
+                    </div>
+                `;
+                this.showToast(data.erro || 'Erro ao consultar protocolo', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao consultar protocolo:', error);
+            resultadoDiv.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="fas fa-times-circle"></i> Erro ao consultar protocolo: ${error.message}
+                </div>
+            `;
+            this.showToast('Erro ao consultar protocolo', 'error');
+        } finally {
+            // Reabilitar botão
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search"></i> Consultar Status do Protocolo';
+        }
+    }
+
+    getStatusClass(status) {
+        const statusMap = {
+            'EM ANALISE': 'info',
+            'PENDENTE': 'info',
+            'SUCESSO': 'success',
+            'APPROVED': 'success',
+            'ERRO': 'danger',
+            'REPROVED': 'danger'
+        };
+        return statusMap[status] || 'secondary';
     }
 }
 

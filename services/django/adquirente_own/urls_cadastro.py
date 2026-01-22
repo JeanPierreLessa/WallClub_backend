@@ -10,4 +10,5 @@ urlpatterns = [
     path('cnae/', views_cadastro.consultar_cnae, name='own-consultar-cnae'),
     path('cestas/', views_cadastro.consultar_cestas, name='own-consultar-cestas'),
     path('cestas/<int:cesta_id>/tarifas/', views_cadastro.consultar_tarifas_cesta, name='own-consultar-tarifas-cesta'),
+    path('protocolo/', views_cadastro.consultar_protocolo, name='own-consultar-protocolo'),
 ]
