@@ -996,6 +996,7 @@ def loja_create(request):
 
                 # Montar dados para Own
                 loja_data = {
+                    'loja_id': loja_id,
                     'cnpj': cnpj,
                     'razao_social': razao_social,
                     'nome_fantasia': nome_fantasia,
@@ -1024,6 +1025,7 @@ def loja_create(request):
                     'id_cesta': request.POST.get('id_cesta'),
                     'responsavel_assinatura': responsavel_assinatura,
                     'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
+                    'responsavel_assinatura_email': responsavel_assinatura_email,
                     'quantidade_pos': quantidade_pos,
                     'antecipacao_automatica': antecipacao_automatica,
                     'taxa_antecipacao': taxa_antecipacao,
@@ -1414,6 +1416,7 @@ def loja_edit(request, loja_id):
                                     })
 
                             loja_data = {
+                                'loja_id': loja_id,
                                 'razao_social': razao_social,
                                 'nome_fantasia': nome_fantasia,
                                 'cnpj': cnpj,
@@ -1442,6 +1445,7 @@ def loja_edit(request, loja_id):
                                 'id_cesta': request.POST.get('id_cesta'),
                                 'responsavel_assinatura': responsavel_assinatura,
                                 'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
+                                'responsavel_assinatura_email': responsavel_assinatura_email,
                                 'quantidade_pos': quantidade_pos,
                                 'antecipacao_automatica': antecipacao_automatica,
                                 'taxa_antecipacao': taxa_antecipacao,

@@ -41,7 +41,7 @@ class CadastroOwnService:
             "cnpj": loja_data['cnpj'],
             "cnpjCanalWL": loja_data.get('cnpj_canal_wl', ''),
             "cnpjOrigem": loja_data.get('cnpj_origem', ''),
-            "identificadorCliente": self._formatar_cpf(loja_data.get('responsavel_assinatura_cpf', '')),
+            "identificadorCliente": self._formatar_identificador_cliente(loja_data),
             "urlCallback": loja_data.get('url_callback', 'https://wcapi.wallclub.com.br/webhook/own/credenciamento/'),
 
             # Razão social e nome fantasia
@@ -112,6 +112,51 @@ class CadastroOwnService:
         }
 
         return payload
+
+    def _formatar_identificador_cliente(self, loja_data: Dict[str, Any]) -> str:
+        """
+        Formata o identificadorCliente no padrão exigido pela Own Financial.
+
+        Formato: CNPJ_CPF/EXTERNAL_ID/NOME_OPERACAO/EMAIL/CPF/NOME_PESSOA
+
+        Exemplo: 00000000000/123/99999999999999/emailresponsavel@teste.com.br/11111111111/NOME_PESSOA
+
+        Componentes:
+        - CNPJ_CPF: CNPJ ou CPF do estabelecimento (apenas números)
+        - EXTERNAL_ID: ID do estabelecimento no sistema (loja.id)
+        - NOME_OPERACAO: CNPJ do Parceiro WL (WallClub) se não houver separação por operação
+        - EMAIL: Email da pessoa responsável pelo contrato
+        - CPF: CPF da pessoa responsável pelo contrato (apenas números)
+        - NOME_PESSOA: Nome da pessoa responsável pelo contrato
+
+        Args:
+            loja_data: Dados da loja contendo CNPJ, ID, responsável, etc.
+
+        Returns:
+            String formatada no padrão Own Financial
+        """
+        # CNPJ_CPF: CNPJ do estabelecimento (apenas números)
+        cnpj_cpf = ''.join(filter(str.isdigit, loja_data.get('cnpj', '')))
+
+        # EXTERNAL_ID: ID da loja no sistema WallClub
+        external_id = str(loja_data.get('loja_id', ''))
+
+        # NOME_OPERACAO: CNPJ do Parceiro WL (WallClub)
+        nome_operacao = '54430621000134'  # CNPJ WallClub
+
+        # EMAIL: Email do responsável pelo contrato
+        email = loja_data.get('responsavel_assinatura_email', '')
+
+        # CPF: CPF do responsável (apenas números)
+        cpf = ''.join(filter(str.isdigit, loja_data.get('responsavel_assinatura_cpf', '')))
+
+        # NOME_PESSOA: Nome do responsável
+        nome_pessoa = loja_data.get('responsavel_assinatura', '')
+
+        # Montar identificador no formato: CNPJ_CPF/EXTERNAL_ID/NOME_OPERACAO/EMAIL/CPF/NOME_PESSOA
+        identificador = f"{cnpj_cpf}/{external_id}/{nome_operacao}/{email}/{cpf}/{nome_pessoa}"
+
+        return identificador
 
     def _formatar_cpf(self, cpf: str) -> str:
         """
