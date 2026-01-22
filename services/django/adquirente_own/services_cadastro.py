@@ -41,7 +41,7 @@ class CadastroOwnService:
             "cnpj": loja_data['cnpj'],
             "cnpjCanalWL": loja_data.get('cnpj_canal_wl', ''),
             "cnpjOrigem": loja_data.get('cnpj_origem', ''),
-            "identificadorCliente": loja_data.get('responsavel_assinatura_cpf', ''),
+            "identificadorCliente": self._formatar_cpf(loja_data.get('responsavel_assinatura_cpf', '')),
             "urlCallback": loja_data.get('url_callback', 'https://wcapi.wallclub.com.br/webhook/own/credenciamento/'),
 
             # Razão social e nome fantasia
@@ -112,6 +112,28 @@ class CadastroOwnService:
         }
 
         return payload
+
+    def _formatar_cpf(self, cpf: str) -> str:
+        """
+        Formata CPF com pontos e traço (XXX.XXX.XXX-XX)
+
+        Args:
+            cpf: CPF apenas com números
+
+        Returns:
+            CPF formatado
+        """
+        if not cpf:
+            return ''
+
+        # Remove qualquer formatação existente
+        cpf_numeros = ''.join(filter(str.isdigit, cpf))
+
+        # Formata: XXX.XXX.XXX-XX
+        if len(cpf_numeros) == 11:
+            return f'{cpf_numeros[:3]}.{cpf_numeros[3:6]}.{cpf_numeros[6:9]}-{cpf_numeros[9:]}'
+
+        return cpf_numeros
 
     def _gerar_hash_aceite(self, loja_data: Dict[str, Any]) -> str:
         """
@@ -189,7 +211,7 @@ class CadastroOwnService:
                 cpf = doc.cpf_socio
                 if cpf not in socios_dict:
                     socios_dict[cpf] = {
-                        'identificacao': cpf,
+                        'identificacao': self._formatar_cpf(cpf),
                         'anexos': []
                     }
 
