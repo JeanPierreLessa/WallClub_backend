@@ -319,13 +319,15 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label required-field">Faturamento Previsto (R$)</label>
-                                <input type="number" class="form-control" id="faturamento_previsto"
-                                       name="faturamento_previsto" step="0.01" min="0" value="{{ loja_own.faturamento_previsto|default:'' }}">
+                                <input type="text" class="form-control money-input" id="faturamento_previsto"
+                                       name="faturamento_previsto" value="{{ loja_own.faturamento_previsto|floatformat:2|default:'' }}"
+                                       placeholder="0,00">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label required-field">Faturamento Contratado (R$)</label>
-                                <input type="number" class="form-control" id="faturamento_contratado"
-                                       name="faturamento_contratado" step="0.01" min="0" value="{{ loja_own.faturamento_contratado|default:'' }}">
+                                <input type="text" class="form-control money-input" id="faturamento_contratado"
+                                       name="faturamento_contratado" value="{{ loja_own.faturamento_contratado|floatformat:2|default:'' }}"
+                                       placeholder="0,00">
                             </div>
                         </div>
 

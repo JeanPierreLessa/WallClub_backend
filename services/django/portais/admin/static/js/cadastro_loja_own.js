@@ -47,6 +47,26 @@ class CadastroLojaOwn {
             btnConsultarProtocolo.addEventListener('click', () => this.consultarProtocolo());
         }
 
+        // Formatação de moeda
+        const moneyInputs = document.querySelectorAll('.money-input');
+        moneyInputs.forEach(input => {
+            // Formatar valor inicial
+            if (input.value) {
+                input.value = this.formatMoney(input.value);
+            }
+
+            input.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                e.target.value = this.formatMoney(value);
+            });
+
+            input.addEventListener('blur', (e) => {
+                if (!e.target.value) {
+                    e.target.value = '0,00';
+                }
+            });
+        });
+
         // Busca CNAE
         const inputCnae = document.getElementById('busca_cnae');
         if (inputCnae) {
@@ -416,7 +436,7 @@ class CadastroLojaOwn {
         const lojaId = urlParts[urlParts.indexOf('loja') + 1];
 
         if (!lojaId) {
-            this.showToast('Erro ao identificar loja', 'error');
+            alert('Erro ao identificar loja');
             return;
         }
 
@@ -448,14 +468,12 @@ class CadastroLojaOwn {
                     </div>
                 `;
 
-                this.showToast('Status consultado com sucesso!', 'success');
             } else {
                 resultadoDiv.innerHTML = `
                     <div class="alert alert-warning mb-0">
                         <i class="fas fa-exclamation-triangle"></i> ${data.erro || 'Protocolo não encontrado'}
                     </div>
                 `;
-                this.showToast(data.erro || 'Erro ao consultar protocolo', 'error');
             }
         } catch (error) {
             console.error('Erro ao consultar protocolo:', error);
@@ -464,7 +482,6 @@ class CadastroLojaOwn {
                     <i class="fas fa-times-circle"></i> Erro ao consultar protocolo: ${error.message}
                 </div>
             `;
-            this.showToast('Erro ao consultar protocolo', 'error');
         } finally {
             // Reabilitar botão
             btn.disabled = false;
@@ -482,6 +499,25 @@ class CadastroLojaOwn {
             'REPROVED': 'danger'
         };
         return statusMap[status] || 'secondary';
+    }
+
+    formatMoney(value) {
+        // Remove tudo que não é dígito
+        value = value.toString().replace(/\D/g, '');
+
+        // Se vazio, retorna 0,00
+        if (!value || value === '0') {
+            return '0,00';
+        }
+
+        // Converte para número e divide por 100 para ter centavos
+        const numValue = parseInt(value) / 100;
+
+        // Formata com separador de milhar e decimal
+        return numValue.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 }
 
