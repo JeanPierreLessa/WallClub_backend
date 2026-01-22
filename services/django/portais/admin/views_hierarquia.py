@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.db import connection, transaction
 from ..controle_acesso.decorators import require_admin_access
 from portais.controle_acesso import require_funcionalidade
+from wallclub_core.utilitarios.log_control import registrar_log
 
 
 @require_funcionalidade('hierarquia_list')
