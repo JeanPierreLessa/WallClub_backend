@@ -1048,15 +1048,20 @@ def loja_create(request):
                 if resultado.get('sucesso'):
                     messages.success(
                         request,
-                        f'Loja "{razao_social}" criada e cadastrada na Own! Protocolo: {resultado.get("protocolo")}'
+                        f'✅ Loja "{razao_social}" criada e cadastrada na Own Financial! Protocolo: {resultado.get("protocolo")}'
                     )
                 else:
-                    messages.warning(
+                    messages.error(
                         request,
-                        f'Loja "{razao_social}" criada, mas houve erro ao cadastrar na Own: {resultado.get("mensagem")}'
+                        f'⚠️ Loja "{razao_social}" criada, mas houve ERRO ao cadastrar na Own Financial: {resultado.get("mensagem")}'
                     )
             else:
-                messages.success(request, f'Loja "{razao_social}" criada com sucesso!')
+                # Checkbox não marcado - avisar que não foi enviado para Own
+                messages.warning(
+                    request,
+                    f'⚠️ Loja "{razao_social}" criada com sucesso, mas NÃO foi enviada para cadastro na Own Financial. '
+                    f'Para cadastrar na Own, edite a loja e marque o checkbox "Cadastrar esta loja na Own Financial".'
+                )
 
             return redirect('portais_admin:hierarquia_geral')
 
@@ -1463,18 +1468,27 @@ def loja_edit(request, loja_id):
                                 'protocolo': loja_own.protocolo if loja_own else ''  # Protocolo salvo para alterações
                             }
 
+                            registrar_log('admin.hierarquia', f'🔄 Iniciando cadastro Own para loja {loja_id} - {razao_social}')
+
                             service = CadastroOwnService()
                             resultado = service.cadastrar_estabelecimento(loja_id, loja_data)
 
+                            registrar_log('admin.hierarquia', f'📊 Resultado do cadastro Own: {resultado}')
+
                             if resultado.get('sucesso'):
-                                messages.success(request, f'Loja "{razao_social}" atualizada e cadastrada na Own Financial!')
+                                messages.success(request, f'✅ Loja "{razao_social}" atualizada e cadastrada na Own Financial! Protocolo: {resultado.get("protocolo")}')
                             else:
-                                messages.warning(request, f'Loja atualizada, mas houve erro ao cadastrar na Own: {resultado.get("mensagem")}')
+                                messages.error(request, f'⚠️ Loja "{razao_social}" atualizada, mas houve ERRO ao cadastrar na Own Financial: {resultado.get("mensagem")}')
                         except Exception as e:
                             registrar_log('admin.hierarquia', f'❌ Erro ao cadastrar loja na Own: {str(e)}', nivel='ERROR')
-                            messages.warning(request, f'Loja atualizada, mas houve erro ao cadastrar na Own: {str(e)}')
+                            messages.error(request, f'⚠️ Loja atualizada, mas houve ERRO ao cadastrar na Own: {str(e)}')
                     else:
-                        messages.success(request, f'Loja "{razao_social}" atualizada com sucesso!')
+                        # Checkbox não marcado - avisar que não foi enviado para Own
+                        messages.warning(
+                            request,
+                            f'⚠️ Loja "{razao_social}" atualizada com sucesso, mas NÃO foi enviada para cadastro na Own Financial. '
+                            f'Para cadastrar na Own, marque o checkbox "Cadastrar esta loja na Own Financial".'
+                        )
 
                 return redirect('portais_admin:loja_detail', loja_id=loja_id)
             except Exception as e:
