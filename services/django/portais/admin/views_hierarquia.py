@@ -981,6 +981,8 @@ def loja_create(request):
             # Verificar se deve cadastrar na Own
             cadastrar_own = request.POST.get('cadastrar_own') == '1'
 
+            registrar_log('admin.hierarquia', f'📋 Checkbox cadastrar_own: {cadastrar_own} (valor POST: {request.POST.get("cadastrar_own")})')
+
             if cadastrar_own:
                 # Coletar tarifas editadas do formulário
                 total_tarifas = int(request.POST.get('total_tarifas', 0))
@@ -1033,9 +1035,14 @@ def loja_create(request):
                     'tarifacao': tarifacao
                 }
 
+                registrar_log('admin.hierarquia', f'🔄 Iniciando cadastro Own para loja {loja_id} - {razao_social}')
+                registrar_log('admin.hierarquia', f'📋 Dados: CNPJ={cnpj}, Responsável={responsavel_assinatura}, CPF={responsavel_assinatura_cpf}, Email={responsavel_assinatura_email}')
+
                 # Cadastrar na Own
                 service = CadastroOwnService(environment='LIVE')
                 resultado = service.cadastrar_estabelecimento(loja_id, loja_data)
+
+                registrar_log('admin.hierarquia', f'📊 Resultado do cadastro Own: {resultado}')
 
                 if resultado.get('sucesso'):
                     messages.success(
