@@ -1395,8 +1395,10 @@ def loja_edit(request, loja_id):
                             ativo=True
                         )
 
-                    # Se checkbox Own marcado e ainda não cadastrado, cadastrar
-                    if cadastrar_own and not loja_own:
+                    # Se checkbox Own marcado, cadastrar ou recadastrar
+                    registrar_log('admin.hierarquia', f'📋 Checkbox cadastrar_own: {cadastrar_own} (valor POST: {request.POST.get("cadastrar_own")})')
+
+                    if cadastrar_own:
                         try:
                             # Validar campos obrigatórios para Own
                             id_cesta = request.POST.get('id_cesta')
