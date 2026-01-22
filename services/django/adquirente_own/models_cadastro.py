@@ -29,6 +29,26 @@ class LojaOwn(models.Model):
     # Configurações de tarifação
     id_cesta = models.IntegerField(null=True, blank=True, help_text='ID da cesta de tarifas Own')
 
+    # Dados de atividade econômica
+    cnae = models.CharField(max_length=20, null=True, blank=True, help_text='CNAE principal')
+    ramo_atividade = models.CharField(max_length=256, null=True, blank=True, help_text='Ramo de atividade')
+    mcc = models.CharField(max_length=4, null=True, blank=True, help_text='MCC (Merchant Category Code)')
+
+    # Dados financeiros
+    faturamento_previsto = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text='Faturamento previsto')
+    faturamento_contratado = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text='Faturamento contratado')
+
+    # Configurações de POS e antecipação
+    quantidade_pos = models.IntegerField(null=True, blank=True, default=0, help_text='Quantidade de POS')
+    antecipacao_automatica = models.CharField(max_length=1, null=True, blank=True, default='N', help_text='Antecipação automática (S/N)')
+    taxa_antecipacao = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, default=0.00, help_text='Taxa de antecipação')
+    tipo_antecipacao = models.CharField(max_length=20, null=True, blank=True, default='ROTATIVO', help_text='Tipo de antecipação')
+
+    # Responsável pela assinatura
+    responsavel_assinatura = models.CharField(max_length=256, null=True, blank=True, help_text='Nome do responsável')
+    responsavel_assinatura_cpf = models.CharField(max_length=11, null=True, blank=True, help_text='CPF do responsável')
+    responsavel_assinatura_email = models.CharField(max_length=256, null=True, blank=True, help_text='Email do responsável')
+
     # Configurações de captura
     aceita_ecommerce = models.BooleanField(default=False, help_text='Aceita pagamentos e-commerce')
 

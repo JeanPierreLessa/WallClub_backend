@@ -304,7 +304,38 @@
                         <!-- Preview das Tarifas -->
                         <div id="tarifas_preview" class="mb-3"></div>
 
-                        <!-- Responsável -->
+                        <!-- Configurações de Captura e Antecipação -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Quantidade de POS</label>
+                                <input type="number" class="form-control" id="quantidade_pos"
+                                       name="quantidade_pos" value="0" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Antecipação Automática</label>
+                                <select class="form-select" id="antecipacao_automatica"
+                                        name="antecipacao_automatica">
+                                    <option value="N">Não</option>
+                                    <option value="S">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Taxa Antecipação (%)</label>
+                                <input type="number" class="form-control" id="taxa_antecipacao"
+                                       name="taxa_antecipacao" value="0" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="aceita_ecommerce"
+                                           name="aceita_ecommerce" value="1">
+                                    <label class="form-check-label" for="aceita_ecommerce">
+                                        Aceita E-commerce
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Responsável pela Assinatura -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label required-field">Responsável pela Assinatura</label>
@@ -361,37 +392,6 @@
                                 <label class="form-label">Comprovante de Endereço da Empresa</label>
                                 <input type="file" class="form-control" id="doc_comprovante_endereco_empresa"
                                        name="doc_comprovante_endereco_empresa" accept="image/*,.pdf">
-                            </div>
-                        </div>
-
-                        <!-- Configurações -->
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <label class="form-label">Quantidade de POS</label>
-                                <input type="number" class="form-control" id="quantidade_pos"
-                                       name="quantidade_pos" value="0" min="0">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Antecipação Automática</label>
-                                <select class="form-select" id="antecipacao_automatica"
-                                        name="antecipacao_automatica">
-                                    <option value="N">Não</option>
-                                    <option value="S">Sim</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Taxa Antecipação (%)</label>
-                                <input type="number" class="form-control" id="taxa_antecipacao"
-                                       name="taxa_antecipacao" value="0" step="0.01" min="0">
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-check mt-4">
-                                    <input class="form-check-input" type="checkbox" id="aceita_ecommerce"
-                                           name="aceita_ecommerce" value="1">
-                                    <label class="form-check-label" for="aceita_ecommerce">
-                                        Aceita E-commerce
-                                    </label>
-                                </div>
                             </div>
                         </div>
                     </div>

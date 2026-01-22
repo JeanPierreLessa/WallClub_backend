@@ -839,7 +839,7 @@ def loja_create(request):
                 messages.error(request, 'Canal é obrigatório.')
                 return redirect('portais_admin:loja_create')
 
-            # Inserir loja na tabela principal
+            # Inserir loja na tabela principal (sem campos Own)
             with connection.cursor() as cursor:
                 cursor.execute("""
                     INSERT INTO loja (
@@ -847,29 +847,37 @@ def loja_create(request):
                         email, url_loja, ddd_telefone_comercial, telefone_comercial,
                         ddd_celular, celular, cep, logradouro, numero_endereco,
                         bairro, municipio, uf, codigo_banco, agencia, digito_agencia,
-                        numero_conta, digito_conta, pix, GrupoEconomicoId,
-                        cnae, mcc, ramo_atividade, faturamento_previsto, faturamento_contratado,
-                        quantidade_pos, antecipacao_automatica, taxa_antecipacao, responsavel_assinatura, responsavel_assinatura_cpf
+                        numero_conta, digito_conta, pix, GrupoEconomicoId
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, [
                     razao_social or None, nome_fantasia or None, cnpj or None, complemento or None,
                     int(canal_id), gateway_ativo,
                     email or None, url_loja or None, ddd_telefone_comercial or None, telefone_comercial or None,
                     ddd_celular or None, celular or None, cep or None, logradouro or None, numero_endereco or None,
                     bairro or None, municipio or None, uf or None, codigo_banco or None, agencia or None, digito_agencia or None,
-                    numero_conta or None, digito_conta or None, pix or None, int(grupo_id),
-                    cnae or None, mcc or None, ramo_atividade or None,
-                    float(faturamento_previsto) if faturamento_previsto else None,
-                    float(faturamento_contratado) if faturamento_contratado else None,
-                    int(quantidade_pos) if quantidade_pos else 0,
-                    antecipacao_automatica, float(taxa_antecipacao) if taxa_antecipacao else 0,
-                    responsavel_assinatura or None, responsavel_assinatura_cpf or None
+                    numero_conta or None, digito_conta or None, pix or None, int(grupo_id)
                 ])
 
                 # Obter ID da loja criada
                 cursor.execute("SELECT LAST_INSERT_ID()")
                 loja_id = cursor.fetchone()[0]
+
+            # Criar/atualizar registro loja_own com campos Own
+            from adquirente_own.models_cadastro import LojaOwn
+            loja_own, created = LojaOwn.objects.get_or_create(loja_id=loja_id)
+            loja_own.cnae = cnae or None
+            loja_own.ramo_atividade = ramo_atividade or None
+            loja_own.mcc = mcc or None
+            loja_own.faturamento_previsto = float(faturamento_previsto) if faturamento_previsto else None
+            loja_own.faturamento_contratado = float(faturamento_contratado) if faturamento_contratado else None
+            loja_own.quantidade_pos = int(quantidade_pos) if quantidade_pos else 0
+            loja_own.antecipacao_automatica = antecipacao_automatica or 'N'
+            loja_own.taxa_antecipacao = float(taxa_antecipacao) if taxa_antecipacao else 0.00
+            loja_own.tipo_antecipacao = 'ROTATIVO'
+            loja_own.responsavel_assinatura = responsavel_assinatura or None
+            loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
+            loja_own.save()
 
             # Processar upload de documentos do responsável e da empresa
             from adquirente_own.models_cadastro import LojaDocumentos
@@ -1210,11 +1218,7 @@ def loja_edit(request, loja_id):
                                 bairro = %s, municipio = %s, uf = %s,
                                 codigo_banco = %s, agencia = %s, digito_agencia = %s,
                                 numero_conta = %s, digito_conta = %s, pix = %s,
-                                GrupoEconomicoId = %s,
-                                cnae = %s, mcc = %s, ramo_atividade = %s,
-                                faturamento_previsto = %s, faturamento_contratado = %s,
-                                quantidade_pos = %s, antecipacao_automatica = %s,
-                                taxa_antecipacao = %s, responsavel_assinatura = %s, responsavel_assinatura_cpf = %s
+                                GrupoEconomicoId = %s
                             WHERE id = %s
                         """, [
                             razao_social or None, nome_fantasia or None, cnpj, complemento or None,
@@ -1227,15 +1231,24 @@ def loja_edit(request, loja_id):
                             codigo_banco or None, agencia or None, digito_agencia or None,
                             numero_conta or None, digito_conta or None, pix or None,
                             grupo_id,
-                            cnae or None, mcc or None, ramo_atividade or None,
-                            float(faturamento_previsto) if faturamento_previsto else None,
-                            float(faturamento_contratado) if faturamento_contratado else None,
-                            int(quantidade_pos) if quantidade_pos else 0,
-                            antecipacao_automatica,
-                            float(taxa_antecipacao) if taxa_antecipacao else 0,
-                            responsavel_assinatura or None, responsavel_assinatura_cpf or None,
                             loja_id
                         ])
+
+                    # Atualizar registro loja_own com campos Own
+                    from adquirente_own.models_cadastro import LojaOwn
+                    loja_own, created = LojaOwn.objects.get_or_create(loja_id=loja_id)
+                    loja_own.cnae = cnae or None
+                    loja_own.ramo_atividade = ramo_atividade or None
+                    loja_own.mcc = mcc or None
+                    loja_own.faturamento_previsto = float(faturamento_previsto) if faturamento_previsto else None
+                    loja_own.faturamento_contratado = float(faturamento_contratado) if faturamento_contratado else None
+                    loja_own.quantidade_pos = int(quantidade_pos) if quantidade_pos else 0
+                    loja_own.antecipacao_automatica = antecipacao_automatica or 'N'
+                    loja_own.taxa_antecipacao = float(taxa_antecipacao) if taxa_antecipacao else 0.00
+                    loja_own.tipo_antecipacao = 'ROTATIVO'
+                    loja_own.responsavel_assinatura = responsavel_assinatura or None
+                    loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
+                    loja_own.save()
 
                     # Processar upload de documentos do responsável e da empresa
                     from adquirente_own.models_cadastro import LojaDocumentos
