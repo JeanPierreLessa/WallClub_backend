@@ -462,9 +462,12 @@ class CadastroLojaOwn {
                         <p class="mb-1"><strong>Status:</strong> ${data.status} ${podeReenviar}</p>
                         <p class="mb-1"><strong>Data Recebimento:</strong> ${data.dataRecebimento}</p>
                         <p class="mb-1"><strong>Tipo:</strong> ${data.tipo}</p>
-                        ${data.contrato ? `<p class="mb-1"><strong>Contrato:</strong> ${data.contrato}</p>` : ''}
-                        ${data.motivo && data.motivo.trim() ? `<p class="mb-1"><strong>Motivo:</strong> ${data.motivo}</p>` : ''}
-                        ${data.reenvio === 'S' ? '<p class="mb-0"><span class="badge bg-secondary">Reenvio</span></p>' : ''}
+                        <p class="mb-1"><strong>Reenvio:</strong> ${data.reenvio === 'S' ? '<span class="badge bg-warning">Sim</span>' : '<span class="badge bg-secondary">Não</span>'}</p>
+                        ${data.contrato && data.contrato.trim() && data.contrato !== ' ' ? `<p class="mb-1"><strong>Contrato:</strong> ${data.contrato}</p>` : ''}
+                        ${data.identificadorCliente ? `<p class="mb-1"><strong>Identificador Cliente:</strong> ${data.identificadorCliente}</p>` : ''}
+                        ${data.cnpjWL ? `<p class="mb-1"><strong>CNPJ White Label:</strong> ${data.cnpjWL}</p>` : ''}
+                        ${data.cnpjEstabelecimento ? `<p class="mb-1"><strong>CNPJ Estabelecimento:</strong> ${data.cnpjEstabelecimento}</p>` : ''}
+                        ${data.motivo && data.motivo.trim() && data.motivo !== ' ' ? `<p class="mb-0"><strong>Motivo:</strong> ${data.motivo}</p>` : ''}
                     </div>
                 `;
 

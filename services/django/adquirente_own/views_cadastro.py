@@ -182,6 +182,10 @@ def consultar_protocolo(request):
                 'tipo': protocolo_info.get('tipo'),
                 'reenvio': protocolo_info.get('reenvio'),
                 'contrato': protocolo_info.get('contrato'),
+                'identificadorCliente': protocolo_info.get('identificadorCliente'),
+                'cnpjWL': protocolo_info.get('cnpjWL'),
+                'cnpjEstabelecimento': protocolo_info.get('cnpjEstabelecimento'),
+                'detalhesCadastro': protocolo_info.get('detalhesCadastro'),
                 'podeReenviar': protocolo_info.get('status') in ['ERRO', 'REPROVED']
             })
 
