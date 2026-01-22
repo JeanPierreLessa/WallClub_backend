@@ -1057,7 +1057,7 @@ def loja_edit(request, loja_id):
     from adquirente_own.services_cadastro import CadastroOwnService
     from wallclub_core.utilitarios.log_control import registrar_log
 
-    # Buscar dados completos da loja
+    # Buscar dados completos da loja (sem campos Own)
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT id, razao_social, nome_fantasia, cnpj, complemento, canal_id, gateway_ativo,
@@ -1065,8 +1065,6 @@ def loja_edit(request, loja_id):
                    ddd_celular, celular, cep, logradouro, numero_endereco,
                    bairro, municipio, uf, codigo_banco, agencia, digito_agencia,
                    numero_conta, digito_conta, pix, GrupoEconomicoId,
-                   cnae, mcc, ramo_atividade, faturamento_previsto, faturamento_contratado,
-                   quantidade_pos, antecipacao_automatica, taxa_antecipacao, responsavel_assinatura,
                    nomebanco, numerobanco, conta
             FROM loja
             WHERE id = %s
@@ -1084,15 +1082,13 @@ def loja_edit(request, loja_id):
             'ddd_celular': row[11], 'celular': row[12], 'cep': row[13], 'logradouro': row[14], 'numero_endereco': row[15],
             'bairro': row[16], 'municipio': row[17], 'uf': row[18], 'codigo_banco': row[19], 'agencia': row[20], 'digito_agencia': row[21],
             'numero_conta': row[22], 'digito_conta': row[23], 'pix': row[24], 'GrupoEconomicoId': row[25],
-            'cnae': row[26], 'mcc': row[27], 'ramo_atividade': row[28], 'faturamento_previsto': row[29], 'faturamento_contratado': row[30],
-            'quantidade_pos': row[31], 'antecipacao_automatica': row[32], 'taxa_antecipacao': row[33], 'responsavel_assinatura': row[34],
-            'nomebanco': row[35], 'numerobanco': row[36], 'conta': row[37]
+            'nomebanco': row[26], 'numerobanco': row[27], 'conta': row[28]
         }
 
-    # Buscar dados Own se existir
+    # Buscar dados Own da loja
     try:
-        loja_own = LojaOwn.objects.filter(loja_id=loja_id).first()
-    except:
+        loja_own = LojaOwn.objects.get(loja_id=loja_id)
+    except LojaOwn.DoesNotExist:
         loja_own = None
 
     # Buscar canais disponíveis
