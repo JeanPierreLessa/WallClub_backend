@@ -57,7 +57,7 @@ class CheckoutAntifraudeService:
         """
         # Verificar se antifraude está habilitado
         if not settings.ANTIFRAUDE_ENABLED:
-            registrar_log('checkout.antifraude', '⚠️ Antifraude desabilitado - aprovando transação')
+            registrar_log('checkout', '⚠️ Antifraude desabilitado - aprovando transação')
             return True, {
                 'decisao': 'APROVADO',
                 'motivo': 'Antifraude desabilitado',
@@ -66,28 +66,28 @@ class CheckoutAntifraudeService:
             }
         
         # Logs detalhados
-        registrar_log('checkout.antifraude', '=' * 80)
-        registrar_log('checkout.antifraude', '🛡️  INICIANDO ANÁLISE ANTIFRAUDE - CHECKOUT WEB')
-        registrar_log('checkout.antifraude', '=' * 80)
-        registrar_log('checkout.antifraude', '📋 DADOS DA TRANSAÇÃO:')
-        registrar_log('checkout.antifraude', f'   • Transaction ID: {transaction_id}')
-        registrar_log('checkout.antifraude', f'   • CPF: {cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-**')
-        registrar_log('checkout.antifraude', f'   • Valor: R$ {valor:.2f}')
-        registrar_log('checkout.antifraude', f'   • Modalidade: {modalidade}')
-        registrar_log('checkout.antifraude', f'   • Parcelas: {parcelas}x')
-        registrar_log('checkout.antifraude', f'   • Loja ID: {loja_id} | Canal ID: {canal_id}')
+        registrar_log('checkout', '=' * 80)
+        registrar_log('checkout', '🛡️  INICIANDO ANÁLISE ANTIFRAUDE - CHECKOUT WEB')
+        registrar_log('checkout', '=' * 80)
+        registrar_log('checkout', '📋 DADOS DA TRANSAÇÃO:')
+        registrar_log('checkout', f'   • Transaction ID: {transaction_id}')
+        registrar_log('checkout', f'   • CPF: {cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-**')
+        registrar_log('checkout', f'   • Valor: R$ {valor:.2f}')
+        registrar_log('checkout', f'   • Modalidade: {modalidade}')
+        registrar_log('checkout', f'   • Parcelas: {parcelas}x')
+        registrar_log('checkout', f'   • Loja ID: {loja_id} | Canal ID: {canal_id}')
         
         if numero_cartao:
             bin_cartao = numero_cartao[:6] if len(numero_cartao) >= 6 else None
-            registrar_log('checkout.antifraude', f'   • BIN Cartão: {bin_cartao}****')
+            registrar_log('checkout', f'   • BIN Cartão: {bin_cartao}****')
         if bandeira:
-            registrar_log('checkout.antifraude', f'   • Bandeira: {bandeira}')
+            registrar_log('checkout', f'   • Bandeira: {bandeira}')
         if ip_address:
-            registrar_log('checkout.antifraude', f'   • IP: {ip_address}')
+            registrar_log('checkout', f'   • IP: {ip_address}')
         if user_agent:
-            registrar_log('checkout.antifraude', f'   • User Agent: {user_agent[:50]}...')
+            registrar_log('checkout', f'   • User Agent: {user_agent[:50]}...')
         
-        registrar_log('checkout.antifraude', '')
+        registrar_log('checkout', '')
         
         # Garantir que transaction_id sempre tenha valor
         if not transaction_id:
@@ -117,7 +117,7 @@ class CheckoutAntifraudeService:
         
         # Chamar API (sem OAuth - rede interna)
         api_url = f"{settings.RISK_ENGINE_URL}/api/antifraude/analyze/"
-        registrar_log('checkout.antifraude', f'🌐 CHAMANDO API ANTIFRAUDE: {api_url}')
+        registrar_log('checkout', f'🌐 CHAMANDO API ANTIFRAUDE: {api_url}')
         
         headers = {'Content-Type': 'application/json'}
         
@@ -133,7 +133,7 @@ class CheckoutAntifraudeService:
             
             if response.status_code == 200:
                 data = response.json()
-                registrar_log('checkout.antifraude', f'✅ Resposta recebida (HTTP 200) em {tempo_ms/1000:.2f}s')
+                registrar_log('checkout', f'✅ Resposta recebida (HTTP 200) em {tempo_ms/1000:.2f}s')
                 
                 decisao = data.get('decisao', 'APROVADO')
                 score = data.get('score_risco', 0)
@@ -142,42 +142,42 @@ class CheckoutAntifraudeService:
                 tempo_analise = data.get('tempo_analise_ms', 0)
                 
                 # Logs de resultado
-                registrar_log('checkout.antifraude', '')
-                registrar_log('checkout.antifraude', '📊 RESULTADO DA ANÁLISE:')
-                registrar_log('checkout.antifraude', f'   • Decisão: {decisao}')
-                registrar_log('checkout.antifraude', f'   • Score de Risco: {score}/100')
-                registrar_log('checkout.antifraude', f'   • Motivo: {motivo}')
-                registrar_log('checkout.antifraude', f'   • Tempo de Análise: {tempo_analise}ms')
+                registrar_log('checkout', '')
+                registrar_log('checkout', '📊 RESULTADO DA ANÁLISE:')
+                registrar_log('checkout', f'   • Decisão: {decisao}')
+                registrar_log('checkout', f'   • Score de Risco: {score}/100')
+                registrar_log('checkout', f'   • Motivo: {motivo}')
+                registrar_log('checkout', f'   • Tempo de Análise: {tempo_analise}ms')
                 
                 if regras:
-                    registrar_log('checkout.antifraude', '')
-                    registrar_log('checkout.antifraude', f'🚨 REGRAS ACIONADAS ({len(regras)}):')
+                    registrar_log('checkout', '')
+                    registrar_log('checkout', f'🚨 REGRAS ACIONADAS ({len(regras)}):')
                     for i, regra in enumerate(regras, 1):
                         nome = regra.get('regra', 'Desconhecida')
                         pontos = regra.get('pontos_adicionados', 0)
-                        registrar_log('checkout.antifraude', f'   {i}. {nome} (+{pontos} pontos)')
+                        registrar_log('checkout', f'   {i}. {nome} (+{pontos} pontos)')
                 
-                registrar_log('checkout.antifraude', '')
-                registrar_log('checkout.antifraude', '-' * 80)
+                registrar_log('checkout', '')
+                registrar_log('checkout', '-' * 80)
                 
                 # Decisão
                 if decisao == 'APROVADO':
-                    registrar_log('checkout.antifraude', f'✅ TRANSAÇÃO APROVADA - Score baixo ({score}), sem indícios de fraude')
-                    registrar_log('checkout.antifraude', '➡️  Continuando processamento (Pinbank)')
+                    registrar_log('checkout', f'✅ TRANSAÇÃO APROVADA - Score baixo ({score}), sem indícios de fraude')
+                    registrar_log('checkout', '➡️  Continuando processamento (Pinbank)')
                     permitir = True
                 elif decisao == 'REPROVADO':
-                    registrar_log('checkout.antifraude', f'❌ TRANSAÇÃO REPROVADA - Score alto ({score}), risco de fraude detectado', nivel='WARNING')
-                    registrar_log('checkout.antifraude', '🚫 Bloqueando transação')
+                    registrar_log('checkout', f'❌ TRANSAÇÃO REPROVADA - Score alto ({score}), risco de fraude detectado', nivel='WARNING')
+                    registrar_log('checkout', '🚫 Bloqueando transação')
                     permitir = False
                 elif decisao == 'REVISAR':
-                    registrar_log('checkout.antifraude', f'⚠️ TRANSAÇÃO EM REVISÃO - Score médio ({score}), requer análise manual', nivel='WARNING')
-                    registrar_log('checkout.antifraude', '➡️  Processando mas marcando para revisão')
+                    registrar_log('checkout', f'⚠️ TRANSAÇÃO EM REVISÃO - Score médio ({score}), requer análise manual', nivel='WARNING')
+                    registrar_log('checkout', '➡️  Processando mas marcando para revisão')
                     permitir = True
                 else:
-                    registrar_log('checkout.antifraude', f'❓ Decisão desconhecida: {decisao} - Aprovando por segurança', nivel='WARNING')
+                    registrar_log('checkout', f'❓ Decisão desconhecida: {decisao} - Aprovando por segurança', nivel='WARNING')
                     permitir = True
                 
-                registrar_log('checkout.antifraude', '=' * 80)
+                registrar_log('checkout', '=' * 80)
                 
                 resultado = {
                     'decisao': decisao,
@@ -194,11 +194,11 @@ class CheckoutAntifraudeService:
                 # Log detalhado do erro
                 try:
                     error_body = response.json()
-                    registrar_log('checkout.antifraude', f'Erro HTTP ao chamar antifraude: {response.status_code}', nivel='ERROR')
-                    registrar_log('checkout.antifraude', f'Response body: {error_body}', nivel='ERROR')
+                    registrar_log('checkout', f'Erro HTTP ao chamar antifraude: {response.status_code}', nivel='ERROR')
+                    registrar_log('checkout', f'Response body: {error_body}', nivel='ERROR')
                 except:
-                    registrar_log('checkout.antifraude', f'Erro HTTP ao chamar antifraude: {response.status_code}', nivel='ERROR')
-                    registrar_log('checkout.antifraude', f'Response text: {response.text[:500]}', nivel='ERROR')
+                    registrar_log('checkout', f'Erro HTTP ao chamar antifraude: {response.status_code}', nivel='ERROR')
+                    registrar_log('checkout', f'Response text: {response.text[:500]}', nivel='ERROR')
                 
                 # Fail-open: aprova em caso de erro
                 return True, {
@@ -209,7 +209,7 @@ class CheckoutAntifraudeService:
                 }
         
         except requests.Timeout:
-            registrar_log('checkout.antifraude', 'Timeout ao chamar antifraude', nivel='ERROR')
+            registrar_log('checkout', 'Timeout ao chamar antifraude', nivel='ERROR')
             return True, {
                 'decisao': 'APROVADO',
                 'motivo': 'Timeout (fail-open)',
@@ -218,7 +218,7 @@ class CheckoutAntifraudeService:
             }
         
         except Exception as e:
-            registrar_log('checkout.antifraude', f'Exceção ao chamar antifraude: {str(e)}', nivel='ERROR')
+            registrar_log('checkout', f'Exceção ao chamar antifraude: {str(e)}', nivel='ERROR')
             return True, {
                 'decisao': 'APROVADO',
                 'motivo': f'Erro: {str(e)} (fail-open)',

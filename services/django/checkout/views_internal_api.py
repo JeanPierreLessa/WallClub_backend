@@ -57,7 +57,7 @@ def listar_recorrencias(request):
                 'loja_nome': rec.loja.nome if rec.loja else None,
             })
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Lista recorrências - Loja: {loja_id}, Status: {status}, Total: {len(recorrencias)}")
         
         return JsonResponse({
@@ -67,7 +67,7 @@ def listar_recorrencias(request):
         })
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao listar recorrências: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -149,7 +149,7 @@ def criar_recorrencia(request):
             tentativas_falhas_consecutivas=0
         )
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Recorrência criada - ID: {recorrencia.id}, Cliente: {cliente_id}, Valor: R$ {valor_recorrencia}")
         
         return JsonResponse({
@@ -160,7 +160,7 @@ def criar_recorrencia(request):
         })
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao criar recorrência: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -195,7 +195,7 @@ def pausar_recorrencia(request, recorrencia_id):
         recorrencia.status = 'pausado'
         recorrencia.save()
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Recorrência pausada - ID: {recorrencia_id}, Motivo: {motivo}")
         
         return JsonResponse({
@@ -209,7 +209,7 @@ def pausar_recorrencia(request, recorrencia_id):
             'mensagem': 'Recorrência não encontrada'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao pausar recorrência {recorrencia_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -250,7 +250,7 @@ def reativar_recorrencia(request, recorrencia_id):
         
         recorrencia.save()
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Recorrência reativada - ID: {recorrencia_id}, Próxima: {recorrencia.proxima_cobranca}")
         
         return JsonResponse({
@@ -265,7 +265,7 @@ def reativar_recorrencia(request, recorrencia_id):
             'mensagem': 'Recorrência não encontrada'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao reativar recorrência {recorrencia_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -294,17 +294,17 @@ def cobrar_recorrencia(request, recorrencia_id):
         resultado = CheckoutVendasService.processar_cobranca_agendada(recorrencia_id)
         
         if resultado['sucesso']:
-            registrar_log('checkout.internal_api',
+            registrar_log('checkout',
                          f"Cobrança manual aprovada - ID: {recorrencia_id}, NSU: {resultado.get('nsu')}")
         else:
-            registrar_log('checkout.internal_api',
+            registrar_log('checkout',
                          f"Cobrança manual negada - ID: {recorrencia_id}, Motivo: {resultado.get('mensagem')}",
                          nivel='WARNING')
         
         return JsonResponse(resultado)
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao cobrar recorrência {recorrencia_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -348,7 +348,7 @@ def atualizar_recorrencia(request, recorrencia_id):
         
         recorrencia.save()
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Recorrência atualizada - ID: {recorrencia_id}")
         
         return JsonResponse({
@@ -362,7 +362,7 @@ def atualizar_recorrencia(request, recorrencia_id):
             'mensagem': 'Recorrência não encontrada'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao atualizar recorrência {recorrencia_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -391,7 +391,7 @@ def deletar_recorrencia(request, recorrencia_id):
         recorrencia.status = 'cancelado'
         recorrencia.save()
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Recorrência cancelada - ID: {recorrencia_id}")
         
         return JsonResponse({
@@ -405,7 +405,7 @@ def deletar_recorrencia(request, recorrencia_id):
             'mensagem': 'Recorrência não encontrada'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao cancelar recorrência {recorrencia_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -466,7 +466,7 @@ def obter_recorrencia(request, recorrencia_id):
             'mensagem': 'Recorrência não encontrada'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao obter recorrência {recorrencia_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -531,7 +531,7 @@ def listar_clientes(request):
                 'created_at': cliente.created_at.isoformat(),
             })
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Lista clientes - Loja: {loja_id}, Total: {len(clientes)}")
         
         return JsonResponse({
@@ -541,7 +541,7 @@ def listar_clientes(request):
         })
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao listar clientes: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -619,7 +619,7 @@ def criar_cliente(request):
             user_agent=data.get('user_agent')
         )
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Cliente criado - ID: {cliente.id}, Nome: {nome}")
         
         return JsonResponse({
@@ -629,7 +629,7 @@ def criar_cliente(request):
         })
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao criar cliente: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -692,7 +692,7 @@ def obter_cliente(request):
             'mensagem': 'Cliente não encontrado'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao obter cliente {cliente_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -745,7 +745,7 @@ def atualizar_cliente(request):
         
         cliente.save()
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Cliente atualizado - ID: {cliente_id}")
         
         return JsonResponse({
@@ -759,7 +759,7 @@ def atualizar_cliente(request):
             'mensagem': 'Cliente não encontrado'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao atualizar cliente {cliente_id}: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -829,7 +829,7 @@ def listar_tokens(request):
                 'created_at': token.created_at.isoformat(),
             })
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Lista tokens - Loja: {loja_id}, Total: {len(tokens)}")
         
         return JsonResponse({
@@ -839,7 +839,7 @@ def listar_tokens(request):
         })
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao listar tokens: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -911,7 +911,7 @@ def criar_token(request):
         # TODO: Construir URL completa do link (necessita configuração de domínio)
         link = f"/checkout/{token_obj.token}/"
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Token criado - ID: {token_obj.id}, Loja: {loja_id}, Valor: R$ {item_valor}")
         
         return JsonResponse({
@@ -924,7 +924,7 @@ def criar_token(request):
         })
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao criar token: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -994,7 +994,7 @@ def obter_token(request):
             'mensagem': 'Token não encontrado'
         }, status=404)
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao obter token {token_value[:8]}...: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({
@@ -1054,7 +1054,7 @@ def validar_token(request):
         
         valido = token.is_valid()
         
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Validação token - Válido: {valido}, Motivo: {motivo}")
         
         return JsonResponse({
@@ -1066,7 +1066,7 @@ def validar_token(request):
         })
         
     except Exception as e:
-        registrar_log('checkout.internal_api',
+        registrar_log('checkout',
                      f"Erro ao validar token: {str(e)}",
                      nivel='ERROR')
         return JsonResponse({

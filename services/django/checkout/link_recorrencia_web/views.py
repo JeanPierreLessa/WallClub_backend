@@ -64,7 +64,7 @@ def checkout_recorrencia_view(request):
         return render(request, 'recorrencia/checkout_recorrencia.html', context)
         
     except Exception as e:
-        registrar_log('checkout.recorrencia', f"Erro ao carregar checkout: {str(e)}", nivel='ERROR')
+        registrar_log('checkout', f"Erro ao carregar checkout: {str(e)}", nivel='ERROR')
         return render(request, 'recorrencia/erro.html', {
             'mensagem': 'Erro ao carregar página. Tente novamente.'
         })
@@ -148,12 +148,12 @@ def enviar_otp_view(request):
         }
         
         if resultado['sucesso']:
-            registrar_log('checkout.recorrencia', f"OTP enviado para telefone {telefone[-4:]}***")
+            registrar_log('checkout', f"OTP enviado para telefone {telefone[-4:]}***")
         
         return JsonResponse(resultado)
         
     except Exception as e:
-        registrar_log('checkout.recorrencia', f"Erro ao enviar OTP: {str(e)}", nivel='ERROR')
+        registrar_log('checkout', f"Erro ao enviar OTP: {str(e)}", nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': f'Erro ao enviar código: {str(e)}'
@@ -247,7 +247,7 @@ def processar_cadastro_cartao_view(request):
         if telefone_obj.ativo == -1:
             telefone_obj.ativo = 1
             telefone_obj.save(update_fields=['ativo'])
-            registrar_log('checkout.recorrencia', f'Telefone ativado: {telefone[-4:]}***')
+            registrar_log('checkout', f'Telefone ativado: {telefone[-4:]}***')
         
         # Processar via service
         ip_address = request.META.get('REMOTE_ADDR', '')
@@ -269,7 +269,7 @@ def processar_cadastro_cartao_view(request):
             'mensagem': 'Dados inválidos'
         })
     except Exception as e:
-        registrar_log('checkout.recorrencia', f"Erro ao processar cadastro: {str(e)}", nivel='ERROR')
+        registrar_log('checkout', f"Erro ao processar cadastro: {str(e)}", nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': f'Erro ao processar: {str(e)}'

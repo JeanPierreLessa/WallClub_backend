@@ -100,7 +100,7 @@ class RecorrenciaTokenService:
             }
             
         except Exception as e:
-            registrar_log('checkout.recorrencia', f"Erro ao criar token: {str(e)}", nivel='ERROR')
+            registrar_log('checkout', f"Erro ao criar token: {str(e)}", nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao enviar link: {str(e)}'
@@ -332,7 +332,7 @@ class RecorrenciaTokenService:
             }
             
         except Exception as e:
-            registrar_log('checkout.recorrencia', f"Erro ao processar cadastro: {str(e)}", nivel='ERROR')
+            registrar_log('checkout', f"Erro ao processar cadastro: {str(e)}", nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao processar cadastro: {str(e)}'

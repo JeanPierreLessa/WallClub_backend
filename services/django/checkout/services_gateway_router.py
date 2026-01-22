@@ -35,15 +35,15 @@ class GatewayRouter:
                 row = cursor.fetchone()
                 if row and row[0]:
                     gateway = row[0].upper()
-                    registrar_log('checkout.gateway', f'Loja {loja_id}: Gateway {gateway}')
+                    registrar_log('checkout', f'Loja {loja_id}: Gateway {gateway}')
                     return gateway
                 
                 # Default: Pinbank
-                registrar_log('checkout.gateway', f'Loja {loja_id}: Gateway padrão (PINBANK)')
+                registrar_log('checkout', f'Loja {loja_id}: Gateway padrão (PINBANK)')
                 return GatewayRouter.GATEWAY_PINBANK
                 
         except Exception as e:
-            registrar_log('checkout.gateway', f'Erro ao obter gateway da loja {loja_id}: {e}', nivel='ERROR')
+            registrar_log('checkout', f'Erro ao obter gateway da loja {loja_id}: {e}', nivel='ERROR')
             return GatewayRouter.GATEWAY_PINBANK
     
     @staticmethod
@@ -61,11 +61,11 @@ class GatewayRouter:
         
         if gateway == GatewayRouter.GATEWAY_OWN:
             from adquirente_own.services_transacoes_pagamento import TransacoesOwnService
-            registrar_log('checkout.gateway', f'🟢 Usando Own Financial para loja {loja_id}')
+            registrar_log('checkout', f'🟢 Usando Own Financial para loja {loja_id}')
             return TransacoesOwnService(loja_id=loja_id)
         else:
             from pinbank.services_transacoes_pagamento import TransacoesPinbankService
-            registrar_log('checkout.gateway', f'🔵 Usando Pinbank para loja {loja_id}')
+            registrar_log('checkout', f'🔵 Usando Pinbank para loja {loja_id}')
             return TransacoesPinbankService(loja_id=loja_id)
     
     @staticmethod

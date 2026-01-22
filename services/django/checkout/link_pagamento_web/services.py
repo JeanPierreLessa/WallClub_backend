@@ -112,7 +112,7 @@ class LinkPagamentoService:
             try:
                 transacao = CheckoutTransaction.objects.get(token=token)
             except CheckoutTransaction.DoesNotExist:
-                registrar_log('checkout.link_pagamento_web', f"ERRO: Transaction não encontrada para token {token[:8]}...", nivel='ERROR')
+                registrar_log('checkout', f"ERRO: Transaction não encontrada para token {token[:8]}...", nivel='ERROR')
                 return {
                     'sucesso': False,
                     'mensagem': 'Transação não encontrada. Entre em contato com o vendedor.',
@@ -169,11 +169,11 @@ class LinkPagamentoService:
                     # Aplicar desconto do cupom ao valor final
                     valor_final = valor_final - cupom_desconto
                     
-                    registrar_log('checkout.link_pagamento_web', 
+                    registrar_log('checkout', 
                                  f"✅ Cupom {cupom_codigo} aplicado - Desconto: R$ {cupom_desconto}")
                     
                 except ValidationError as e:
-                    registrar_log('checkout.link_pagamento_web', 
+                    registrar_log('checkout', 
                                  f"❌ Cupom inválido: {str(e)}", nivel='WARNING')
                     return {
                         'sucesso': False,
@@ -182,10 +182,10 @@ class LinkPagamentoService:
                         'pode_tentar_novamente': True
                     }
             
-            registrar_log('checkout.link_pagamento_web', '')
-            registrar_log('checkout.link_pagamento_web', '=' * 80)
-            registrar_log('checkout.link_pagamento_web', '🛡️  ANÁLISE ANTIFRAUDE - CHECKOUT WEB')
-            registrar_log('checkout.link_pagamento_web', '=' * 80)
+            registrar_log('checkout', '')
+            registrar_log('checkout', '=' * 80)
+            registrar_log('checkout', '🛡️  ANÁLISE ANTIFRAUDE - CHECKOUT WEB')
+            registrar_log('checkout', '=' * 80)
             
             # Chamar Risk Engine
             permitir, resultado_antifraude = CheckoutAntifraudeService.analisar_transacao(
@@ -216,10 +216,10 @@ class LinkPagamentoService:
                 transacao.status = 'BLOQUEADA_ANTIFRAUDE'
                 transacao.save()
                 
-                registrar_log('checkout.link_pagamento_web', 
+                registrar_log('checkout', 
                              f"❌ TRANSAÇÃO BLOQUEADA PELO ANTIFRAUDE - Score: {transacao.score_risco}, Motivo: {transacao.motivo_bloqueio}", 
                              nivel='WARNING')
-                registrar_log('checkout.link_pagamento_web', '=' * 80)
+                registrar_log('checkout', '=' * 80)
                 
                 return {
                     'sucesso': False,
@@ -232,14 +232,14 @@ class LinkPagamentoService:
             # Tratar decisão REVISAR (processar mas marcar para revisão)
             if resultado_antifraude.get('decisao') == 'REVISAR':
                 transacao.status = 'PENDENTE_REVISAO'
-                registrar_log('checkout.link_pagamento_web', 
+                registrar_log('checkout', 
                              f"⚠️ TRANSAÇÃO EM REVISÃO - Score: {transacao.score_risco}, será processada mas requer análise manual", 
                              nivel='WARNING')
             
-            registrar_log('checkout.link_pagamento_web', 
+            registrar_log('checkout', 
                          f"✅ ANTIFRAUDE: {resultado_antifraude.get('decisao')} - Score: {transacao.score_risco}/100")
-            registrar_log('checkout.link_pagamento_web', '=' * 80)
-            registrar_log('checkout.link_pagamento_web', '')
+            registrar_log('checkout', '=' * 80)
+            registrar_log('checkout', '')
             
             # =============================================================================
             # PROCESSAR PAGAMENTO VIA GATEWAY (PINBANK OU OWN)
@@ -266,7 +266,7 @@ class LinkPagamentoService:
                 'bandeira': dados_cartao.get('bandeira', 'VISA')
             }
             
-            registrar_log('checkout.link_pagamento_web', 
+            registrar_log('checkout', 
                          f"Processando transação via {gateway_ativo} - Token: {token[:8]}..., Parcelas: {session.parcelas}, Valor Original: R$ {valor_original}, Valor Final: R$ {valor_final}")
             
             # Processar transação (interface unificada)
@@ -297,7 +297,7 @@ class LinkPagamentoService:
                 # Verificar quantas tentativas restam
                 tentativas_restantes = 3 - token_obj.tentativas_pagamento
                 
-                registrar_log('checkout.link_pagamento_web', f"Transação NEGADA para token {token[:8]}... - {resultado_transacao.get('mensagem')} - Tentativa {token_obj.tentativas_pagamento}/3")
+                registrar_log('checkout', f"Transação NEGADA para token {token[:8]}... - {resultado_transacao.get('mensagem')} - Tentativa {token_obj.tentativas_pagamento}/3")
                 
                 return {
                     'sucesso': False,
@@ -352,7 +352,7 @@ class LinkPagamentoService:
                     nsu=nsu,
                     ip_address=ip_address
                 )
-                registrar_log('checkout.link_pagamento_web', 
+                registrar_log('checkout', 
                              f"✅ Uso do cupom {cupom_obj.codigo} registrado - Transação {transacao.id}")
             
             
@@ -402,15 +402,15 @@ class LinkPagamentoService:
                             validade=session.data_validade,
                             valido=True
                         )
-                        registrar_log('checkout.link_pagamento_web', 
+                        registrar_log('checkout', 
                                     f"Cartão tokenizado com sucesso via {gateway_ativo} - Cliente: {cliente.id}, CartaoId: {cartao_id}")
                     else:
-                        registrar_log('checkout.link_pagamento_web', f"Falha ao tokenizar cartão: {resultado_token.get('mensagem')}", nivel='WARNING')
+                        registrar_log('checkout', f"Falha ao tokenizar cartão: {resultado_token.get('mensagem')}", nivel='WARNING')
                         
                 except Exception as e:
-                    registrar_log('checkout.link_pagamento_web', f"Erro ao tokenizar cartão: {str(e)}", nivel='ERROR')
+                    registrar_log('checkout', f"Erro ao tokenizar cartão: {str(e)}", nivel='ERROR')
             
-            registrar_log('checkout.link_pagamento_web', f"Transação APROVADA - ID: {transacao.id}, NSU: {nsu}")
+            registrar_log('checkout', f"Transação APROVADA - ID: {transacao.id}, NSU: {nsu}")
             
             return {
                 'sucesso': True,
@@ -423,7 +423,7 @@ class LinkPagamentoService:
             }
             
         except Exception as e:
-            registrar_log('checkout.link_pagamento_web', f"Erro ao processar checkout link pagamento: {str(e)}", nivel='ERROR')
+            registrar_log('checkout', f"Erro ao processar checkout link pagamento: {str(e)}", nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao processar pagamento: {str(e)}',

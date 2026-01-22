@@ -73,7 +73,7 @@ def listar_cartoes_cliente(request, cpf):
         })
 
     except Exception as e:
-        registrar_log('checkout.api_cartoes', f'Erro ao listar cartões: {str(e)}', nivel='ERROR')
+        registrar_log('checkout', f'Erro ao listar cartões: {str(e)}', nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': 'Erro ao listar cartões'
@@ -131,7 +131,7 @@ def invalidar_cartao(request, cartao_id):
             usuario_id=usuario_id
         )
 
-        registrar_log('checkout.api_cartoes',
+        registrar_log('checkout',
                      f'Cartão {cartao_id} invalidado - Motivo: {motivo} - Usuário: {usuario_id}',
                      nivel='INFO')
 
@@ -151,7 +151,7 @@ def invalidar_cartao(request, cartao_id):
             'mensagem': 'JSON inválido'
         }, status=400)
     except Exception as e:
-        registrar_log('checkout.api_cartoes', f'Erro ao invalidar cartão: {str(e)}', nivel='ERROR')
+        registrar_log('checkout', f'Erro ao invalidar cartão: {str(e)}', nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': 'Erro ao invalidar cartão'
@@ -199,7 +199,7 @@ def reativar_cartao(request, cartao_id):
         cartao.invalidado_em = None
         cartao.save()
 
-        registrar_log('checkout.api_cartoes',
+        registrar_log('checkout',
                      f'Cartão {cartao_id} reativado - Usuário: {usuario_id}',
                      nivel='INFO')
 
@@ -217,7 +217,7 @@ def reativar_cartao(request, cartao_id):
             'mensagem': 'JSON inválido'
         }, status=400)
     except Exception as e:
-        registrar_log('checkout.api_cartoes', f'Erro ao reativar cartão: {str(e)}', nivel='ERROR')
+        registrar_log('checkout', f'Erro ao reativar cartão: {str(e)}', nivel='ERROR')
         return JsonResponse({
             'sucesso': False,
             'mensagem': 'Erro ao reativar cartão'

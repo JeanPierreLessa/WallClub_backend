@@ -188,24 +188,24 @@ class ValidarOTPCheckoutView(APIView):
             "salvar_cartao": false
         }
         """
-        registrar_log('checkout.2fa', '>>> CHEGOU NO MÉTODO POST ValidarOTPCheckoutView', nivel='INFO')
+        registrar_log('checkout', '>>> CHEGOU NO MÉTODO POST ValidarOTPCheckoutView', nivel='INFO')
         try:
             # CORS é validado pelo middleware CorsMiddleware
-            registrar_log('checkout.2fa', '>>> Passo 1: Extraindo token', nivel='INFO')
+            registrar_log('checkout', '>>> Passo 1: Extraindo token', nivel='INFO')
             # Extrair token primeiro para rate limit
             token = request.data.get('token')
             if not token:
-                registrar_log('checkout.2fa', '>>> ERRO: Token não fornecido - 400', nivel='ERROR')
+                registrar_log('checkout', '>>> ERRO: Token não fornecido - 400', nivel='ERROR')
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Token obrigatório'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            registrar_log('checkout.2fa', f'>>> Passo 2: Token {token[:8]}... - Verificando rate limit', nivel='INFO')
+            registrar_log('checkout', f'>>> Passo 2: Token {token[:8]}... - Verificando rate limit', nivel='INFO')
             # Rate limit por token (3 tentativas de OTP)
             allowed, error_msg = check_otp_rate_limit(token)
             if not allowed:
-                registrar_log('checkout.2fa',
+                registrar_log('checkout',
                              f">>> BLOQUEADO POR RATE LIMIT - Retornando 429",
                              nivel='ERROR')
                 return Response({
@@ -213,31 +213,31 @@ class ValidarOTPCheckoutView(APIView):
                     'mensagem': error_msg
                 }, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-            registrar_log('checkout.2fa', '>>> Passo 3: Rate limit OK, validando campos', nivel='INFO')
+            registrar_log('checkout', '>>> Passo 3: Rate limit OK, validando campos', nivel='INFO')
             # Validar campos obrigatórios
             cpf = request.data.get('cpf')
             telefone = request.data.get('telefone')
             codigo_otp = request.data.get('codigo_otp')
 
             if not all([cpf, telefone, codigo_otp]):
-                registrar_log('checkout.2fa', '>>> ERRO: Campos obrigatórios faltando - 400', nivel='ERROR')
+                registrar_log('checkout', '>>> ERRO: Campos obrigatórios faltando - 400', nivel='ERROR')
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Campos obrigatórios: token, cpf, telefone, codigo_otp'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            registrar_log('checkout.2fa', '>>> Passo 4: Campos OK, validando token no banco', nivel='INFO')
+            registrar_log('checkout', '>>> Passo 4: Campos OK, validando token no banco', nivel='INFO')
             # Validar token
             try:
                 token_obj = CheckoutToken.objects.get(token=token)
                 if not token_obj.is_valid():
-                    registrar_log('checkout.2fa', '>>> ERRO: Token inválido - 400', nivel='ERROR')
+                    registrar_log('checkout', '>>> ERRO: Token inválido - 400', nivel='ERROR')
                     return Response({
                         'sucesso': False,
                         'mensagem': 'Token inválido ou expirado'
                     }, status=status.HTTP_400_BAD_REQUEST)
             except CheckoutToken.DoesNotExist:
-                registrar_log('checkout.2fa', '>>> ERRO: Token não existe - 404', nivel='ERROR')
+                registrar_log('checkout', '>>> ERRO: Token não existe - 404', nivel='ERROR')
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Token não encontrado'
@@ -256,7 +256,7 @@ class ValidarOTPCheckoutView(APIView):
                     'mensagem': 'Valor inválido'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            registrar_log('checkout.2fa', '>>> Passo 5: Token válido, chamando validar_otp_e_processar', nivel='INFO')
+            registrar_log('checkout', '>>> Passo 5: Token válido, chamando validar_otp_e_processar', nivel='INFO')
             # Validar OTP (sem processar ainda)
             resultado_otp = CheckoutSecurityService.validar_otp_e_processar(
                 cpf=cpf,
@@ -272,7 +272,7 @@ class ValidarOTPCheckoutView(APIView):
             )
 
             if not resultado_otp['valido']:
-                registrar_log('checkout.2fa',
+                registrar_log('checkout',
                              f">>> BLOQUEADO: OTP INVÁLIDO - Retornando 403: {resultado_otp['mensagem']}",
                              nivel='ERROR')
                 return Response({
@@ -351,7 +351,7 @@ class ValidarOTPCheckoutView(APIView):
                         parametros_botao=None
                     )
 
-                    registrar_log('checkout.2fa',
+                    registrar_log('checkout',
                                  f"📲 WhatsApp de confirmação enviado para {telefone[-4:]}",
                                  nivel='INFO')
 
@@ -369,16 +369,16 @@ class ValidarOTPCheckoutView(APIView):
                                 estabelecimento=nome_loja
                             )
 
-                            registrar_log('checkout.2fa',
+                            registrar_log('checkout',
                                          f"🔔 Push de confirmação enviado para cliente {cliente.id}",
                                          nivel='INFO')
                     except Exception as e:
-                        registrar_log('checkout.2fa',
+                        registrar_log('checkout',
                                      f"Erro ao enviar Push: {str(e)}",
                                      nivel='WARNING')
 
                 except Exception as e:
-                    registrar_log('checkout.2fa',
+                    registrar_log('checkout',
                                  f"Erro ao enviar notificações: {str(e)}",
                                  nivel='ERROR')
             else:
