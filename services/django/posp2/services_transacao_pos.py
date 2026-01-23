@@ -262,22 +262,22 @@ class TRDataPosService:
             # 7. Calcular valores via CalculadoraBaseGestao e gerar slip
             tipo_compra = self.TIPO_COMPRA_MAP.get(dados['paymentMethod'], dados['paymentMethod'])
 
-            # Recalcular valor bruto original: amount do SDK já vem com descontos aplicados
-            # Precisamos reverter para que a calculadora aplique os parâmetros corretamente
+            # Amount do SDK já vem com descontos aplicados (cupom + cashback)
+            # Recalcular valor bruto: amount + cupom + cashback
             valor_para_calculo = dados['valor_original']
 
             if dados.get('amount'):
                 # Amount vem em centavos (inteiro), converter para reais
                 amount_reais = Decimal(str(dados['amount'])) / 100
 
-                # Pegar valores de desconto já em reais (decimal)
-                cashback_usado = Decimal(str(dados.get('cashback_wall_valor', 0)))
+                # Pegar valores de desconto já em reais
                 cupom_desconto = Decimal(str(dados.get('cupom_valor_desconto', 0)))
+                cashback_usado = Decimal(str(dados.get('valor_cashback', 0)))
 
-                # Recalcular valor bruto original (antes dos descontos)
-                valor_para_calculo = amount_reais + cashback_usado + cupom_desconto
+                # Recalcular valor bruto original
+                valor_para_calculo = amount_reais + cupom_desconto + cashback_usado
 
-                registrar_log('posp2', f'💰 Recalculando valor bruto: amount={amount_reais}, cashback={cashback_usado}, cupom={cupom_desconto}, valor_bruto={valor_para_calculo}')
+                registrar_log('posp2', f'💰 Recalculando valor bruto: amount={amount_reais}, cupom={cupom_desconto}, cashback={cashback_usado}, valor_bruto={valor_para_calculo}')
 
             dados_linha = {
                 'id': transaction_id,
@@ -699,7 +699,7 @@ class TRDataPosService:
             registrar_log('posp2', f'💰 [CASHBACK] Cashback concedido: R$ {cashback_concedido:.2f}')
 
             # AJUSTAR vdesconto e vparcela considerando saldo usado
-            # vdesconto = valor_original - desconto_club - saldo_usado
+            # vdesconto = parte0 - saldo_usado
             vdesconto_final = parte0 - saldo_cashback_usado
 
             # vparcela = vdesconto / parcelas
