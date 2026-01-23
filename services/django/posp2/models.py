@@ -19,13 +19,13 @@ class POSP2Transaction(models.Model):
     idempotency_key = models.CharField(max_length=255, unique=True, verbose_name="Chave de Idempotência")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
-    
+
     class Meta:
         db_table = 'posp2_transactions'
         verbose_name = "Transação POSP2"
         verbose_name_plural = "Transações POSP2"
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"Transação {self.transaction_id} - {self.terminal}"
 
@@ -35,13 +35,13 @@ class VersaoTerminal(models.Model):
     """
     versao_terminal = models.CharField(max_length=50, unique=True, verbose_name="Versão do Terminal")
     permitida = models.BooleanField(default=True, verbose_name="Permitida")
-    
+
     class Meta:
         db_table = 'versoes_terminal'
         verbose_name = "Versão do Terminal"
         verbose_name_plural = "Versões dos Terminais"
         ordering = ['versao_terminal']
-    
+
     def __str__(self):
         status = "Permitida" if self.permitida else "Bloqueada"
         return f"Versão {self.versao_terminal} - {status}"
@@ -52,7 +52,7 @@ class Terminal(models.Model):
     Modelo para tabela terminais - informações dos terminais POS
     Usado no script pinbank_cria_base_gestao.php
     """
-    
+
     id = models.PositiveIntegerField(primary_key=True)
     loja_id = models.IntegerField(null=True, blank=True, verbose_name="ID da Loja")
     terminal = models.CharField(max_length=256, null=True, blank=True, verbose_name="Número de Série Terminal")
@@ -63,38 +63,38 @@ class Terminal(models.Model):
     fim = models.DateTimeField(null=True, blank=True, verbose_name="Data/Hora Fim")
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    
+
     class Meta:
         db_table = 'terminais'
         managed = False  # Django não gerencia esta tabela (legado)
         verbose_name = 'Terminal'
         verbose_name_plural = 'Terminais'
-    
+
     def __str__(self):
         return f"Terminal {self.idterminal} - Loja {self.loja_id}"
-    
+
     @property
     def ativo(self):
         """Verifica se o terminal está ativo no momento"""
         from datetime import datetime
         agora = datetime.now()
-        
+
         if self.inicio is None:
             return False
-        
+
         if self.inicio > agora:
             return False
-        
+
         if self.fim is None:
             return True
-        
+
         return self.fim > agora
-    
+
     @property
     def inicio_date(self):
         """Retorna apenas a data de início (sem hora)"""
         return self.inicio.date() if self.inicio else None
-    
+
     @property
     def fim_date(self):
         """Retorna apenas a data de fim (sem hora)"""
@@ -107,13 +107,13 @@ class Terminal(models.Model):
 class TransactionData(models.Model):
     """
     ⚠️ DEPRECATED - Usar TransactionDataPos
-    
+
     Modelo para tabela transactiondata - dados de transações POS Pinbank (LEGADO)
     Substituído por TransactionDataPos (tabela unificada Pinbank + Own)
-    
+
     Status: Trigger ativo sincronizando com transactiondata_pos
     """
-    
+
     id = models.PositiveIntegerField(primary_key=True)
     datahora = models.CharField(max_length=256, null=True, blank=True)
     valor_original = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -148,50 +148,50 @@ class TransactionData(models.Model):
     capturedTransaction = models.BooleanField(null=True, blank=True)
     cardName = models.CharField(max_length=256, null=True, blank=True)
     cardNumber = models.CharField(max_length=256, null=True, blank=True)
-    
+
     # Campos para suporte a cashback (Wall='C')
     valor_desconto = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         verbose_name="Valor Desconto",
         help_text="Valor do desconto WallClub aplicado"
     )
-    
+
     valor_cashback = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         verbose_name="Valor Cashback",
         help_text="Valor do cashback creditado (wall='C')"
     )
-    
+
     autorizacao_id = models.CharField(
         max_length=40, null=True, blank=True,
         verbose_name="ID Autorização",
         help_text="ID da autorização de uso de saldo"
     )
-    
+
     cashback_concedido = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, default=0,
         verbose_name="Cashback Concedido",
         help_text="Valor do cashback concedido na transação"
     )
-    
+
     saldo_usado = models.DecimalField(
         max_digits=10, decimal_places=2, default=0,
         verbose_name="Saldo Usado",
         help_text="Saldo da conta digital usado no pagamento"
     )
-    
+
     modalidade_wall = models.CharField(
         max_length=1, null=True, blank=True,
         choices=[('S', 'Wall'), ('N', 'Sem Wall'), ('C', 'Cashback')],
         verbose_name="Modalidade Wall"
     )
-    
+
     class Meta:
         db_table = 'transactiondata'
         managed = False  # Django não gerencia esta tabela (legado)
         verbose_name = 'Transaction Data (DEPRECATED)'
         verbose_name_plural = 'Transaction Data (DEPRECATED)'
-    
+
     def __str__(self):
         return f"Transaction {self.id} - NSU: {self.nsuPinbank}"
 
@@ -202,17 +202,17 @@ class TransactionDataPos(models.Model):
     Suporta Pinbank e Own (Ágilli) na mesma estrutura
     Substitui gradualmente transactiondata (legado) e transactiondata_own
     """
-    
+
     GATEWAY_CHOICES = [
         ('PINBANK', 'Pinbank'),
         ('OWN', 'Own/Ágilli'),
     ]
-    
+
     id = models.BigAutoField(primary_key=True)
-    
+
     # Origem
     gateway = models.CharField(max_length=20, choices=GATEWAY_CHOICES, db_index=True)
-    
+
     # Dados básicos (COMUM)
     datahora = models.DateTimeField()
     valor_original = models.DecimalField(max_digits=10, decimal_places=2)
@@ -220,7 +220,7 @@ class TransactionDataPos(models.Model):
     cpf = models.CharField(max_length=14, null=True, blank=True, db_index=True)
     terminal = models.CharField(max_length=20, db_index=True)
     operador_pos = models.CharField(max_length=100, null=True, blank=True)
-    
+
     # Identificadores (FLEXÍVEL)
     nsu_gateway = models.CharField(max_length=50, null=True, blank=True, db_index=True,
                                     help_text='nsuPinbank (Pinbank) ou txTransactionId (Own)')
@@ -229,48 +229,48 @@ class TransactionDataPos(models.Model):
     nsuHost = models.CharField(max_length=50, null=True, blank=True, help_text='Usado por Own')
     authorizationCode = models.CharField(max_length=50, null=True, blank=True)
     transactionReturn = models.CharField(max_length=10, null=True, blank=True)
-    
+
     # Valores (COMUM)
     amount = models.BigIntegerField(null=True, blank=True)
     originalAmount = models.BigIntegerField(null=True, blank=True)
     totalInstallments = models.IntegerField(default=1)
-    
+
     # Método de pagamento (COMUM)
     paymentMethod = models.CharField(max_length=100, null=True, blank=True)
     operationId = models.IntegerField(null=True, blank=True, help_text='Usado por Own')
     brand = models.CharField(max_length=50, null=True, blank=True)
     cardNumber = models.CharField(max_length=50, null=True, blank=True)
     cardName = models.CharField(max_length=100, null=True, blank=True)
-    
+
     # Timestamps (COMUM)
     hostTimestamp = models.CharField(max_length=20, null=True, blank=True)
     terminalTimestamp = models.BigIntegerField(null=True, blank=True)
-    
+
     # Específico Own (NULL se Pinbank)
     sdk = models.CharField(max_length=20, null=True, blank=True)
     customerTicket = models.TextField(null=True, blank=True)
     estabTicket = models.TextField(null=True, blank=True)
     e2ePixId = models.CharField(max_length=100, null=True, blank=True)
-    
+
     # Wall Club (COMUM)
     modalidade_wall = models.CharField(max_length=1, null=True, blank=True)
     autorizacao_id = models.CharField(max_length=36, null=True, blank=True)
     valor_desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     valor_cashback = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     cashback_concedido = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
+
     # CUPOM (COMUM)
     cupom_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     cupom_valor_desconto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
+
     # CASHBACK CENTRALIZADO (COMUM)
     cashback_wall_parametro_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     cashback_loja_regra_id = models.BigIntegerField(null=True, blank=True, db_index=True)
-    
+
     # Auditoria
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'transactiondata_pos'
         managed = False
@@ -283,7 +283,7 @@ class TransactionDataPos(models.Model):
             models.Index(fields=['cpf', 'datahora']),
             models.Index(fields=['nsu_gateway']),
         ]
-    
+
     def __str__(self):
         return f"{self.gateway} {self.nsu_gateway} - {self.terminal} - R$ {self.valor_original}"
 
@@ -293,57 +293,57 @@ class TransactionDataOwn(models.Model):
     Modelo para tabela transactiondata_own - dados de transações POS via SDK Ágilli (Own)
     Estrutura específica para transações Own Financial
     """
-    
+
     id = models.PositiveIntegerField(primary_key=True)
     datahora = models.DateTimeField(verbose_name="Data/Hora")
     valor_original = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Original")
-    
+
     # Identificação do cliente/terminal
     celular = models.CharField(max_length=256, null=True, blank=True)
     cpf = models.CharField(max_length=256, null=True, blank=True)
     terminal = models.CharField(max_length=256, verbose_name="ID do Terminal")
     operador_pos = models.CharField(max_length=10, null=True, blank=True)
-    
+
     # Identificadores da transação Own
     txTransactionId = models.CharField(max_length=50, unique=True, verbose_name="ID Transação Own")
     nsuTerminal = models.CharField(max_length=50, null=True, blank=True, verbose_name="NSU Terminal")
     nsuHost = models.CharField(max_length=50, null=True, blank=True, verbose_name="NSU Host")
     authorizationCode = models.CharField(max_length=256, null=True, blank=True)
     transactionReturn = models.CharField(max_length=10, null=True, blank=True, verbose_name="Código Retorno")
-    
+
     # Valores e parcelas
     amount = models.IntegerField(verbose_name="Valor em Centavos")
     originalAmount = models.IntegerField(verbose_name="Valor Original em Centavos")
     totalInstallments = models.IntegerField(default=1, verbose_name="Número de Parcelas")
-    
+
     # Método de pagamento e operação
     operationId = models.IntegerField(verbose_name="ID Operação")
     paymentMethod = models.CharField(max_length=256, verbose_name="Método de Pagamento")
-    
+
     # Dados do cartão
     brand = models.CharField(max_length=256, verbose_name="Bandeira")
     cardNumber = models.CharField(max_length=256, null=True, blank=True)
     cardName = models.CharField(max_length=256, null=True, blank=True)
-    
+
     # Comprovantes Ágilli
     customerTicket = models.TextField(null=True, blank=True, verbose_name="Comprovante Cliente")
     estabTicket = models.TextField(null=True, blank=True, verbose_name="Comprovante Estabelecimento")
     e2ePixId = models.CharField(max_length=100, null=True, blank=True, verbose_name="ID E2E PIX")
-    
+
     # Timestamps
     terminalTimestamp = models.BigIntegerField(null=True, blank=True)
     hostTimestamp = models.BigIntegerField(null=True, blank=True)
-    
+
     # Status
     status = models.CharField(max_length=256, verbose_name="Status")
     capturedTransaction = models.BooleanField(default=True)
-    
+
     # Dados do estabelecimento
     cnpj = models.CharField(max_length=14, verbose_name="CNPJ")
-    
+
     # Origem
     sdk = models.CharField(max_length=20, default='agilli', verbose_name="SDK")
-    
+
     # Campos Wall Club
     desconto_wall = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, default=0,
@@ -379,7 +379,7 @@ class TransactionDataOwn(models.Model):
         max_length=1, null=True, blank=True,
         choices=[('S', 'Wall'), ('N', 'Sem Wall'), ('C', 'Cashback')]
     )
-    
+
     # Cupom
     cupom_id = models.BigIntegerField(
         null=True, blank=True,
@@ -389,7 +389,7 @@ class TransactionDataOwn(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True,
         verbose_name="Valor Desconto Cupom"
     )
-    
+
     # Cashback Centralizado (segregado)
     cashback_wall_parametro_id = models.BigIntegerField(
         null=True, blank=True, db_index=True,
@@ -401,11 +401,11 @@ class TransactionDataOwn(models.Model):
         verbose_name="ID RegraCashbackLoja",
         help_text="ID da RegraCashbackLoja usada"
     )
-    
+
     # Auditoria
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'transactiondata_own'
         managed = False
@@ -421,9 +421,34 @@ class TransactionDataOwn(models.Model):
             models.Index(fields=['status']),
             models.Index(fields=['operationId']),
         ]
-    
+
     def __str__(self):
         return f"Transaction Own {self.id} - TxID: {self.txTransactionId}"
+
+
+class TransactionDataPosBacksync(models.Model):
+    """
+    Model para armazenar transações de backsync do aplicativo POS
+    Estrutura idêntica a posp2_transactions mas para transactiondata_pos
+    """
+    transaction_id = models.CharField(max_length=50, verbose_name="ID da Transação")
+    transaction_data = models.TextField(verbose_name="Dados da Transação (JSON)")
+    cpf = models.CharField(max_length=20, blank=True, null=True, db_index=True, verbose_name="CPF")
+    celular = models.CharField(max_length=20, blank=True, null=True, verbose_name="Celular")
+    terminal = models.CharField(max_length=50, db_index=True, verbose_name="Terminal")
+    valor_original = models.CharField(max_length=20, verbose_name="Valor Original")
+    idempotency_key = models.CharField(max_length=255, unique=True, verbose_name="Chave de Idempotência")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+
+    class Meta:
+        db_table = 'transactiondata_pos_backsync'
+        verbose_name = "Transação POS Backsync"
+        verbose_name_plural = "Transações POS Backsync"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Transação {self.transaction_id} - {self.terminal}"
 
 
 class TerminalOperador(models.Model):

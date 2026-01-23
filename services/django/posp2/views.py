@@ -15,6 +15,7 @@ from .services import POSP2Service
 from .services_conta_digital import SaldoService, CashbackService
 from .services_transacao import TRDataService
 from .services_sync import TransactionSyncService
+from .services_backsync import TransactionDataPosBacksyncService
 from wallclub_core.oauth.decorators import require_oauth_posp2
 from wallclub_core.decorators.api_decorators import handle_api_errors, validate_required_params
 from wallclub_core.seguranca.rate_limiter_pos import require_pos_rate_limit
@@ -170,6 +171,29 @@ class TransactionSyncView(View):
             })
 
         service = TransactionSyncService()
+        resultado = service.sincronizar_transacoes(transacoes)
+
+        return JsonResponse(resultado)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(require_oauth_posp2, name='dispatch')
+@method_decorator(handle_api_errors, name='dispatch')
+class TransactionDataPosBacksyncView(View):
+    """View para backsync de transações do app Android para transactiondata_pos"""
+
+    def post(self, request):
+        """Processa backsync de transações"""
+        data = json.loads(request.body)
+        transacoes = data.get('transacoes', [])
+
+        if not transacoes:
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': 'Array de transações obrigatório'
+            })
+
+        service = TransactionDataPosBacksyncService()
         resultado = service.sincronizar_transacoes(transacoes)
 
         return JsonResponse(resultado)
