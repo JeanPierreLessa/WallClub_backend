@@ -868,15 +868,23 @@ def loja_create(request):
 
             # Criar/atualizar registro loja_own com campos Own
             from adquirente_own.models_cadastro import LojaOwn
+
+            # Função para converter formato brasileiro para float
+            def converter_valor_br(valor_str):
+                if not valor_str:
+                    return None
+                # Remove pontos (separador de milhar) e substitui vírgula por ponto
+                return float(valor_str.replace('.', '').replace(',', '.'))
+
             loja_own, created = LojaOwn.objects.get_or_create(loja_id=loja_id)
             loja_own.cnae = cnae or None
             loja_own.ramo_atividade = ramo_atividade or None
             loja_own.mcc = mcc or None
-            loja_own.faturamento_previsto = float(faturamento_previsto) if faturamento_previsto else None
-            loja_own.faturamento_contratado = float(faturamento_contratado) if faturamento_contratado else None
+            loja_own.faturamento_previsto = converter_valor_br(faturamento_previsto)
+            loja_own.faturamento_contratado = converter_valor_br(faturamento_contratado)
             loja_own.quantidade_pos = int(quantidade_pos) if quantidade_pos else 0
             loja_own.antecipacao_automatica = antecipacao_automatica or 'N'
-            loja_own.taxa_antecipacao = float(taxa_antecipacao) if taxa_antecipacao else 0.00
+            loja_own.taxa_antecipacao = converter_valor_br(taxa_antecipacao) or 0.00
             loja_own.tipo_antecipacao = 'ROTATIVO'
             loja_own.responsavel_assinatura = responsavel_assinatura or None
             loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
@@ -1269,15 +1277,23 @@ def loja_edit(request, loja_id):
 
                     # Atualizar registro loja_own com campos Own
                     from adquirente_own.models_cadastro import LojaOwn
+
+                    # Função para converter formato brasileiro para float
+                    def converter_valor_br(valor_str):
+                        if not valor_str:
+                            return None
+                        # Remove pontos (separador de milhar) e substitui vírgula por ponto
+                        return float(valor_str.replace('.', '').replace(',', '.'))
+
                     loja_own, created = LojaOwn.objects.get_or_create(loja_id=loja_id)
                     loja_own.cnae = cnae or None
                     loja_own.ramo_atividade = ramo_atividade or None
                     loja_own.mcc = mcc or None
-                    loja_own.faturamento_previsto = float(faturamento_previsto) if faturamento_previsto else None
-                    loja_own.faturamento_contratado = float(faturamento_contratado) if faturamento_contratado else None
+                    loja_own.faturamento_previsto = converter_valor_br(faturamento_previsto)
+                    loja_own.faturamento_contratado = converter_valor_br(faturamento_contratado)
                     loja_own.quantidade_pos = int(quantidade_pos) if quantidade_pos else 0
                     loja_own.antecipacao_automatica = antecipacao_automatica or 'N'
-                    loja_own.taxa_antecipacao = float(taxa_antecipacao) if taxa_antecipacao else 0.00
+                    loja_own.taxa_antecipacao = converter_valor_br(taxa_antecipacao) or 0.00
                     loja_own.tipo_antecipacao = 'ROTATIVO'
                     loja_own.responsavel_assinatura = responsavel_assinatura or None
                     loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
