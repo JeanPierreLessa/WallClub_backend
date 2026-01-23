@@ -53,9 +53,9 @@ class CadastroOwnService:
             "ramoAtividade": loja_data['ramo_atividade'],
             "mcc": loja_data['mcc'],
 
-            # Dados financeiros
-            "faturamentoPrevisto": float(loja_data['faturamento_previsto']),
-            "faturamentoContratado": float(loja_data['faturamento_contratado']),
+            # Dados financeiros (converter formato brasileiro para float)
+            "faturamentoPrevisto": self._converter_valor_br(loja_data['faturamento_previsto']),
+            "faturamentoContratado": self._converter_valor_br(loja_data['faturamento_contratado']),
 
             # Contato
             "email": loja_data['email'],
@@ -112,6 +112,21 @@ class CadastroOwnService:
         }
 
         return payload
+
+    def _converter_valor_br(self, valor_str: str) -> float:
+        """
+        Converte valor no formato brasileiro (ex: 40.000,00) para float.
+
+        Args:
+            valor_str: String com valor no formato brasileiro
+
+        Returns:
+            Float com o valor convertido
+        """
+        if not valor_str:
+            return 0.0
+        # Remove pontos (separador de milhar) e substitui vírgula por ponto
+        return float(str(valor_str).replace('.', '').replace(',', '.'))
 
     def _formatar_identificador_cliente(self, loja_data: Dict[str, Any]) -> str:
         """
