@@ -316,6 +316,7 @@ class TRDataPosService:
                 info_canal=canal_info
             )
             registrar_log('posp2', f'✅ Valores calculados: {len(valores_calculados)} campos')
+            registrar_log('posp2', f'🔍 [DEBUG] valores[11]={valores_calculados.get(11)}, valores[19]={valores_calculados.get(19)}, valores[26]={valores_calculados.get(26)}')
 
             # 8. Inserir em base_transacoes_unificadas
             self._inserir_base_transacoes_unificadas(
