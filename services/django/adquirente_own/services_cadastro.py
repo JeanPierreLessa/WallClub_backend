@@ -107,8 +107,8 @@ class CadastroOwnService:
             "documentosSocios": loja_data.get('documentos_socios', []),
             "anexos": loja_data.get('anexos', []),
 
-            # Outros meios de captura - sempre vazio
-            "outrosMeiosCaptura": []
+            # Outros meios de captura
+            "outrosMeiosCaptura": [{"meioCaptura": "ECOMMERCE"}] if loja_data.get('aceita_ecommerce') else []
         }
 
         return payload
