@@ -395,46 +395,34 @@ class ConsultasOwnService:
             loja_id: ID da loja
 
         Returns:
-            {
-                'sucesso': bool,
-                'mensagem': str,
-                'dados': dict  # Dados atualizados + tarifas para exibir
-            }
+            Dict com sucesso, mensagem e dados atualizados
         """
         try:
             from adquirente_own.models_cadastro import LojaOwn
             from datetime import datetime
-            from django.apps import apps
-            Loja = apps.get_model('loja', 'Loja')
+            from django.db import connection
 
             # Buscar loja_own
             loja_own = LojaOwn.objects.filter(loja_id=loja_id).first()
             if not loja_own:
-                return {
-                    'sucesso': False,
-                    'mensagem': f'LojaOwn não encontrada para loja_id {loja_id}'
-                }
+                return {'sucesso': False, 'mensagem': f'LojaOwn não encontrada para loja_id {loja_id}'}
 
-            # Buscar loja para pegar CNPJ
-            loja = Loja.objects.filter(id=loja_id).first()
-            if not loja:
-                return {
-                    'sucesso': False,
-                    'mensagem': f'Loja não encontrada (ID: {loja_id})'
-                }
+            # Buscar CNPJ da loja via SQL
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT cnpj FROM loja WHERE id = %s", [loja_id])
+                row = cursor.fetchone()
 
-            cnpj = loja.cnpj.replace('.', '').replace('/', '').replace('-', '')
+            if not row or not row[0]:
+                return {'sucesso': False, 'mensagem': f'Loja não encontrada (ID: {loja_id})'}
+
+            cnpj = row[0].replace('.', '').replace('/', '').replace('-', '')
 
             # Consultar dados cadastrais na Own
             credenciais = self.own_service.obter_credenciais_white_label(self.environment)
             if not credenciais:
-                return {
-                    'sucesso': False,
-                    'mensagem': 'Credenciais Own não encontradas'
-                }
+                return {'sucesso': False, 'mensagem': 'Credenciais Own não encontradas'}
 
             params = {'cpfCnpj': cnpj}
-
             registrar_log('adquirente_own', f'🔄 Sincronizando dados cadastrais: CNPJ={cnpj}')
 
             resultado = self.own_service.fazer_requisicao_autenticada(
@@ -450,17 +438,11 @@ class ConsultasOwnService:
                 return resultado
 
             dados = resultado.get('dados', [])
-
             if not dados or len(dados) == 0:
-                return {
-                    'sucesso': False,
-                    'mensagem': 'Nenhum dado cadastral retornado pela Own'
-                }
+                return {'sucesso': False, 'mensagem': 'Nenhum dado cadastral retornado pela Own'}
 
             # Pegar primeiro registro (dados básicos)
             dados_base = dados[0]
-
-            # Atualizar campos relevantes na loja_own
             campos_atualizados = []
 
             # Contrato
@@ -474,7 +456,7 @@ class ConsultasOwnService:
                 loja_own.mcc = mcc
                 campos_atualizados.append('mcc')
 
-            # Data de entrada (credenciamento)
+            # Data de entrada
             data_entrada_str = dados_base.get('dataEntrada')
             if data_entrada_str:
                 try:
@@ -485,7 +467,7 @@ class ConsultasOwnService:
                 except:
                     pass
 
-            # Status (se tem contrato = APROVADO)
+            # Status
             if loja_own.contrato and loja_own.status_credenciamento != 'APROVADO':
                 loja_own.status_credenciamento = 'APROVADO'
                 campos_atualizados.append('status_credenciamento')
@@ -511,13 +493,10 @@ class ConsultasOwnService:
                     'razao_social': dados_base.get('razaoSocial'),
                     'nome_fantasia': dados_base.get('nomeFantasia'),
                     'campos_atualizados': campos_atualizados,
-                    'tarifas': dados  # Retorna todas as tarifas para exibir na tela
+                    'tarifas': dados
                 }
             }
 
         except Exception as e:
             registrar_log('adquirente_own', f'❌ Erro ao sincronizar dados: {str(e)}', nivel='ERROR')
-            return {
-                'sucesso': False,
-                'mensagem': f'Erro ao sincronizar dados: {str(e)}'
-            }
+            return {'sucesso': False, 'mensagem': f'Erro ao sincronizar dados: {str(e)}'}
