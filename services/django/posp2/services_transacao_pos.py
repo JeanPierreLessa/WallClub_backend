@@ -306,6 +306,15 @@ class TRDataPosService:
             registrar_log('posp2', f'✅ Valores calculados: {len(valores_calculados)} campos')
             registrar_log('posp2', f'🔍 [DEBUG] valores[11]={valores_calculados.get(11)}, valores[19]={valores_calculados.get(19)}, valores[26]={valores_calculados.get(26)}')
 
+            # Ajustar var26 para refletir valor efetivamente pago (abater cupom e cashback)
+            cupom_desconto = Decimal(str(dados.get('cupom_valor_desconto', 0) or 0))
+            cashback_usado = Decimal(str(dados.get('valor_cashback', 0) or 0))
+            if 26 in valores_calculados and (cupom_desconto > 0 or cashback_usado > 0):
+                var26_original = Decimal(str(valores_calculados[26]))
+                var26_ajustado = var26_original - cupom_desconto - cashback_usado
+                valores_calculados[26] = var26_ajustado
+                registrar_log('posp2', f'💰 var26 ajustado: {var26_original} - cupom({cupom_desconto}) - cashback({cashback_usado}) = {var26_ajustado}')
+
             # 8. Inserir em base_transacoes_unificadas
             self._inserir_base_transacoes_unificadas(
                 dados, valores_calculados, datetime.now(), dados['nsu_gateway']
@@ -688,15 +697,14 @@ class TRDataPosService:
             cupom_desconto = safe_float_convert(dados.get('cupom_valor_desconto', 0))
             registrar_log('posp2', f'💰 [CASHBACK] Cashback concedido: R$ {cashback_concedido:.2f}')
 
-            # AJUSTAR vdesconto e vparcela considerando saldo usado e cupom
-            # vdesconto = parte0 - saldo_usado - cupom
-            vdesconto_final = parte0 - saldo_cashback_usado - cupom_desconto
+            # var26 já vem ajustado (cupom e cashback já abatidos)
+            # vdesconto_final = parte0 (que é var26 ajustado)
+            vdesconto_final = parte0
 
             # vparcela = vdesconto / parcelas
             vparcela_ajustado = vdesconto_final / parcelas if parcelas > 0 else vdesconto_final
 
-            registrar_log('posp2', f'💰 [AJUSTE SALDO] parte0={parte0:.2f}, saldo_usado={saldo_cashback_usado:.2f}, cupom={cupom_desconto:.2f}, vdesconto_final={vdesconto_final:.2f}')
-            registrar_log('posp2', f'💰 [AJUSTE SALDO] vparcela original={vparcela:.2f}, vparcela_ajustado={vparcela_ajustado:.2f}, parcelas={parcelas}')
+            registrar_log('posp2', f'💰 [SLIP] vdesconto_final={vdesconto_final:.2f}, vparcela_ajustado={vparcela_ajustado:.2f}, parcelas={parcelas}')
 
             # Data e hora
             agora = datetime.now()

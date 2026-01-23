@@ -41,11 +41,11 @@ class CargaBaseUnificadaPOSService:
         worker_clause = f"AND MOD(CAST(pep.NsuOperacao AS UNSIGNED), 2) = {worker_id}" if worker_id is not None else ""
 
         registrar_log('pinbank.cargas_pinbank', f"Executando query com limite={limite}, nsu={nsu}, worker_id={worker_id}")
-        
+
         # Debug: contar registros antes da query
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT COUNT(*) 
+                SELECT COUNT(*)
                 FROM wallclub.pinbankExtratoPOS pep
                 INNER JOIN wallclub.transactiondata_pos t ON pep.NsuOperacao = t.nsu_gateway AND t.gateway = 'PINBANK'
                 WHERE pep.processado = 0
@@ -137,8 +137,8 @@ class CargaBaseUnificadaPOSService:
                          pe.var112 f112
                 FROM     wallclub.pinbankExtratoPOS pep
                 INNER JOIN wallclub.transactiondata_pos t ON pep.NsuOperacao = t.nsu_gateway AND t.gateway = 'PINBANK'
-                INNER JOIN wallclub.terminais term ON pep.SerialNumber = term.terminal 
-                         AND pep.DataTransacao >= term.inicio 
+                INNER JOIN wallclub.terminais term ON pep.SerialNumber = term.terminal
+                         AND pep.DataTransacao >= term.inicio
                          AND (term.fim IS NULL OR pep.DataTransacao < term.fim)
                 INNER JOIN wallclub.loja l ON l.id = term.loja_id
                 LEFT JOIN wallclub.pagamentos_efetuados pe ON pe.nsu = t.nsu_gateway
@@ -147,8 +147,8 @@ class CargaBaseUnificadaPOSService:
                              SELECT MIN(pep2.id)
                              FROM wallclub.pinbankExtratoPOS pep2
                              INNER JOIN wallclub.transactiondata_pos t2 ON pep2.NsuOperacao = t2.nsu_gateway AND t2.gateway = 'PINBANK'
-                             INNER JOIN wallclub.terminais term2 ON pep2.SerialNumber = term2.terminal 
-                                  AND pep2.DataTransacao >= term2.inicio 
+                             INNER JOIN wallclub.terminais term2 ON pep2.SerialNumber = term2.terminal
+                                  AND pep2.DataTransacao >= term2.inicio
                                   AND (term2.fim IS NULL OR pep2.DataTransacao < term2.fim)
                              WHERE pep2.processado = 0
                              {worker_clause}
@@ -217,7 +217,7 @@ class CargaBaseUnificadaPOSService:
 
                                 # Inserir na base unificada (já marca como processado internamente)
                                 sucesso = self._inserir_valores_base_unificada(valores, linha)
-                                
+
                                 if sucesso:
                                     registros_processados += 1
 
