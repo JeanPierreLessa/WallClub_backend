@@ -97,7 +97,8 @@ class CadastroOwnService:
             "tarifacao": loja_data['tarifacao'],  # Lista de tarifas
 
             # Protocolo, contrato e hash
-            "protocoloCore": loja_data.get('protocolo', ''),  # Protocolo - apenas para reenvio após recusa
+            # Se tem contrato = aditivo (protocoloCore vazio), senão pode ter protocolo para reenvio
+            "protocoloCore": '' if loja_data.get('contrato') else loja_data.get('protocolo', ''),
             "numeroContrato": loja_data.get('contrato', ''),  # Número do contrato - para aditivos (alterações)
             "hashAceite": self._gerar_hash_aceite(loja_data),
 
