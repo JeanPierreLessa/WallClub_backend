@@ -361,9 +361,16 @@ class ConsultasOwnService:
 
             dados = resultado.get('dados', [])
 
+            # LOG DETALHADO DO JSON COMPLETO
+            import json
+            registrar_log('adquirente_own', f'📋 JSON COMPLETO DA CONSULTA DE PROTOCOLO:')
+            registrar_log('adquirente_own', f'{json.dumps(dados, indent=2, ensure_ascii=False)}')
+
             # Se protocolo específico foi informado, filtrar
             if protocolo and dados:
                 dados = [p for p in dados if p.get('protocoloCore') == protocolo]
+                registrar_log('adquirente_own', f'🔍 Filtrado para protocolo {protocolo}:')
+                registrar_log('adquirente_own', f'{json.dumps(dados, indent=2, ensure_ascii=False)}')
 
             registrar_log('adquirente_own', f'✅ {len(dados)} protocolo(s) encontrado(s)')
 

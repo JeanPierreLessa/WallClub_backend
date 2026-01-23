@@ -13,23 +13,23 @@ from wallclub_core.utilitarios.funcoes_gerais import calcular_cet, proxima_sexta
 
 class TransacaoService:
     """Service para operações de transações"""
-    
+
     @staticmethod
     def consultar_saldo(cliente_id, canal_id):
         """
         Consulta saldo do cliente - MIGRADO DO saldo.php
-        
+
         IMPLEMENTAÇÃO ORIGINAL: sempre retorna 0 (saldo.php apenas faz "echo 0")
-        
+
         Args:
             cliente_id (int): ID do cliente
             canal_id (int): ID do canal
-            
+
         Returns:
             dict: Dados do saldo (sempre zero conforme PHP original)
         """
         try:
-            
+
             # Implementação EXATA do saldo.php: sempre retorna 0
             # Formato JSON padrão conforme solicitado
             return {
@@ -37,60 +37,60 @@ class TransacaoService:
                 'saldo': 0.00,
                 'mensagem': 'Saldo consultado com sucesso'
             }
-                    
+
         except Exception as e:
             registrar_log('apps.transacoes', f"Erro ao consultar saldo: {str(e)}", nivel='ERROR')
             return {
                 'sucesso': False,
                 'mensagem': 'Erro interno do servidor'
             }
-    
+
     def verificar_transacao_cancelada(self, nsu):
         """
         Verifica se uma transação foi cancelada
-        
+
         Args:
             nsu: NSU da transação
-            
+
         Returns:
             bool: True se cancelada, False caso contrário
         """
         try:
             from wallclub_core.database.queries import TransacoesQueries
-            
+
             return TransacoesQueries.verificar_transacao_cancelada(nsu)
-            
+
         except Exception as e:
             registrar_log('apps.transacoes', f"Erro ao verificar cancelamento NSU {nsu}: {str(e)}", nivel='ERROR')
             return False
-    
+
     def consultar_extrato(self, id_usuario_app, dt_inicio, dt_fim):
         """
         Consulta extrato - LÓGICA EXATA DO extrato.php
-        
+
         Args:
             id_usuario_app (int): ID do usuário no app (cadastro.id)
             dt_inicio (str): Data início (YYYY-MM-DD HH:MM:SS)
             dt_fim (str): Data fim (YYYY-MM-DD HH:MM:SS)
-            
+
         Returns:
             dict: Dados do extrato formatados igual ao PHP
         """
         try:
-            registrar_log('apps.transacoes', 
+            registrar_log('apps.transacoes',
                          f"Consultando extrato - Usuario: {id_usuario_app}, Período: {dt_inicio} a {dt_fim}")
-            
+
             # Garantir formato correto das datas
             if hasattr(dt_inicio, 'strftime'):
                 dt_inicio = dt_inicio.strftime('%Y-%m-%d') + " 00:00:00"
             elif isinstance(dt_inicio, str) and len(dt_inicio) == 10:
                 dt_inicio = f"{dt_inicio} 00:00:00"
-                
+
             if hasattr(dt_fim, 'strftime'):
                 dt_fim = dt_fim.strftime('%Y-%m-%d')
             elif isinstance(dt_fim, str) and len(dt_fim) == 10:
                 dt_fim = f"{dt_fim}"
-            
+
             # Buscar dados do cliente
             from apps.cliente.models import Cliente
             try:
@@ -100,7 +100,7 @@ class TransacaoService:
             except Cliente.DoesNotExist:
                 registrar_log('apps.transacoes', f"Cliente não encontrado: {id_usuario_app}", nivel='ERROR')
                 return {'erro': 'Cliente não encontrado'}
-            
+
             with connection.cursor() as cursor:
                 # Migrado para base_transacoes_unificadas (1 linha por NSU)
                 query = """
@@ -108,7 +108,7 @@ class TransacaoService:
                         btu.data_transacao,
                         btu.var5,
                         btu.var11,
-                        CASE 
+                        CASE
                             WHEN btu.var13 >= 1 THEN ABS(btu.var13 * btu.var20)
                             ELSE btu.var26
                         END - COALESCE(btu.valor_cashback, 0),
@@ -117,7 +117,7 @@ class TransacaoService:
                         btu.var12,
                         btu.card_number,
                         btu.var9,
-                        CASE 
+                        CASE
                             WHEN btu.var8 = 'A VISTA' THEN 'CREDIT_ONE_INSTALLMENT'
                             WHEN btu.var8 = 'DEBITO' THEN 'DEBIT'
                             WHEN btu.var8 = 'PARCELADO SEM JUROS' THEN 'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST'
@@ -131,13 +131,13 @@ class TransacaoService:
                       AND btu.data_transacao < CONCAT(%s, ' 23:59:59')
                     ORDER BY btu.data_transacao DESC
                 """
-                
+
                 cursor.execute(query, [cpf_cliente, canal_id, dt_inicio, dt_fim])
-                
+
                 extrato = []
                 for row in cursor.fetchall():
                     data, estab, valoro, valord, parcelas, forma, band, card, nsu, metodo = row
-                    
+
                     # Formatação de forma de pagamento
                     if metodo == 'CREDIT_ONE_INSTALLMENT':
                         forma = "crédito à vista"
@@ -145,27 +145,27 @@ class TransacaoService:
                         forma = "crédito"
                     elif metodo == 'DEBIT':
                         forma = "débito"
-                    
+
                     if band == "PIX":
                         forma = ''
-                    
+
                     # Formatação do cartão
                     if card and len(str(card)) > 6:
                         card = f"Cartão final {str(card)[-3:]}"
                     else:
                         card = ""
-                    
+
                     forma = f" {forma}" if forma else ''
-                    
+
                     # Status de cancelamento
                     status = " (CANCELADA)" if self.verificar_transacao_cancelada(nsu) else ""
-                    
+
                     # Descrição formatada
                     if band == "PIX":
                         descricao = f"{estab}\\n\\n{data}\\n\\nPIX{card}{status}"
                     else:
                         descricao = f"{estab}\\n\\n{data}\\n\\n{band}{forma}{card}{status}"
-                    
+
                     # Formatar data no padrão YYYY-MM-DD HH:MM:SS
                     if isinstance(data, str):
                         try:
@@ -175,7 +175,7 @@ class TransacaoService:
                             data_formatada = str(data)
                     else:
                         data_formatada = data.strftime('%Y-%m-%d %H:%M:%S') if data else ""
-                    
+
                     extrato.append({
                         'data': data_formatada,
                         'estabelecimento': str(estab),
@@ -190,31 +190,31 @@ class TransacaoService:
                         'descricao': descricao,
                         'cancelada': self.verificar_transacao_cancelada(nsu)
                     })
-                
+
                 return {
                     'sucesso': True,
                     'mensagem': 'Extrato consultado com sucesso',
                     'extrato': extrato,
                     'total': len(extrato)
                 }
-                
+
         except Exception as e:
             registrar_log('apps.transacoes', f"Erro ao consultar extrato: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': 'Erro interno do servidor'}
-    
+
     def gerar_comprovante(self, nsu_pinbank, cliente_id):
         """
         Gera comprovante de transação específica - COMPLETO
         """
         try:
             from apps.cliente.models import Cliente
-            
+
             try:
                 cliente = Cliente.objects.get(id=cliente_id)
                 cpf_cliente = cliente.cpf
             except Cliente.DoesNotExist:
                 return {'sucesso': False, 'mensagem': 'Cliente não encontrado'}
-            
+
             with connection.cursor() as cursor:
                 # Migrado para base_transacoes_unificadas (1 linha por NSU)
                 query = """
@@ -230,18 +230,18 @@ class TransacaoService:
                     WHERE btu.var9 = %s
                       AND btu.var11 > 0
                 """
-                
+
                 cursor.execute(query, [cliente_id, nsu_pinbank])
                 resultado = cursor.fetchone()
-                
+
                 if not resultado:
                     return {'sucesso': False, 'mensagem': 'Transação não encontrada'}
-                
+
                 # Extrair dados
                 (cpf, nome, valores11, datahora_raw, valores13, autwall, nopwall, terminal,
                  forma, cnpj, razao_social, valores16, valores20, valores26, valores88,
                  valores94, valor_cashback, valores14) = resultado
-                
+
                 # Converter decimais (garantir que são Decimal, não string)
                 valores11 = Decimal(str(valores11)) if valores11 else Decimal('0.00')
                 valores16 = Decimal(str(valores16)) if valores16 else Decimal('0.00')
@@ -251,7 +251,7 @@ class TransacaoService:
                 valores94 = Decimal(str(valores94)) if valores94 else Decimal('0.00')
                 valor_cashback = Decimal(str(valor_cashback)) if valor_cashback else Decimal('0.00')
                 valores14 = Decimal(str(valores14)) if valores14 else Decimal('0.00')
-                
+
                 # Formatar data
                 if isinstance(datahora_raw, str):
                     try:
@@ -261,14 +261,14 @@ class TransacaoService:
                         datahora = str(datahora_raw)
                 else:
                     datahora = datahora_raw.strftime('%d/%m/%Y %H:%M:%S') if datahora_raw else ""
-                
+
                 # Cliente WallClub?
                 wall = 's' if len(cpf) > 0 else 'n'
                 pixcartao = "PIX" if forma == "PIX" else "CARTÃO"
-                
+
                 # Cálculos usando var14 para decidir encargo vs desconto
                 encargos = abs(valores88 + valores94)
-                
+
                 if valores13 >= 1:
                     vparcela = valores20
                     tarifas = abs(valores13 * vparcela - valores16) - encargos
@@ -279,16 +279,16 @@ class TransacaoService:
                     tarifas = Decimal('0.00')
                     parte0 = valores26
                     parte1 = Decimal('0.00')
-                
+
                 valor_pago_cliente = parte0 - valor_cashback
-                
+
                 # CET
                 cet = ""
                 if forma == "PARCELADO COM JUROS" and valores14 < 0:
                     cet_valor = calcular_cet(vparcela, valores11, valores13)
                     if cet_valor:
                         cet = f"CET (Custo Efetivo Total) %am: {cet_valor}"
-                
+
                 # Montar comprovante usando valores14 para decidir
                 if wall == 's':
                     if forma in ["PIX", "DEBITO"]:
@@ -348,20 +348,20 @@ class TransacaoService:
                         "valor_cashback": valor_cashback,
                         "valor_pago_cliente": valor_pago_cliente
                     }
-                
+
                 return {
                     'sucesso': True,
                     'mensagem': 'Comprovante gerado com sucesso',
                     'comprovante': array_comprovante
                 }
-                
+
         except Exception as e:
             registrar_log('apps.transacoes', f"Erro ao gerar comprovante: {str(e)}", nivel='ERROR')
             return {'sucesso': False, 'mensagem': 'Erro interno do servidor'}
-    
+
     @staticmethod
     def checa_transacao_cancelada(nsu):
         """Método estático para compatibilidade"""
         service = TransacaoService()
         return service.verificar_transacao_cancelada(nsu)
-    
+
