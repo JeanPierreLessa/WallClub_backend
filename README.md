@@ -90,6 +90,16 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Campo `origem_transacao`: LINK_PAGAMENTO, RECORRENCIA, TEF, POS
   - ✅ Campo `tipo_operacao`: Wallet, Credenciadora
   - ✅ Deprecados: `CalculadoraBaseGestao`, `calculadora_tef.py`
+- ✅ **Sistema Backsync POS (23/01/2026):**
+  - ✅ Novo endpoint: `/api/v1/posp2/transactiondata_pos_backsync/`
+  - ✅ Tabela: `transactiondata_pos_backsync` (sincronização offline)
+  - ✅ Service: `TransactionDataPosBacksyncService` (idempotência)
+  - ✅ Substitui: `/api/v1/posp2/transaction_sync_service/` (deprecated)
+  - 🔴 **Depreciações Planejadas:**
+    - `/api/v1/posp2/transaction_sync_service/` → `transactiondata_pos_backsync`
+    - `/api/v1/posp2/trdata/` → `trdata_pinbank` e `trdata_own`
+    - Tabela `posp2_transactions` → `transactiondata_pos_backsync`
+  - 📄 Documentação: `docs/em execucao/deprecar_pos.md`
 
 ## 📋 Navegação Rápida
 

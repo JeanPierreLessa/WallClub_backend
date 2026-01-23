@@ -44,7 +44,7 @@ class TRDataPosService:
 
         dados_normalizados = self._parse_payload_pinbank(dados_json)
         resultado = self._processar_comum(dados_normalizados)
-        
+
         registrar_log('posp2', f'📤 JSON Saída: {json.dumps(resultado, ensure_ascii=False)}')
         return resultado
 
@@ -57,7 +57,7 @@ class TRDataPosService:
 
         dados_normalizados = self._parse_payload_own(dados_json)
         resultado = self._processar_comum(dados_normalizados)
-        
+
         registrar_log('posp2', f'📤 JSON Saída: {json.dumps(resultado, ensure_ascii=False)}')
         return resultado
 
@@ -261,14 +261,14 @@ class TRDataPosService:
 
             # 7. Calcular valores via CalculadoraBaseGestao e gerar slip
             tipo_compra = self.TIPO_COMPRA_MAP.get(dados['paymentMethod'], dados['paymentMethod'])
-            
+
             # Se houver cupom, usar valor após desconto (amount), senão usar valor_original
             valor_para_calculo = dados['valor_original']
             if cupom_id and dados.get('amount'):
                 # Amount vem em centavos, converter para decimal
                 valor_para_calculo = Decimal(str(dados['amount'])) / 100
                 registrar_log('posp2', f'🎟️ Cupom aplicado: valor_original={dados["valor_original"]}, valor_com_cupom={valor_para_calculo}')
-            
+
             dados_linha = {
                 'id': transaction_id,
                 'DataTransacao': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
@@ -300,7 +300,7 @@ class TRDataPosService:
             canal_info = {'id': canal_id, 'canal_id': canal_id, 'canal': nome_canal}
             calculadora = CalculadoraBaseUnificada()
             valores_calculados = calculadora.calcular_valores_primarios(
-                dados_linha, 
+                dados_linha,
                 tabela='transactiondata_pos',
                 info_loja=loja_info,
                 info_canal=canal_info
@@ -317,7 +317,7 @@ class TRDataPosService:
 
             # 10. Enviar push notification para o cliente
             self._enviar_push_notification(
-                dados, valores_calculados, loja_info, canal_id, 
+                dados, valores_calculados, loja_info, canal_id,
                 datetime.now()
             )
 
@@ -560,7 +560,7 @@ class TRDataPosService:
             # Dados básicos
             cpf = dados.get('cpf', '')
             nome = ''
-            
+
             if cpf:
                 try:
                     from wallclub_core.integracoes.api_interna_service import APIInternaService
@@ -579,7 +579,7 @@ class TRDataPosService:
 
             wall = 's' if cpf and len(cpf.strip()) > 0 else 'n'
             forma = self.TIPO_COMPRA_MAP.get(dados.get('paymentMethod', ''), dados.get('paymentMethod', ''))
-            
+
             # Função auxiliar para converter valores
             def safe_float_convert(value):
                 if not value:
@@ -615,12 +615,13 @@ class TRDataPosService:
 
             # Lógica condicional do PHP
             pixcartao_tipo = "PIX" if dados.get('brand') == 'PIX' else "CARTÃO"
-            
+
             if valores_calculados.get(12) == "PIX" or pixcartao_tipo == "PIX":
                 desconto = safe_float_convert(valores_calculados.get(15, 0))
             else:
                 desconto = safe_float_convert(valores_calculados.get(18, 0))
-            
+
+            # Usar valores[26] calculado pela calculadora (já considera cupom)
             parte0 = safe_float_convert(valores_calculados.get(26, 0))
             if not parte0 or parte0 == 0:
                 amount_centavos = dados.get('amount', 0)
@@ -631,7 +632,7 @@ class TRDataPosService:
 
             # vparcela e cálculos de tarifas/encargos conforme PHP
             parcelas = int(valores_calculados.get(13, 1))
-            
+
             # Calcular encargos (PHP linha 432): $encargos = abs($valores[88] + $valores[94]["0"]);
             valores_94 = valores_calculados.get(94, {})
             if isinstance(valores_94, dict):
@@ -644,7 +645,7 @@ class TRDataPosService:
             vparcela = valores_calculados.get(20, 0)
             if vparcela is None or vparcela == 0:
                 vparcela = parte0 / parcelas if parcelas > 0 else parte0
-            
+
             # correção feita em 13/12/2025 - Problema quando é encargo e nao desconto
             # Calcular parte1 seguindo PHP (linha 445): $parte1 = abs($valores[13] * $vparcela - $valores[11]);
             if parcelas >= 1 and vparcela:
@@ -701,7 +702,7 @@ class TRDataPosService:
             agora = datetime.now()
             data_formatada = valores_calculados.get(0, agora.strftime('%Y-%m-%d'))
             hora = agora.strftime('%H:%M:%S')
-            
+
             # CET para parcelado
             cet = ""
             if parcelas > 1:
@@ -716,7 +717,7 @@ class TRDataPosService:
             # Lógica condicional do PHP
             if wall == 's':
                 if forma in ["PIX", "DEBITO"]:
-                    array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj, 
+                    array = self._criar_array_base(dados, valores_calculados, cpf, nome, cnpj,
                                                   data_formatada, hora, forma, nopwall, autwall, terminal, nsu, cet)
                     array_update = {
                         "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
@@ -760,7 +761,7 @@ class TRDataPosService:
                         label_desconto = f"Valor do desconto CLUB: R$ {formatar_valor_monetario(parte1)}"
                         label_vdesconto = f"Valor pago com desconto:\nR$ {formatar_valor_monetario(vdesconto_final)}"
                         label_encargos = f"Encargos financeiros: R$ {formatar_valor_monetario(encargos)}"
-                    
+
                     array_update = {
                         "voriginal": f"Valor original da loja: R$ {formatar_valor_monetario(valor_original_display)}",
                         "desconto": label_desconto,
@@ -817,7 +818,7 @@ class TRDataPosService:
             registrar_log('posp2', f'Traceback: {traceback.format_exc()}', nivel='ERROR')
             return {}
 
-    def _inserir_base_transacoes_unificadas(self, dados: Dict, valores_calculados: Dict, 
+    def _inserir_base_transacoes_unificadas(self, dados: Dict, valores_calculados: Dict,
                                             data_transacao, nsu: str):
         """
         Insere dados calculados na tabela base_transacoes_unificadas
@@ -827,7 +828,7 @@ class TRDataPosService:
             # Verificar se NSU já existe (evitar duplicação)
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT COUNT(*) FROM base_transacoes_unificadas 
+                    SELECT COUNT(*) FROM base_transacoes_unificadas
                     WHERE var9 = %s AND tipo_operacao = 'Wallet'
                 """, [str(nsu)])
                 existe = cursor.fetchone()[0] > 0
@@ -878,20 +879,20 @@ class TRDataPosService:
             valores = list(dados_insert.values())
             placeholders = ', '.join(['%s'] * len(valores))
             campos_str = ', '.join(campos)
-            
+
             with connection.cursor() as cursor:
                 cursor.execute(f"""
                     INSERT INTO base_transacoes_unificadas ({campos_str})
                     VALUES ({placeholders})
                 """, valores)
-            
+
             registrar_log('posp2', f'✅ Inserido em base_transacoes_unificadas - NSU: {nsu}')
 
         except Exception as e:
             registrar_log('posp2', f'❌ Erro ao inserir em base_transacoes_unificadas: {str(e)}', nivel='ERROR')
             # Não interromper o fluxo
 
-    def _enviar_push_notification(self, dados: Dict, valores_calculados: Dict, 
+    def _enviar_push_notification(self, dados: Dict, valores_calculados: Dict,
                                    loja_info: Dict, canal_id: int, data_transacao_dt: datetime):
         """Envia push notification para o cliente após processamento da transação"""
         try:

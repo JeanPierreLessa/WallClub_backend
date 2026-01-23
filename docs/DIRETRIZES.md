@@ -1,9 +1,11 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.1
-**Data:** 24/12/2025
+**Versão:** 5.2
+**Data:** 23/01/2026
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- Sistema Backsync POS - Novo endpoint `transactiondata_pos_backsync` para sincronização offline (23/01/2026)
+- Depreciações Planejadas - Endpoints `/transaction_sync_service/` e `/trdata/` marcados para substituição (23/01/2026)
 - Abstração Calculadoras Base - Parâmetros obrigatórios, sem busca interna (24/12/2025)
 - Migração Pinbank para `transactiondata_pos` - Endpoint `/trdata/` agora grava em tabela unificada (23/12/2025)
 - Migração Terminais DATETIME - Campos `inicio`/`fim` convertidos de Unix timestamp para DATETIME (20/12/2025)

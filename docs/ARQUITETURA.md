@@ -552,6 +552,43 @@ docker-compose logs -f riskengine
 
 **Arquivos:** `posp2/services_conta_digital.py`, `apps/cliente/views_saldo.py`
 
+### 3.1. Sistema de Backsync POS ⭐
+
+**Status:** Implementado (23/01/2026)
+
+**Objetivo:** Sincronização de transações offline do app Android POS
+
+**Endpoints:**
+- ✅ **Novo:** `/api/v1/posp2/transactiondata_pos_backsync/` (tabela: `transactiondata_pos_backsync`)
+- 🔴 **Deprecated:** `/api/v1/posp2/transaction_sync_service/` (tabela: `posp2_transactions`)
+
+**Diferenças:**
+- **Antigo:** Grava em `posp2_transactions` (tabela isolada, sem integração)
+- **Novo:** Grava em `transactiondata_pos_backsync` (integrado com `transactiondata_pos`)
+
+**Fluxo:**
+1. App POS armazena transações localmente quando offline
+2. Ao reconectar, envia array de transações para backsync
+3. Servidor valida idempotência (`idempotency_key`)
+4. Grava em `transactiondata_pos_backsync` para processamento posterior
+
+**Idempotência:**
+- Chave: `{terminal}_{nsu}_{timestamp}_{valor_original}`
+- Transações duplicadas retornam sucesso sem regravação
+
+**Arquivos:**
+- `posp2/services_backsync.py` - Service de backsync
+- `posp2/models.py` - Modelo `TransactionDataPosBacksync`
+- `posp2/views.py` - View `TransactionDataPosBacksyncView`
+
+**Depreciações Planejadas:**
+- 🔴 `/api/v1/posp2/transaction_sync_service/` → Substituir por `transactiondata_pos_backsync`
+- 🔴 `/api/v1/posp2/trdata/` → Substituir por `trdata_pinbank` e `trdata_own`
+- 🔴 Tabela `posp2_transactions` → Substituir por `transactiondata_pos_backsync`
+- 🟠 Tabela `transactiondata` (legado Pinbank) → Já tem trigger para `transactiondata_pos`
+
+**Documentação:** Ver `docs/em execucao/deprecar_pos.md`
+
 ### 4. Cargas Pinbank
 
 **Extrato POS:**
