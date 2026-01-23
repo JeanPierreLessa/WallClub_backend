@@ -262,12 +262,22 @@ class TRDataPosService:
             # 7. Calcular valores via CalculadoraBaseGestao e gerar slip
             tipo_compra = self.TIPO_COMPRA_MAP.get(dados['paymentMethod'], dados['paymentMethod'])
 
-            # Se houver cupom, usar valor após desconto (amount), senão usar valor_original
+            # Recalcular valor bruto original: amount do SDK já vem com descontos aplicados
+            # Precisamos reverter para que a calculadora aplique os parâmetros corretamente
             valor_para_calculo = dados['valor_original']
-            if cupom_id and dados.get('amount'):
-                # Amount vem em centavos, converter para decimal
-                valor_para_calculo = Decimal(str(dados['amount'])) / 100
-                registrar_log('posp2', f'🎟️ Cupom aplicado: valor_original={dados["valor_original"]}, valor_com_cupom={valor_para_calculo}')
+
+            if dados.get('amount'):
+                # Amount vem em centavos (inteiro), converter para reais
+                amount_reais = Decimal(str(dados['amount'])) / 100
+
+                # Pegar valores de desconto já em reais (decimal)
+                cashback_usado = Decimal(str(dados.get('cashback_wall_valor', 0)))
+                cupom_desconto = Decimal(str(dados.get('cupom_valor_desconto', 0)))
+
+                # Recalcular valor bruto original (antes dos descontos)
+                valor_para_calculo = amount_reais + cashback_usado + cupom_desconto
+
+                registrar_log('posp2', f'💰 Recalculando valor bruto: amount={amount_reais}, cashback={cashback_usado}, cupom={cupom_desconto}, valor_bruto={valor_para_calculo}')
 
             dados_linha = {
                 'id': transaction_id,
