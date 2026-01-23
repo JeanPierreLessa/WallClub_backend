@@ -403,8 +403,9 @@ class ConsultasOwnService:
         """
         try:
             from adquirente_own.models_cadastro import LojaOwn
-            from apps.loja.models import Loja
             from datetime import datetime
+            from django.apps import apps
+            Loja = apps.get_model('loja', 'Loja')
 
             # Buscar loja_own
             loja_own = LojaOwn.objects.filter(loja_id=loja_id).first()
