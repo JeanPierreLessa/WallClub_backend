@@ -1497,7 +1497,8 @@ def loja_edit(request, loja_id):
                                 'tipo_antecipacao': 'ROTATIVO',
                                 'tarifacao': tarifacao,
                                 'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1',
-                                'protocolo': loja_own.protocolo if loja_own else ''  # Protocolo salvo para alterações
+                                'protocolo': loja_own.protocolo if loja_own else '',  # Protocolo salvo para alterações
+                                'contrato': loja_own.contrato if loja_own else ''  # Número do contrato para aditivos
                             }
 
                             registrar_log('admin.hierarquia', f'🔄 Iniciando cadastro Own para loja {loja_id} - {razao_social}')

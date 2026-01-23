@@ -96,8 +96,9 @@ class CadastroOwnService:
             "idCesta": int(loja_data['id_cesta']),
             "tarifacao": loja_data['tarifacao'],  # Lista de tarifas
 
-            # Protocolo e hash
-            "protocoloCore": loja_data.get('protocolo', ''),  # Protocolo salvo (vazio na criação, preenchido na alteração)
+            # Protocolo, contrato e hash
+            "protocoloCore": loja_data.get('protocolo', ''),  # Protocolo - apenas para reenvio após recusa
+            "numeroContrato": loja_data.get('contrato', ''),  # Número do contrato - para aditivos (alterações)
             "hashAceite": self._gerar_hash_aceite(loja_data),
 
             # Terminais - sempre vazio
