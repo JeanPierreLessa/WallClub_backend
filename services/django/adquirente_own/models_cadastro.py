@@ -23,6 +23,7 @@ class LojaOwn(models.Model):
         help_text='Status: PENDENTE, APROVADO, REPROVADO, PROCESSANDO'
     )
     protocolo = models.CharField(max_length=50, null=True, blank=True, help_text='Protocolo de cadastro na Own')
+    contrato = models.CharField(max_length=50, null=True, blank=True, help_text='Número do contrato na Own')
     data_credenciamento = models.DateTimeField(null=True, blank=True, help_text='Data do credenciamento')
     mensagem_status = models.TextField(null=True, blank=True, help_text='Mensagem de retorno da Own')
 
@@ -33,6 +34,7 @@ class LojaOwn(models.Model):
     cnae = models.CharField(max_length=20, null=True, blank=True, help_text='CNAE principal')
     ramo_atividade = models.CharField(max_length=256, null=True, blank=True, help_text='Ramo de atividade')
     mcc = models.CharField(max_length=4, null=True, blank=True, help_text='MCC (Merchant Category Code)')
+    mcc_id = models.IntegerField(null=True, blank=True, help_text='ID do MCC na Own')
 
     # Dados financeiros
     faturamento_previsto = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text='Faturamento previsto')

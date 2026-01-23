@@ -446,8 +446,9 @@ class ConsultasOwnService:
             campos_atualizados = []
 
             # Contrato
-            if dados_base.get('contrato') and loja_own.contrato != dados_base.get('contrato'):
-                loja_own.contrato = dados_base.get('contrato')
+            contrato = dados_base.get('contrato')
+            if contrato and loja_own.contrato != contrato:
+                loja_own.contrato = contrato
                 campos_atualizados.append('contrato')
 
             # MCC
@@ -455,6 +456,12 @@ class ConsultasOwnService:
             if mcc and loja_own.mcc != mcc:
                 loja_own.mcc = mcc
                 campos_atualizados.append('mcc')
+
+            # MCC ID
+            mcc_id = dados_base.get('mccId')
+            if mcc_id and loja_own.mcc_id != mcc_id:
+                loja_own.mcc_id = mcc_id
+                campos_atualizados.append('mcc_id')
 
             # Data de entrada
             data_entrada_str = dados_base.get('dataEntrada')
