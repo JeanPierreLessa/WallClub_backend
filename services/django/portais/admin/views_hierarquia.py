@@ -1109,6 +1109,20 @@ def loja_edit(request, loja_id):
     # Buscar dados Own da loja
     try:
         loja_own = LojaOwn.objects.get(loja_id=loja_id)
+
+        # Sincronizar dados cadastrais da Own (se loja tem credenciamento)
+        if loja_own and loja_own.protocolo:
+            from adquirente_own.services_consultas import ConsultasOwnService
+            service = ConsultasOwnService(environment='LIVE')
+            resultado_sync = service.sincronizar_dados_cadastrais(loja_id=loja_id)
+
+            if resultado_sync.get('sucesso'):
+                registrar_log('portais_admin', f'✅ Dados Own sincronizados para loja {loja_id}')
+                # Recarregar loja_own após sincronização
+                loja_own = LojaOwn.objects.get(loja_id=loja_id)
+            else:
+                registrar_log('portais_admin', f'⚠️ Falha ao sincronizar dados Own: {resultado_sync.get("mensagem")}', nivel='WARNING')
+
     except LojaOwn.DoesNotExist:
         loja_own = None
 

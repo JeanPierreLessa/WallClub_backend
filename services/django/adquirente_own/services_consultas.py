@@ -385,3 +385,138 @@ class ConsultasOwnService:
                 'sucesso': False,
                 'mensagem': f'Erro ao consultar protocolo: {str(e)}'
             }
+
+    def sincronizar_dados_cadastrais(self, loja_id: int) -> Dict[str, Any]:
+        """
+        Consulta dados cadastrais na Own e sincroniza com loja_own
+        Usado ao abrir a tela de edição ou no webhook
+
+        Args:
+            loja_id: ID da loja
+
+        Returns:
+            {
+                'sucesso': bool,
+                'mensagem': str,
+                'dados': dict  # Dados atualizados + tarifas para exibir
+            }
+        """
+        try:
+            from adquirente_own.models_cadastro import LojaOwn
+            from apps.loja.models import Loja
+            from datetime import datetime
+
+            # Buscar loja_own
+            loja_own = LojaOwn.objects.filter(loja_id=loja_id).first()
+            if not loja_own:
+                return {
+                    'sucesso': False,
+                    'mensagem': f'LojaOwn não encontrada para loja_id {loja_id}'
+                }
+
+            # Buscar loja para pegar CNPJ
+            loja = Loja.objects.filter(id=loja_id).first()
+            if not loja:
+                return {
+                    'sucesso': False,
+                    'mensagem': f'Loja não encontrada (ID: {loja_id})'
+                }
+
+            cnpj = loja.cnpj.replace('.', '').replace('/', '').replace('-', '')
+
+            # Consultar dados cadastrais na Own
+            credenciais = self.own_service.obter_credenciais_white_label(self.environment)
+            if not credenciais:
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Credenciais Own não encontradas'
+                }
+
+            params = {'cpfCnpj': cnpj}
+
+            registrar_log('adquirente_own', f'🔄 Sincronizando dados cadastrais: CNPJ={cnpj}')
+
+            resultado = self.own_service.fazer_requisicao_autenticada(
+                method='GET',
+                endpoint='/indicadores/v2/cadastrais',
+                client_id=credenciais['client_id'],
+                client_secret=credenciais['client_secret'],
+                scope=credenciais['scope'],
+                params=params
+            )
+
+            if not resultado.get('sucesso'):
+                return resultado
+
+            dados = resultado.get('dados', [])
+
+            if not dados or len(dados) == 0:
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Nenhum dado cadastral retornado pela Own'
+                }
+
+            # Pegar primeiro registro (dados básicos)
+            dados_base = dados[0]
+
+            # Atualizar campos relevantes na loja_own
+            campos_atualizados = []
+
+            # Contrato
+            if dados_base.get('contrato') and loja_own.contrato != dados_base.get('contrato'):
+                loja_own.contrato = dados_base.get('contrato')
+                campos_atualizados.append('contrato')
+
+            # MCC
+            mcc = str(dados_base.get('mcc', ''))
+            if mcc and loja_own.mcc != mcc:
+                loja_own.mcc = mcc
+                campos_atualizados.append('mcc')
+
+            # Data de entrada (credenciamento)
+            data_entrada_str = dados_base.get('dataEntrada')
+            if data_entrada_str:
+                try:
+                    data_entrada = datetime.strptime(data_entrada_str, '%d/%m/%Y')
+                    if not loja_own.data_credenciamento or loja_own.data_credenciamento != data_entrada:
+                        loja_own.data_credenciamento = data_entrada
+                        campos_atualizados.append('data_credenciamento')
+                except:
+                    pass
+
+            # Status (se tem contrato = APROVADO)
+            if loja_own.contrato and loja_own.status_credenciamento != 'APROVADO':
+                loja_own.status_credenciamento = 'APROVADO'
+                campos_atualizados.append('status_credenciamento')
+
+            # Sincronização
+            loja_own.sincronizado = True
+            loja_own.ultima_sincronizacao = datetime.now()
+
+            if campos_atualizados:
+                loja_own.save()
+                registrar_log('adquirente_own', f'✅ Dados sincronizados: {", ".join(campos_atualizados)}')
+            else:
+                registrar_log('adquirente_own', f'✅ Dados já estão sincronizados')
+
+            return {
+                'sucesso': True,
+                'mensagem': 'Dados sincronizados com sucesso',
+                'dados': {
+                    'contrato': loja_own.contrato,
+                    'mcc': loja_own.mcc,
+                    'status_credenciamento': loja_own.status_credenciamento,
+                    'data_credenciamento': loja_own.data_credenciamento.strftime('%d/%m/%Y') if loja_own.data_credenciamento else None,
+                    'razao_social': dados_base.get('razaoSocial'),
+                    'nome_fantasia': dados_base.get('nomeFantasia'),
+                    'campos_atualizados': campos_atualizados,
+                    'tarifas': dados  # Retorna todas as tarifas para exibir na tela
+                }
+            }
+
+        except Exception as e:
+            registrar_log('adquirente_own', f'❌ Erro ao sincronizar dados: {str(e)}', nivel='ERROR')
+            return {
+                'sucesso': False,
+                'mensagem': f'Erro ao sincronizar dados: {str(e)}'
+            }
