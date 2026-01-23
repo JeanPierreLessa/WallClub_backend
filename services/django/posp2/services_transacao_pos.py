@@ -262,22 +262,10 @@ class TRDataPosService:
             # 7. Calcular valores via CalculadoraBaseGestao e gerar slip
             tipo_compra = self.TIPO_COMPRA_MAP.get(dados['paymentMethod'], dados['paymentMethod'])
 
-            # Amount do SDK já vem com descontos aplicados (cupom + cashback)
-            # Recalcular valor bruto: amount + cupom + cashback
+            # Usar valor_original (valororiginal da loja) para a calculadora
+            # Igual à trdata - cupom e cashback são informativos para o slip
             valor_para_calculo = dados['valor_original']
-
-            if dados.get('amount'):
-                # Amount vem em centavos (inteiro), converter para reais
-                amount_reais = Decimal(str(dados['amount'])) / 100
-
-                # Pegar valores de desconto já em reais
-                cupom_desconto = Decimal(str(dados.get('cupom_valor_desconto', 0)))
-                cashback_usado = Decimal(str(dados.get('valor_cashback', 0)))
-
-                # Recalcular valor bruto original
-                valor_para_calculo = amount_reais + cupom_desconto + cashback_usado
-
-                registrar_log('posp2', f'💰 Recalculando valor bruto: amount={amount_reais}, cupom={cupom_desconto}, cashback={cashback_usado}, valor_bruto={valor_para_calculo}')
+            registrar_log('posp2', f'💰 Usando valor_original para calculadora: {valor_para_calculo}')
 
             dados_linha = {
                 'id': transaction_id,
@@ -697,16 +685,17 @@ class TRDataPosService:
 
             # Extrair cashback_concedido dos dados
             cashback_concedido = safe_float_convert(dados.get('cashback_concedido', 0))
+            cupom_desconto = safe_float_convert(dados.get('cupom_valor_desconto', 0))
             registrar_log('posp2', f'💰 [CASHBACK] Cashback concedido: R$ {cashback_concedido:.2f}')
 
-            # AJUSTAR vdesconto e vparcela considerando saldo usado
-            # vdesconto = parte0 - saldo_usado
-            vdesconto_final = parte0 - saldo_cashback_usado
+            # AJUSTAR vdesconto e vparcela considerando saldo usado e cupom
+            # vdesconto = parte0 - saldo_usado - cupom
+            vdesconto_final = parte0 - saldo_cashback_usado - cupom_desconto
 
             # vparcela = vdesconto / parcelas
             vparcela_ajustado = vdesconto_final / parcelas if parcelas > 0 else vdesconto_final
 
-            registrar_log('posp2', f'💰 [AJUSTE SALDO] parte0={parte0:.2f}, saldo_usado={saldo_cashback_usado:.2f}, vdesconto_final={vdesconto_final:.2f}')
+            registrar_log('posp2', f'💰 [AJUSTE SALDO] parte0={parte0:.2f}, saldo_usado={saldo_cashback_usado:.2f}, cupom={cupom_desconto:.2f}, vdesconto_final={vdesconto_final:.2f}')
             registrar_log('posp2', f'💰 [AJUSTE SALDO] vparcela original={vparcela:.2f}, vparcela_ajustado={vparcela_ajustado:.2f}, parcelas={parcelas}')
 
             # Data e hora
