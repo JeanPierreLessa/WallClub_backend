@@ -279,6 +279,26 @@
                             </button>
                             <div id="resultado-protocolo" class="mt-2"></div>
                         </div>
+
+                        <!-- Informações de Credenciamento -->
+                        <div class="row mt-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Contrato Own</label>
+                                <input type="text" class="form-control" readonly value="{{ loja_own.contrato|default:'-' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Conveniada ID</label>
+                                <input type="text" class="form-control" readonly value="{{ loja_own.conveniada_id|default:'-' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Data Credenciamento</label>
+                                <input type="text" class="form-control" readonly value="{{ loja_own.data_credenciamento|date:'d/m/Y'|default:'-' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">MCC ID</label>
+                                <input type="text" class="form-control" readonly value="{{ loja_own.mcc_id|default:'-' }}">
+                            </div>
+                        </div>
                         {% endif %}
                     </div>
 
