@@ -89,13 +89,6 @@ class CalculadoraBaseUnificada:
             valor_original = dados_linha['valor_original']
             if valor_original is None or valor_original == 0:
                 valor_original = dados_linha['ValorBruto']  # usar ValorBruto como fallback
-
-            # Aplicar desconto de cupom se existir
-            cupom_valor_desconto = dados_linha.get('cupom_valor_desconto', 0)
-            if cupom_valor_desconto and cupom_valor_desconto > 0:
-                valor_original = self._to_decimal(valor_original, 2) - self._to_decimal(cupom_valor_desconto, 2)
-                registrar_log('parametros_wallclub', f"🎟️ Cupom aplicado na calculadora: valor_antes={dados_linha['valor_original']}, desconto={cupom_valor_desconto}, valor_final={valor_original}")
-
             valores[11] = self._to_decimal(valor_original, 2)
             valores[12] = dados_linha['Bandeira']
             valores[13] = dados_linha['NumeroTotalParcelas']
