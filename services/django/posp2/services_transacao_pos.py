@@ -122,6 +122,9 @@ class TRDataPosService:
                 'cupom_codigo': dados.get('cupom_codigo', ''),
                 'cupom_valor_desconto': Decimal(str(dados.get('cupom_valor_desconto', 0))),
 
+                # Desconto Wall (do payload principal)
+                'desconto_wall_parametro_id': dados.get('desconto_wall_parametro_id'),
+
                 # Cashback centralizado (do payload principal - NÃO do trdata)
                 'cashback_wall_parametro_id': dados.get('cashback_wall_parametro_id'),
                 'cashback_wall_valor': Decimal(str(dados.get('cashback_wall_valor', 0))),
@@ -252,6 +255,14 @@ class TRDataPosService:
                     cupom_id, cupom_cliente_id, loja_id,
                     transaction_id, dados['nsu_gateway'],
                     dados['valor_original'], dados['cupom_valor_desconto']
+                )
+
+            # 5.5. Debitar saldo de cashback usado (COMUM)
+            if dados.get('autorizacao_id') and dados.get('valor_cashback', 0) > 0:
+                self._debitar_saldo_cashback(
+                    autorizacao_id=dados['autorizacao_id'],
+                    nsu_transacao=dados['nsu_gateway'],
+                    valor=dados['valor_cashback']
                 )
 
             # 6. Conceder cashback via sistema centralizado (COMUM)
@@ -431,6 +442,26 @@ class TRDataPosService:
             registrar_log('posp2', f'✅ Uso do cupom registrado')
         except Exception as e:
             registrar_log('posp2', f'⚠️ Erro ao registrar uso do cupom: {e}', nivel='WARNING')
+
+    def _debitar_saldo_cashback(self, autorizacao_id: str, nsu_transacao: str, valor: Decimal):
+        """Debita saldo de cashback usado na transação"""
+        try:
+            from apps.conta_digital.services_autorizacao import AutorizacaoService
+
+            registrar_log('posp2', f'💸 Debitando saldo: autorizacao={autorizacao_id[:8]}, NSU={nsu_transacao}, valor=R$ {valor:.2f}')
+
+            resultado = AutorizacaoService.debitar_saldo_autorizado(
+                autorizacao_id=autorizacao_id,
+                nsu_transacao=nsu_transacao
+            )
+
+            if resultado.get('sucesso'):
+                registrar_log('posp2', f'✅ Saldo debitado: R$ {resultado.get("valor_debitado")}, movimentacao_id={resultado.get("movimentacao_id")}')
+            else:
+                registrar_log('posp2', f'❌ Erro ao debitar saldo: {resultado.get("mensagem")}', nivel='ERROR')
+
+        except Exception as e:
+            registrar_log('posp2', f'❌ Erro ao debitar saldo cashback: {str(e)}', nivel='ERROR')
 
     def _conceder_cashback(self, dados: Dict, transaction_id: int, loja_id: int, canal_id: int):
         """Concede cashback Wall e Loja via sistema centralizado"""

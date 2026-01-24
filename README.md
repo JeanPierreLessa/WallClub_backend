@@ -1,4 +1,4 @@
-# WallClub - Backend Monorepo
+antes# WallClub - Backend Monorepo
 
 Repositório unificado contendo todos os serviços do ecossistema WallClub, criado na **Fase 6C** (Novembro 2025) e finalizado na **Fase 6D** (05/11/2025) com 4 containers Django independentes.
 
