@@ -1,9 +1,10 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.2
-**Data:** 23/01/2026
+**Versão:** 5.3
+**Data:** 24/01/2026
 **Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- Conta Digital - Métodos `debitar()` e `estornar_movimentacao()` corrigidos para verificar `afeta_cashback` (24/01/2026)
 - Sistema Backsync POS - Novo endpoint `transactiondata_pos_backsync` para sincronização offline (23/01/2026)
 - Depreciações Planejadas - Endpoints `/transaction_sync_service/` e `/trdata/` marcados para substituição (23/01/2026)
 - Abstração Calculadoras Base - Parâmetros obrigatórios, sem busca interna (24/12/2025)
@@ -386,12 +387,141 @@ def validar_valor_monetario(valor_str):
 
 ---
 
-## 🌐 APIS REST
+## CONTA DIGITAL
+
+### Estrutura de Saldos
+
+**Campos Separados:**
+```python
+# Model ContaDigital
+saldo_atual          # Dinheiro disponível
+saldo_bloqueado      # Dinheiro bloqueado temporariamente
+cashback_disponivel  # Cashback disponível para uso
+cashback_bloqueado   # Cashback em retenção
+```
+
+**Regra de Ouro:** Saldo monetário e cashback são **SEMPRE** separados.
+
+### Tipos de Movimentação
+
+**Campo `afeta_cashback` em `TipoMovimentacao`:**
+- `afeta_cashback=0` → Afeta `saldo_atual` e `saldo_bloqueado`
+- `afeta_cashback=1` → Afeta `cashback_disponivel` e `cashback_bloqueado`
+
+**Tipos Principais:**
+```sql
+-- Saldo monetário (afeta_cashback=0)
+CREDITO, CREDITO_MANUAL, DEBITO, DEBITO_COMPRA, SAQUE
+
+-- Cashback (afeta_cashback=1)
+CASHBACK_CREDITO, CASHBACK_DEBITO
+
+-- Bloqueios (afeta_cashback=0)
+BLOQUEIO, DESBLOQUEIO
+```
+
+### Métodos do ContaDigitalService
+
+**SEMPRE verificar `tipo_movimentacao.afeta_cashback`:**
+
+```python
+# CORRETO - Método creditar()
+if tipo_movimentacao.afeta_cashback:
+    if periodo_retencao_dias > 0:
+        conta.cashback_bloqueado += valor
+    else:
+        conta.cashback_disponivel += valor
+else:
+    conta.saldo_atual += valor
+
+# CORRETO - Método debitar()
+if tipo_movimentacao.afeta_cashback:
+    if conta.cashback_disponivel < valor:
+        raise ValidationError("Cashback insuficiente")
+    conta.cashback_disponivel -= valor
+else:
+    if not conta.tem_saldo_suficiente(valor):
+        raise ValidationError("Saldo insuficiente")
+    conta.saldo_atual -= valor
+
+# CORRETO - Método estornar_movimentacao()
+if movimentacao_original.tipo_movimentacao.afeta_cashback:
+    # Estornar em cashback_disponivel
+    conta.cashback_disponivel += valor
+else:
+    # Estornar em saldo_atual
+    conta.saldo_atual += valor
+```
+
+**NUNCA misturar saldo e cashback:**
+```python
+# ERRADO - Sempre debita de saldo_atual
+conta.saldo_atual -= valor  # Ignora se é cashback
+
+# ERRADO - Sempre valida saldo_atual
+if conta.saldo_atual < valor:  # Ignora cashback_disponivel
+    raise ValidationError("Saldo insuficiente")
+```
+
+### Uso em Transações POS
+
+**Débito de Cashback:**
+```python
+# CORRETO - Usar tipo CASHBACK_DEBITO
+ContaDigitalService.debitar(
+    cliente_id=cliente_id,
+    canal_id=canal_id,
+    valor=valor_cashback,
+    descricao='Uso de cashback - Terminal PB59237K70569',
+    tipo_codigo='CASHBACK_DEBITO',  # afeta_cashback=1
+    referencia_externa=nsu,
+    sistema_origem='POSP2'
+)
+
+# ERRADO - Usar tipo DEBITO para cashback
+ContaDigitalService.debitar(
+    tipo_codigo='DEBITO',  # afeta_cashback=0 - vai debitar saldo_atual!
+    ...
+)
+```
+
+**Validação de Saldo:**
+```python
+# CORRETO - Validar cashback disponível
+if conta.cashback_disponivel < valor:
+    raise ValidationError("Cashback insuficiente")
+
+# ERRADO - Validar saldo monetário para cashback
+if conta.saldo_atual < valor:  # Cliente tem R$ 0,00 mas R$ 27,29 em cashback
+    raise ValidationError("Saldo insuficiente")
+```
+
+### Métodos Específicos
+
+**Para Cashback:**
+- `usar_cashback()` - Debita de `cashback_disponivel` (tipo `CASHBACK_DEBITO`)
+- `creditar_cashback_transacao_pos()` - Credita em `cashback_disponivel` ou `cashback_bloqueado`
+- `estornar_cashback_transacao_pos()` - Debita de `cashback_disponivel`
+- `liberar_cashback_retido()` - Move de `cashback_bloqueado` para `cashback_disponivel`
+
+**Para Saldo Monetário:**
+- `bloquear_saldo()` - Move de `saldo_atual` para `saldo_bloqueado`
+- `desbloquear_saldo()` - Move de `saldo_bloqueado` para `saldo_atual`
+
+**Genéricos (verificam `afeta_cashback`):**
+- `creditar()` - Credita em `saldo_atual` ou `cashback_disponivel`
+- `debitar()` - Debita de `saldo_atual` ou `cashback_disponivel`
+- `estornar_movimentacao()` - Estorna em `saldo_atual` ou `cashback_disponivel`
+
+---
+
+## APIS REST
 
 ### Método HTTP Obrigatório
 
 **SEMPRE usar POST:**
 ```python
+# ...
 # ✅ CORRETO
 @api_view(['POST'])
 def minha_api(request):

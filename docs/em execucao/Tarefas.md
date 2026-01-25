@@ -34,4 +34,8 @@ from    transactiondata_pos
 where   terminal in ('PB59237K70569','5202172510000286' )
 		and nsu_gateway = '2119516'
 
+- proximo passo e vermos o slip e a carga de base transacoes unificadas  (dados ok)
+
+
+
 

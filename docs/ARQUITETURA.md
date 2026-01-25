@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 6.1
-**Data:** 24/12/2025
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)**
+**Versão:** 6.2
+**Data:** 24/01/2026
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)**
 
 ---
 
@@ -493,7 +493,7 @@ docker-compose logs -f riskengine
 
 ### 2. Sistema de Cashback Centralizado ⭐
 
-**Status:** Implementado (02/12/2025)
+**Status:** Implementado (02/12/2025) + **Débito Corrigido (24/01/2026)**
 
 **Tipos:**
 - **Cashback Wall:** Concedido pela WallClub (custo WallClub)
@@ -514,6 +514,18 @@ docker-compose logs -f riskengine
 - CRUD regras cashback (`/cashback/`)
 - Configuração: valor, condições, limites, orçamento
 - Relatórios de uso
+
+**Conta Digital - Estrutura de Saldos:**
+- `saldo_atual` - Dinheiro disponível
+- `saldo_bloqueado` - Dinheiro bloqueado temporariamente
+- `cashback_disponivel` - Cashback disponível para uso
+- `cashback_bloqueado` - Cashback em retenção
+
+**Correção Crítica (24/01/2026):**
+- Métodos `debitar()` e `estornar_movimentacao()` agora verificam `tipo_movimentacao.afeta_cashback`
+- Débito de cashback usa `cashback_disponivel` (antes usava `saldo_atual` incorretamente)
+- `AutorizacaoService.debitar_saldo_autorizado()` usa `tipo_codigo='CASHBACK_DEBITO'`
+- Fluxo POS com uso de saldo de cashback funcionando 100%
 
 ### 3. Sistema de Ofertas Push
 

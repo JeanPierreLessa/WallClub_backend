@@ -664,10 +664,19 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025
-**Última atualização:** 08/12/2025
+**Última atualização:** 24/01/2026
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (08/12/2025)
+### Atualizações Recentes (24/01/2026)
+- ✅ **Conta Digital - Débito de Cashback Corrigido**
+  - Método `debitar()` agora verifica `tipo_movimentacao.afeta_cashback`
+  - Débito de cashback usa `cashback_disponivel` (antes usava `saldo_atual` incorretamente)
+  - Método `estornar_movimentacao()` também verifica `afeta_cashback`
+  - `AutorizacaoService.debitar_saldo_autorizado()` usa `tipo_codigo='CASHBACK_DEBITO'`
+  - Fluxo POS com uso de saldo de cashback funcionando 100%
+  - Validação de saldo correta: verifica `cashback_disponivel` para cashback, `saldo_atual` para dinheiro
+
+### Atualizações Anteriores (08/12/2025)
 - ✅ **Transactiondata_pos - Tabela Unificada Pinbank + Own**
   - Campo `gateway` (PINBANK/OWN) para identificar origem
   - Campo `desconto_wall_parametro_id` para rastrear regra de desconto aplicada
