@@ -14,51 +14,51 @@ class ClienteJWTAuthentication(authentication.BaseAuthentication):
     Autenticação JWT customizada EXCLUSIVA para clientes mobile/API
     Não usa User do Django, apenas dados do Cliente
     """
-    
+
     def authenticate(self, request):
         """
         Autentica requisição usando JWT customizado de cliente
-        
+
         Returns:
             tuple: (user_obj, token) ou None se não autenticado
         """
         registrar_log('apps.cliente', "🔐 ClienteJWTAuthentication: Iniciando autenticação", nivel='DEBUG')
-        
+
         auth_header = request.META.get('HTTP_AUTHORIZATION')
         registrar_log('apps.cliente', f"🔐 Auth header: {auth_header}", nivel='DEBUG')
-        
+
         if not auth_header or not auth_header.startswith('Bearer '):
             registrar_log('apps.cliente', "🔐 Sem token Bearer, retornando None", nivel='DEBUG')
             return None
-            
+
         try:
             token = auth_header.split(' ')[1]
             registrar_log('apps.cliente', f"🔐 Token extraído: {token[:50]}...", nivel='DEBUG')
-            
+
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
             registrar_log('apps.cliente', f"🔐 Payload decodificado: {payload}", nivel='DEBUG')
-            
+
             # Verificar se é access token
             if payload.get('token_type') != 'access':
                 registrar_log('apps.cliente', f"🔐 Token type inválido: {payload.get('token_type')}", nivel='ERROR')
                 raise exceptions.AuthenticationFailed('Token inválido')
-            
+
             # Verificar expiração
             exp = payload.get('exp')
             if exp and datetime.utcfromtimestamp(exp) < datetime.utcnow():
                 registrar_log('apps.cliente', "🔐 Token expirado", nivel='ERROR')
                 raise exceptions.AuthenticationFailed('Token expirado')
-            
+
             # CRÍTICO: Validar contra tabela de auditoria
             jti = payload.get('jti')
             if jti:
                 from .models import ClienteJWTToken
                 jwt_record = ClienteJWTToken.validate_token(token, jti)
-                
+
                 if not jwt_record:
                     registrar_log('apps.cliente', f"🔐 Token revogado ou não encontrado na tabela (jti={jti})", nivel='ERROR')
                     raise exceptions.AuthenticationFailed('Token inválido ou revogado')
-                
+
                 # Registrar uso do token
                 jwt_record.record_usage()
                 registrar_log('apps.cliente', f"🔐 Token validado com sucesso (jti={jti})", nivel='DEBUG')
@@ -66,13 +66,13 @@ class ClienteJWTAuthentication(authentication.BaseAuthentication):
                 # Token sem JTI - rejeitar por segurança
                 registrar_log('apps.cliente', "🔐 Token sem JTI - rejeitado por segurança", nivel='ERROR')
                 raise exceptions.AuthenticationFailed('Token inválido')
-            
+
             # Criar objeto user-like com dados do cliente
             user_obj = ClienteUser(payload)
             registrar_log('apps.cliente', f"🔐 ClienteUser criado: {user_obj}", nivel='DEBUG')
-            
+
             return (user_obj, token)
-            
+
         except jwt.ExpiredSignatureError:
             registrar_log('apps.cliente', "🔐 JWT ExpiredSignatureError", nivel='ERROR')
             raise exceptions.AuthenticationFailed('Token expirado')
@@ -89,7 +89,7 @@ class ClienteUser:
     Objeto user-like para representar cliente autenticado
     EXCLUSIVO para apps de cliente - não confundir com User do Django
     """
-    
+
     def __init__(self, payload):
         self.cliente_id = payload.get('cliente_id')
         self.cpf = payload.get('cpf')
@@ -98,17 +98,17 @@ class ClienteUser:
         self.is_active = payload.get('is_active', True)
         self.is_authenticated = True
         self.is_anonymous = False
-    
+
     @property
     def id(self):
         """Compatibilidade com código que usa request.user.id"""
         return self.cliente_id
-    
+
     @property
     def pk(self):
         """Compatibilidade com Django"""
         return self.cliente_id
-    
+
     def __str__(self):
         return f"Cliente {self.nome} ({self.cpf})"
 
@@ -117,62 +117,128 @@ class ClienteUser:
 from wallclub_core.oauth.jwt_utils import validate_cliente_jwt_token
 
 
-def refresh_cliente_access_token(refresh_token):
+def refresh_cliente_access_token(refresh_token, device_fingerprint=None):
     """
     Gera novo access token usando refresh token de cliente
-    
+    Implementa sliding window de 30 dias + revalidação forçada a cada 90 dias
+
     Args:
         refresh_token (str): Refresh token
-        
+        device_fingerprint (str): Fingerprint do dispositivo (opcional)
+
     Returns:
         dict: Novo access token ou None se inválido
+              Se precisar 2FA: {'requer_2fa': True, 'motivo': str}
     """
     try:
+        from datetime import timedelta
+
         payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=['HS256'])
-        
+
         # Verificar se é refresh token
         if payload.get('token_type') != 'refresh':
             return None
-        
+
         # Verificar expiração
         exp = payload.get('exp')
         if exp and datetime.utcfromtimestamp(exp) < datetime.utcnow():
             return None
-        
+
         # Validar token contra tabela de auditoria
         jti = payload.get('jti')
         if jti:
             from apps.cliente.models import ClienteJWTToken
             jwt_record = ClienteJWTToken.validate_token(refresh_token, jti)
-            
+
             if not jwt_record:
-                registrar_log('apps.cliente', 
-                    f"Refresh token revogado ou não encontrado na tabela (jti={jti})", 
+                registrar_log('apps.cliente',
+                    f"Refresh token revogado ou não encontrado na tabela (jti={jti})",
                     nivel='WARNING')
                 return None
-        
+
+        cliente_id = payload['cliente_id']
+
+        # Validar dispositivo se fingerprint fornecido
+        if device_fingerprint:
+            from wallclub_core.seguranca.models import DispositivoConfiavel
+
+            try:
+                dispositivo = DispositivoConfiavel.objects.get(
+                    user_id=cliente_id,
+                    tipo_usuario='cliente',
+                    device_fingerprint=device_fingerprint,
+                    ativo=True
+                )
+
+                agora = datetime.now()
+
+                # 1. Verificar sliding window (30 dias de inatividade)
+                if dispositivo.confiavel_ate and agora > dispositivo.confiavel_ate:
+                    registrar_log('apps.cliente',
+                        f"🔒 Dispositivo expirado por inatividade (>30 dias): cliente={cliente_id}",
+                        nivel='WARNING')
+                    return {
+                        'requer_2fa': True,
+                        'motivo': 'dispositivo_expirado_inatividade',
+                        'mensagem': 'Dispositivo inativo há mais de 30 dias. Revalidação necessária.'
+                    }
+
+                # 2. Verificar hard limit (90 dias desde última revalidação)
+                if dispositivo.ultima_revalidacao_2fa:
+                    dias_desde_revalidacao = (agora - dispositivo.ultima_revalidacao_2fa).days
+
+                    if dias_desde_revalidacao >= 90:
+                        registrar_log('apps.cliente',
+                            f"🔒 Revalidação periódica necessária (90 dias): cliente={cliente_id}, dias={dias_desde_revalidacao}",
+                            nivel='INFO')
+                        return {
+                            'requer_2fa': True,
+                            'motivo': 'revalidacao_periodica_90_dias',
+                            'mensagem': 'Por segurança, precisamos validar sua identidade novamente.',
+                            'dias_desde_revalidacao': dias_desde_revalidacao
+                        }
+
+                # 3. Renovar sliding window (confiavel_ate = agora + 30 dias)
+                dispositivo.confiavel_ate = agora + timedelta(days=30)
+                dispositivo.ultimo_acesso = agora
+                dispositivo.save(update_fields=['confiavel_ate', 'ultimo_acesso'])
+
+                registrar_log('apps.cliente',
+                    f"✅ Dispositivo renovado (sliding window): cliente={cliente_id}, novo_confiavel_ate={dispositivo.confiavel_ate.strftime('%Y-%m-%d %H:%M')}")
+
+            except DispositivoConfiavel.DoesNotExist:
+                # Dispositivo não encontrado: exigir 2FA
+                registrar_log('apps.cliente',
+                    f"🔒 Dispositivo não reconhecido no refresh: cliente={cliente_id}",
+                    nivel='WARNING')
+                return {
+                    'requer_2fa': True,
+                    'motivo': 'dispositivo_nao_reconhecido',
+                    'mensagem': 'Dispositivo não reconhecido. Validação necessária.'
+                }
+
         # Buscar dados do cliente
         from apps.cliente.models import Cliente
         try:
-            cliente = Cliente.objects.get(id=payload['cliente_id'])
-            
+            cliente = Cliente.objects.get(id=cliente_id)
+
             # Gerar novo access token (sem request pois é refresh)
             jwt_data = generate_cliente_jwt_token(cliente, request=None, is_refresh=True)
-            
+
             if not jwt_data or not jwt_data.get('token'):
-                registrar_log('apps.cliente', 
-                    f"Erro ao gerar novo token no refresh para cliente={payload['cliente_id']}", 
+                registrar_log('apps.cliente',
+                    f"Erro ao gerar novo token no refresh para cliente={cliente_id}",
                     nivel='ERROR')
                 return None
-            
+
             return {
                 'token': jwt_data['token'],
                 'expires_at': jwt_data['expires_at'].isoformat() if hasattr(jwt_data['expires_at'], 'isoformat') else jwt_data['expires_at']
             }
-            
+
         except Cliente.DoesNotExist:
             return None
-            
+
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
@@ -181,12 +247,12 @@ def generate_auth_pending_token(cliente_id, cpf, canal_id):
     """
     Gera token temporário "auth_pending" válido por 2 minutos.
     Usado entre login e validação 2FA para evitar expor cliente_id.
-    
+
     Args:
         cliente_id: ID do cliente
         cpf: CPF do cliente
         canal_id: ID do canal
-        
+
     Returns:
         dict: {auth_token: str, expires_at: datetime}
     """
@@ -194,10 +260,10 @@ def generate_auth_pending_token(cliente_id, cpf, canal_id):
         import uuid
         from datetime import datetime, timedelta
         import time
-        
+
         now_timestamp = int(time.time())
         exp_timestamp = now_timestamp + (2 * 60)  # 2 minutos
-        
+
         payload = {
             'cliente_id': cliente_id,
             'cpf': cpf,
@@ -207,21 +273,21 @@ def generate_auth_pending_token(cliente_id, cpf, canal_id):
             'jti': str(uuid.uuid4()),
             'token_type': 'auth_pending'  # Token temporário
         }
-        
+
         auth_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         expires_at = datetime.utcfromtimestamp(exp_timestamp)
-        
-        registrar_log('apps.cliente', 
+
+        registrar_log('apps.cliente',
             f"Auth pending token gerado: cliente={cliente_id}, expira em 5min",
             nivel='INFO')
-        
+
         return {
             'auth_token': auth_token,
             'expires_at': expires_at
         }
-        
+
     except Exception as e:
-        registrar_log('apps.cliente', 
+        registrar_log('apps.cliente',
             f"Erro ao gerar auth_pending token: {str(e)}", nivel='ERROR')
         return None
 
@@ -229,32 +295,32 @@ def generate_auth_pending_token(cliente_id, cpf, canal_id):
 def validate_auth_pending_token(token):
     """
     Valida auth_pending token e extrai dados do cliente.
-    
+
     Args:
         token: Auth pending token
-        
+
     Returns:
         dict: Payload do token ou None se inválido
     """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-        
+
         # Verificar tipo
         if payload.get('token_type') != 'auth_pending':
-            registrar_log('apps.cliente', 
+            registrar_log('apps.cliente',
                 f"Token type inválido: {payload.get('token_type')}", nivel='ERROR')
             return None
-        
+
         # Verificar expiração
         exp = payload.get('exp')
         if exp and datetime.utcfromtimestamp(exp) < datetime.utcnow():
             registrar_log('apps.cliente', "Auth pending token expirado", nivel='ERROR')
             return None
-        
+
         return payload
-        
+
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
-        registrar_log('apps.cliente', 
+        registrar_log('apps.cliente',
             f"Erro ao validar auth_pending token: {str(e)}", nivel='ERROR')
         return None
 
@@ -262,12 +328,12 @@ def validate_auth_pending_token(token):
 def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
     """
     Gera token JWT customizado para o cliente com auditoria
-    
+
     Args:
         cliente: Instância do modelo Cliente
         request: Request HTTP para metadados (opcional)
         is_refresh: Se True, gera apenas access token sem revogar tokens anteriores
-        
+
     Returns:
         dict: Token JWT e dados de expiração
     """
@@ -275,16 +341,16 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
         import uuid
         from datetime import datetime, timedelta
         import time
-        
+
         # Usar timestamp atual diretamente (mais preciso)
         now_timestamp = int(time.time())
         exp_timestamp = now_timestamp + (1 * 24 * 60 * 60)  # 1 dia (segurança)
         refresh_exp_timestamp = now_timestamp + (30 * 24 * 60 * 60)  # 30 dias
-        
+
         # Gerar JTIs únicos
         access_jti = str(uuid.uuid4())
         refresh_jti = str(uuid.uuid4())
-        
+
         # Payload do access token
         access_payload = {
             'cliente_id': cliente.id,
@@ -298,7 +364,7 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
             'token_type': 'access',
             'oauth_validated': True  # Indica que foi gerado via OAuth
         }
-        
+
         # Payload do refresh token
         refresh_payload = {
             'cliente_id': cliente.id,
@@ -307,17 +373,17 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
             'jti': refresh_jti,
             'token_type': 'refresh'
         }
-        
+
         # Gerar tokens usando PyJWT
         access_token = jwt.encode(access_payload, settings.SECRET_KEY, algorithm='HS256')
         refresh_token = jwt.encode(refresh_payload, settings.SECRET_KEY, algorithm='HS256')
-        
+
         # Salvar tokens no banco para auditoria
         from .models import ClienteJWTToken
-        
+
         expires_at = datetime.utcfromtimestamp(exp_timestamp)
         refresh_expires_at = datetime.utcfromtimestamp(refresh_exp_timestamp)
-        
+
         # Extrair metadados do request
         ip_address = None
         user_agent = None
@@ -326,10 +392,10 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
             from .views import get_client_ip
             ip_address = get_client_ip(request)
             user_agent = request.META.get('HTTP_USER_AGENT', '')
-        
+
         # CRÍTICO: Revogar apenas access tokens anteriores (preservar refresh tokens)
         from .models import ClienteJWTToken
-        
+
         if not is_refresh:
             # Login normal: revogar TODOS os tokens ativos
             tokens_revogados = ClienteJWTToken.objects.filter(
@@ -339,9 +405,9 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
                 is_active=False,
                 revoked_at=datetime.utcnow()
             )
-            
+
             if tokens_revogados > 0:
-                registrar_log('apps.cliente', 
+                registrar_log('apps.cliente',
                     f"🔒 {tokens_revogados} token(s) anterior(es) revogado(s) para cliente_id={cliente.id}")
         else:
             # Refresh: revogar apenas access tokens anteriores, manter refresh tokens
@@ -353,11 +419,11 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
                 is_active=False,
                 revoked_at=datetime.utcnow()
             )
-            
+
             if tokens_revogados > 0:
-                registrar_log('apps.cliente', 
+                registrar_log('apps.cliente',
                     f"🔄 {tokens_revogados} access token(s) anterior(es) revogado(s) (refresh) para cliente_id={cliente.id}")
-        
+
         # Criar registros de auditoria
         ClienteJWTToken.create_from_token(
             cliente=cliente,
@@ -368,7 +434,7 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
             ip_address=ip_address,
             user_agent=user_agent
         )
-        
+
         # Só criar novo refresh token se não for refresh (evitar duplicação)
         if not is_refresh:
             ClienteJWTToken.create_from_token(
@@ -380,13 +446,13 @@ def generate_cliente_jwt_token(cliente, request=None, is_refresh=False):
                 ip_address=ip_address,
                 user_agent=user_agent
             )
-        
+
         return {
             'token': access_token,
             'refresh_token': refresh_token,
             'expires_at': expires_at
         }
-        
+
     except Exception as e:
         registrar_log('apps.cliente', f"Erro ao gerar JWT token cliente: {str(e)}", nivel='ERROR')
         return {

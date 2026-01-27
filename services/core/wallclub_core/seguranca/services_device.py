@@ -44,7 +44,7 @@ class DeviceManagementService:
             import re
             # WallClub/311 → WallClub, WallClub/312 → WallClub
             user_agent_normalizado = re.sub(r'(WallClub|AClub)/\d+', r'\1', user_agent)
-            
+
             # Concatenar dados relevantes do dispositivo
             componentes = [
                 user_agent_normalizado,  # User-agent sem versão
@@ -95,7 +95,7 @@ class DeviceManagementService:
             # CRÍTICO: NUNCA sobrescrever fingerprint fornecido pelo app
             # App já calcula o fingerprint corretamente no lado do cliente
             fingerprint = dados_dispositivo.get('device_fingerprint')
-            
+
             if not fingerprint or fingerprint.strip() == '':
                 # Apenas calcular se app NÃO enviou fingerprint
                 registrar_log('comum.seguranca',
@@ -122,6 +122,7 @@ class DeviceManagementService:
                 dispositivo_existente.ultimo_acesso = datetime.now()
                 if marcar_confiavel:
                     dispositivo_existente.confiavel_ate = datetime.now() + timedelta(days=cls.VALIDADE_DIAS)
+                    dispositivo_existente.ultima_revalidacao_2fa = datetime.now()
                 dispositivo_existente.save()
 
                 registrar_log(
@@ -160,8 +161,10 @@ class DeviceManagementService:
 
             # Calcular validade (30 dias se confiável)
             confiavel_ate = None
+            ultima_revalidacao_2fa = None
             if marcar_confiavel:
                 confiavel_ate = datetime.now() + timedelta(days=cls.VALIDADE_DIAS)
+                ultima_revalidacao_2fa = datetime.now()
 
             # Usar nome fornecido ou extrair do user-agent como fallback
             nome_dispositivo = dados_dispositivo.get('nome_dispositivo')
@@ -182,7 +185,8 @@ class DeviceManagementService:
                     ip_registro=ip_registro,
                     ultimo_acesso=datetime.now(),
                     ativo=True,
-                    confiavel_ate=confiavel_ate
+                    confiavel_ate=confiavel_ate,
+                    ultima_revalidacao_2fa=ultima_revalidacao_2fa
                 )
 
                 registrar_log(
@@ -459,7 +463,7 @@ class DeviceManagementService:
             registrar_log('comum.seguranca',
                 f"  - dispositivo_id: {dispositivo_id}",
                 nivel='INFO')
-            
+
             # Buscar dispositivo por fingerprint ou ID
             if device_fingerprint and user_id and tipo_usuario:
                 # LOG: Listar TODOS os dispositivos ativos do usuário antes de revogar
@@ -468,17 +472,17 @@ class DeviceManagementService:
                     tipo_usuario=tipo_usuario,
                     ativo=True
                 )
-                
+
                 registrar_log('comum.seguranca',
                     f"📱 [REVOGAR] Dispositivos ativos encontrados para user_id={user_id}: {dispositivos_ativos.count()}",
                     nivel='INFO')
-                
+
                 for idx, disp in enumerate(dispositivos_ativos, 1):
                     registrar_log('comum.seguranca',
                         f"  [{idx}] ID={disp.id}, fingerprint={disp.device_fingerprint}, "
                         f"nome={disp.nome_dispositivo}, user_agent={disp.user_agent}",
                         nivel='INFO')
-                
+
                 # Buscar dispositivo específico pelo fingerprint
                 dispositivo = DispositivoConfiavel.objects.filter(
                     device_fingerprint=device_fingerprint,
@@ -486,7 +490,7 @@ class DeviceManagementService:
                     tipo_usuario=tipo_usuario,
                     ativo=True
                 ).first()
-                
+
                 # LOG: Resultado da busca
                 if dispositivo:
                     registrar_log('comum.seguranca',
@@ -523,14 +527,14 @@ class DeviceManagementService:
             registrar_log('comum.seguranca',
                 f"🗑️ [REVOGAR] Revogando dispositivo ID={dispositivo.id}, fingerprint={dispositivo.device_fingerprint}",
                 nivel='INFO')
-            
+
             # Usar update() para evitar violação de constraint unique_user_device_ativo
             DispositivoConfiavel.objects.filter(id=dispositivo.id).update(
                 ativo=False,
                 revogado_em=datetime.now(),
                 revogado_por=revogado_por
             )
-            
+
             # Recarregar objeto para notificação
             dispositivo.refresh_from_db()
 
