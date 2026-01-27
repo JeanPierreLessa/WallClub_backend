@@ -57,6 +57,12 @@ def refresh_jwt_token(request):
                 'mensagem': 'Refresh token é obrigatório'
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        if not device_fingerprint:
+            return Response({
+                'sucesso': False,
+                'mensagem': 'Device fingerprint é obrigatório para validação de segurança'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         # Validar e renovar token (com validação de dispositivo)
         from apps.cliente.jwt_cliente import refresh_cliente_access_token
 
