@@ -166,12 +166,12 @@ class ClienteService:
 
 
 class CartaoTokenizadoService:
-    """Serviço para tokenização e gerenciamento de cartões via Pinbank"""
+    """Serviço para tokenização e gerenciamento de cartões via gateway da loja (Pinbank ou OWN)"""
 
     @staticmethod
     def tokenizar_cartao(cliente_id: int, dados_cartao: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Tokeniza cartão via API Pinbank e salva no banco
+        Tokeniza cartão via gateway da loja (Pinbank ou OWN) e salva no banco
 
         Args:
             cliente_id: ID do cliente
@@ -183,10 +183,13 @@ class CartaoTokenizadoService:
         Raises:
             ValidationError: Se cliente não existe ou dados inválidos
         """
-        from pinbank.services_transacoes_pagamento import TransacoesPinbankService
+        from checkout.services_gateway_router import GatewayRouter
 
         try:
             cliente = CheckoutCliente.objects.get(id=cliente_id)
+
+            # Determinar gateway da loja
+            gateway = GatewayRouter.obter_gateway_loja(cliente.loja_id)
 
             # Validar dados do cartão
             numero = dados_cartao.get('numero', '').replace(' ', '')
@@ -248,26 +251,46 @@ class CartaoTokenizadoService:
 
             # Validade já convertida acima
 
-            # Chamar API Pinbank para tokenizar
-            # USANDO EXATAMENTE O MESMO PAYLOAD DO LINK DE PAGAMENTO (testado)
-            pinbank_service = TransacoesPinbankService(loja_id=cliente.loja_id)
+            # Tokenizar via gateway correto da loja
+            registrar_log('checkout', f"Iniciando tokenização via {gateway} para cliente {cliente_id}")
 
-            cpf_limpo = cliente.cpf.replace('.', '').replace('-', '')
+            if gateway == GatewayRouter.GATEWAY_OWN:
+                # Tokenizar via OWN
+                from adquirente_own.services_transacoes_pagamento import TransacoesOwnService
 
-            payload_tokenizacao = {
-                'numero_cartao': numero,
-                'data_validade': validade,  # MM/YY
-                'codigo_seguranca': cvv,
-                'nome_impresso': nome_titular.upper(),
-                'cpf_comprador': int(cpf_limpo)
-            }
+                own_service = TransacoesOwnService(loja_id=cliente.loja_id)
 
-            registrar_log('checkout', f"Iniciando tokenização para cliente {cliente_id}")
+                # Converter dados para formato OWN
+                card_data = {
+                    'number': numero,
+                    'holder': nome_titular.upper(),
+                    'expiry_month': validade.split('/')[0],
+                    'expiry_year': validade.split('/')[1],
+                    'cvv': cvv,
+                    'brand': dados_cartao.get('bandeira', 'VISA').upper()
+                }
 
-            resultado = pinbank_service.incluir_cartao_tokenizado(payload_tokenizacao)
+                resultado = own_service.incluir_cartao_tokenizado(card_data)
+                registrar_log('checkout', f"Resposta OWN: {resultado}")
 
-            # Logar resposta completa do Pinbank
-            registrar_log('checkout', f"Resposta Pinbank: {resultado}")
+            else:
+                # Tokenizar via Pinbank
+                from pinbank.services_transacoes_pagamento import TransacoesPinbankService
+
+                pinbank_service = TransacoesPinbankService(loja_id=cliente.loja_id)
+
+                cpf_limpo = cliente.cpf.replace('.', '').replace('-', '')
+
+                payload_tokenizacao = {
+                    'numero_cartao': numero,
+                    'data_validade': validade,  # MM/YY
+                    'codigo_seguranca': cvv,
+                    'nome_impresso': nome_titular.upper(),
+                    'cpf_comprador': int(cpf_limpo)
+                }
+
+                resultado = pinbank_service.incluir_cartao_tokenizado(payload_tokenizacao)
+                registrar_log('checkout', f"Resposta Pinbank: {resultado}")
 
             if not resultado.get('sucesso'):
                 mensagem = resultado.get('mensagem', 'Erro ao tokenizar cartão')
@@ -278,14 +301,13 @@ class CartaoTokenizadoService:
                     'mensagem': f"{mensagem} - {erro_detalhe}" if erro_detalhe else mensagem
                 }
 
-            # Extrair token (Pinbank retorna 'cartao_id')
+            # Extrair token (ambos gateways retornam 'cartao_id')
             cartao_id = resultado.get('cartao_id')
 
             if not cartao_id:
-                raise ValidationError('Token não retornado pelo Pinbank')
+                raise ValidationError(f'Token não retornado pelo gateway {gateway}')
 
             # Gerar máscara do cartão (primeiros 6 + últimos 4 dígitos)
-            # MESMO PADRÃO DO LINK DE PAGAMENTO
             cartao_mascarado = f"{numero[:6]}******{numero[-4:]}"
 
             # Detectar bandeira pelos primeiros dígitos
@@ -301,13 +323,13 @@ class CartaoTokenizadoService:
             else:
                 bandeira = 'VISA'  # default
 
-            # Salvar cartão tokenizado
-            # USANDO EXATAMENTE OS MESMOS CAMPOS DO LINK DE PAGAMENTO (testado)
+            # Salvar cartão tokenizado com informação do gateway
             cartao = CheckoutCartaoTokenizado.objects.create(
                 cliente=cliente,
                 id_token=cartao_id,
                 cartao_mascarado=cartao_mascarado,
                 bandeira=bandeira,
+                tokenizadora=gateway,
                 validade=validade,
                 nome_cliente=nome_titular,
                 valido=True
@@ -343,12 +365,29 @@ class CartaoTokenizadoService:
 
     @staticmethod
     def listar_cartoes_cliente(cliente_id: int, apenas_validos: bool = True):
-        """Lista cartões do cliente"""
-        filtros = {'cliente_id': cliente_id}
-        if apenas_validos:
-            filtros['valido'] = True
+        """
+        Lista cartões do cliente filtrando pelo gateway da loja
+        Retorna apenas cartões tokenizados pelo gateway ativo da loja
+        """
+        from checkout.services_gateway_router import GatewayRouter
 
-        return CheckoutCartaoTokenizado.objects.filter(**filtros).order_by('-created_at')
+        try:
+            cliente = CheckoutCliente.objects.get(id=cliente_id)
+            gateway = GatewayRouter.obter_gateway_loja(cliente.loja_id)
+
+            filtros = {
+                'cliente_id': cliente_id,
+                'tokenizadora': gateway  # Filtrar pelo gateway ativo da loja
+            }
+            if apenas_validos:
+                filtros['valido'] = True
+
+            registrar_log('checkout', f"Listando cartões do cliente {cliente_id} - Gateway: {gateway}")
+            return CheckoutCartaoTokenizado.objects.filter(**filtros).order_by('-created_at')
+
+        except CheckoutCliente.DoesNotExist:
+            registrar_log('checkout', f"Cliente {cliente_id} não encontrado", nivel='WARNING')
+            return CheckoutCartaoTokenizado.objects.none()
 
     @staticmethod
     def invalidar_cartao(cartao_id: int, motivo: str = None, usuario_id: int = None):
