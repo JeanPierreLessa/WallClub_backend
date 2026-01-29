@@ -51,18 +51,19 @@ class TransacoesOwnService:
             cursor.execute(
                 """
                 SELECT
-                    url_loja,
-                    razao_social,
-                    mcc,
-                    logradouro,
-                    numero_endereco,
-                    municipio,
-                    uf,
-                    cep,
-                    ddd_telefone_comercial,
-                    telefone_comercial
-                FROM loja
-                WHERE id = %s
+                    l.url_loja,
+                    l.razao_social,
+                    lo.mcc,
+                    l.logradouro,
+                    l.numero_endereco,
+                    l.municipio,
+                    l.uf,
+                    l.cep,
+                    l.ddd_telefone_comercial,
+                    l.telefone_comercial
+                FROM loja l
+                LEFT JOIN loja_own lo ON l.id = lo.loja_id
+                WHERE l.id = %s
                 """,
                 [id_loja]
             )
@@ -162,7 +163,9 @@ class TransacoesOwnService:
         }
 
         try:
-            registrar_log('own.transacao', f'📡 {method} {endpoint}')
+            registrar_log('own.transacao', f'📡 {method} {url}')
+            registrar_log('own.transacao', f'🔑 Entity ID: {data.get("entityId") if data else "N/A"}')
+            registrar_log('own.transacao', f'🔐 Token (primeiros 20 chars): {access_token[:20]}...')
             registrar_log('own.transacao', f'📦 Payload: {data}')
 
             if method.upper() == 'POST':
@@ -424,7 +427,6 @@ class TransacoesOwnService:
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
             'paymentType': 'DB',
-            'registrationId': registration_id,
             'transactionCategory': 'EC',
             'standingInstruction.mode': 'REPEATED',
             'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',

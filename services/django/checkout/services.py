@@ -10,6 +10,7 @@ from django.utils import timezone
 from wallclub_core.utilitarios.log_control import registrar_log
 from .models import CheckoutCliente, CheckoutCartaoTokenizado, CheckoutTransaction
 from pinbank.services_transacoes_pagamento import TransacoesPinbankService
+from .services_gateway_router import GatewayRouter
 
 
 class ClienteService:
@@ -419,7 +420,7 @@ class CartaoTokenizadoService:
     @staticmethod
     def excluir_cartao_pinbank(cartao_id: int) -> Dict[str, Any]:
         """
-        Exclui cartão do Pinbank e invalida localmente
+        Exclui cartão do gateway (Pinbank ou OWN) e invalida localmente
 
         Args:
             cartao_id: ID do cartão local
@@ -427,23 +428,30 @@ class CartaoTokenizadoService:
         Returns:
             Dict com sucesso e mensagem
         """
-        from pinbank.services_transacoes_pagamento import TransacoesPinbankService
-
         try:
             cartao = CheckoutCartaoTokenizado.objects.get(id=cartao_id)
 
-            # Chamar API Pinbank para excluir
-            pinbank_service = TransacoesPinbankService(loja_id=cartao.cliente.loja_id)
-            resultado = pinbank_service.excluir_cartao_tokenizado(cartao.id_token)
+            # Obter gateway correto via router
+            gateway = GatewayRouter.obter_gateway_loja(cartao.cliente.loja_id)
+            service = GatewayRouter.obter_service_transacao(cartao.cliente.loja_id)
+
+            # Chamar API do gateway para excluir
+            if gateway == GatewayRouter.GATEWAY_OWN:
+                resultado = service.delete_registration(
+                    registration_id=cartao.id_token,
+                    loja_id=cartao.cliente.loja_id
+                )
+                registrar_log('checkout', f"Cartão excluído da OWN: {cartao_id}")
+            else:
+                resultado = service.excluir_cartao_tokenizado(cartao.id_token)
+                registrar_log('checkout', f"Cartão excluído do Pinbank: {cartao_id}")
 
             # Invalidar localmente independente do resultado
             cartao.valido = False
             cartao.save()
 
-            if resultado.get('sucesso'):
-                registrar_log('checkout', f"Cartão excluído do Pinbank: {cartao_id}")
-            else:
-                registrar_log('checkout', f"Erro ao excluir do Pinbank: {resultado.get('mensagem')}", nivel='WARNING')
+            if not resultado.get('sucesso'):
+                registrar_log('checkout', f"Erro ao excluir do {gateway}: {resultado.get('mensagem')}", nivel='WARNING')
 
             return resultado
 
@@ -505,9 +513,6 @@ class CheckoutService:
             # Determinar bandeira do cartão
             bandeira_cartao = bandeira or cartao.bandeira or 'MASTERCARD'
 
-            # Preparar dados da transação
-            pinbank_service = TransacoesPinbankService(loja_id=cliente.loja_id)
-
             # Garantir que valor seja Decimal
             if not isinstance(valor, Decimal):
                 valor = Decimal(str(valor))
@@ -515,28 +520,41 @@ class CheckoutService:
             # Usar valor_transacao_final se fornecido (valor com desconto das parcelas)
             valor_para_transacao = valor_transacao_final if valor_transacao_final is not None else valor
 
-            # CPF/CNPJ como int (remover zeros à esquerda)
-            cpf_cnpj = cliente.cpf or cliente.cnpj
-            cpf_cnpj_int = int(cpf_cnpj) if cpf_cnpj else 0
+            # Obter gateway correto via router
+            gateway = GatewayRouter.obter_gateway_loja(cliente.loja_id)
+            service = GatewayRouter.obter_service_transacao(cliente.loja_id)
 
-            payload_transacao = {
-                'cartao_id': cartao.id_token,  # snake_case
-                'valor': valor_para_transacao,  # Valor em reais (Decimal) - conversão para centavos feita no Pinbank
-                'quantidade_parcelas': parcelas,
-                'forma_pagamento': '1',  # Cartão de crédito
-                'descricao_pedido': descricao,
-                'ip_address_comprador': ip_address,
-                'cpf_comprador': cpf_cnpj_int,  # CPF como int
-                'nome_comprador': cliente.nome
-            }
+            registrar_log('checkout', f"Processando pagamento cliente {cliente_id} - R$ {valor} via {gateway}")
 
-            registrar_log('checkout', f"Processando pagamento cliente {cliente_id} - R$ {valor}")
-            registrar_log('checkout', f"Payload Pinbank: {payload_transacao}")
+            # Processar conforme gateway
+            if gateway == GatewayRouter.GATEWAY_OWN:
+                # OWN Financial - pagamento com registration_id
+                resultado = service.create_payment_with_registration(
+                    registration_id=cartao.id_token,
+                    amount=valor_para_transacao,
+                    parcelas=parcelas,
+                    loja_id=cliente.loja_id
+                )
+                registrar_log('checkout', f"Resultado OWN: sucesso={resultado.get('sucesso')}, mensagem={resultado.get('mensagem')}")
+            else:
+                # Pinbank - pagamento com cartão tokenizado
+                cpf_cnpj = cliente.cpf or cliente.cnpj
+                cpf_cnpj_int = int(cpf_cnpj) if cpf_cnpj else 0
 
-            # Processar via Pinbank
-            resultado = pinbank_service.efetuar_transacao_cartao_tokenizado(payload_transacao)
+                payload_transacao = {
+                    'cartao_id': cartao.id_token,
+                    'valor': valor_para_transacao,
+                    'quantidade_parcelas': parcelas,
+                    'forma_pagamento': '1',
+                    'descricao_pedido': descricao,
+                    'ip_address_comprador': ip_address,
+                    'cpf_comprador': cpf_cnpj_int,
+                    'nome_comprador': cliente.nome
+                }
 
-            registrar_log('checkout', f"Resultado Pinbank: sucesso={resultado.get('sucesso')}, mensagem={resultado.get('mensagem')}")
+                registrar_log('checkout', f"Payload Pinbank: {payload_transacao}")
+                resultado = service.efetuar_transacao_cartao_tokenizado(payload_transacao)
+                registrar_log('checkout', f"Resultado Pinbank: sucesso={resultado.get('sucesso')}, mensagem={resultado.get('mensagem')}")
 
             # Determinar status
             if resultado.get('sucesso'):
@@ -645,8 +663,6 @@ class CheckoutService:
         Processa pagamento usando cartão digitado diretamente (não tokenizado)
         Usa efetuar_transacao ao invés de efetuar_transacao_cartao_tokenizado
         """
-        from pinbank.services_transacoes_pagamento import TransacoesPinbankService
-
         try:
             cliente = CheckoutCliente.objects.get(id=cliente_id)
 
@@ -656,26 +672,9 @@ class CheckoutService:
             if not all([numero_cartao, validade, cvv, nome_titular, bandeira]):
                 raise ValidationError('Dados do cartão incompletos')
 
-            pinbank_service = TransacoesPinbankService(loja_id=cliente.loja_id)
-
-            # CPF/CNPJ como int (remover zeros à esquerda)
-            cpf_cnpj = cliente.cpf or cliente.cnpj
-            cpf_cnpj_int = int(cpf_cnpj) if cpf_cnpj else 0
-
-            payload_transacao = {
-                'numero_cartao': numero_cartao,
-                'data_validade': validade,
-                'codigo_seguranca': cvv,
-                'nome_impresso': nome_titular,
-                'bandeira': bandeira,
-                'valor': valor,
-                'quantidade_parcelas': parcelas,
-                'forma_pagamento': '1',  # Cartão de crédito
-                'descricao_pedido': descricao,
-                'ip_address_comprador': ip_address,
-                'cpf_comprador': cpf_cnpj_int,  # CPF como int
-                'nome_comprador': cliente.nome
-            }
+            # Obter gateway correto via router
+            gateway = GatewayRouter.obter_gateway_loja(cliente.loja_id)
+            service = GatewayRouter.obter_service_transacao(cliente.loja_id)
 
             registrar_log('checkout', f"Processando pagamento DIRETO cliente {cliente_id} - R$ {valor}")
 
@@ -742,8 +741,45 @@ class CheckoutService:
                     )
             # ========== FIM INTERCEPTAÇÃO ANTIFRAUDE ==========
 
-            # Processar via Pinbank (cartão direto - não tokenizado)
-            resultado = pinbank_service.efetuar_transacao_cartao(payload_transacao)
+            # Processar conforme gateway
+            registrar_log('checkout', f"Processando pagamento DIRETO via {gateway}")
+
+            if gateway == GatewayRouter.GATEWAY_OWN:
+                # OWN Financial - pagamento direto com cartão
+                card_data = {
+                    'number': numero_cartao,
+                    'holder': nome_titular.upper(),
+                    'expiry_month': validade.split('/')[0],
+                    'expiry_year': validade.split('/')[1],
+                    'cvv': cvv,
+                    'brand': bandeira.upper()
+                }
+                resultado = service.create_payment_debit(
+                    card_data=card_data,
+                    amount=valor,
+                    parcelas=parcelas,
+                    loja_id=cliente.loja_id
+                )
+            else:
+                # Pinbank - pagamento direto com cartão
+                cpf_cnpj = cliente.cpf or cliente.cnpj
+                cpf_cnpj_int = int(cpf_cnpj) if cpf_cnpj else 0
+
+                payload_transacao = {
+                    'numero_cartao': numero_cartao,
+                    'data_validade': validade,
+                    'codigo_seguranca': cvv,
+                    'nome_impresso': nome_titular,
+                    'bandeira': bandeira,
+                    'valor': valor,
+                    'quantidade_parcelas': parcelas,
+                    'forma_pagamento': '1',
+                    'descricao_pedido': descricao,
+                    'ip_address_comprador': ip_address,
+                    'cpf_comprador': cpf_cnpj_int,
+                    'nome_comprador': cliente.nome
+                }
+                resultado = service.efetuar_transacao_cartao(payload_transacao)
 
             if resultado.get('sucesso'):
                 status = 'APROVADA'

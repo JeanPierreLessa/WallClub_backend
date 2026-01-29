@@ -16,6 +16,8 @@ class LojaOwn(models.Model):
 
     # Dados de credenciamento
     conveniada_id = models.CharField(max_length=50, null=True, blank=True, help_text='ID do estabelecimento na Own')
+    entity_id = models.CharField(max_length=100, null=True, blank=True, help_text='Entity ID para transações OPPWA')
+    access_token = models.CharField(max_length=512, null=True, blank=True, help_text='Access token para transações OPPWA')
     status_credenciamento = models.CharField(
         max_length=50,
         null=True,
