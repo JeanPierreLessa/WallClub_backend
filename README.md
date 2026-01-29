@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 24/12/2025
+**Última Atualização:** 29/01/2026
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -44,10 +44,13 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
 - ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
-- ⚠️ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce)
+- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (29/01/2026)**
   - ✅ APIs Adquirência (OAuth 2.0) - QA/Sandbox funcionando
   - ✅ Webhooks tempo real (transações, liquidações, cadastro)
-  - ⚠️ API OPPWA E-commerce - Credenciais OK, API QA com timeout (>60s)
+  - ✅ API OPPWA E-commerce - Integração completa e validada
+  - ✅ Portal de Vendas com GatewayRouter (seleção dinâmica Pinbank/Own)
+  - ✅ Tokenização, pagamento com token, pagamento direto, estorno e exclusão
+  - ✅ Transação real aprovada (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 

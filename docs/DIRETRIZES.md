@@ -1,9 +1,14 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.3
-**Data:** 24/01/2026
-**Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
+**Versão:** 5.4
+**Data:** 29/01/2026
+**Fontes:** Fases 1-7 (100%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- **GatewayRouter - Portal de Vendas com Own Financial completo (29/01/2026)**
+  - `CheckoutService` refatorado para usar `GatewayRouter` ao invés de hardcoded Pinbank
+  - Seleção dinâmica de gateway (Pinbank/Own) por loja via campo `gateway_ativo`
+  - Suporte completo: tokenização, pagamento com token, pagamento direto, estorno e exclusão
+  - Transação real aprovada via Own Financial (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
 - Conta Digital - Métodos `debitar()` e `estornar_movimentacao()` corrigidos para verificar `afeta_cashback` (24/01/2026)
 - Sistema Backsync POS - Novo endpoint `transactiondata_pos_backsync` para sincronização offline (23/01/2026)
 - Depreciações Planejadas - Endpoints `/transaction_sync_service/` e `/trdata/` marcados para substituição (23/01/2026)
@@ -645,6 +650,66 @@ cartao.id_token = token_id  # Salvar apenas token
 - ❌ Logs de aplicação
 - ❌ Cache (Redis/Memcached)
 - ❌ Mensagens (WhatsApp/SMS/Email)
+
+### GatewayRouter - Multi-Gateway de Pagamentos ⭐
+
+**Status:** Implementado (29/01/2026)
+
+**Regra de Ouro:** ❌ **NUNCA** instanciar `TransacoesPinbankService` ou `TransacoesOwnService` diretamente. ✅ **SEMPRE** usar `GatewayRouter`.
+
+**Uso Correto:**
+```python
+from checkout.services_gateway_router import GatewayRouter
+
+# Obter gateway ativo da loja
+gateway = GatewayRouter.obter_gateway_loja(loja_id)  # 'PINBANK' ou 'OWN'
+
+# Obter service correto
+service = GatewayRouter.obter_service_transacao(loja_id)
+
+# Processar conforme gateway
+if gateway == GatewayRouter.GATEWAY_OWN:
+    # Own Financial
+    resultado = service.create_payment_with_registration(
+        registration_id=token,
+        amount=valor,
+        parcelas=parcelas,
+        loja_id=loja_id
+    )
+else:
+    # Pinbank
+    resultado = service.efetuar_transacao_cartao_tokenizado(payload)
+```
+
+**Uso INCORRETO:**
+```python
+# ❌ NUNCA fazer isso
+from pinbank.services_transacoes_pagamento import TransacoesPinbankService
+pinbank_service = TransacoesPinbankService(loja_id=loja_id)
+```
+
+**Ativação por Loja:**
+```sql
+-- Ativar Own Financial
+UPDATE loja SET gateway_ativo = 'OWN' WHERE id = 15;
+
+-- Ativar Pinbank (padrão)
+UPDATE loja SET gateway_ativo = 'PINBANK' WHERE id = 15;
+```
+
+**Credenciais Own Financial:**
+- Tabela: `loja_own`
+- Campos: `entity_id`, `access_token`
+- URLs: QA (`eu-test.oppwa.com`) e PROD (`eu-prod.oppwa.com`)
+
+**Métodos Suportados:**
+- Pagamento direto (cartão digitado)
+- Tokenização (salvar cartão)
+- Pagamento com token (MIT)
+- Estorno
+- Exclusão de token
+
+**Arquivo:** `checkout/services_gateway_router.py`
 
 **Variáveis Obrigatórias no `.env`:**
 ```bash

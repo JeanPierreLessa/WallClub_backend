@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 6.2
-**Data:** 24/01/2026
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)**
+**Versão:** 6.3
+**Data:** 29/01/2026
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (100% - **Own Financial Completo**), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)** + **Portal de Vendas com GatewayRouter (Pinbank/Own)**
 
 ---
 
@@ -175,10 +175,14 @@ Internet (80/443)
   - Tabela: `transactiondata_pos` (gateway: PINBANK/OWN)
   - Service: `TRDataPosService` (parser específico por gateway)
 - `pinbank/` - Integração Pinbank + Cargas
-- `adquirente_own/` - Integração Own Financial
-  - OAuth 2.0 (token cache 4min)
-  - API OPPWA E-commerce (timeout 60s)
-  - API QA com problemas de performance (timeout >60s)
+- `adquirente_own/` - Integração Own Financial ✅ **COMPLETO (29/01/2026)**
+  - API OPPWA E-commerce (QA: eu-test.oppwa.com, PROD: eu-prod.oppwa.com)
+  - Tokenização de cartões (registration_id)
+  - Pagamento com token (MIT - Merchant Initiated Transaction)
+  - Pagamento direto (débito/crédito)
+  - Estorno de transações
+  - Exclusão de tokens
+  - Credenciais por loja (entity_id + access_token na tabela loja_own)
 - `parametros_wallclub/` - Parâmetros financeiros (3.840 configs)
 
 **Comunicação:**
@@ -201,10 +205,13 @@ Internet (80/443)
 - `apps/ofertas/` - Sistema de Ofertas Push
 - `apps/transacoes/` - Transações mobile
 - `apps/oauth/` - OAuth 2.0 Token Endpoint (centralizado)
-- `checkout/` - Checkout Web + 2FA WhatsApp + Link de Pagamento
+- `checkout/` - Checkout Web + 2FA WhatsApp + Link de Pagamento + **GatewayRouter**
   - ✅ `CheckoutTransaction` criada pelo portal de vendas (status PENDENTE)
   - ✅ `LinkPagamentoTransactionService` - Gerencia transações de link
   - ✅ Validação OTP integrada com processamento de pagamento
+  - ✅ **GatewayRouter** - Seleção dinâmica de gateway (Pinbank/Own) por loja
+  - ✅ Portal de Vendas integrado com Own Financial (29/01/2026)
+  - ✅ Suporte a tokenização, pagamento com token e pagamento direto em ambos gateways
 
 **API Interna (comunicação entre containers):**
 - `/api/internal/cliente/` - 6 endpoints para consulta de clientes
@@ -547,7 +554,71 @@ docker-compose logs -f riskengine
 - Admin: CRUD + grupos + disparo
 - Lojista: CRUD filtrado por canal + agendamento automático
 
-### 3. Autorização Uso Saldo (Wall Cashback)
+### 3. GatewayRouter - Multi-Gateway de Pagamentos ⭐
+
+**Status:** Implementado e validado (29/01/2026)
+
+**Objetivo:** Seleção dinâmica de gateway de pagamento (Pinbank ou Own Financial) por loja
+
+**Funcionamento:**
+- Campo `gateway_ativo` na tabela `loja` define o gateway ('PINBANK' ou 'OWN')
+- `GatewayRouter.obter_gateway_loja(loja_id)` retorna gateway ativo
+- `GatewayRouter.obter_service_transacao(loja_id)` retorna service correto
+
+**Métodos Suportados:**
+- **Pagamento direto:** Cartão digitado (débito/crédito)
+- **Tokenização:** Salvar cartão para uso futuro
+- **Pagamento com token:** Usar cartão salvo (MIT - Merchant Initiated Transaction)
+- **Estorno:** Cancelamento de transação
+- **Exclusão de token:** Remover cartão salvo
+
+**Integração Portal de Vendas:**
+- ✅ `CheckoutService.processar_pagamento_cartao_tokenizado()` - Usa GatewayRouter
+- ✅ `CheckoutService.processar_pagamento_cartao_direto()` - Usa GatewayRouter
+- ✅ `CheckoutService.incluir_cartao_tokenizado()` - Usa GatewayRouter
+- ✅ `CheckoutService.excluir_cartao_pinbank()` - Usa GatewayRouter (nome legado)
+
+**Own Financial (OPPWA API):**
+- **QA:** `https://eu-test.oppwa.com`
+- **Produção:** `https://eu-prod.oppwa.com`
+- **Credenciais:** `entity_id` + `access_token` por loja (tabela `loja_own`)
+- **Métodos:**
+  - `create_payment_debit()` - Pagamento direto
+  - `create_payment_with_tokenization()` - Pré-autorização + tokenização
+  - `create_payment_with_registration()` - Pagamento com token
+  - `refund_payment()` - Estorno
+  - `delete_registration()` - Exclusão de token
+  - `get_registration_details()` - Consulta token
+
+**Pinbank:**
+- Métodos legados mantidos para compatibilidade
+- `efetuar_transacao_cartao()` - Pagamento direto
+- `efetuar_transacao_cartao_tokenizado()` - Pagamento com token
+- `incluir_cartao()` - Tokenização
+- `excluir_cartao_tokenizado()` - Exclusão de token
+
+**Ativação por Loja:**
+```sql
+-- Ativar Own Financial para uma loja
+UPDATE loja SET gateway_ativo = 'OWN' WHERE id = 15;
+
+-- Garantir credenciais Own configuradas
+SELECT entity_id, access_token FROM loja_own WHERE loja_id = 15;
+```
+
+**Arquivos:**
+- `checkout/services_gateway_router.py` - Router principal
+- `adquirente_own/services_transacoes_pagamento.py` - Service Own
+- `pinbank/services_transacoes_pagamento.py` - Service Pinbank
+- `checkout/services.py` - CheckoutService refatorado
+
+**Validação:**
+- ✅ Testes automatizados (`teste_own_ecommerce.py`) - 7/8 testes passando
+- ✅ Transação real aprovada via portal de vendas (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
+- ✅ Antifraude integrado (score 30/100 - APROVADO)
+- ✅ Notificações WhatsApp e Push enviadas
+
+### 4. Autorização Uso Saldo (Wall Cashback)
 
 **Fluxo:**
 1. POS consulta saldo (CPF + senha) → auth_token 15min
