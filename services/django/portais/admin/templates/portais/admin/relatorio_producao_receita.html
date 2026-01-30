@@ -355,6 +355,10 @@
                 if (data.campos_monetarios.includes(campo)) {
                     td.className = 'monetary';
                     td.textContent = valor || '-';
+                } else if (typeof valor === 'string' && valor.includes('%')) {
+                    // Detectar valores percentuais
+                    td.className = 'percentage';
+                    td.textContent = valor || '-';
                 } else {
                     td.textContent = valor || '-';
                 }
@@ -376,6 +380,10 @@
                 // Formatação especial para campos monetários (mesmo estilo do Gestão Admin)
                 if (data.campos_monetarios.includes(campo)) {
                     td.className = 'monetary';
+                    td.textContent = valor || '-';
+                } else if (typeof valor === 'string' && valor.includes('%')) {
+                    // Detectar valores percentuais
+                    td.className = 'percentage';
                     td.textContent = valor || '-';
                 } else {
                     td.textContent = valor || '-';
