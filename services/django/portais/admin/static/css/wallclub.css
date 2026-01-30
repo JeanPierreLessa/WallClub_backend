@@ -1125,7 +1125,7 @@ tr:hover {
     background: #65C97A;
     color: white;
     padding: 12px 12px;
-    text-align: left;
+    text-align: right;
     font-weight: 600;
     position: sticky;
     top: 0;
@@ -1146,6 +1146,7 @@ tr:hover {
     max-width: none !important;
     overflow: visible !important;
     text-overflow: clip !important;
+    text-align: right;
 }
 
 .data-table tr:hover {

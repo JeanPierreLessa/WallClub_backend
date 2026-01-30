@@ -334,7 +334,7 @@
         Object.keys(primeiroRegistro).forEach(campo => {
             const th = document.createElement('th');
             const label = data.colunas[campo] || campo;
-            th.textContent = label.length > 15 ? label.substring(0, 15) + '...' : label;
+            th.textContent = label;
             th.title = label; // Tooltip com texto completo
             cabecalho.appendChild(th);
         });
