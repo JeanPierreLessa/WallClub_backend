@@ -159,7 +159,7 @@ def obter_estrutura_colunas_rpr():
         {'tipo': 'variavel', 'campo': 'var98', 'nome': None},
 
         # Nova coluna: Ajuste pagos de repasses
-        {'tipo': 'formula', 'campo': 'variavel_nova_18', 'nome': 'Ajuste pagos de repasses', 'formula': '(var98 - var101) - (variavel_nova_2 + variavel_nova_5) if var101 != 0 else "Não Finalizada"'},
+        {'tipo': 'formula', 'campo': 'variavel_nova_18', 'nome': 'Ajuste pagos de repasses (R$)', 'formula': '(var98 - var101) - (variavel_nova_2 + variavel_nova_5) if var101 != 0 else "Não Finalizada"'},
 
         {'tipo': 'variavel', 'campo': 'var101', 'nome': None},
 
@@ -386,7 +386,7 @@ def relatorio_producao_receita(request):
     resultado_caixa_reais = total_var98 - total_var101
 
     # Calcular Ajuste pagos de repasses = Resultado Caixa - (Resultado MDR + Resultado Antecipação)
-    ajuste_pagos_repasses = resultado_caixa_reais - (resultado_mdr_reais + resultado_antecipacao_reais)
+    ajuste_pagos_repasses = (resultado_caixa_reais - (resultado_mdr_reais + resultado_antecipacao_reais)).quantize(Decimal('0.01'))
 
     custo_mdr_total = custo_mdr_direto
     custo_antecipacao_total = custo_antecipacao_direto
