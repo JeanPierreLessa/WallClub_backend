@@ -258,8 +258,12 @@ class CartaoTokenizadoService:
             if gateway == GatewayRouter.GATEWAY_OWN:
                 # Tokenizar via OWN
                 from adquirente_own.services_transacoes_pagamento import TransacoesOwnService
+                import os
+                # Determinar ambiente: production -> LIVE, development -> TEST
+                env = os.getenv('ENVIRONMENT', 'development')
+                own_env = 'LIVE' if env == 'production' else 'TEST'
 
-                own_service = TransacoesOwnService(loja_id=cliente.loja_id)
+                own_service = TransacoesOwnService(loja_id=cliente.loja_id, environment=own_env)
 
                 # Converter dados para formato OWN
                 card_data = {
