@@ -157,6 +157,10 @@ def obter_estrutura_colunas_rpr():
 
         # 29-30: var98, var101
         {'tipo': 'variavel', 'campo': 'var98', 'nome': None},
+
+        # Nova coluna: Ajuste pagos de repasses
+        {'tipo': 'formula', 'campo': 'variavel_nova_18', 'nome': 'Ajuste pagos de repasses', 'formula': '(var98 - var101) - (variavel_nova_2 + variavel_nova_5) if var101 != 0 else "Não Finalizada"'},
+
         {'tipo': 'variavel', 'campo': 'var101', 'nome': None},
 
         # 31-33: Fórmulas resultado caixa e operacional
@@ -335,7 +339,9 @@ def relatorio_producao_receita(request):
             SUM(CAST(var109_A AS DECIMAL(15,2))) as impostos_total,
             SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0
                      THEN CAST(var116_A AS DECIMAL(15,2))
-                     ELSE 0 END) as resultado_financeiro
+                     ELSE 0 END) as resultado_financeiro,
+            SUM(CAST(var98 AS DECIMAL(15,2))) as total_var98,
+            SUM(CAST(var101 AS DECIMAL(15,2))) as total_var101
         FROM base_transacoes_unificadas
         WHERE {where_clause}
     """
@@ -362,11 +368,25 @@ def relatorio_producao_receita(request):
     receita_var15_calculada = Decimal(str(resultado[9] or 0))
     impostos_total = Decimal(str(resultado[10] or 0))
     resultado_financeiro = Decimal(str(resultado[11] or 0))
+    total_var98 = Decimal(str(resultado[12] or 0))
+    total_var101 = Decimal(str(resultado[13] or 0))
 
     # Cálculos derivados
     receita_antecipacao_parcelamentos = receita_var41 + receita_var15_calculada
     receita_outras_tarifas = Decimal('0.00')
     receita_financeira_total = receita_mdr_total + receita_antecipacao_parcelamentos + receita_outras_tarifas
+
+    # Calcular Resultado MDR (R$) = var37 - var90
+    resultado_mdr_reais = receita_mdr_total - custo_mdr_direto
+
+    # Calcular Resultado Antecipação & Parcelamento (R$) = (var15 + var41) - var94_A
+    resultado_antecipacao_reais = receita_antecipacao_parcelamentos - custo_antecipacao_direto
+
+    # Calcular Resultado Caixa (Rcebtos - Repasses) R$ = var98 - var101
+    resultado_caixa_reais = total_var98 - total_var101
+
+    # Calcular Ajuste pagos de repasses = Resultado Caixa - (Resultado MDR + Resultado Antecipação)
+    ajuste_pagos_repasses = resultado_caixa_reais - (resultado_mdr_reais + resultado_antecipacao_reais)
 
     custo_mdr_total = custo_mdr_direto
     custo_antecipacao_total = custo_antecipacao_direto
@@ -505,6 +525,7 @@ def relatorio_producao_receita(request):
         'custos_pos_equip': custos_pos_equip,
         'impostos_total': impostos_total,
         'custo_direto_total': custo_direto_total,
+        'ajuste_pagos_repasses': ajuste_pagos_repasses,
 
         # Resultado Financeiro
         'resultado_financeiro': resultado_financeiro,
@@ -1626,7 +1647,7 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
     formulas_ordenadas = [
         'variavel_nova_1', 'variavel_nova_2', 'variavel_nova_3', 'var15', 'variavel_nova_4',
         'variavel_nova_5', 'variavel_nova_6', 'variavel_nova_8', 'variavel_nova_7',
-        'variavel_nova_9', 'variavel_nova_11', 'variavel_nova_10', 'variavel_nova_12',
+        'variavel_nova_18', 'variavel_nova_9', 'variavel_nova_11', 'variavel_nova_10', 'variavel_nova_12',
         'variavel_nova_13', 'variavel_nova_14', 'variavel_nova_15', 'variavel_nova_17', 'variavel_nova_16'
     ]
 
