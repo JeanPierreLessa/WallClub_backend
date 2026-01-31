@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 29/01/2026
+**Última Atualização:** 30/01/2026
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -17,6 +17,8 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Portal Lojista: Sistema de Ofertas ativo (menu visível)
   - ✅ Portal Lojista: Sistema de Cashback Loja (CRUD completo)
   - ✅ Portal Admin: Gestão de Terminais com histórico (20/12/2025)
+  - ✅ Portal Admin: RPR - Nova métrica "Ajuste pagos de repasses" (30/01/2026)
+  - ✅ Portal Admin: Tabelas RPR e Gestão Admin - Colunas mais largas e alinhamento à direita (30/01/2026)
   - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
   - ✅ Sistema de Cupom: Validação e aplicação de descontos
@@ -44,10 +46,13 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
 - ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
-- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (29/01/2026)**
+- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (30/01/2026)**
   - ✅ APIs Adquirência (OAuth 2.0) - QA/Sandbox funcionando
   - ✅ Webhooks tempo real (transações, liquidações, cadastro)
   - ✅ API OPPWA E-commerce - Integração completa e validada
+  - ✅ Ambiente dinâmico (ENVIRONMENT=production → LIVE, development → TEST)
+  - ✅ API de consulta de tokens e-commerce por contrato documentada
+  - ✅ Documentação oficial OPPWA referenciada
   - ✅ Portal de Vendas com GatewayRouter (seleção dinâmica Pinbank/Own)
   - ✅ Tokenização, pagamento com token, pagamento direto, estorno e exclusão
   - ✅ Transação real aprovada (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
@@ -670,7 +675,28 @@ Proprietary - WallClub © 2025
 **Última atualização:** 24/01/2026
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (24/01/2026)
+### Atualizações Recentes (30/01/2026)
+- ✅ **Portal Admin - RPR - Nova Métrica "Ajuste pagos de repasses"**
+  - Fórmula: `Resultado Caixa (var98 - var101) - (Resultado MDR + Resultado Antecipação)`
+  - Exibida no box "Custo Direto Total" e como nova coluna na tabela RPR
+  - Valor arredondado para 2 casas decimais com `.quantize(Decimal('0.01'))`
+  - Coluna posicionada após "(98) Valor Recebido Uptal"
+
+- ✅ **Portal Admin - Tabelas RPR e Gestão Admin - UX Melhorada**
+  - Largura mínima de colunas aumentada de 150px para 200px
+  - Largura máxima de células aumentada de 250px para 350px
+  - Truncamento de texto removido (sem `text-overflow: ellipsis`)
+  - Alinhamento à direita para todas as células (valores monetários e percentuais)
+  - JavaScript: Removido truncamento de cabeçalhos (antes limitava a 15 caracteres)
+
+- ✅ **Own Financial E-commerce - Correções de Ambiente e Payload**
+  - Ambiente dinâmico: `ENVIRONMENT=production` → `LIVE`, `development` → `TEST`
+  - Correção do campo `paymentMethod`: movido de `customParameters` para campo direto
+  - API de consulta de tokens por contrato documentada: `GET /agilli/ecommerce/token?numeroContrato=XXX`
+  - Documentação oficial OPPWA adicionada ao `PLANO_REPLICACAO_ESTRUTURA.md`
+  - Links: API Reference, Server-to-Server Guide, Tokenization, Result Codes, Webhooks
+
+### Atualizações Anteriores (24/01/2026)
 - ✅ **Conta Digital - Débito de Cashback Corrigido**
   - Método `debitar()` agora verifica `tipo_movimentacao.afeta_cashback`
   - Débito de cashback usa `cashback_disponivel` (antes usava `saldo_atual` incorretamente)

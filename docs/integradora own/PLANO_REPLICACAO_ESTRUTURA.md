@@ -1,9 +1,24 @@
 # PLANO DE REPLICAÇÃO - ESTRUTURA PINBANK → OWN FINANCIAL
 
-**Versão:** 2.5  
-**Data:** 22/11/2025  
-**Objetivo:** Replicar toda estrutura do módulo Pinbank para Own Financial  
+**Versão:** 2.5
+**Data:** 22/11/2025
+**Objetivo:** Replicar toda estrutura do módulo Pinbank para Own Financial
 **Status:** ✅ FASE 1-6 CONCLUÍDAS (100%) | ⚠️ API QA Own com timeout (>60s)
+
+## 📚 DOCUMENTAÇÃO OFICIAL
+
+**OPPWA (Own Financial E-commerce API):**
+- **API Reference:** https://own-financial.docs.oppwa.com/reference/parameters
+- **Server-to-Server Guide:** https://own-financial.docs.oppwa.com/tutorials/server-to-server
+- **Tokenization:** https://own-financial.docs.oppwa.com/tutorials/tokenization
+- **Result Codes:** https://own-financial.docs.oppwa.com/reference/resultCodes
+- **Webhooks:** https://own-financial.docs.oppwa.com/tutorials/webhooks
+
+**Ambientes:**
+- **Teste:** `https://eu-test.oppwa.com/`
+- **Produção:** `https://eu-prod.oppwa.com/`
+
+**Nota:** A documentação oficial da OPPWA é a fonte primária para formato de campos, parâmetros obrigatórios e estrutura de requests/responses. Os exemplos nesta documentação são específicos da integração WallClub com Own Financial.
 
 ---
 
@@ -75,7 +90,7 @@ posp2/
 ### 1. BaseTransacoesGestao (MODIFICAR EXISTENTE)
 
 ```sql
-ALTER TABLE baseTransacoesGestao 
+ALTER TABLE baseTransacoesGestao
 ADD COLUMN adquirente VARCHAR(20) DEFAULT 'PINBANK' AFTER tipo_operacao;
 
 CREATE INDEX idx_adquirente ON baseTransacoesGestao(adquirente);
@@ -429,5 +444,5 @@ Tabela específica para transações POS via SDK Ágilli (Own Financial).
 
 ---
 
-**Documento criado por:** Tech Lead  
+**Documento criado por:** Tech Lead
 **Próxima revisão:** Após validação do time
