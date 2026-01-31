@@ -759,7 +759,7 @@
             "type": "default"
           }
         ],
-        "description": "Consulta o channelId e token de e-commerce (OPPWA) associado ao número de contrato da loja.\n\nRetorna:\n- channelId: ID do canal OPPWA para transações e-commerce\n- token: Token de autenticação base64 para API OPPWA\n\nExemplo de resposta:\n{\n  \"channelId\": \"***REMOVED***\",\n  \"token\": \"***REMOVED***\"\n}\n\nExemplo testado:\ncurl --request GET \\\n  --url 'https://acquirer.own.financial/agilli/ecommerce/token?numeroContrato=029-293-23' \\\n  --header 'authorization: Bearer eyJhbGci...'\n\nContrato testado: 029-293-23 (Loja ID 15)",
+        "description": "Consulta o channelId e token de e-commerce (OPPWA) associado ao número de contrato da loja.\n\nRetorna:\n- channelId: ID do canal OPPWA para transações e-commerce\n- token: Token de autenticação base64 para API OPPWA\n\nExemplo de resposta:\n{\n  \"channelId\": \"#####\",\n  \"token\": \"#####\"\n}\n\nExemplo testado:\ncurl --request GET \\\n  --url 'https://acquirer.own.financial/agilli/ecommerce/token?numeroContrato=029-293-23' \\\n  --header 'authorization: Bearer eyJhbGci...'\n\nContrato testado: 029-293-23 (Loja ID 15)",
         "url": {
           "raw": "https://acquirer.own.financial/agilli/ecommerce/token?numeroContrato=029-293-23",
           "protocol": "https",
@@ -825,7 +825,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n  \"channelId\" : \"***REMOVED***\",\n  \"token\" : \"***REMOVED***\"\n}"
+          "body": "{\n  \"channelId\" : \"#####\",\n  \"token\" : \"#####\"\n}"
         }
       ]
     }

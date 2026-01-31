@@ -247,6 +247,7 @@ class TransacoesOwnService:
             'currency': 'BRL',
             'paymentBrand': brand,
             'paymentType': 'DB',
+            'paymentMethod': 'CREDIT',
             'card.number': card_data['number'],
             'card.holder': card_data['holder'],
             'card.expiryMonth': card_data['expiry_month'],
@@ -264,7 +265,6 @@ class TransacoesOwnService:
             'merchant.postcode': dados_loja['postcode'],
             'merchant.phone': dados_loja['phone'],
             'merchant.customerContactPhone': dados_loja['phone'],
-            'customParameters[PAYMENT_METHOD]': 'CREDIT',
         }
 
         # Parcelamento (se aplicável)
@@ -427,6 +427,7 @@ class TransacoesOwnService:
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
             'paymentType': 'DB',
+            'paymentMethod': 'CREDIT',
             'transactionCategory': 'EC',
             'standingInstruction.mode': 'REPEATED',
             'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
@@ -441,7 +442,6 @@ class TransacoesOwnService:
             'merchant.postcode': dados_loja['postcode'],
             'merchant.phone': dados_loja['phone'],
             'merchant.customerContactPhone': dados_loja['phone'],
-            'customParameters[PAYMENT_METHOD]': 'CREDIT',
         }
 
         # Parcelamento (se aplicável)
