@@ -397,7 +397,7 @@ def relatorio_producao_receita(request):
     custo_mdr_total = custo_mdr_direto
     custo_antecipacao_total = custo_antecipacao_direto
     custos_pos_equip = Decimal('0.00')
-    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total
+    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total + ajuste_pagos_repasses
 
     receita_antecipacao = receita_var23 + receita_var21
 
@@ -506,6 +506,9 @@ def relatorio_producao_receita(request):
     total_lancamentos_manuais = lancamentos_manuais_queryset.aggregate(
         total=Sum('valor')
     )['total'] or Decimal('0.00')
+
+    # Recalcular custo_direto_total incluindo lançamentos manuais
+    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total + ajuste_pagos_repasses + total_lancamentos_manuais
 
     # Calcular comissão líquida
     comissao_total_pagar = resultado_financeiro * percentual_comissao
@@ -1030,7 +1033,12 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
             SUM(CAST(var109_A AS DECIMAL(15,2))) as impostos_total,
             SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0
                      THEN CAST(var116_A AS DECIMAL(15,2))
-                     ELSE 0 END) as resultado_financeiro
+                     ELSE 0 END) as resultado_financeiro,
+            SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0
+                     THEN (CAST(var98 AS DECIMAL(15,2)) - CAST(var101 AS DECIMAL(15,2))) -
+                          ((CAST(var37 AS DECIMAL(15,2)) - CAST(var90 AS DECIMAL(15,2))) +
+                           ((CASE WHEN CAST(var86 AS DECIMAL(15,2)) < 0 THEN ABS(CAST(var86 AS DECIMAL(15,2))) ELSE 0 END + CAST(var41 AS DECIMAL(15,2))) - CAST(var94_A AS DECIMAL(15,2))))
+                     ELSE 0 END) as ajuste_pagos_repasses_total
         FROM base_transacoes_unificadas
         WHERE {where_clause}
     """
@@ -1048,6 +1056,7 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
     receita_var15_calculada = Decimal(str(resultado[6] or 0))
     impostos_total = Decimal(str(resultado[7] or 0))
     resultado_financeiro = Decimal(str(resultado[8] or 0))
+    ajuste_pagos_repasses = Decimal(str(resultado[9] or 0)).quantize(Decimal('0.01'))
 
     # Cálculos derivados
     ticket_medio = volume_total / qtde_nsus_distintos if qtde_nsus_distintos > 0 else Decimal('0.00')
@@ -1058,7 +1067,6 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
     custo_mdr_total = custo_mdr_direto
     custo_antecipacao_total = custo_antecipacao_direto
     custos_pos_equip = Decimal('0.00')
-    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total
 
     # Calcular lançamentos manuais
     lancamentos_manuais_queryset = LancamentoManual.objects.filter(
@@ -1086,6 +1094,9 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
     total_lancamentos_manuais = lancamentos_manuais_queryset.aggregate(
         total=Sum('valor')
     )['total'] or Decimal('0.00')
+
+    # Calcular custo_direto_total incluindo ajuste e lançamentos
+    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total + ajuste_pagos_repasses + total_lancamentos_manuais
 
     # Calcular percentual de comissão (simplificado para export)
     percentual_comissao = Decimal('0.15')  # 15% padrão
@@ -1122,6 +1133,7 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
         {'indicador': 'Custo MDR Total', 'valor': formatar_monetario(custo_mdr_total), 'detalhamento': ''},
         {'indicador': 'Custo Antecipação Total', 'valor': formatar_monetario(custo_antecipacao_total), 'detalhamento': ''},
         {'indicador': 'Lançamentos Manuais', 'valor': formatar_monetario(total_lancamentos_manuais), 'detalhamento': ''},
+        {'indicador': 'Ajuste pagos de repasses', 'valor': formatar_monetario(ajuste_pagos_repasses), 'detalhamento': ''},
         {'indicador': 'Custos POS / Equip.', 'valor': formatar_monetario(custos_pos_equip), 'detalhamento': ''},
         {'indicador': 'Impostos', 'valor': formatar_monetario(impostos_total), 'detalhamento': ''},
         {'indicador': '', 'valor': '', 'detalhamento': ''},
