@@ -345,7 +345,7 @@ def relatorio_producao_receita(request):
             SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0
                      THEN (CAST(var98 AS DECIMAL(15,2)) - CAST(var101 AS DECIMAL(15,2))) -
                           ((CAST(var37 AS DECIMAL(15,2)) - CAST(var90 AS DECIMAL(15,2))) +
-                           ((CAST(var15 AS DECIMAL(15,2)) + CAST(var41 AS DECIMAL(15,2))) - CAST(var94_A AS DECIMAL(15,2))))
+                           ((CASE WHEN CAST(var86 AS DECIMAL(15,2)) < 0 THEN ABS(CAST(var86 AS DECIMAL(15,2))) ELSE 0 END + CAST(var41 AS DECIMAL(15,2))) - CAST(var94_A AS DECIMAL(15,2))))
                      ELSE 0 END) as ajuste_pagos_repasses_total
         FROM base_transacoes_unificadas
         WHERE {where_clause}
