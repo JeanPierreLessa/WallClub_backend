@@ -219,7 +219,7 @@ def obter_colunas_monetarias_rpr_dinamico():
     for item in estrutura:
         campo = item['campo']
         # Variáveis monetárias conhecidas
-        if campo in ['var11', 'var15', 'var26', 'var37', 'var41', 'var90', 'var94_A', 'var98', 'var101', 'var58', 'var111_A', 'var109_A', 'var113_A', 'var116_A', 'var118_A']:
+        if campo in ['var11', 'var15', 'var26', 'var37', 'var41', 'var90', 'var94_A', 'var98', 'variavel_nova_18', 'var101', 'var58', 'var111_A', 'var109_A', 'var113_A', 'var116_A', 'var118_A']:
             colunas_monetarias.append(campo)
         # Fórmulas que resultam em valores monetários (R$)
         elif item['tipo'] == 'formula' and 'R$' in item['nome']:
