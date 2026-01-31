@@ -341,7 +341,12 @@ def relatorio_producao_receita(request):
                      THEN CAST(var116_A AS DECIMAL(15,2))
                      ELSE 0 END) as resultado_financeiro,
             SUM(CAST(var98 AS DECIMAL(15,2))) as total_var98,
-            SUM(CAST(var101 AS DECIMAL(15,2))) as total_var101
+            SUM(CAST(var101 AS DECIMAL(15,2))) as total_var101,
+            SUM(CASE WHEN var101 IS NOT NULL AND CAST(var101 AS DECIMAL(15,2)) != 0
+                     THEN (CAST(var98 AS DECIMAL(15,2)) - CAST(var101 AS DECIMAL(15,2))) -
+                          ((CAST(var37 AS DECIMAL(15,2)) - CAST(var90 AS DECIMAL(15,2))) +
+                           ((CAST(var15 AS DECIMAL(15,2)) + CAST(var41 AS DECIMAL(15,2))) - CAST(var94_A AS DECIMAL(15,2))))
+                     ELSE 0 END) as ajuste_pagos_repasses_calculado
         FROM base_transacoes_unificadas
         WHERE {where_clause}
     """
@@ -370,6 +375,7 @@ def relatorio_producao_receita(request):
     resultado_financeiro = Decimal(str(resultado[11] or 0))
     total_var98 = Decimal(str(resultado[12] or 0))
     total_var101 = Decimal(str(resultado[13] or 0))
+    ajuste_pagos_repasses = Decimal(str(resultado[14] or 0)).quantize(Decimal('0.01'))
 
     # Cálculos derivados
     receita_antecipacao_parcelamentos = receita_var41 + receita_var15_calculada
@@ -384,9 +390,6 @@ def relatorio_producao_receita(request):
 
     # Calcular Resultado Caixa (Rcebtos - Repasses) R$ = var98 - var101
     resultado_caixa_reais = total_var98 - total_var101
-
-    # Calcular Ajuste pagos de repasses = Resultado Caixa - (Resultado MDR + Resultado Antecipação)
-    ajuste_pagos_repasses = (resultado_caixa_reais - (resultado_mdr_reais + resultado_antecipacao_reais)).quantize(Decimal('0.01'))
 
     custo_mdr_total = custo_mdr_direto
     custo_antecipacao_total = custo_antecipacao_direto
