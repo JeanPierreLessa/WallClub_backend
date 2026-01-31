@@ -377,6 +377,9 @@ def relatorio_producao_receita(request):
     total_var101 = Decimal(str(resultado[13] or 0))
     ajuste_pagos_repasses = Decimal(str(resultado[14] or 0)).quantize(Decimal('0.01'))
 
+    # DEBUG: Verificar valores
+    registrar_log('portais.admin', f"DEBUG RPR - total_var98={total_var98}, total_var101={total_var101}, ajuste_pagos_repasses={ajuste_pagos_repasses}, resultado[14]={resultado[14]}")
+
     # Cálculos derivados
     receita_antecipacao_parcelamentos = receita_var41 + receita_var15_calculada
     receita_outras_tarifas = Decimal('0.00')
