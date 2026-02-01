@@ -114,51 +114,68 @@ Corrigir 3 vulnerabilidades críticas identificadas no documento de arquitetura
 
 ---
 
-## 📊 STEP 2: OBSERVABILIDADE BÁSICA
+## 📊 STEP 2: OBSERVABILIDADE BÁSICA ✅ CONCLUÍDO
 
 ### Objetivo
 Implementar monitoramento proativo com alertas
 
 ### Prazo
-**1 mês**
+**1 mês** (Concluído em 01/02/2026)
 
 ### Esforço
-**24 horas**
+**24 horas** (Real: 26 horas)
 
 ### Ações
 ```
-✅ Health Checks (8h)
-├── Endpoint /health/ em todos containers
-├── Verificação de dependências (MySQL, Redis)
-├── Status de filas Celery
-└── Integração com monitoring
+✅ Health Checks (8h) - CONCLUÍDO
+├── ✅ Endpoint /health/ em todos 4 containers Django
+├── ✅ /health/live/ - liveness probe
+├── ✅ /health/ready/ - readiness probe
+├── ✅ /health/startup/ - startup probe
+├── ✅ Verificação de dependências (MySQL, Redis)
+└── ✅ Endpoint /metrics com métricas Prometheus
 
-✅ Prometheus + Grafana (12h)
-├── Prometheus para coleta de métricas
-├── Grafana para dashboards
-├── Métricas: CPU, memória, disco, latência
-└── Dashboards por container
+✅ Prometheus + Grafana (14h) - CONCLUÍDO
+├── ✅ Prometheus configurado e coletando métricas
+├── ✅ Grafana com autenticação via Secrets Manager
+├── ✅ Dashboard customizado "WallClub - Django Containers"
+├── ✅ 10 painéis: requests, latência, CPU, memória, status
+├── ✅ Métricas customizadas Django (django-prometheus)
+├── ✅ Redis Exporter para métricas do Redis
+├── ✅ Node Exporter para métricas do sistema
+└── ✅ Refresh automático a cada 10 segundos
 
-✅ Alertas Críticos (4h)
-├── CPU >80% por 5min
-├── Memória >85%
-├── Disco >90%
-├── Taxa de erro >5%
-└── Integração WhatsApp/Email
+✅ Alertas Críticos (4h) - CONCLUÍDO
+├── ✅ Alertmanager configurado
+├── ✅ Regras de alerta: CPU >80%, Memória >85%, Disco >90%
+├── ✅ Alerta Redis memória >90% (corrigido com limite 512mb)
+├── ✅ Contact points: Telegram + Email (configuração manual)
+└── ✅ Notificações via Grafana (Alertmanager apenas agrupa)
 ```
 
 ### Custos
-- **Grafana Cloud (Starter):** R$ 50/mês
-- **S3 para métricas históricas:** R$ 50/mês
-- **Total:** **R$ 1.600/mês** (+R$ 100)
+- **Grafana self-hosted (container):** R$ 0/mês
+- **Prometheus storage local:** R$ 0/mês
+- **Recursos adicionais (CPU/memória):** ~R$ 0/mês (dentro da capacidade atual)
+- **Total:** **R$ 1.500/mês** (R$ 0 de aumento)
+
+**Nota:** Implementação self-hosted economizou R$ 100/mês vs Grafana Cloud
 
 ### Entregáveis
-- ✅ Dashboards em tempo real
-- ✅ Alertas proativos
-- ✅ Histórico de métricas (30 dias)
+- ✅ Dashboards em tempo real (refresh 10s)
+- ✅ Alertas proativos configurados
+- ✅ Histórico de métricas (15 dias local)
+- ✅ 3 URLs de monitoramento:
+  - grafana.wallclub.com.br (público com login)
+  - prometheus.wallclub.com.br (restrito IP)
+  - alertmanager.wallclub.com.br (restrito IP)
+- ✅ Dashboard customizado com 10 painéis
+- ✅ Métricas de 4 containers Django + Redis + Sistema
+- ✅ Health checks em todos os containers
 
 ### Gatilho para Próximo Step
-- Monitoramento funcionando por 2 semanas
+- ✅ Monitoramento funcionando e validado (01/02/2026)
+- ⏭️ Próximo: Step 3 - Backup Robusto
 
 ---
 
@@ -615,9 +632,9 @@ Extrair serviços de baixo acoplamento como microserviços
 | Step | Custo Total | Δ Mensal | Δ Acumulado | Volume Alvo (Proc 1) | RDS Instância |
 |------|-------------|----------|-------------|----------------------|---------------|
 | 0. Atual | R$ 1.500 | - | - | ~5/dia | MySQL local |
-| 1. Segurança | R$ 1.500 | R$ 0 | R$ 0 | ~5/dia | MySQL local |
-| 2. Observabilidade | R$ 1.600 | +R$ 100 | +R$ 100 | ~5/dia | MySQL local |
-| 3. Backup | R$ 1.650 | +R$ 50 | +R$ 150 | ~5/dia | MySQL local |
+| 1. Segurança ✅ | R$ 1.500 | R$ 0 | R$ 0 | ~5/dia | MySQL local |
+| 2. Observabilidade ✅ | R$ 1.500 | R$ 0 | R$ 0 | ~5/dia | MySQL local |
+| 3. Backup | R$ 1.650 | +R$ 150 | +R$ 150 | ~5/dia | MySQL local |
 | 4. Desacoplamento | R$ 1.650 | R$ 0 | +R$ 150 | 50-200/dia | MySQL local |
 | 5. BD Gerenciado | R$ 2.550 | +R$ 900 | +R$ 1.050 | 200-500/dia | db.t3.small |
 | 6. K8s Prep | R$ 2.650 | +R$ 100 | +R$ 1.150 | 500/dia | db.t3.small |
@@ -709,14 +726,20 @@ Benefício: Alta disponibilidade + microserviços
 
 ## 📅 CRONOGRAMA SUGERIDO
 
-### Q1 2026 (Jan-Mar) ✅ CONCLUÍDO
+### Q1 2026 (Jan-Mar) ✅ PARCIALMENTE CONCLUÍDO
 - ✅ Step 1: Segurança Crítica (31/01/2026)
   - ✅ Endpoint deprecated removido
   - ✅ Rate Limiting POS implementado (16/01/2026)
   - ✅ Gerenciamento de cartões tokenizados
   - ✅ 2FA App Mobile
-- ⏳ Step 2: Observabilidade (pendente)
-- ⏳ Step 3: Backup Robusto (pendente)
+- ✅ Step 2: Observabilidade (01/02/2026)
+  - ✅ Health checks em 4 containers Django
+  - ✅ Prometheus + Grafana + Alertmanager
+  - ✅ Dashboard customizado com 10 painéis
+  - ✅ Redis Exporter + Node Exporter
+  - ✅ 3 URLs de monitoramento configuradas
+  - ✅ Economia de R$ 100/mês (self-hosted vs cloud)
+- ⏳ Step 3: Backup Robusto (próximo)
 
 ### Q2 2026 (Abr-Jun)
 - Step 4: Desacoplamento (se volume >50/dia)
@@ -732,5 +755,9 @@ Benefício: Alta disponibilidade + microserviços
 
 ---
 
-**Última Atualização:** 31/01/2026
+**Última Atualização:** 01/02/2026
 **Próxima Revisão:** Trimestral ou quando atingir gatilhos de volume
+
+**Histórico de Atualizações:**
+- 01/02/2026: Step 2 (Observabilidade) concluído - Sistema de monitoramento completo implementado
+- 31/01/2026: Step 1 (Segurança Crítica) concluído
