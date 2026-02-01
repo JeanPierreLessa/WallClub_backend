@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 6.3
-**Data:** 29/01/2026
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (100% - **Own Financial Completo**), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)** + **Portal de Vendas com GatewayRouter (Pinbank/Own)**
+**Versão:** 6.4
+**Data:** 31/01/2026
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (100% - **Own Financial Completo**), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)** + **Portal de Vendas com GatewayRouter (Pinbank/Own)** + **Arquitetura de URLs Refatorada (3 arquivos)** + **Sistema de Monitoramento Completo (Prometheus + Alertmanager)**
 
 ---
 
@@ -3633,3 +3633,179 @@ GROUP BY nome_operador
 ```
 
 **Status:** ✅ Implementado e funcional
+
+---
+
+## 🔀 ARQUITETURA DE URLS REFATORADA (31/01/2026)
+
+### Simplificação de Roteamento
+
+**Antes:** 8 arquivos de URLs
+- `wallclub/urls.py` (padrão não usado)
+- `wallclub/urls_portais.py`
+- `wallclub/urls_admin.py`
+- `wallclub/urls_vendas.py`
+- `wallclub/urls_lojista.py`
+- `wallclub/urls_corporativo.py`
+- `wallclub/urls_apis.py`
+- `wallclub/urls_pos.py`
+
+**Depois:** 3 arquivos de URLs (62% redução)
+- `wallclub/urls_portais.py` (com função helper dinâmica)
+- `wallclub/urls_apis.py`
+- `wallclub/urls_pos.py`
+
+### Função Helper Dinâmica
+
+**Arquivo:** `wallclub/urls_portais.py`
+
+```python
+def get_portal_urlpatterns(portal_name=None):
+    """
+    Gera URLpatterns dinamicamente baseado no portal.
+
+    Args:
+        portal_name: 'admin', 'vendas', 'lojista', 'corporativo' ou None
+
+    Returns:
+        Lista de URLpatterns configurados
+    """
+    # Rotas globais (todos os portais)
+    base_patterns = [
+        path('metrics', metrics_view),  # Prometheus
+        path('health/', include('monitoring.urls')),
+        path('admin/', admin.site.urls),
+    ]
+
+    # Portal específico ou todos com prefixos
+    if portal_name:
+        return base_patterns + [path('', include(f'portais.{portal_name}.urls'))]
+    else:
+        return base_patterns + [
+            path('portal_admin/', include('portais.admin.urls')),
+            path('portal_vendas/', include('portais.vendas.urls')),
+            # ...
+        ]
+```
+
+### Middleware Simplificado
+
+**Arquivo:** `wallclub/middleware/subdomain_router.py`
+
+```python
+class SubdomainRouterMiddleware:
+    """Gera URLpatterns dinamicamente baseado no subdomínio."""
+
+    subdomain_map = {
+        'admin': 'admin',
+        'vendas': 'vendas',
+        'lojista': 'lojista',
+        'www': 'corporativo',
+    }
+
+    def __call__(self, request):
+        subdomain = request.get_host().split('.')[0]
+
+        if subdomain in self.subdomain_map:
+            portal_name = self.subdomain_map[subdomain]
+            request.urlconf = type('DynamicURLConf', (), {
+                'urlpatterns': get_portal_urlpatterns(portal_name)
+            })
+
+        return self.get_response(request)
+```
+
+### Benefícios
+
+- ✅ **Zero duplicação** de código
+- ✅ **Subdomínios mantidos** (admin.wallclub.com.br, vendas.wallclub.com.br)
+- ✅ **Rotas globais** em um único lugar (/metrics, /health/)
+- ✅ **Manutenção simplificada** (1 função vs 5 arquivos)
+- ✅ **URLconf dinâmico** via middleware
+
+### Rotas Globais
+
+Disponíveis em todos os containers Django:
+
+| Rota | Descrição | Implementação |
+|------|-----------|---------------|
+| `/metrics` | Métricas Prometheus | `monitoring/metrics_view.py` |
+| `/health/` | Health check básico | `monitoring/health_checks.py` |
+| `/health/live/` | Liveness probe | `monitoring/health_checks.py` |
+| `/health/ready/` | Readiness probe | `monitoring/health_checks.py` |
+| `/admin/` | Django Admin | Django padrão |
+
+---
+
+## 📊 SISTEMA DE MONITORAMENTO (31/01/2026)
+
+### Stack Implementada
+
+**Coleta de Métricas:**
+- ✅ Prometheus (porta 9090)
+- ✅ Node Exporter (sistema - porta 9100)
+- ✅ Redis Exporter (porta 9121)
+
+**Alertas e Notificações:**
+- ✅ Alertmanager (porta 9093)
+- ✅ Telegram (@Wallclub_monitor_bot)
+- ✅ Email (AWS SES)
+
+**Visualização:**
+- ⚠️ Grafana (porta 3000 - opcional em dev)
+
+### Métricas Expostas
+
+**Containers Django (4):**
+```prometheus
+up 1
+django_db_connection_status 1
+django_info{version="4.2.23"} 1
+```
+
+**Redis:**
+- `redis_up`
+- `redis_memory_used_bytes`
+- `redis_connected_clients`
+
+**Sistema:**
+- `node_filesystem_avail_bytes`
+- `node_cpu_seconds_total`
+- `node_memory_MemAvailable_bytes`
+
+### Alertas Configurados (14)
+
+**Críticos:**
+- ServiceDown (30s)
+- RedisDown (1min)
+- MySQLDown (1min)
+- DiskSpaceLowCritical (<10%, 5min)
+
+**Warnings:**
+- HealthCheckFailing (5min)
+- HighCPUUsage (>80%, 10min)
+- HighMemoryUsage (>90%, 10min)
+- RedisMemoryHigh (>90%, 5min)
+- DiskSpaceLowWarning (<20%, 10min)
+- LowAvailability (<95%, 5min)
+
+### Retenção e Armazenamento
+
+**Atual:**
+- Retenção: 15 dias
+- Armazenamento: Volume Docker local
+- Scrape interval: 30 segundos
+
+**Evolução Futura:**
+- Thanos + S3 para retenção longa
+- CloudWatch Exporter para S3
+- Métricas customizadas de negócio
+
+### Documentação
+
+**Localização:** `monitoring/README.md`
+
+**Conteúdo:**
+- Métricas implementadas
+- Instruções Node Exporter para banco em produção
+- Evolução futura (Thanos, S3, retenção)

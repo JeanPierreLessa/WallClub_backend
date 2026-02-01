@@ -29,6 +29,9 @@ RUN pip install gunicorn
 # Copiar código RiskEngine
 COPY services/riskengine /app
 
+# Copiar arquivo de métricas Prometheus
+COPY services/riskengine/monitoring_metrics.py /app/monitoring_metrics.py
+
 # Criar usuário não-root
 RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app

@@ -1,7 +1,7 @@
 # ROADMAP DE EVOLUÇÃO - INFRAESTRUTURA WALLCLUB
 
-**Versão:** 1.1
-**Data:** 16/01/2026
+**Versão:** 1.2
+**Data:** 31/01/2026
 **Base Atual:** R$ 1.500/mês | ~5 transações/dia (Processo 1: POS+App)
 **Objetivo:** Evolução incremental baseada em volume e necessidade
 
@@ -619,8 +619,8 @@ Extrair serviços de baixo acoplamento como microserviços
 | 2. Observabilidade | R$ 1.600 | +R$ 100 | +R$ 100 | ~5/dia | MySQL local |
 | 3. Backup | R$ 1.650 | +R$ 50 | +R$ 150 | ~5/dia | MySQL local |
 | 4. Desacoplamento | R$ 1.650 | R$ 0 | +R$ 150 | 50-200/dia | MySQL local |
-| 5. BD Gerenciado | R$ 2.200 | +R$ 550 | +R$ 700 | 200-500/dia | db.t3.small |
-| 6. K8s Prep | R$ 2.300 | +R$ 100 | +R$ 800 | 500/dia | db.t3.small |
+| 5. BD Gerenciado | R$ 2.550 | +R$ 900 | +R$ 1.050 | 200-500/dia | db.t3.small |
+| 6. K8s Prep | R$ 2.650 | +R$ 100 | +R$ 1.150 | 500/dia | db.t3.small |
 | 7. K8s Deploy | R$ 3.750 | +R$ 1.450 | +R$ 2.250 | 500-1k/dia | db.t3.medium |
 | 8. Auto-scaling | R$ 4.350 | +R$ 600 | +R$ 2.850 | 1k-2k/dia | db.t3.large |
 | 9. Multi-AZ | R$ 6.450 | +R$ 2.100 | +R$ 4.950 | >2k/dia | db.m5.large Multi-AZ |
@@ -709,10 +709,14 @@ Benefício: Alta disponibilidade + microserviços
 
 ## 📅 CRONOGRAMA SUGERIDO
 
-### Q1 2026 (Jan-Mar)
-- ✅ Step 1: Segurança Crítica
-- ✅ Step 2: Observabilidade
-- ✅ Step 3: Backup Robusto
+### Q1 2026 (Jan-Mar) ✅ CONCLUÍDO
+- ✅ Step 1: Segurança Crítica (31/01/2026)
+  - ✅ Endpoint deprecated removido
+  - ✅ Rate Limiting POS implementado (16/01/2026)
+  - ✅ Gerenciamento de cartões tokenizados
+  - ✅ 2FA App Mobile
+- ⏳ Step 2: Observabilidade (pendente)
+- ⏳ Step 3: Backup Robusto (pendente)
 
 ### Q2 2026 (Abr-Jun)
 - Step 4: Desacoplamento (se volume >50/dia)
@@ -728,5 +732,5 @@ Benefício: Alta disponibilidade + microserviços
 
 ---
 
-**Última Atualização:** 15/01/2026
+**Última Atualização:** 31/01/2026
 **Próxima Revisão:** Trimestral ou quando atingir gatilhos de volume

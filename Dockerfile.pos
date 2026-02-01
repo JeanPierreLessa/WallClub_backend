@@ -32,12 +32,18 @@ RUN pip uninstall -y wallclub_core && pip install --no-cache-dir /core
 # Copiar código Django
 COPY services/django /app
 
+# Copiar módulo de monitoramento
+COPY monitoring /app/monitoring
+
 # Criar diretórios necessários e usuário não-root
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     adduser --disabled-password --gecos '' appuser && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    chmod +x /app/docker-entrypoint.sh
+
 USER appuser
 
 EXPOSE 8006
 
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["gunicorn", "wallclub.wsgi:application", "--bind", "0.0.0.0:8006", "--workers", "2", "--timeout", "120", "--log-level", "info", "--access-logfile", "-", "--error-logfile", "-"]

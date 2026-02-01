@@ -1,9 +1,20 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.4
-**Data:** 29/01/2026
+**Versão:** 5.5
+**Data:** 31/01/2026
 **Fontes:** Fases 1-7 (100%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- **Arquitetura de URLs Refatorada (31/01/2026)**
+  - Redução de 8 para 3 arquivos de URLs (62% redução)
+  - Função helper `get_portal_urlpatterns()` para geração dinâmica
+  - Middleware simplificado usando função helper (zero duplicação)
+  - Subdomínios mantidos funcionando (admin.wallclub.com.br, vendas.wallclub.com.br)
+  - Rotas globais centralizadas (/metrics, /health/, /admin/)
+- **Sistema de Monitoramento Completo (31/01/2026)**
+  - Prometheus + Alertmanager + Exporters (Redis, Node)
+  - 14 alertas configurados (críticos e warnings)
+  - Notificações via Telegram e Email funcionando
+  - Métricas customizadas em todos os containers Django
 - **GatewayRouter - Portal de Vendas com Own Financial completo (29/01/2026)**
   - `CheckoutService` refatorado para usar `GatewayRouter` ao invés de hardcoded Pinbank
   - Seleção dinâmica de gateway (Pinbank/Own) por loja via campo `gateway_ativo`

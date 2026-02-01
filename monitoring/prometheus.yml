@@ -1,0 +1,78 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: 'wallclub'
+    environment: 'dev'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+rule_files:
+  - '/etc/prometheus/alerts.yml'
+
+scrape_configs:
+  # Monitoramento completo com métricas Django Prometheus
+  - job_name: 'wallclub-portais'
+    static_configs:
+      - targets: ['wallclub-portais:8005']
+        labels:
+          service: 'portais'
+          container: 'wallclub-portais'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  - job_name: 'wallclub-apis'
+    static_configs:
+      - targets: ['wallclub-apis:8007']
+        labels:
+          service: 'apis'
+          container: 'wallclub-apis'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  - job_name: 'wallclub-pos'
+    static_configs:
+      - targets: ['wallclub-pos:8006']
+        labels:
+          service: 'pos'
+          container: 'wallclub-pos'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  - job_name: 'wallclub-riskengine'
+    static_configs:
+      - targets: ['wallclub-riskengine:8008']
+        labels:
+          service: 'riskengine'
+          container: 'wallclub-riskengine'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['wallclub-redis-exporter:9121']
+        labels:
+          service: 'redis'
+          container: 'wallclub-redis'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Node Exporter - Sistema (CPU, Memória, Disco)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['wallclub-node-exporter:9100']
+        labels:
+          service: 'system'
+          instance: 'app-server'
+    scrape_interval: 30s
+    scrape_timeout: 10s

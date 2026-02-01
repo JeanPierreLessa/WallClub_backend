@@ -6,12 +6,13 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 30/01/2026
+**Última Atualização:** 31/01/2026
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
   - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
+  - ✅ **Arquitetura de URLs Refatorada (31/01):** 3 arquivos (antes 8), função helper dinâmica, zero duplicação
   - ✅ Portal Vendas: Sistema de primeiro acesso implementado
   - ✅ Portal Vendas: Filtro por portal corrigido (14/12/2025)
   - ✅ Portal Lojista: Sistema de Ofertas ativo (menu visível)
@@ -58,6 +59,21 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Transação real aprovada (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
+
+### Sistema de Monitoramento ⭐ **NOVO (31/01/2026)**
+- ✅ **Prometheus** (porta 9090) - Coleta de métricas (retenção 15 dias)
+- ✅ **Alertmanager** (porta 9093) - Gerenciamento de alertas
+- ✅ **Node Exporter** (porta 9100) - Métricas de sistema (CPU, memória, disco)
+- ✅ **Redis Exporter** (porta 9121) - Métricas do Redis
+- ✅ **14 Alertas Configurados:**
+  - Críticos: ServiceDown (30s), RedisDown (1min), MySQLDown (1min), DiskSpaceLowCritical (<10%)
+  - Warnings: HighCPU (>80%), HighMemory (>90%), LowAvailability (<95%), e mais
+- ✅ **Notificações:**
+  - Telegram: @Wallclub_monitor_bot
+  - Email: AWS SES
+- ✅ **Métricas Customizadas:** `/metrics` em todos os 4 containers Django
+- ✅ **Health Checks:** `/health/`, `/health/live/`, `/health/ready/`, `/health/startup/`
+- 📖 **Documentação:** `monitoring/README.md`
 
 ### Fases Concluídas
 - ✅ **Fase 1:** Segurança Básica (Rate limiting, OAuth, Auditoria)

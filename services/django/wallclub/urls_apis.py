@@ -1,5 +1,5 @@
 """
-URLs para Container APIs (Mobile + Checkout)
+URLs para Container APIS (Mobile + Checkout)
 """
 from django.contrib import admin
 from django.urls import path, include
@@ -9,9 +9,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Rotas globais (monitoramento)
+from monitoring.metrics_view import metrics_view
+
 urlpatterns = [
+    # Métricas Prometheus
+    path('metrics', metrics_view, name='prometheus-metrics'),
+
+    # Monitoramento e Health Checks
+    path('health/', include('monitoring.urls')),
+
+    # Admin Django
     path('admin/', admin.site.urls),
-    
+
     # APIs Mobile
     path('api/oauth/', include('apps.oauth.urls')),
     path('api/v1/', include('apps.urls')),  # Health check
@@ -20,10 +30,10 @@ urlpatterns = [
     path('api/v1/conta_digital/', include('apps.conta_digital.urls')),
     path('api/v1/ofertas/', include('apps.ofertas.urls')),
     path('api/v1/cupons/', include('apps.cupom.urls')),  # APIs de cupons
-    
+
     # API Interna (comunicação entre containers)
     path('api/internal/cliente/', include('apps.cliente.urls_api_interna')),
-    
+
     # Checkout Web
     path('api/v1/checkout/', include('checkout.link_pagamento_web.urls')),
     path('api/v1/checkout/recorrencia/', include('checkout.link_recorrencia_web.urls')),
