@@ -71,7 +71,7 @@ MIDDLEWARE = [
     'portais.lojista.middleware.MarcaCanalMiddleware',
 ]
 
-ROOT_URLCONF = 'wallclub.urls'
+ROOT_URLCONF = 'wallclub.urls_portais'
 
 TEMPLATES = [
     {
