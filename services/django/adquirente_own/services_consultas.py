@@ -438,6 +438,12 @@ class ConsultasOwnService:
                 return resultado
 
             dados = resultado.get('dados', [])
+
+            # LOG DETALHADO DO JSON COMPLETO
+            import json
+            registrar_log('adquirente_own', f'📋 JSON COMPLETO DA CONSULTA CADASTRAL:')
+            registrar_log('adquirente_own', f'{json.dumps(dados, indent=2, ensure_ascii=False)}')
+
             if not dados or len(dados) == 0:
                 return {'sucesso': False, 'mensagem': 'Nenhum dado cadastral retornado pela Own'}
 
