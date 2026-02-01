@@ -68,7 +68,9 @@
 - ❌ Completar funções sem pedido direto
 - ❌ Usar dados hardcoded (só quando explícito)
 - ❌ Assumir o que o usuário quer
-- ❌ **EXPOR CREDENCIAIS EM CÓDIGO OU DOCUMENTOS** (usar AWS Secrets Manager)
+- ❌ **🚨 CRÍTICO: EXPOR CREDENCIAIS EM CÓDIGO, ARQUIVOS DE CONFIGURAÇÃO OU DOCUMENTOS**
+- ❌ **🚨 CRÍTICO: USAR FALLBACK COM CREDENCIAIS REAIS** (ex: `os.environ.get('TOKEN', 'credencial_real')`)
+- ❌ **🚨 CRÍTICO: COMMITAR TOKENS, SENHAS, API KEYS EM REPOSITÓRIO GIT**
 - ❌ **CRIAR DOCUMENTOS (README, guias, tutoriais) SEM SOLICITAÇÃO EXPLÍCITA**
 - ❌ Propor soluções que exijam ações do usuário sem perguntar primeiro
 - ❌ Mudar abordagem quando falhar sem consultar o usuário
@@ -736,12 +738,36 @@ BASE_URL=http://localhost:8005
 MERCHANT_URL = os.environ.get('MERCHANT_URL')  # Adicionar junto com outras URLs
 ```
 
-**Locais onde credenciais NUNCA devem aparecer:**
+**🚨 REGRA CRÍTICA: Credenciais NUNCA devem aparecer em:**
 - ❌ Código Python (.py)
-- ❌ Arquivos de configuração commitados (.env.production)
+- ❌ Arquivos de configuração commitados (YAML, JSON, .conf)
 - ❌ Documentação (.md)
 - ❌ Scripts (.sh, .sql)
 - ❌ Logs de aplicação
+- ❌ **FALLBACK de variáveis de ambiente** (ex: `os.environ.get('TOKEN', 'valor_real')`)
+
+**❌ PROIBIDO - Exemplos de código INSEGURO:**
+```python
+# NUNCA FAZER ISSO:
+EMAIL_HOST_USER = os.environ.get('MAILSERVER_USERNAME', 'AKIAXWHDLWAXPATSXOK6')
+bot_token = os.environ.get('TELEGRAM_TOKEN', '8352234743:AAELmuFIBsNeZ639dlUVOAozkUivpnKAj7w')
+```
+
+**✅ CORRETO - Usar ConfigManager ou variável obrigatória:**
+```python
+# Opção 1: ConfigManager (recomendado)
+from wallclub_core.utilitarios.config_manager import get_config_manager
+email_config = get_config_manager().get_email_config()
+EMAIL_HOST_USER = email_config.get('user')  # Sem fallback
+
+# Opção 2: Variável obrigatória (falha se não existir)
+TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']  # Sem fallback, levanta KeyError
+
+# Opção 3: Validação explícita
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+if not TELEGRAM_TOKEN:
+    raise ValueError("TELEGRAM_TOKEN não configurado")
+```
 
 **Usar:** AWS Secrets Manager (`wall/prod/db`, `wall/prod/oauth/*`, `wall/prod/integrations`)
 

@@ -1,9 +1,9 @@
 global:
   resolve_timeout: 5m
-  smtp_smarthost: 'email-smtp.us-east-1.amazonaws.com:587'
+  smtp_smarthost: '${MAILSERVER_URL}:587'
   smtp_from: 'noreply@wallclub.com.br'
-  smtp_auth_username: 'AKIAXWHDLWAXPATSXOK6'
-  smtp_auth_password: 'BIlwP21H2UKtnQWSngltPT6jdpV3+D7MunK/RcxRD3S5'
+  smtp_auth_username: '${MAILSERVER_USERNAME}'
+  smtp_auth_password: '${MAILSERVER_PASSWD}'
   smtp_require_tls: true
 
 route:
@@ -32,8 +32,8 @@ receivers:
           <p><strong>Status:</strong> {{ .Status }}</p>
           <p><strong>Horário:</strong> {{ .CommonAnnotations.timestamp }}</p>
     telegram_configs:
-      - bot_token: '8352234743:AAELmuFIBsNeZ639dlUVOAozkUivpnKAj7w'
-        chat_id: 177710501
+      - bot_token: '${TELEGRAM_MONITOR_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_MONITOR_BOT_CHAT_ID}
         parse_mode: 'HTML'
         message: |
           🚨 <b>{{ .GroupLabels.alertname }}</b>
