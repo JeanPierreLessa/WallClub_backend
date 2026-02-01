@@ -1,50 +1,15 @@
 global:
   resolve_timeout: 5m
-  smtp_smarthost: '${MAILSERVER_URL}:587'
-  smtp_from: 'noreply@wallclub.com.br'
-  smtp_auth_username: '${MAILSERVER_USERNAME}'
-  smtp_auth_password: '${MAILSERVER_PASSWD}'
-  smtp_require_tls: true
 
 route:
   group_by: ['alertname', 'service']
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 1h
-  receiver: 'todos-canais'
-  routes:
-    - match:
-        severity: critical
-      receiver: 'todos-canais'
-      repeat_interval: 30m
+  receiver: 'null'
 
 receivers:
-  - name: 'todos-canais'
-    email_configs:
-      - to: 'jeanpierre.lessa@gmail.com'
-        headers:
-          Subject: '[WallClub] {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
-        html: |
-          <h2>Alerta: {{ .GroupLabels.alertname }}</h2>
-          <p><strong>Severidade:</strong> {{ .CommonLabels.severity }}</p>
-          <p><strong>Serviço:</strong> {{ .GroupLabels.service }}</p>
-          <p><strong>Descrição:</strong> {{ range .Alerts }}{{ .Annotations.description }}{{ end }}</p>
-          <p><strong>Status:</strong> {{ .Status }}</p>
-          <p><strong>Horário:</strong> {{ .CommonAnnotations.timestamp }}</p>
-    telegram_configs:
-      - bot_token: '${TELEGRAM_MONITOR_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_MONITOR_BOT_CHAT_ID}
-        parse_mode: 'HTML'
-        message: |
-          🚨 <b>{{ .GroupLabels.alertname }}</b>
-
-          <b>Serviço:</b> {{ .GroupLabels.service }}
-          <b>Severidade:</b> {{ .CommonLabels.severity }}
-
-          {{ range .Alerts }}
-          <b>Descrição:</b> {{ .Annotations.description }}
-          <b>Status:</b> {{ .Status }}
-          {{ end }}
+  - name: 'null'
 
 inhibit_rules:
   - source_match:
