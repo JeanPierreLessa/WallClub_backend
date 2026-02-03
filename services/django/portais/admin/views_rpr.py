@@ -1115,8 +1115,55 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
     # Box Resultado Financeiro: Totalizador = Receita Financeira Total - Custo Direto Total
     resultado_financeiro_totalizador = receita_financeira_total - custo_direto_total
 
-    # Calcular percentual de comissão (simplificado para export)
-    percentual_comissao = Decimal('0.15')  # 15% padrão
+    # Calcular percentual de comissão usando tabela canal_comissao (mesmo cálculo da tela)
+    percentual_comissao = Decimal('0.00')
+
+    def obter_comissao_vigente_canal_export(canal_nome, data_referencia):
+        """Busca comissão vigente do canal na data de referência"""
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT cc.comissao
+                FROM canal_comissao cc
+                JOIN canal c ON cc.canal_id = c.id
+                WHERE c.nome = %s
+                AND cc.vigencia_inicio <= %s
+                AND (cc.vigencia_fim IS NULL OR cc.vigencia_fim >= %s)
+                ORDER BY cc.vigencia_inicio DESC
+                LIMIT 1
+            """, [canal_nome, data_referencia, data_referencia])
+            result = cursor.fetchone()
+            return Decimal(str(result[0])) if result else Decimal('0.00')
+
+    data_referencia = filtros.get('data_final') or date.today().strftime('%Y-%m-%d')
+
+    if filtros.get('canal'):
+        percentual_comissao = obter_comissao_vigente_canal_export(filtros['canal'], data_referencia)
+    else:
+        # Calcular média ponderada por volume
+        sql_volume_canal = f"""
+            SELECT var4 as canal_nome, SUM(CAST(var26 AS DECIMAL(15,2))) as volume_canal
+            FROM base_transacoes_unificadas
+            WHERE {where_clause} AND var4 IS NOT NULL
+            GROUP BY var4
+        """
+        volume_por_canal = {}
+        with connection.cursor() as cursor:
+            cursor.execute(sql_volume_canal, params)
+            for row in cursor.fetchall():
+                canal_nome = row[0]
+                volume = Decimal(str(row[1] or 0))
+                if canal_nome and volume > 0:
+                    volume_por_canal[canal_nome] = volume
+
+        volume_total_canais = sum(volume_por_canal.values())
+        if volume_total_canais > 0:
+            comissao_ponderada = Decimal('0.00')
+            for canal_nome, volume in volume_por_canal.items():
+                comissao_canal = obter_comissao_vigente_canal_export(canal_nome, data_referencia)
+                if comissao_canal > 0:
+                    peso = volume / volume_total_canais
+                    comissao_ponderada += comissao_canal * peso
+            percentual_comissao = comissao_ponderada
 
     # Comissão Total a Pagar = Totalizador * Percentual de Comissão
     comissao_total_pagar = resultado_financeiro_totalizador * percentual_comissao
