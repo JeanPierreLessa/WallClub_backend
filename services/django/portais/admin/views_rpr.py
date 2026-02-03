@@ -158,8 +158,8 @@ def obter_estrutura_colunas_rpr():
         # Nova coluna: Custo ajuste nos Repasses (movida para antes de var98)
         {'tipo': 'formula', 'campo': 'variavel_nova_18', 'nome': 'Custo ajuste nos Repasses (R$)', 'formula': '(var98 - var101) - (variavel_nova_2 + variavel_nova_5) if var101 != 0 else "Não Finalizada"'},
 
-        # Nova coluna: Resultado Operacional Ajustado
-        {'tipo': 'formula', 'campo': 'variavel_nova_19', 'nome': 'Resultado Operacional Ajustado (R$)', 'formula': 'variavel_nova_8 - variavel_nova_18 if variavel_nova_18 != "Não Finalizada" else "Não Finalizada"'},
+        # Nova coluna: Resultado Operacional Ajustado (Resultado Operacional projetado + Custo ajuste nos Repasses)
+        {'tipo': 'formula', 'campo': 'variavel_nova_19', 'nome': 'Resultado Operacional Ajustado (R$)', 'formula': 'variavel_nova_8 + variavel_nova_18 if variavel_nova_18 != "Não Finalizada" else "Não Finalizada"'},
 
         # 29-30: var98, var101
         {'tipo': 'variavel', 'campo': 'var98', 'nome': None},
@@ -545,7 +545,7 @@ def relatorio_producao_receita(request):
         'custos_pos_equip': custos_pos_equip,
         'impostos_total': impostos_total,
         'custo_direto_total': custo_direto_total,
-        'ajuste_pagos_repasses': ajuste_pagos_repasses,
+        'ajuste_pagos_repasses': -ajuste_pagos_repasses,  # Inverter sinal para exibição (valor vem negativo do banco)
 
         # Resultado Financeiro
         'resultado_financeiro': resultado_financeiro,
@@ -1690,7 +1690,7 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
     formulas_ordenadas = [
         'variavel_nova_1', 'variavel_nova_2', 'variavel_nova_3', 'var15', 'variavel_nova_4',
         'variavel_nova_5', 'variavel_nova_6', 'variavel_nova_8', 'variavel_nova_7',
-        'variavel_nova_18', 'variavel_nova_9', 'variavel_nova_11', 'variavel_nova_10', 'variavel_nova_12',
+        'variavel_nova_18', 'variavel_nova_19', 'variavel_nova_9', 'variavel_nova_11', 'variavel_nova_10', 'variavel_nova_12',
         'variavel_nova_13', 'variavel_nova_14', 'variavel_nova_15', 'variavel_nova_17', 'variavel_nova_16'
     ]
 
