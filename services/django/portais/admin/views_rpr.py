@@ -155,12 +155,14 @@ def obter_estrutura_colunas_rpr():
         # 28: Fórmula operacional monetária (cálculo)
         {'tipo': 'formula', 'campo': 'variavel_nova_8', 'nome': 'Resultado Operacional (projetado) R$', 'formula': 'variavel_nova_5 + variavel_nova_2'},
 
+        # Nova coluna: Custo ajuste nos Repasses (movida para antes de var98)
+        {'tipo': 'formula', 'campo': 'variavel_nova_18', 'nome': 'Custo ajuste nos Repasses (R$)', 'formula': '(var98 - var101) - (variavel_nova_2 + variavel_nova_5) if var101 != 0 else "Não Finalizada"'},
+
+        # Nova coluna: Resultado Operacional Ajustado
+        {'tipo': 'formula', 'campo': 'variavel_nova_19', 'nome': 'Resultado Operacional Ajustado (R$)', 'formula': 'variavel_nova_8 - variavel_nova_18 if variavel_nova_18 != "Não Finalizada" else "Não Finalizada"'},
+
         # 29-30: var98, var101
         {'tipo': 'variavel', 'campo': 'var98', 'nome': None},
-
-        # Nova coluna: Ajuste pagos de repasses
-        {'tipo': 'formula', 'campo': 'variavel_nova_18', 'nome': 'Ajuste pagos de repasses (R$)', 'formula': '(var98 - var101) - (variavel_nova_2 + variavel_nova_5) if var101 != 0 else "Não Finalizada"'},
-
         {'tipo': 'variavel', 'campo': 'var101', 'nome': None},
 
         # 31-33: Fórmulas resultado caixa e operacional
@@ -219,7 +221,7 @@ def obter_colunas_monetarias_rpr_dinamico():
     for item in estrutura:
         campo = item['campo']
         # Variáveis monetárias conhecidas
-        if campo in ['var11', 'var15', 'var26', 'var37', 'var41', 'var90', 'var94_A', 'var98', 'variavel_nova_18', 'var101', 'var58', 'var111_A', 'var109_A', 'var113_A', 'var116_A', 'var118_A']:
+        if campo in ['var11', 'var15', 'var26', 'var37', 'var41', 'var90', 'var94_A', 'var98', 'variavel_nova_18', 'variavel_nova_19', 'var101', 'var58', 'var111_A', 'var109_A', 'var113_A', 'var116_A', 'var118_A']:
             colunas_monetarias.append(campo)
         # Fórmulas que resultam em valores monetários (R$)
         elif item['tipo'] == 'formula' and 'R$' in item['nome']:
@@ -397,7 +399,8 @@ def relatorio_producao_receita(request):
     custo_mdr_total = custo_mdr_direto
     custo_antecipacao_total = custo_antecipacao_direto
     custos_pos_equip = Decimal('0.00')
-    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total + ajuste_pagos_repasses
+    # Custo Direto Total: inverter sinal de ajuste_pagos_repasses e remover custos_pos_equip
+    custo_direto_total = custo_mdr_total + custo_antecipacao_total + impostos_total - ajuste_pagos_repasses
 
     receita_antecipacao = receita_var23 + receita_var21
 
@@ -507,12 +510,20 @@ def relatorio_producao_receita(request):
         total=Sum('valor')
     )['total'] or Decimal('0.00')
 
-    # Recalcular custo_direto_total incluindo lançamentos manuais
-    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total + ajuste_pagos_repasses + total_lancamentos_manuais
+    # Recalcular custo_direto_total incluindo lançamentos manuais (sem custos_pos_equip, com sinal invertido de ajuste)
+    custo_direto_total = custo_mdr_total + custo_antecipacao_total + impostos_total - ajuste_pagos_repasses + total_lancamentos_manuais
 
-    # Calcular comissão líquida
-    comissao_total_pagar = resultado_financeiro * percentual_comissao
-    comissao_liquida_pagar = comissao_total_pagar - total_lancamentos_manuais
+    # Box Resultado Financeiro: Totalizador = Receita Financeira Total - Custo Direto Total
+    resultado_financeiro_totalizador = receita_financeira_total - custo_direto_total
+
+    # Comissão Total a Pagar = Totalizador * Percentual de Comissão
+    comissao_total_pagar = resultado_financeiro_totalizador * percentual_comissao
+
+    # Resultado após Custos de POS's = Totalizador - Custos POS/Equip
+    resultado_apos_custos_pos = resultado_financeiro_totalizador - custos_pos_equip
+
+    # Comissão Total Líquida a Pagar = Resultado após Custos POS * Percentual de Comissão
+    comissao_liquida_pagar = resultado_apos_custos_pos * percentual_comissao
 
     # Preparar dados para o template
     dados_metricas = {
@@ -538,8 +549,11 @@ def relatorio_producao_receita(request):
 
         # Resultado Financeiro
         'resultado_financeiro': resultado_financeiro,
+        'resultado_financeiro_totalizador': resultado_financeiro_totalizador,
         'percentual_comissao': percentual_comissao * 100,  # Converter 0.2 para 20%
         'comissao_total_pagar': comissao_total_pagar,
+        'custos_pos_equip': custos_pos_equip,
+        'resultado_apos_custos_pos': resultado_apos_custos_pos,
         'total_lancamentos_manuais': total_lancamentos_manuais,
         'comissao_liquida_pagar': comissao_liquida_pagar,
     }
@@ -1095,13 +1109,23 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
         total=Sum('valor')
     )['total'] or Decimal('0.00')
 
-    # Calcular custo_direto_total incluindo ajuste e lançamentos
-    custo_direto_total = custo_mdr_total + custo_antecipacao_total + custos_pos_equip + impostos_total + ajuste_pagos_repasses + total_lancamentos_manuais
+    # Calcular custo_direto_total incluindo ajuste e lançamentos (sem custos_pos_equip, com sinal invertido de ajuste)
+    custo_direto_total = custo_mdr_total + custo_antecipacao_total + impostos_total - ajuste_pagos_repasses + total_lancamentos_manuais
+
+    # Box Resultado Financeiro: Totalizador = Receita Financeira Total - Custo Direto Total
+    resultado_financeiro_totalizador = receita_financeira_total - custo_direto_total
 
     # Calcular percentual de comissão (simplificado para export)
     percentual_comissao = Decimal('0.15')  # 15% padrão
-    comissao_total_pagar = resultado_financeiro * percentual_comissao
-    comissao_liquida_pagar = comissao_total_pagar - total_lancamentos_manuais
+
+    # Comissão Total a Pagar = Totalizador * Percentual de Comissão
+    comissao_total_pagar = resultado_financeiro_totalizador * percentual_comissao
+
+    # Resultado após Custos de POS's = Totalizador - Custos POS/Equip
+    resultado_apos_custos_pos = resultado_financeiro_totalizador - custos_pos_equip
+
+    # Comissão Total Líquida a Pagar = Resultado após Custos POS * Percentual de Comissão
+    comissao_liquida_pagar = resultado_apos_custos_pos * percentual_comissao
 
     # Função auxiliar para formatar valores monetários
     def formatar_monetario(valor):
@@ -1133,14 +1157,15 @@ def _gerar_dados_resumo_executivo_rpr(filtros, canais_usuario):
         {'indicador': 'Custo MDR Total', 'valor': formatar_monetario(custo_mdr_total), 'detalhamento': ''},
         {'indicador': 'Custo Antecipação Total', 'valor': formatar_monetario(custo_antecipacao_total), 'detalhamento': ''},
         {'indicador': 'Lançamentos Manuais', 'valor': formatar_monetario(total_lancamentos_manuais), 'detalhamento': ''},
-        {'indicador': 'Ajuste pagos de repasses', 'valor': formatar_monetario(ajuste_pagos_repasses), 'detalhamento': ''},
-        {'indicador': 'Custos POS / Equip.', 'valor': formatar_monetario(custos_pos_equip), 'detalhamento': ''},
+        {'indicador': 'Custo ajuste nos Repasses', 'valor': formatar_monetario(-ajuste_pagos_repasses), 'detalhamento': ''},
         {'indicador': 'Impostos', 'valor': formatar_monetario(impostos_total), 'detalhamento': ''},
         {'indicador': '', 'valor': '', 'detalhamento': ''},
-        {'indicador': 'RESULTADO FINANCEIRO', 'valor': formatar_monetario(resultado_financeiro), 'detalhamento': ''},
+        {'indicador': 'RESULTADO FINANCEIRO', 'valor': formatar_monetario(resultado_financeiro_totalizador), 'detalhamento': ''},
         {'indicador': 'Percentual de Comissão', 'valor': f"{float(percentual_comissao * 100):.2f}", 'detalhamento': '%'},
         {'indicador': 'Comissão Total a Pagar', 'valor': formatar_monetario(comissao_total_pagar), 'detalhamento': ''},
-        {'indicador': 'Comissão Líquida a Pagar', 'valor': formatar_monetario(comissao_liquida_pagar), 'detalhamento': ''},
+        {'indicador': 'Custos POS / Equip.', 'valor': formatar_monetario(custos_pos_equip), 'detalhamento': ''},
+        {'indicador': 'Resultado após Custos de POS\'s', 'valor': formatar_monetario(resultado_apos_custos_pos), 'detalhamento': ''},
+        {'indicador': 'Comissão Total Líquida a Pagar', 'valor': formatar_monetario(comissao_liquida_pagar), 'detalhamento': ''},
     ]
 
 
