@@ -1,9 +1,18 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.5
-**Data:** 31/01/2026
+**Versão:** 5.6
+**Data:** 03/02/2026
 **Fontes:** Fases 1-7 (100%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- **Own Financial - Payload Otimizado (03/02/2026)**
+  - Campos estruturados de cliente e endereço implementados
+  - CheckoutCliente e CheckoutToken: `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`, `data_nascimento`, `email`
+  - Portal de Vendas: Formulários de cadastro/edição com campos estruturados
+  - Payload Own: `merchant.taxId` (CNPJ), `merchant.id` (razão social), `merchant.postcode` (CEP)
+  - Payload Own: `customer.identificationDocType: TAXSTATEMENT`, `customer.birthDate`, `customer.email`
+  - Campos removidos (rejeitados pela API): `customer.browserUserAgent`, `billing.street`, `shipping.street`
+  - Transação aprovada com payload completo (NSU: 8ac7a4a19c22cdec019c2357e13915e2)
+  - Documentação oficial: https://docs.payments-own.financial/reference/parameters
 - **Arquitetura de URLs Refatorada (31/01/2026)**
   - Redução de 8 para 3 arquivos de URLs (62% redução)
   - Função helper `get_portal_urlpatterns()` para geração dinâmica
@@ -19,7 +28,6 @@
   - `CheckoutService` refatorado para usar `GatewayRouter` ao invés de hardcoded Pinbank
   - Seleção dinâmica de gateway (Pinbank/Own) por loja via campo `gateway_ativo`
   - Suporte completo: tokenização, pagamento com token, pagamento direto, estorno e exclusão
-  - Transação real aprovada via Own Financial (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
 - Conta Digital - Métodos `debitar()` e `estornar_movimentacao()` corrigidos para verificar `afeta_cashback` (24/01/2026)
 - Sistema Backsync POS - Novo endpoint `transactiondata_pos_backsync` para sincronização offline (23/01/2026)
 - Depreciações Planejadas - Endpoints `/transaction_sync_service/` e `/trdata/` marcados para substituição (23/01/2026)

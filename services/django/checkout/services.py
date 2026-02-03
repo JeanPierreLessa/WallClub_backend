@@ -112,7 +112,7 @@ class ClienteService:
 
         Args:
             cliente_id: ID do cliente
-            dados: Dict com campos a atualizar (nome, email, endereco, cep)
+            dados: Dict com campos a atualizar (nome, email, endereco, cep, data_nascimento, logradouro, numero, etc)
 
         Returns:
             CheckoutCliente atualizado
@@ -125,11 +125,25 @@ class ClienteService:
                 cliente.nome = dados['nome']
             if 'email' in dados:
                 cliente.email = dados['email']
+            if 'data_nascimento' in dados:
+                cliente.data_nascimento = dados['data_nascimento']
             # celular removido - gerenciado por checkout_cliente_telefone (2FA)
             if 'endereco' in dados:
                 cliente.endereco = dados['endereco']
             if 'cep' in dados:
                 cliente.cep = dados['cep']
+            if 'logradouro' in dados:
+                cliente.logradouro = dados['logradouro']
+            if 'numero' in dados:
+                cliente.numero = dados['numero']
+            if 'complemento' in dados:
+                cliente.complemento = dados['complemento']
+            if 'bairro' in dados:
+                cliente.bairro = dados['bairro']
+            if 'cidade' in dados:
+                cliente.cidade = dados['cidade']
+            if 'estado' in dados:
+                cliente.estado = dados['estado']
 
             cliente.save()
 

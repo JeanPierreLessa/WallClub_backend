@@ -77,7 +77,11 @@ class GatewayRouter:
         loja_id: int,
         card_data: dict,
         amount: float,
-        parcelas: int = 1
+        parcelas: int = 1,
+        customer_data: dict = None,
+        transaction_id: str = None,
+        ip_address: str = None,
+        user_agent: str = None
     ) -> dict:
         """
         Processa pagamento débito/crédito usando o gateway correto
@@ -87,6 +91,10 @@ class GatewayRouter:
             card_data: Dados do cartão
             amount: Valor
             parcelas: Número de parcelas
+            customer_data: Dados do cliente (nome, email, cpf, telefone, endereço)
+            transaction_id: ID único da transação
+            ip_address: IP do cliente
+            user_agent: User agent do navegador
 
         Returns:
             Dict padronizado com sucesso, nsu, codigo_autorizacao, mensagem
@@ -101,7 +109,11 @@ class GatewayRouter:
                 card_data=card_data,
                 amount=Decimal(str(amount)),
                 parcelas=parcelas,
-                loja_id=loja_id
+                loja_id=loja_id,
+                customer_data=customer_data,
+                transaction_id=transaction_id,
+                ip_address=ip_address,
+                user_agent=user_agent
             )
 
             # Padronizar resposta

@@ -114,8 +114,15 @@ def cliente_form(request):
             dados = {
                 'nome': request.POST.get('nome'),
                 'email': request.POST.get('email'),
+                'data_nascimento': request.POST.get('data_nascimento') or None,
                 'endereco': request.POST.get('endereco'),
                 'cep': request.POST.get('cep', '').replace('-', ''),
+                'logradouro': request.POST.get('logradouro'),
+                'numero': request.POST.get('numero'),
+                'complemento': request.POST.get('complemento'),
+                'bairro': request.POST.get('bairro'),
+                'cidade': request.POST.get('cidade'),
+                'estado': request.POST.get('estado'),
             }
 
             if tipo_documento == 'cpf':
@@ -200,8 +207,15 @@ def cliente_editar(request, cliente_id):
     if request.method == 'POST':
         dados = {
             'email': request.POST.get('email'),
+            'data_nascimento': request.POST.get('data_nascimento') or None,
             'endereco': request.POST.get('endereco'),
-            'cep': request.POST.get('cep'),
+            'cep': request.POST.get('cep', '').replace('-', ''),
+            'logradouro': request.POST.get('logradouro'),
+            'numero': request.POST.get('numero'),
+            'complemento': request.POST.get('complemento'),
+            'bairro': request.POST.get('bairro'),
+            'cidade': request.POST.get('cidade'),
+            'estado': request.POST.get('estado'),
         }
 
         resultado = CheckoutVendasService.atualizar_cliente_checkout(cliente_id, dados)

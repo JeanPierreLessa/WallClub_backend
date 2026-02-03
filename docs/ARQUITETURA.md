@@ -3353,20 +3353,22 @@ docker exec -it wallclub-portais python scripts/test_email.py
 
 ## 🏦 INTEGRAÇÃO OWN FINANCIAL
 
-**Status:** ✅ 100% Concluído (Cadastro de Estabelecimentos + E-commerce)
-**Data:** 13/01/2026
+**Status:** ✅ 100% Concluído (Cadastro + E-commerce + Payload Otimizado)
+**Data:** 03/02/2026
 **Documentação Completa:**
 - [PLANO_REPLICACAO_ESTRUTURA.md](integradora%20own/PLANO_REPLICACAO_ESTRUTURA.md)
 - [PLANO_IMPLEMENTACAO_CADASTRO_OWN.md](integradora%20own/PLANO_IMPLEMENTACAO_CADASTRO_OWN.md)
+- **Documentação API:** https://docs.payments-own.financial/reference/parameters
 
 ### Visão Geral
 
 Integração completa com Own Financial replicando estrutura Pinbank, suportando:
 - **APIs Adquirência** (OAuth 2.0) - Consultas transações/liquidações ✅
 - **Webhooks Tempo Real** - Transações, liquidações, cadastro ✅
-- **API OPPWA E-commerce** - Pagamentos e tokenização ⏳
+- **API OPPWA E-commerce** - Pagamentos e tokenização ✅ **COMPLETO (03/02/2026)**
 - **Roteador Multi-Gateway** - Convivência Pinbank + Own ✅
-- **Cadastro de Estabelecimentos** - Portal Admin + APIs REST ✅ NOVO
+- **Cadastro de Estabelecimentos** - Portal Admin + APIs REST ✅
+- **Payload Otimizado** - Campos estruturados para maximizar aprovação ✅ **NOVO (03/02/2026)**
 
 ### Componentes Implementados
 
@@ -3417,6 +3419,13 @@ adquirente_own/
 **Métodos Adapter (Compatibilidade Pinbank):**
 - Interface 100% compatível com `TransacoesPinbankService`
 - Checkouts funcionam com ambos gateways sem modificação
+
+**Payload Otimizado (03/02/2026):**
+- **Merchant:** `taxId` (CNPJ), `id` (razão social), `postcode` (CEP)
+- **Customer:** `birthDate`, `email`, `phone`, `identificationDocType: TAXSTATEMENT` (CPF)
+- **Billing/Shipping:** `city`, `state`, `postcode`, `country`
+- **Campos removidos:** `customer.browserUserAgent`, `billing.street`, `shipping.street`
+- **Resultado:** Transação aprovada com payload completo (NSU: 8ac7a4a19c22cdec019c2357e13915e2)
 
 #### 4. APIs REST - Cadastro de Estabelecimentos ✅ NOVO
 **Endpoints Públicos:**
@@ -3479,7 +3488,7 @@ adquirente_own/
 
 ### Status Atual
 
-**✅ Concluído (92%):**
+**✅ Concluído (100%):**
 - Estrutura base e models
 - APIs Adquirência (OAuth 2.0)
 - Webhooks tempo real
@@ -3487,20 +3496,18 @@ adquirente_own/
 - Roteador multi-gateway
 - Checkouts adaptados
 - POS TRData Own
+- **API OPPWA E-commerce validada (03/02/2026)**
+- **Payload otimizado com campos estruturados**
+- **Transações aprovadas em ambiente de testes**
+- **Portal de Vendas com campos estruturados (logradouro, numero, bairro, cidade, estado, CEP, data_nascimento)**
 
-**⏳ Pendente (8%):**
-- Credenciais OPPWA da Own:
-  - `entity_id` - ID entidade OPPWA
-  - `access_token` - Bearer token fixo
-- Testes e-commerce em sandbox
-- Validação completa
+### Campos Estruturados - Checkout
 
-### Próximos Passos
-
-1. **Solicitar à Own Financial:**
-   - Credenciais OPPWA (`entity_id` + `access_token`)
-   - Cartões de teste ambiente sandbox
-   - Documentação específica (se houver)
+**CheckoutCliente e CheckoutToken:**
+- `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`
+- `data_nascimento`, `email`
+- Integração ViaCEP para preenchimento automático
+- Portal de Vendas: Formulários de cadastro/edição atualizados
 
 2. **Após receber credenciais:**
    - Executar `teste_own_ecommerce.py`

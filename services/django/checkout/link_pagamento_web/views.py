@@ -19,7 +19,7 @@ from datetime import datetime
 from .models import CheckoutToken, CheckoutSession, CheckoutAttempt
 from checkout.models import CheckoutTransaction
 from .serializers import (
-    GerarTokenSerializer, ProcessarCheckoutSerializer, 
+    GerarTokenSerializer, ProcessarCheckoutSerializer,
     ConfirmarCheckoutSerializer, StatusCheckoutSerializer
 )
 # from wallclub_core.integracoes.whatsapp_service import WhatsAppService  # Removido para teste direto
@@ -54,7 +54,7 @@ class GerarTokenView(APIView):
     Requer API Key válida no header X-API-Key.
     """
     permission_classes = [AllowAny]
-    
+
     @method_decorator(require_oauth_checkout)
     # @method_decorator(ratelimit(key='ip', rate='10/m', method='POST'))  # Temporariamente comentado
     def post(self, request):
@@ -68,33 +68,33 @@ class GerarTokenView(APIView):
                     'mensagem': 'Dados inválidos',
                     'erros': serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
             # Validar loja_id com OAuth client (se restrito por loja)
             oauth_client = request.oauth_client  # Adicionado pelo decorator OAuth
             loja_id = serializer.validated_data['loja_id']
-            
+
             # Se OAuth client tem loja_id definida, validar se loja está autorizada
             if oauth_client.nivel_acesso == 'LOJA':
                 if oauth_client.loja_id != loja_id:
-                    registrar_log("checkout.link_pagamento_web", 
+                    registrar_log("checkout.link_pagamento_web",
                                  f"Loja {loja_id} não permitida para OAuth client {oauth_client.name} (Loja autorizada: {oauth_client.loja_id})")
                     return Response({
                         'sucesso': False,
                         'mensagem': f'Este token OAuth não tem permissão para a loja {loja_id}'
                     }, status=status.HTTP_403_FORBIDDEN)
-            
+
             # Se OAuth client é de grupo econômico, validar se loja pertence ao grupo
             if oauth_client.nivel_acesso == 'GRUPO':
                 from wallclub_core.estr_organizacional.loja import Loja
                 loja = Loja.get_loja(loja_id)
                 if not loja or loja.GrupoEconomicoId != oauth_client.grupo_economico_id:
-                    registrar_log("checkout.link_pagamento_web", 
+                    registrar_log("checkout.link_pagamento_web",
                                  f"Loja {loja_id} não pertence ao grupo econômico {oauth_client.grupo_economico_id}")
                     return Response({
                         'sucesso': False,
                         'mensagem': f'Esta loja não pertence ao grupo econômico autorizado'
                     }, status=status.HTTP_403_FORBIDDEN)
-            
+
             # Gerar token
             token_obj = CheckoutToken.generate_token(
                 loja_id=serializer.validated_data['loja_id'],
@@ -103,20 +103,29 @@ class GerarTokenView(APIView):
                 nome_completo=serializer.validated_data['nome_completo'],
                 cpf=serializer.validated_data['cpf'],
                 celular=serializer.validated_data['celular'],
+                email=serializer.validated_data.get('email'),
+                data_nascimento=serializer.validated_data.get('data_nascimento'),
                 endereco_completo=serializer.validated_data['endereco_completo'],
+                logradouro=serializer.validated_data.get('logradouro'),
+                numero=serializer.validated_data.get('numero'),
+                complemento=serializer.validated_data.get('complemento'),
+                bairro=serializer.validated_data.get('bairro'),
+                cidade=serializer.validated_data.get('cidade'),
+                estado=serializer.validated_data.get('estado'),
+                cep=serializer.validated_data.get('cep'),
                 pedido_origem_loja=serializer.validated_data.get('pedido_origem_loja'),
                 created_by=oauth_client.name  # Usar nome do OAuth Client
             )
-            
+
             registrar_log("checkout.link_pagamento_web", f"Token gerado: {token_obj.token[:8]}... para {token_obj.item_nome}")
-            
+
             return Response({
                 'sucesso': True,
                 'token': token_obj.token,
                 'expires_at': token_obj.expires_at,
                 'checkout_url': f'/api/v1/checkout/?token={token_obj.token}'
             }, status=status.HTTP_201_CREATED)
-            
+
         except Exception as e:
             registrar_log("checkout.link_pagamento_web", f"Erro: {str(e)}", nivel='ERROR')
             return Response({
@@ -129,41 +138,41 @@ class GerarTokenView(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class CheckoutPageView(View):
     """Página HTML do checkout"""
-    
+
     def get(self, request):
         """Exibe página de checkout via GET (links de email)"""
         token = request.GET.get('token')
-        
+
         if not token:
             log_attempt('', request, False, 'Token não fornecido')
             return JsonResponse({
                 'error': 'Token não fornecido'
             }, status=400)
-        
+
         try:
             token_obj = get_object_or_404(CheckoutToken, token=token)
-            
+
             if not token_obj.is_valid():
                 log_attempt(token, request, False, 'Token inválido ou expirado')
                 return JsonResponse({
                     'error': 'Link expirado ou já utilizado'
                 }, status=400)
-            
+
             log_attempt(token, request, True)
             registrar_log("checkout.link_pagamento_web", f"Página acessada para token {token[:8]}...")
-            
+
             # Buscar nome da loja
             from wallclub_core.estr_organizacional.loja import Loja
             loja = Loja.get_loja(token_obj.loja_id)
             loja_nome = loja.razao_social if loja else 'Loja'
-            
+
             # Buscar telefone ativo (ativo=1) do cliente
             from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
             cpf_limpo = ''.join(filter(str.isdigit, token_obj.cpf))
-            
+
             telefone_ativo = None
             pode_alterar_telefone = True
-            
+
             try:
                 # Buscar cliente primeiro
                 from checkout.models import CheckoutCliente
@@ -179,12 +188,10 @@ class CheckoutPageView(View):
             except CheckoutClienteTelefone.DoesNotExist:
                 # Cliente não tem telefone ativo ainda
                 pass
-            
-            # Celular editável se:
-            # 1. Não existe telefone ativo (primeira vez)
-            # 2. Existe telefone mas pode alterar (antes da primeira transação)
+
+            # Celular editavel
             celular_editavel = telefone_ativo is None or pode_alterar_telefone
-            
+
             # Obfuscar telefone para exibição: (21)****0901
             telefone_obfuscado = ''
             if telefone_ativo:
@@ -195,7 +202,7 @@ class CheckoutPageView(View):
                     telefone_obfuscado = f"({tel_limpo[:2]})****{tel_limpo[-4:]}"
                 else:
                     telefone_obfuscado = "****" + tel_limpo[-4:] if len(tel_limpo) >= 4 else tel_limpo
-            
+
             return render(request, 'checkout/checkout.html', {
                 'token': token,
                 'loja_id': token_obj.loja_id,
@@ -205,15 +212,24 @@ class CheckoutPageView(View):
                 'nome_completo': token_obj.nome_completo,
                 'cpf': token_obj.cpf,
                 'celular': token_obj.celular or '',
+                'email': token_obj.email or '',
+                'data_nascimento': token_obj.data_nascimento.strftime('%Y-%m-%d') if token_obj.data_nascimento else '',
                 'celular_editavel': celular_editavel,
                 'telefone_ativo': telefone_ativo,
                 'telefone_obfuscado': telefone_obfuscado,
                 'pode_alterar_telefone': pode_alterar_telefone,
                 'endereco_completo': token_obj.endereco_completo,
+                'logradouro': token_obj.logradouro or '',
+                'numero': token_obj.numero or '',
+                'complemento': token_obj.complemento or '',
+                'bairro': token_obj.bairro or '',
+                'cidade': token_obj.cidade or '',
+                'estado': token_obj.estado or '',
+                'cep': token_obj.cep or '',
                 'pedido_origem_loja': token_obj.pedido_origem_loja,
                 'expires_at': token_obj.expires_at
             })
-            
+
         except Exception as e:
             import traceback
             error_detail = traceback.format_exc()
@@ -222,42 +238,42 @@ class CheckoutPageView(View):
             return JsonResponse({
                 'error': 'Erro interno'
             }, status=500)
-    
+
     # @method_decorator(ratelimit(key='ip', rate='30/m', method='POST'))  # Temporariamente comentado
     def post(self, request):
         """Exibe página de checkout via POST (legado)"""
         token = request.POST.get('token')
-        
+
         if not token:
             log_attempt('', request, False, 'Token não fornecido')
             return JsonResponse({
                 'error': 'Token não fornecido'
             }, status=400)
-        
+
         try:
             token_obj = get_object_or_404(CheckoutToken, token=token)
-            
+
             if not token_obj.is_valid():
                 log_attempt(token, request, False, 'Token inválido ou expirado')
                 return JsonResponse({
                     'error': 'Link expirado ou já utilizado'
                 }, status=400)
-            
+
             log_attempt(token, request, True)
             registrar_log("checkout.link_pagamento_web", f"Página acessada para token {token[:8]}...")
-            
+
             # Buscar nome da loja
             from wallclub_core.estr_organizacional.loja import Loja
             loja = Loja.get_loja(token_obj.loja_id)
             loja_nome = loja.razao_social if loja else 'Loja'
-            
+
             # Buscar telefone ativo (ativo=1) do cliente
             from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
             cpf_limpo = ''.join(filter(str.isdigit, token_obj.cpf))
-            
+
             telefone_ativo = None
             pode_alterar_telefone = True
-            
+
             try:
                 # Buscar cliente primeiro
                 from checkout.models import CheckoutCliente
@@ -273,12 +289,10 @@ class CheckoutPageView(View):
             except CheckoutClienteTelefone.DoesNotExist:
                 # Cliente não tem telefone ativo ainda
                 pass
-            
-            # Celular editável se:
-            # 1. Não existe telefone ativo (primeira vez)
-            # 2. Existe telefone mas pode alterar (antes da primeira transação)
+
+            # Celular editavel
             celular_editavel = telefone_ativo is None or pode_alterar_telefone
-            
+
             # Obfuscar telefone para exibição: (21)****0901
             telefone_obfuscado = ''
             if telefone_ativo:
@@ -289,7 +303,7 @@ class CheckoutPageView(View):
                     telefone_obfuscado = f"({tel_limpo[:2]})****{tel_limpo[-4:]}"
                 else:
                     telefone_obfuscado = "****" + tel_limpo[-4:] if len(tel_limpo) >= 4 else tel_limpo
-            
+
             return render(request, 'checkout/checkout.html', {
                 'token': token,
                 'loja_id': token_obj.loja_id,
@@ -299,15 +313,24 @@ class CheckoutPageView(View):
                 'nome_completo': token_obj.nome_completo,
                 'cpf': token_obj.cpf,
                 'celular': token_obj.celular or '',
+                'email': token_obj.email or '',
+                'data_nascimento': token_obj.data_nascimento.strftime('%Y-%m-%d') if token_obj.data_nascimento else '',
                 'celular_editavel': celular_editavel,
                 'telefone_ativo': telefone_ativo,
                 'telefone_obfuscado': telefone_obfuscado,
                 'pode_alterar_telefone': pode_alterar_telefone,
                 'endereco_completo': token_obj.endereco_completo,
+                'logradouro': token_obj.logradouro or '',
+                'numero': token_obj.numero or '',
+                'complemento': token_obj.complemento or '',
+                'bairro': token_obj.bairro or '',
+                'cidade': token_obj.cidade or '',
+                'estado': token_obj.estado or '',
+                'cep': token_obj.cep or '',
                 'pedido_origem_loja': token_obj.pedido_origem_loja,
                 'expires_at': token_obj.expires_at
             })
-            
+
         except Exception as e:
             # Log via log_attempt abaixo
             log_attempt(token, request, False, str(e))
@@ -319,7 +342,7 @@ class CheckoutPageView(View):
 class ProcessarCheckoutView(APIView):
     """API para processar dados do checkout"""
     permission_classes = [AllowAny]
-    
+
     # @method_decorator(ratelimit(key='ip', rate='5/m', method='POST'))  # Temporariamente comentado
     def post(self, request):
         """Processa pagamento via link de checkout - delega para CheckoutService"""
@@ -333,17 +356,17 @@ class ProcessarCheckoutView(APIView):
                     'mensagem': 'Dados inválidos',
                     'erros': serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
             # Preparar dados para o service
             from checkout.link_pagamento_web.services import LinkPagamentoService
-            
+
             dados_cartao = {
                 'numero_cartao': serializer.validated_data['numero_cartao'],
                 'cvv': serializer.validated_data['cvv'],
                 'data_validade': serializer.validated_data['data_validade'],
                 'bandeira': serializer.validated_data['bandeira']
             }
-            
+
             dados_sessao = {
                 'cpf': serializer.validated_data['cpf'],
                 'nome': serializer.validated_data['nome'],
@@ -355,7 +378,7 @@ class ProcessarCheckoutView(APIView):
                 'salvar_cartao': serializer.validated_data.get('salvar_cartao', False),
                 'cupom_codigo': serializer.validated_data.get('cupom_codigo')
             }
-            
+
             # Processar via service
             resultado = LinkPagamentoService.processar_checkout_link_pagamento(
                 token=serializer.validated_data['token'],
@@ -364,7 +387,7 @@ class ProcessarCheckoutView(APIView):
                 ip_address=get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', '')
             )
-            
+
             # Registrar tentativa
             log_attempt(
                 serializer.validated_data['token'],
@@ -372,13 +395,13 @@ class ProcessarCheckoutView(APIView):
                 resultado.get('sucesso', False),
                 resultado.get('mensagem') if not resultado.get('sucesso') else None
             )
-            
+
             # Retornar resultado
             if resultado.get('sucesso'):
                 return Response(resultado, status=status.HTTP_200_OK)
             else:
                 return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
-            
+
         except Exception as e:
             import traceback
             erro_completo = traceback.format_exc()
@@ -395,20 +418,20 @@ class ProcessarCheckoutView(APIView):
 class SimularParcelasView(APIView):
     """API para simular parcelas usando lógica V2 (com cashback Wall + Loja)"""
     permission_classes = [AllowAny]  # Público - chamado pelo browser do cliente no checkout
-    
+
     def post(self, request):
         """Simula valores de parcelas incluindo cashback (mesma lógica do POS V2)"""
         try:
             valor = request.data.get('valor')
             loja_id = request.data.get('loja_id')
             cliente_id = request.data.get('cliente_id', 0)  # 0 se não identificado
-            
+
             if not valor or not loja_id:
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Valor e loja_id são obrigatórios'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
             # Converter valor para Decimal
             try:
                 from decimal import Decimal, ROUND_HALF_UP
@@ -418,28 +441,28 @@ class SimularParcelasView(APIView):
                     'sucesso': False,
                     'mensagem': 'Valor inválido'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
             # Importar serviços
             from parametros_wallclub.services import CalculadoraDesconto
             from apps.cashback.services import CashbackService
             from datetime import datetime
-            
+
             calculadora = CalculadoraDesconto()
             data_atual = datetime.now().strftime('%Y-%m-%d')
             wall = 'S'  # Checkout sempre usa Wall
-            
+
             # Buscar canal_id da loja
             from wallclub_core.estr_organizacional.loja import Loja
             loja = Loja.get_loja(loja_id)
             canal_id = loja.canal_id if loja else 1
-            
+
             # Simular apenas crédito (1x a 12x) para checkout
             opcoes = []
-            
+
             for num_parcelas in range(1, 13):
                 forma = "A VISTA" if num_parcelas == 1 else "PARCELADO SEM JUROS"
                 forma_key = "CREDIT_ONE_INSTALLMENT" if num_parcelas == 1 else "CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST"
-                
+
                 # Calcular desconto Wall
                 valor_com_desconto = calculadora.calcular_desconto(
                     valor_original=valor_original,
@@ -449,14 +472,14 @@ class SimularParcelasView(APIView):
                     id_loja=loja_id,
                     wall=wall
                 )
-                
+
                 # FILTRO: Se calculadora retornar None, PULAR esta parcela
                 if valor_com_desconto is None:
                     continue
-                
+
                 # Calcular valor da parcela
                 valor_parcela = valor_com_desconto / num_parcelas
-                
+
                 # Determinar descrição
                 if valor_com_desconto > valor_original:
                     info_extra = " (c/encargos)"
@@ -464,19 +487,19 @@ class SimularParcelasView(APIView):
                     info_extra = " (c/desconto)"
                 else:
                     info_extra = " (s/juros)"
-                
+
                 # Calcular cashback Wall
                 valor_cashback_wall = Decimal('0')
                 try:
                     from parametros_wallclub.models import Plano
                     from parametros_wallclub.services import ParametrosService
-                    
+
                     # Buscar plano
                     if forma == 'A VISTA':
                         plano = Plano.objects.filter(nome='A VISTA', prazo_dias=1, bandeira='MASTERCARD').first()
                     else:  # PARCELADO SEM JUROS
                         plano = Plano.objects.filter(nome='PARCELADO SEM JUROS', prazo_dias=num_parcelas, bandeira='MASTERCARD').first()
-                    
+
                     if plano:
                         # Buscar configuração wall='C' para cashback
                         config_cashback = ParametrosService.get_configuracao_ativa(
@@ -485,14 +508,14 @@ class SimularParcelasView(APIView):
                             wall='C',
                             data_referencia=datetime.now()
                         )
-                        
+
                         if config_cashback:
                             param_7 = getattr(config_cashback, 'parametro_loja_7', None)
                             if param_7 and param_7 > 0:
                                 valor_cashback_wall = valor_com_desconto * param_7
                 except Exception as e:
                     registrar_log("checkout.link_pagamento_web", f"Erro ao calcular cashback Wall: {str(e)}", nivel='WARNING')
-                
+
                 # Simular cashback loja
                 valor_cashback_loja = Decimal('0')
                 try:
@@ -503,21 +526,21 @@ class SimularParcelasView(APIView):
                         valor_transacao=valor_com_desconto,
                         forma_pagamento='CREDITO'
                     )
-                    
+
                     if resultado_loja and resultado_loja.get('aplicavel'):
                         valor_cashback_loja = Decimal(str(resultado_loja['valor']))
                 except Exception as e:
                     registrar_log("checkout.link_pagamento_web", f"Erro ao simular cashback loja: {str(e)}", nivel='WARNING')
-                
+
                 # Cashback total
                 cashback_total = valor_cashback_wall + valor_cashback_loja
-                
+
                 # Formato: 3x de R$ 30,00 (s/juros) - Valor Total: R$ 90,00 (cashback R$ XX,XX)
                 texto = f"{num_parcelas}x de R$ {float(valor_parcela):.2f}{info_extra} - Valor Total: R$ {float(valor_com_desconto):.2f}"
-                
+
                 if cashback_total > 0:
                     texto += f" (cashback R$ {float(cashback_total):.2f})"
-                
+
                 opcoes.append({
                     'parcelas': num_parcelas,
                     'valor_total': float(valor_com_desconto),
@@ -527,15 +550,15 @@ class SimularParcelasView(APIView):
                     'cashback_total': float(cashback_total),
                     'texto': texto
                 })
-            
-            registrar_log("checkout.link_pagamento_web", 
+
+            registrar_log("checkout.link_pagamento_web",
                          f"Simulação V2 concluída - Valor: {valor}, Loja: {loja_id}, Opções: {len(opcoes)}")
-            
+
             return Response({
                 'sucesso': True,
                 'opcoes': opcoes
             }, status=status.HTTP_200_OK)
-            
+
         except Exception as e:
             import traceback
             registrar_log("checkout.link_pagamento_web", f"Erro: {str(e)}\n{traceback.format_exc()}", nivel='ERROR')
@@ -548,7 +571,7 @@ class SimularParcelasView(APIView):
 class StatusCheckoutView(APIView):
     """API para consultar status do checkout"""
     permission_classes = [AllowAny]
-    
+
     @method_decorator(require_oauth_checkout)
     # @method_decorator(ratelimit(key='ip', rate='20/m', method='GET'))  # Temporariamente comentado
     def get(self, request, token):
@@ -556,12 +579,12 @@ class StatusCheckoutView(APIView):
         try:
             token_obj = get_object_or_404(CheckoutToken, token=token)
             serializer = StatusCheckoutSerializer(token_obj)
-            
+
             return Response({
                 'sucesso': True,
                 'dados': serializer.data
             }, status=status.HTTP_200_OK)
-            
+
         except Exception as e:
             # Log removido - erro genérico
             return Response({
@@ -573,49 +596,49 @@ class StatusCheckoutView(APIView):
 class ValidarCupomView(APIView):
     """API para validar cupom de desconto"""
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
         """Valida cupom sem aplicar (apenas verifica se é válido)"""
         try:
             cupom_codigo = request.data.get('cupom_codigo', '').strip()
             loja_id = request.data.get('loja_id')
             valor_transacao = request.data.get('valor_transacao')
-            
+
             if not cupom_codigo:
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Código do cupom é obrigatório'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
             if not loja_id or not valor_transacao:
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Dados incompletos'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
             # Fazer chamada interna para o container Portais validar o cupom
             # usando o CupomService real (mesma lógica do processamento)
             import requests
             from django.conf import settings
-            
+
             # URL interna do container Portais
             try:
                 portais_url = settings.PORTAIS_INTERNAL_URL
-                registrar_log("checkout.link_pagamento_web", 
+                registrar_log("checkout.link_pagamento_web",
                              f"PORTAIS_INTERNAL_URL: {portais_url}", nivel='INFO')
             except AttributeError as e:
-                registrar_log("checkout.link_pagamento_web", 
+                registrar_log("checkout.link_pagamento_web",
                              f"PORTAIS_INTERNAL_URL não definido: {str(e)}", nivel='ERROR')
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Configuração inválida'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
             try:
                 url_completa = f'{portais_url}/api/cupom/validar/'
-                registrar_log("checkout.link_pagamento_web", 
+                registrar_log("checkout.link_pagamento_web",
                              f"Chamando Portais: {url_completa}", nivel='INFO')
-                
+
                 response = requests.post(
                     url_completa,
                     json={
@@ -626,11 +649,11 @@ class ValidarCupomView(APIView):
                     },
                     timeout=5
                 )
-                
-                registrar_log("checkout.link_pagamento_web", 
-                             f"Resposta Portais - Status: {response.status_code}, Content-Type: {response.headers.get('Content-Type')}, Body: {response.text[:200]}", 
+
+                registrar_log("checkout.link_pagamento_web",
+                             f"Resposta Portais - Status: {response.status_code}, Content-Type: {response.headers.get('Content-Type')}, Body: {response.text[:200]}",
                              nivel='INFO')
-                
+
                 # Tentar parsear JSON
                 try:
                     data = response.json()
@@ -639,29 +662,29 @@ class ValidarCupomView(APIView):
                     else:
                         return Response(data, status=response.status_code)
                 except Exception as json_error:
-                    registrar_log("checkout.link_pagamento_web", 
-                                 f"Erro ao parsear JSON: {str(json_error)} - Resposta: {response.text[:500]}", 
+                    registrar_log("checkout.link_pagamento_web",
+                                 f"Erro ao parsear JSON: {str(json_error)} - Resposta: {response.text[:500]}",
                                  nivel='ERROR')
                     return Response({
                         'sucesso': False,
                         'mensagem': 'Erro ao validar cupom'
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    
+
             except requests.exceptions.JSONDecodeError as e:
-                registrar_log("checkout.link_pagamento_web", 
+                registrar_log("checkout.link_pagamento_web",
                              f"Erro ao parsear JSON do Portais: {str(e)}", nivel='ERROR')
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Erro ao validar cupom. Tente novamente.'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             except requests.exceptions.RequestException as e:
-                registrar_log("checkout.link_pagamento_web", 
+                registrar_log("checkout.link_pagamento_web",
                              f"Erro ao chamar Portais para validar cupom: {str(e)}", nivel='ERROR')
                 return Response({
                     'sucesso': False,
                     'mensagem': 'Erro ao validar cupom. Tente novamente.'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
         except Exception as e:
             import traceback
             erro_completo = traceback.format_exc()
@@ -676,7 +699,7 @@ class ValidarCupomView(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class SimuladorDermaDreamView(View):
     """Página do simulador do sistema DermaDream"""
-    
+
     def get(self, request):
         """Exibe página do simulador"""
         return render(request, 'checkout/simula_sistema_dermadream.html')

@@ -30,6 +30,11 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **wallclub-apis** (Mobile + Checkout Web)
   - ✅ Checkout: Domínio dedicado checkout.wallclub.com.br
   - ✅ Checkout: Sistema de Cupom integrado (validação interna)
+  - ✅ **Checkout: Campos estruturados (03/02/2026)**
+    - CheckoutCliente e CheckoutToken com endereço estruturado
+    - Campos: `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`, `data_nascimento`, `email`
+    - Portal de Vendas: Formulários de cadastro/edição atualizados
+    - Integração ViaCEP para preenchimento automático
   - ✅ POSP2 V2: Simulação com cashback Wall + Loja integrado
   - ✅ Checkout 2FA: Integração com Risk Engine completa
   - ✅ Correções 14/12/2025:
@@ -47,16 +52,20 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
 - ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
-- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (30/01/2026)**
+- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (03/02/2026)**
   - ✅ APIs Adquirência (OAuth 2.0) - QA/Sandbox funcionando
   - ✅ Webhooks tempo real (transações, liquidações, cadastro)
   - ✅ API OPPWA E-commerce - Integração completa e validada
   - ✅ Ambiente dinâmico (ENVIRONMENT=production → LIVE, development → TEST)
   - ✅ API de consulta de tokens e-commerce por contrato documentada
-  - ✅ Documentação oficial OPPWA referenciada
+  - ✅ Documentação oficial OPPWA referenciada: https://docs.payments-own.financial/reference/parameters
   - ✅ Portal de Vendas com GatewayRouter (seleção dinâmica Pinbank/Own)
   - ✅ Tokenização, pagamento com token, pagamento direto, estorno e exclusão
-  - ✅ Transação real aprovada (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
+  - ✅ **Payload Otimizado (03/02/2026):** Campos estruturados de cliente e endereço
+    - Merchant: `taxId` (CNPJ), `id` (razão social), `postcode` (CEP)
+    - Customer: `birthDate`, `email`, `phone`, `identificationDocType: TAXSTATEMENT`
+    - Billing/Shipping: `city`, `state`, `postcode`, `country`
+  - ✅ Transação aprovada com payload completo (NSU: 8ac7a4a19c22cdec019c2357e13915e2)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 

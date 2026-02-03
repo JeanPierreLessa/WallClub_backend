@@ -21,7 +21,7 @@ def sanitize_for_json(obj):
 
 class LinkPagamentoService:
     """Serviço para processar pagamentos via link público"""
-    
+
     @staticmethod
     @transaction.atomic
     def processar_checkout_link_pagamento(
@@ -33,14 +33,14 @@ class LinkPagamentoService:
     ) -> Dict[str, Any]:
         """
         Processa pagamento via link de pagamento (checkout público)
-        
+
         Args:
             token: Token do checkout
             dados_cartao: Dict com numero_cartao, cvv, data_validade, bandeira
             dados_sessao: Dict com cpf, nome, celular, endereco, parcelas, tipo_pagamento, valor_total, salvar_cartao
             ip_address: IP do cliente
             user_agent: User agent do cliente
-            
+
         Returns:
             Dict com sucesso, transacao_id, nsu, mensagem, tentativas_restantes, pode_tentar_novamente
         """
@@ -49,13 +49,13 @@ class LinkPagamentoService:
         from checkout.services_gateway_router import GatewayRouter
         import hashlib
         from datetime import datetime
-        
+
         # Mapeamento de tipos de compra
         TIPO_COMPRA_MAP = {
             'CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST': '2',
             'CREDIT_ONE_INSTALLMENT': '1',
         }
-        
+
         try:
             # Validar token
             try:
@@ -74,11 +74,11 @@ class LinkPagamentoService:
                     'tentativas_restantes': 0,
                     'pode_tentar_novamente': False
                 }
-            
+
             # Hash do cartão para auditoria
             numero_cartao = dados_cartao['numero_cartao']
             cartao_hash = hashlib.sha256(numero_cartao.encode()).hexdigest()
-            
+
             # Criar ou atualizar sessão
             session, created = CheckoutSession.objects.get_or_create(
                 token=token_obj,
@@ -95,7 +95,7 @@ class LinkPagamentoService:
                     'user_agent': user_agent
                 }
             )
-            
+
             if not created:
                 # Atualizar dados existentes
                 session.numero_cartao_hash = cartao_hash
@@ -107,7 +107,7 @@ class LinkPagamentoService:
                 session.celular = dados_sessao['celular']
                 session.endereco = dados_sessao['endereco']
                 session.save()
-            
+
             # Buscar transação existente criada pelo vendedor
             try:
                 transacao = CheckoutTransaction.objects.get(token=token)
@@ -119,29 +119,29 @@ class LinkPagamentoService:
                     'tentativas_restantes': 0,
                     'pode_tentar_novamente': False
                 }
-            
+
             # =============================================================================
             # ANÁLISE ANTIFRAUDE (RISK ENGINE)
             # =============================================================================
             from checkout.services_antifraude import CheckoutAntifraudeService
-            
+
             # Valores
             valor_original = Decimal(str(token_obj.item_valor)) if not isinstance(token_obj.item_valor, Decimal) else token_obj.item_valor
             valor_final = Decimal(str(dados_sessao['valor_total']))
-            
+
             # =============================================================================
             # VALIDAR E APLICAR CUPOM (SE FORNECIDO)
             # =============================================================================
             cupom_obj = None
             cupom_desconto = Decimal('0.00')
             cupom_codigo = dados_sessao.get('cupom_codigo', '').strip() if dados_sessao.get('cupom_codigo') else None
-            
+
             if cupom_codigo:
                 from apps.cupom.services import CupomService
                 from django.core.exceptions import ValidationError
-                
+
                 cupom_service = CupomService()
-                
+
                 try:
                     # Buscar ou criar cliente temporário para validação
                     from checkout.models import CheckoutCliente
@@ -154,7 +154,7 @@ class LinkPagamentoService:
                             'ativo': True
                         }
                     )
-                    
+
                     # Validar cupom (valor_final já vem com desconto da calculadora)
                     cupom_obj = cupom_service.validar_cupom(
                         codigo=cupom_codigo,
@@ -162,18 +162,18 @@ class LinkPagamentoService:
                         cliente_id=cliente_temp.id,
                         valor_transacao=valor_final
                     )
-                    
+
                     # Calcular desconto do cupom
                     cupom_desconto = cupom_service.calcular_desconto(cupom_obj, valor_final)
-                    
+
                     # Aplicar desconto do cupom ao valor final
                     valor_final = valor_final - cupom_desconto
-                    
-                    registrar_log('checkout', 
+
+                    registrar_log('checkout',
                                  f"✅ Cupom {cupom_codigo} aplicado - Desconto: R$ {cupom_desconto}")
-                    
+
                 except ValidationError as e:
-                    registrar_log('checkout', 
+                    registrar_log('checkout',
                                  f"❌ Cupom inválido: {str(e)}", nivel='WARNING')
                     return {
                         'sucesso': False,
@@ -181,12 +181,12 @@ class LinkPagamentoService:
                         'tentativas_restantes': 3 - token_obj.tentativas_pagamento,
                         'pode_tentar_novamente': True
                     }
-            
+
             registrar_log('checkout', '')
             registrar_log('checkout', '=' * 80)
             registrar_log('checkout', '🛡️  ANÁLISE ANTIFRAUDE - CHECKOUT WEB')
             registrar_log('checkout', '=' * 80)
-            
+
             # Chamar Risk Engine
             permitir, resultado_antifraude = CheckoutAntifraudeService.analisar_transacao(
                 cpf=session.cpf,
@@ -204,23 +204,23 @@ class LinkPagamentoService:
                 cliente_email=session.cpf,  # Usar CPF como identificador
                 transaction_id=str(transacao.id)
             )
-            
+
             # Salvar resultado antifraude na transação
             transacao.score_risco = resultado_antifraude.get('score_risco', 0)
             transacao.decisao_antifraude = resultado_antifraude.get('decisao', 'APROVADO')
             transacao.motivo_bloqueio = resultado_antifraude.get('motivo', '')
             transacao.antifraude_response = resultado_antifraude
-            
+
             # Tratar decisão REPROVADO
             if not permitir or resultado_antifraude.get('decisao') == 'REPROVADO':
                 transacao.status = 'BLOQUEADA_ANTIFRAUDE'
                 transacao.save()
-                
-                registrar_log('checkout', 
-                             f"❌ TRANSAÇÃO BLOQUEADA PELO ANTIFRAUDE - Score: {transacao.score_risco}, Motivo: {transacao.motivo_bloqueio}", 
+
+                registrar_log('checkout',
+                             f"❌ TRANSAÇÃO BLOQUEADA PELO ANTIFRAUDE - Score: {transacao.score_risco}, Motivo: {transacao.motivo_bloqueio}",
                              nivel='WARNING')
                 registrar_log('checkout', '=' * 80)
-                
+
                 return {
                     'sucesso': False,
                     'mensagem': 'Transação bloqueada por segurança. Entre em contato com o vendedor.',
@@ -228,28 +228,28 @@ class LinkPagamentoService:
                     'pode_tentar_novamente': False,
                     'motivo_tecnico': transacao.motivo_bloqueio
                 }
-            
+
             # Tratar decisão REVISAR (processar mas marcar para revisão)
             if resultado_antifraude.get('decisao') == 'REVISAR':
                 transacao.status = 'PENDENTE_REVISAO'
-                registrar_log('checkout', 
-                             f"⚠️ TRANSAÇÃO EM REVISÃO - Score: {transacao.score_risco}, será processada mas requer análise manual", 
+                registrar_log('checkout',
+                             f"⚠️ TRANSAÇÃO EM REVISÃO - Score: {transacao.score_risco}, será processada mas requer análise manual",
                              nivel='WARNING')
-            
-            registrar_log('checkout', 
+
+            registrar_log('checkout',
                          f"✅ ANTIFRAUDE: {resultado_antifraude.get('decisao')} - Score: {transacao.score_risco}/100")
             registrar_log('checkout', '=' * 80)
             registrar_log('checkout', '')
-            
+
             # =============================================================================
             # PROCESSAR PAGAMENTO VIA GATEWAY (PINBANK OU OWN)
             # =============================================================================
             # Obter service correto baseado no gateway da loja
             transacoes_service = GatewayRouter.obter_service_transacao(token_obj.loja_id)
             gateway_ativo = GatewayRouter.obter_gateway_loja(token_obj.loja_id)
-            
+
             forma_pagamento_codigo = TIPO_COMPRA_MAP.get(session.tipo_pagamento, '1')
-            
+
             dados_transacao = {
                 'loja_id': token_obj.loja_id,  # ID da loja do checkout
                 'nome_impresso': session.nome.upper(),
@@ -261,21 +261,33 @@ class LinkPagamentoService:
                 'quantidade_parcelas': session.parcelas,
                 'descricao_pedido': f"{token_obj.item_nome} - Checkout WallClub",
                 'ip_address_comprador': ip_address,
+                'user_agent_comprador': user_agent,
                 'cpf_comprador': int(session.cpf),
                 'nome_comprador': session.nome,
+                'telefone_comprador': session.celular,
+                'email_comprador': token_obj.email,
+                'data_nascimento': token_obj.data_nascimento.strftime('%Y-%m-%d') if token_obj.data_nascimento else '',
+                'logradouro': token_obj.logradouro,
+                'numero_endereco': token_obj.numero,
+                'complemento': token_obj.complemento,
+                'bairro': token_obj.bairro,
+                'cidade': token_obj.cidade,
+                'estado': token_obj.estado,
+                'cep': token_obj.cep,
+                'transaction_id': f"WC-{token[:16]}",
                 'bandeira': dados_cartao.get('bandeira', 'VISA')
             }
-            
-            registrar_log('checkout', 
+
+            registrar_log('checkout',
                          f"Processando transação via {gateway_ativo} - Token: {token[:8]}..., Parcelas: {session.parcelas}, Valor Original: R$ {valor_original}, Valor Final: R$ {valor_final}")
-            
+
             # Processar transação (interface unificada)
             resultado_transacao = transacoes_service.efetuar_transacao_cartao(dados_transacao)
-            
+
             if not resultado_transacao.get('sucesso', False):
                 # Incrementar tentativas do token
                 token_obj.incrementar_tentativa()
-                
+
                 # Registrar tentativa frustrada
                 CheckoutTransactionAttempt.objects.create(
                     transaction=transacao,
@@ -286,40 +298,40 @@ class LinkPagamentoService:
                     user_agent_cliente=user_agent,
                     numero_cartao_hash=cartao_hash
                 )
-                
+
                 # Atualizar transação se limite de tentativas atingido
                 if token_obj.tentativas_pagamento >= 3:
                     transacao.status = 'NEGADA'
                     transacao.erro_pinbank = f"Limite de tentativas atingido: {resultado_transacao.get('mensagem')}"
                     transacao.pinbank_response = sanitize_for_json(resultado_transacao)
                     transacao.save()
-                
+
                 # Verificar quantas tentativas restam
                 tentativas_restantes = 3 - token_obj.tentativas_pagamento
-                
+
                 registrar_log('checkout', f"Transação NEGADA para token {token[:8]}... - {resultado_transacao.get('mensagem')} - Tentativa {token_obj.tentativas_pagamento}/3")
-                
+
                 return {
                     'sucesso': False,
                     'mensagem': resultado_transacao.get('mensagem', 'Pagamento não autorizado'),
                     'tentativas_restantes': tentativas_restantes,
                     'pode_tentar_novamente': tentativas_restantes > 0
                 }
-            
+
             # Transação aprovada
             dados_transacao_aprovada = resultado_transacao.get('dados', {})
             nsu = dados_transacao_aprovada.get('nsu', '')
             codigo_autorizacao = dados_transacao_aprovada.get('codigo_autorizacao', '')
-            
+
             # Atualizar transação existente com dados finais
             transacao.session = session
             transacao.nsu = nsu
             transacao.codigo_autorizacao = codigo_autorizacao
-            
+
             # Status: Se estava em PENDENTE_REVISAO, manter; senão APROVADA
             if transacao.status != 'PENDENTE_REVISAO':
                 transacao.status = 'APROVADA'
-            
+
             transacao.forma_pagamento = session.tipo_pagamento
             transacao.parcelas = session.parcelas
             transacao.valor_transacao_original = valor_original
@@ -328,14 +340,14 @@ class LinkPagamentoService:
             transacao.ip_address_cliente = ip_address
             transacao.user_agent_cliente = user_agent
             transacao.processed_at = datetime.now()
-            
+
             # Salvar dados do cupom (se usado)
             if cupom_obj:
                 transacao.cupom_id = cupom_obj.id
                 transacao.cupom_valor_desconto = cupom_desconto
-            
+
             transacao.save()
-            
+
             # Registrar uso do cupom após transação aprovada
             if cupom_obj:
                 from apps.cupom.services import CupomService
@@ -352,13 +364,13 @@ class LinkPagamentoService:
                     nsu=nsu,
                     ip_address=ip_address
                 )
-                registrar_log('checkout', 
+                registrar_log('checkout',
                              f"✅ Uso do cupom {cupom_obj.codigo} registrado - Transação {transacao.id}")
-            
-            
+
+
             # Marcar token como usado
             token_obj.mark_as_used()
-            
+
             # Tokenizar cartão se solicitado
             if dados_sessao.get('salvar_cartao', False):
                 try:
@@ -374,7 +386,7 @@ class LinkPagamentoService:
                             # celular removido - gerenciado por checkout_cliente_telefone (2FA)
                         }
                     )
-                    
+
                     # Tokenizar cartão (interface unificada - funciona com Pinbank e Own)
                     resultado_token = transacoes_service.incluir_cartao_tokenizado({
                         'loja_id': token_obj.loja_id,
@@ -385,14 +397,14 @@ class LinkPagamentoService:
                         'cpf_comprador': int(session.cpf),
                         'bandeira': dados_cartao.get('bandeira', 'VISA')
                     })
-                    
+
                     if resultado_token.get('sucesso'):
                         # Ambos gateways retornam 'cartao_id'
                         cartao_id = resultado_token.get('cartao_id')
-                        
+
                         # Gerar máscara do cartão (primeiros 6 + últimos 4 dígitos)
                         cartao_mascarado = f"{numero_cartao[:6]}******{numero_cartao[-4:]}"
-                        
+
                         # Salvar cartão tokenizado
                         CheckoutCartaoTokenizado.objects.create(
                             cliente=cliente,
@@ -402,16 +414,16 @@ class LinkPagamentoService:
                             validade=session.data_validade,
                             valido=True
                         )
-                        registrar_log('checkout', 
+                        registrar_log('checkout',
                                     f"Cartão tokenizado com sucesso via {gateway_ativo} - Cliente: {cliente.id}, CartaoId: {cartao_id}")
                     else:
                         registrar_log('checkout', f"Falha ao tokenizar cartão: {resultado_token.get('mensagem')}", nivel='WARNING')
-                        
+
                 except Exception as e:
                     registrar_log('checkout', f"Erro ao tokenizar cartão: {str(e)}", nivel='ERROR')
-            
+
             registrar_log('checkout', f"Transação APROVADA - ID: {transacao.id}, NSU: {nsu}")
-            
+
             return {
                 'sucesso': True,
                 'transacao_id': transacao.id,
@@ -421,7 +433,7 @@ class LinkPagamentoService:
                 'valor_original': float(valor_original),
                 'valor_final': float(valor_final)
             }
-            
+
         except Exception as e:
             registrar_log('checkout', f"Erro ao processar checkout link pagamento: {str(e)}", nivel='ERROR')
             return {
