@@ -28,6 +28,140 @@ from wallclub_core.utilitarios.export_utils import exportar_csv
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
+# ============================================================================
+# FUNÇÕES AUXILIARES PARA CÁLCULO DE TOTALIZADORES (eliminar duplicação)
+# ============================================================================
+
+def calcular_percentual_totalizador(campo, totais):
+    """
+    Calcula percentuais dos totalizadores baseados nos totais agregados.
+
+    Args:
+        campo: Nome do campo percentual a calcular
+        totais: Dict com totais das colunas (pode vir do SQL ou soma Python)
+
+    Returns:
+        Decimal com o percentual calculado ou Decimal('0') se denominador for zero
+    """
+    from decimal import Decimal
+
+    if campo == 'var36':  # (36) Valor MDR Wall (pago Loja) - % = var37 / var26
+        var37_total = totais.get('var37', Decimal('0'))
+        var26_total = totais.get('var26', Decimal('0'))
+        return (var37_total / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
+
+    elif campo == 'var89':  # (89) MDR Pago Uptal (%) = var90 / var26
+        var90_total = totais.get('var90', Decimal('0'))
+        var26_total = totais.get('var26', Decimal('0'))
+        return (var90_total / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
+
+    elif campo == 'variavel_nova_1':  # Resultado MDR (%) = variavel_nova_2 / var26
+        var37_total = totais.get('var37', Decimal('0'))
+        var90_total = totais.get('var90', Decimal('0'))
+        var26_total = totais.get('var26', Decimal('0'))
+        variavel_nova_2 = var37_total - var90_total
+        return (variavel_nova_2 / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
+
+    elif campo == 'variavel_nova_7':  # Resultado Operacional (projetado) % = variavel_nova_8 / var11
+        var15_total = totais.get('var15', Decimal('0'))
+        var41_total = totais.get('var41', Decimal('0'))
+        var94_A_total = totais.get('var94_A', Decimal('0'))
+        var37_total = totais.get('var37', Decimal('0'))
+        var90_total = totais.get('var90', Decimal('0'))
+        var11_total = totais.get('var11', Decimal('0'))
+        variavel_nova_8 = ((var15_total + var41_total) - var94_A_total) + (var37_total - var90_total)
+        return (variavel_nova_8 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+    elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) % = variavel_nova_11 / var11
+        var113_A_total = totais.get('var113_A', Decimal('0'))
+        var11_total = totais.get('var11', Decimal('0'))
+        return (var113_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+    elif campo == 'variavel_nova_12':  # Cashback pago à Loja (%) = var58 / var11
+        var58_total = totais.get('var58', Decimal('0'))
+        var11_total = totais.get('var11', Decimal('0'))
+        return (var58_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+    elif campo == 'variavel_nova_14':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - % = variavel_nova_15 / var11
+        var116_A_total = totais.get('var116_A', Decimal('0'))
+        var11_total = totais.get('var11', Decimal('0'))
+        return (var116_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+    elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) % = variavel_nova_17 / var11
+        var113_A_total = totais.get('var113_A', Decimal('0'))
+        var109_A_total = totais.get('var109_A', Decimal('0'))
+        var11_total = totais.get('var11', Decimal('0'))
+        variavel_nova_17 = var113_A_total - var109_A_total
+        return (variavel_nova_17 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+    return Decimal('0')
+
+
+def calcular_media_ponderada_parcelas(totais):
+    """
+    Calcula média ponderada de parcelas por volume.
+
+    Args:
+        totais: Dict com 'var11' (volume total) e 'soma_parcelas_ponderada'
+
+    Returns:
+        Decimal com média ponderada ou Decimal('0.00') se volume for zero
+    """
+    from decimal import Decimal
+
+    var11_total = totais.get('var11', Decimal('0'))
+    soma_parcelas_ponderada = totais.get('soma_parcelas_ponderada', Decimal('0'))
+
+    if var11_total > 0:
+        return (soma_parcelas_ponderada / var11_total).quantize(Decimal('0.01'))
+    return Decimal('0.00')
+
+
+def calcular_totais_de_linhas(linhas, campos_necessarios):
+    """
+    Calcula totais de campos específicos a partir de uma lista de linhas.
+    Útil para quando não temos agregação SQL disponível.
+
+    Args:
+        linhas: Lista de dicts com dados das linhas
+        campos_necessarios: Lista de campos que precisam ser totalizados
+
+    Returns:
+        Dict com totais calculados
+    """
+    from decimal import Decimal, InvalidOperation
+
+    totais = {}
+
+    for campo in campos_necessarios:
+        total = Decimal('0')
+        for linha in linhas:
+            valor = linha.get(campo, 0)
+            if valor and valor != '' and valor != 'Não Finalizada':
+                try:
+                    total += Decimal(str(valor))
+                except (ValueError, TypeError, InvalidOperation):
+                    pass
+        totais[campo] = total
+
+    # Calcular soma_parcelas_ponderada se necessário
+    if 'var13' in campos_necessarios and 'var11' in campos_necessarios:
+        soma_parcelas_ponderada = Decimal('0')
+        for linha in linhas:
+            parcelas = linha.get('var13', 0)
+            volume = linha.get('var11', 0)
+            if parcelas and volume:
+                try:
+                    parcelas_num = Decimal(str(parcelas))
+                    volume_num = Decimal(str(volume))
+                    soma_parcelas_ponderada += parcelas_num * volume_num
+                except (ValueError, TypeError, InvalidOperation):
+                    pass
+        totais['soma_parcelas_ponderada'] = soma_parcelas_ponderada
+
+    return totais
+
+
 def obter_nomes_canais_por_ids(canal_ids):
     """
     Função auxiliar para obter nomes de canais a partir de IDs usando método centralizado
@@ -658,68 +792,19 @@ def tabela_rpr_ajax(request):
             elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var43', 'var68', 'tipo_operacao']:
                 linha_totalizadora[campo] = ""
             elif campo == 'var13':
-                # Núm. de Parcelas - calcular média ponderada por volume
-                soma_parcelas_ponderada = Decimal('0')
-                volume_total = Decimal('0')
-                for linha in todas_linhas:
-                    parcelas = linha.get('var13', 0)
-                    volume = linha.get('var11', 0)
-                    if parcelas and volume:
-                        try:
-                            parcelas_num = Decimal(str(parcelas))
-                            volume_num = Decimal(str(volume))
-                            soma_parcelas_ponderada += parcelas_num * volume_num
-                            volume_total += volume_num
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                if volume_total > 0:
-                    media_ponderada = soma_parcelas_ponderada / volume_total
-                    linha_totalizadora[campo] = float(media_ponderada.quantize(Decimal('0.01')))
-                else:
-                    linha_totalizadora[campo] = ""
+                # Núm. de Parcelas - calcular média ponderada usando função auxiliar
+                campos_necessarios = ['var11', 'var13']
+                totais = calcular_totais_de_linhas(todas_linhas, campos_necessarios)
+                media = calcular_media_ponderada_parcelas(totais)
+                linha_totalizadora[campo] = float(media) if media > 0 else ""
             elif campo in colunas_percentuais:
-                # Calcular percentuais baseados nos totais
-                if campo == 'var36':  # (36) Valor MDR Wall (pago Loja) - % = var37 / var26
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in todas_linhas if l.get('var37'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in todas_linhas if l.get('var26'))
-                    linha_totalizadora[campo] = float((var37_total / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'var89':  # (89) MDR Pago Uptal (%) = var90 / var26
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in todas_linhas if l.get('var90'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in todas_linhas if l.get('var26'))
-                    linha_totalizadora[campo] = float((var90_total / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'variavel_nova_1':  # Resultado MDR (%) = variavel_nova_2 / var26
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in todas_linhas if l.get('var37'))
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in todas_linhas if l.get('var90'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in todas_linhas if l.get('var26'))
-                    variavel_nova_2 = var37_total - var90_total
-                    linha_totalizadora[campo] = float((variavel_nova_2 / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'variavel_nova_7':  # Resultado Operacional (projetado) % = variavel_nova_8 / var11
-                    var15_total = sum(Decimal(str(l.get('var15', 0))) for l in todas_linhas if l.get('var15'))
-                    var41_total = sum(Decimal(str(l.get('var41', 0))) for l in todas_linhas if l.get('var41'))
-                    var94_A_total = sum(Decimal(str(l.get('var94_A', 0))) for l in todas_linhas if l.get('var94_A'))
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in todas_linhas if l.get('var37'))
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in todas_linhas if l.get('var90'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in todas_linhas if l.get('var11'))
-                    variavel_nova_8 = ((var15_total + var41_total) - var94_A_total) + (var37_total - var90_total)
-                    linha_totalizadora[campo] = float((variavel_nova_8 / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) % = variavel_nova_11 / var11
-                    var113_A_total = sum(Decimal(str(l.get('var113_A', 0))) for l in todas_linhas if l.get('var113_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in todas_linhas if l.get('var11'))
-                    linha_totalizadora[campo] = float((var113_A_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_12':  # Cashback pago à Loja (%) = var58 / var11
-                    var58_total = sum(Decimal(str(l.get('var58', 0))) for l in todas_linhas if l.get('var58'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in todas_linhas if l.get('var11'))
-                    linha_totalizadora[campo] = float((var58_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_14':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - % = variavel_nova_15 / var11
-                    var116_A_total = sum(Decimal(str(l.get('var116_A', 0))) for l in todas_linhas if l.get('var116_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in todas_linhas if l.get('var11'))
-                    linha_totalizadora[campo] = float((var116_A_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) % = variavel_nova_17 / var11
-                    var113_A_total = sum(Decimal(str(l.get('var113_A', 0))) for l in todas_linhas if l.get('var113_A'))
-                    var109_A_total = sum(Decimal(str(l.get('var109_A', 0))) for l in todas_linhas if l.get('var109_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in todas_linhas if l.get('var11'))
-                    variavel_nova_17 = var113_A_total - var109_A_total
-                    linha_totalizadora[campo] = float((variavel_nova_17 / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
+                # Calcular percentuais usando função auxiliar
+                if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                    # Identificar campos necessários para o cálculo
+                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
+                    totais = calcular_totais_de_linhas(todas_linhas, campos_necessarios)
+                    percentual = calcular_percentual_totalizador(campo, totais)
+                    linha_totalizadora[campo] = float(percentual) if percentual > 0 else ""
                 else:
                     linha_totalizadora[campo] = ""
             elif campo in colunas_monetarias or item.get('tipo') == 'formula':
@@ -887,33 +972,14 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 linha_totalizadora[campo] = ""
             elif campo == 'var13':
                 # Núm. de Parcelas - calcular média ponderada por volume
-                var11_total = totais_sql.get('var11', Decimal('0'))
-                soma_parcelas_ponderada = totais_sql.get('soma_parcelas_ponderada', Decimal('0'))
-                if var11_total > 0:
-                    media_ponderada = soma_parcelas_ponderada / var11_total
-                    linha_totalizadora[campo] = media_ponderada.quantize(Decimal('0.01'))
-                    registrar_log('portais.admin', f"RPR - Média ponderada parcelas: {linha_totalizadora[campo]} (soma_ponderada={soma_parcelas_ponderada}, volume_total={var11_total})")
-                else:
-                    linha_totalizadora[campo] = Decimal('0.00')
+                linha_totalizadora[campo] = calcular_media_ponderada_parcelas(totais_sql)
+                registrar_log('portais.admin', f"RPR - Média ponderada parcelas: {linha_totalizadora[campo]}")
             elif campo in ['var43']:
                 # Campos que não fazem sentido totalizar (Data Prev. Pgto)
                 linha_totalizadora[campo] = ""
-            elif campo == 'var36':
-                # (36) Valor MDR Wall (pago Loja) - % = var37 / var26
-                var37_total = totais_sql.get('var37', Decimal('0'))
-                var26_total = totais_sql.get('var26', Decimal('0'))
-                if var26_total > 0:
-                    linha_totalizadora[campo] = (var37_total / var26_total).quantize(Decimal('0.0001'))
-                else:
-                    linha_totalizadora[campo] = Decimal('0')
-            elif campo == 'var89':
-                # (89) MDR Pago Uptal (%) = var90 / var26
-                var90_total = totais_sql.get('var90', Decimal('0'))
-                var26_total = totais_sql.get('var26', Decimal('0'))
-                if var26_total > 0:
-                    linha_totalizadora[campo] = (var90_total / var26_total).quantize(Decimal('0.0001'))
-                else:
-                    linha_totalizadora[campo] = Decimal('0')
+            elif campo in ['var36', 'var89']:
+                # Percentuais de variáveis - usar função auxiliar
+                linha_totalizadora[campo] = calcular_percentual_totalizador(campo, totais_sql)
             elif campo in ['var39', 'var92', 'var40', 'var93_A']:
                 # Outros percentuais - deixar vazio
                 linha_totalizadora[campo] = ""
@@ -954,55 +1020,9 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                     var113_A_total = totais_sql.get('var113_A', Decimal('0'))
                     var109_A_total = totais_sql.get('var109_A', Decimal('0'))
                     linha_totalizadora[campo] = var113_A_total - var109_A_total
-                elif campo == 'variavel_nova_1':  # Resultado MDR (%) = variavel_nova_2 / var26
-                    variavel_nova_2 = totais_sql.get('var37', Decimal('0')) - totais_sql.get('var90', Decimal('0'))
-                    var26_total = totais_sql.get('var26', Decimal('0'))
-                    if var26_total > 0:
-                        linha_totalizadora[campo] = (variavel_nova_2 / var26_total).quantize(Decimal('0.0001'))
-                    else:
-                        linha_totalizadora[campo] = Decimal('0')
-                elif campo == 'variavel_nova_7':  # Resultado Operacional (projetado) % = variavel_nova_8 / var11
-                    var15_total = totais_sql.get('var15', Decimal('0'))
-                    var41_total = totais_sql.get('var41', Decimal('0'))
-                    var94_A_total = totais_sql.get('var94_A', Decimal('0'))
-                    variavel_nova_5 = (var15_total + var41_total) - var94_A_total
-                    variavel_nova_2 = totais_sql.get('var37', Decimal('0')) - totais_sql.get('var90', Decimal('0'))
-                    variavel_nova_8 = variavel_nova_5 + variavel_nova_2
-                    var11_total = totais_sql.get('var11', Decimal('0'))
-                    if var11_total > 0:
-                        linha_totalizadora[campo] = (variavel_nova_8 / var11_total).quantize(Decimal('0.0001'))
-                    else:
-                        linha_totalizadora[campo] = Decimal('0')
-                elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) % = variavel_nova_11 / var11
-                    variavel_nova_11 = totais_sql.get('var113_A', Decimal('0'))
-                    var11_total = totais_sql.get('var11', Decimal('0'))
-                    if var11_total > 0:
-                        linha_totalizadora[campo] = (variavel_nova_11 / var11_total).quantize(Decimal('0.0001'))
-                    else:
-                        linha_totalizadora[campo] = Decimal('0')
-                elif campo == 'variavel_nova_12':  # Cashback pago à Loja (%) = var58 / var11
-                    var58_total = totais_sql.get('var58', Decimal('0'))
-                    var11_total = totais_sql.get('var11', Decimal('0'))
-                    if var11_total > 0:
-                        linha_totalizadora[campo] = (var58_total / var11_total).quantize(Decimal('0.0001'))
-                    else:
-                        linha_totalizadora[campo] = Decimal('0')
-                elif campo == 'variavel_nova_14':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - % = variavel_nova_15 / var11
-                    variavel_nova_15 = totais_sql.get('var116_A', Decimal('0'))
-                    var11_total = totais_sql.get('var11', Decimal('0'))
-                    if var11_total > 0:
-                        linha_totalizadora[campo] = (variavel_nova_15 / var11_total).quantize(Decimal('0.0001'))
-                    else:
-                        linha_totalizadora[campo] = Decimal('0')
-                elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) % = variavel_nova_17 / var11
-                    var113_A_total = totais_sql.get('var113_A', Decimal('0'))
-                    var109_A_total = totais_sql.get('var109_A', Decimal('0'))
-                    variavel_nova_17 = var113_A_total - var109_A_total
-                    var11_total = totais_sql.get('var11', Decimal('0'))
-                    if var11_total > 0:
-                        linha_totalizadora[campo] = (variavel_nova_17 / var11_total).quantize(Decimal('0.0001'))
-                    else:
-                        linha_totalizadora[campo] = Decimal('0')
+                elif campo in ['variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                    # Fórmulas percentuais - usar função auxiliar
+                    linha_totalizadora[campo] = calcular_percentual_totalizador(campo, totais_sql)
                 else:
                     # Outras fórmulas - deixar vazio
                     linha_totalizadora[campo] = ""
@@ -1404,68 +1424,18 @@ def exportar_rpr_excel(request):
                 # Campos de texto/identificação
                 linha_totalizadora[campo] = ""
             elif campo == 'var13':
-                # Núm. de Parcelas - calcular média ponderada por volume
-                soma_parcelas_ponderada = Decimal('0')
-                volume_total = Decimal('0')
-                for linha in dados:
-                    parcelas = linha.get('var13', 0)
-                    volume = linha.get('var11', 0)
-                    if parcelas and volume:
-                        try:
-                            parcelas_num = Decimal(str(parcelas))
-                            volume_num = Decimal(str(volume))
-                            soma_parcelas_ponderada += parcelas_num * volume_num
-                            volume_total += volume_num
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                if volume_total > 0:
-                    media_ponderada = soma_parcelas_ponderada / volume_total
-                    linha_totalizadora[campo] = float(media_ponderada.quantize(Decimal('0.01')))
-                else:
-                    linha_totalizadora[campo] = ""
+                # Núm. de Parcelas - usar função auxiliar
+                campos_necessarios = ['var11', 'var13']
+                totais = calcular_totais_de_linhas(dados, campos_necessarios)
+                media = calcular_media_ponderada_parcelas(totais)
+                linha_totalizadora[campo] = float(media) if media > 0 else ""
             elif campo in colunas_percentuais:
-                # Calcular percentuais baseados nos totais
-                if campo == 'var36':
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in dados if l.get('var37'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in dados if l.get('var26'))
-                    linha_totalizadora[campo] = float((var37_total / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'var89':
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in dados if l.get('var90'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in dados if l.get('var26'))
-                    linha_totalizadora[campo] = float((var90_total / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'variavel_nova_1':
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in dados if l.get('var37'))
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in dados if l.get('var90'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in dados if l.get('var26'))
-                    variavel_nova_2 = var37_total - var90_total
-                    linha_totalizadora[campo] = float((variavel_nova_2 / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'variavel_nova_7':
-                    var15_total = sum(Decimal(str(l.get('var15', 0))) for l in dados if l.get('var15'))
-                    var41_total = sum(Decimal(str(l.get('var41', 0))) for l in dados if l.get('var41'))
-                    var94_A_total = sum(Decimal(str(l.get('var94_A', 0))) for l in dados if l.get('var94_A'))
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in dados if l.get('var37'))
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in dados if l.get('var90'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    variavel_nova_8 = ((var15_total + var41_total) - var94_A_total) + (var37_total - var90_total)
-                    linha_totalizadora[campo] = float((variavel_nova_8 / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_10':
-                    var113_A_total = sum(Decimal(str(l.get('var113_A', 0))) for l in dados if l.get('var113_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    linha_totalizadora[campo] = float((var113_A_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_12':
-                    var58_total = sum(Decimal(str(l.get('var58', 0))) for l in dados if l.get('var58'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    linha_totalizadora[campo] = float((var58_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_14':
-                    var116_A_total = sum(Decimal(str(l.get('var116_A', 0))) for l in dados if l.get('var116_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    linha_totalizadora[campo] = float((var116_A_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_16':
-                    var113_A_total = sum(Decimal(str(l.get('var113_A', 0))) for l in dados if l.get('var113_A'))
-                    var109_A_total = sum(Decimal(str(l.get('var109_A', 0))) for l in dados if l.get('var109_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    variavel_nova_17 = var113_A_total - var109_A_total
-                    linha_totalizadora[campo] = float((variavel_nova_17 / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
+                # Calcular percentuais usando função auxiliar
+                if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
+                    totais = calcular_totais_de_linhas(dados, campos_necessarios)
+                    percentual = calcular_percentual_totalizador(campo, totais)
+                    linha_totalizadora[campo] = float(percentual) if percentual > 0 else ""
                 else:
                     linha_totalizadora[campo] = ""
             elif campo in colunas_monetarias or item.get('tipo') == 'formula':
@@ -1712,68 +1682,18 @@ def exportar_rpr_csv(request):
             elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var43', 'var68', 'tipo_operacao']:
                 linha_totalizadora[campo] = ""
             elif campo == 'var13':
-                # Núm. de Parcelas - calcular média ponderada por volume
-                soma_parcelas_ponderada = Decimal('0')
-                volume_total = Decimal('0')
-                for linha in dados:
-                    parcelas = linha.get('var13', 0)
-                    volume = linha.get('var11', 0)
-                    if parcelas and volume:
-                        try:
-                            parcelas_num = Decimal(str(parcelas))
-                            volume_num = Decimal(str(volume))
-                            soma_parcelas_ponderada += parcelas_num * volume_num
-                            volume_total += volume_num
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                if volume_total > 0:
-                    media_ponderada = soma_parcelas_ponderada / volume_total
-                    linha_totalizadora[campo] = float(media_ponderada.quantize(Decimal('0.01')))
-                else:
-                    linha_totalizadora[campo] = ""
+                # Núm. de Parcelas - usar função auxiliar
+                campos_necessarios = ['var11', 'var13']
+                totais = calcular_totais_de_linhas(dados, campos_necessarios)
+                media = calcular_media_ponderada_parcelas(totais)
+                linha_totalizadora[campo] = float(media) if media > 0 else ""
             elif campo in colunas_percentuais:
-                # Calcular percentuais baseados nos totais
-                if campo == 'var36':
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in dados if l.get('var37'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in dados if l.get('var26'))
-                    linha_totalizadora[campo] = float((var37_total / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'var89':
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in dados if l.get('var90'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in dados if l.get('var26'))
-                    linha_totalizadora[campo] = float((var90_total / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'variavel_nova_1':
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in dados if l.get('var37'))
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in dados if l.get('var90'))
-                    var26_total = sum(Decimal(str(l.get('var26', 0))) for l in dados if l.get('var26'))
-                    variavel_nova_2 = var37_total - var90_total
-                    linha_totalizadora[campo] = float((variavel_nova_2 / var26_total).quantize(Decimal('0.0001'))) if var26_total > 0 else ""
-                elif campo == 'variavel_nova_7':
-                    var15_total = sum(Decimal(str(l.get('var15', 0))) for l in dados if l.get('var15'))
-                    var41_total = sum(Decimal(str(l.get('var41', 0))) for l in dados if l.get('var41'))
-                    var94_A_total = sum(Decimal(str(l.get('var94_A', 0))) for l in dados if l.get('var94_A'))
-                    var37_total = sum(Decimal(str(l.get('var37', 0))) for l in dados if l.get('var37'))
-                    var90_total = sum(Decimal(str(l.get('var90', 0))) for l in dados if l.get('var90'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    variavel_nova_8 = ((var15_total + var41_total) - var94_A_total) + (var37_total - var90_total)
-                    linha_totalizadora[campo] = float((variavel_nova_8 / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_10':
-                    var113_A_total = sum(Decimal(str(l.get('var113_A', 0))) for l in dados if l.get('var113_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    linha_totalizadora[campo] = float((var113_A_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_12':
-                    var58_total = sum(Decimal(str(l.get('var58', 0))) for l in dados if l.get('var58'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    linha_totalizadora[campo] = float((var58_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_14':
-                    var116_A_total = sum(Decimal(str(l.get('var116_A', 0))) for l in dados if l.get('var116_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    linha_totalizadora[campo] = float((var116_A_total / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
-                elif campo == 'variavel_nova_16':
-                    var113_A_total = sum(Decimal(str(l.get('var113_A', 0))) for l in dados if l.get('var113_A'))
-                    var109_A_total = sum(Decimal(str(l.get('var109_A', 0))) for l in dados if l.get('var109_A'))
-                    var11_total = sum(Decimal(str(l.get('var11', 0))) for l in dados if l.get('var11'))
-                    variavel_nova_17 = var113_A_total - var109_A_total
-                    linha_totalizadora[campo] = float((variavel_nova_17 / var11_total).quantize(Decimal('0.0001'))) if var11_total > 0 else ""
+                # Calcular percentuais usando função auxiliar
+                if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
+                    totais = calcular_totais_de_linhas(dados, campos_necessarios)
+                    percentual = calcular_percentual_totalizador(campo, totais)
+                    linha_totalizadora[campo] = float(percentual) if percentual > 0 else ""
                 else:
                     linha_totalizadora[campo] = ""
             elif campo in colunas_monetarias or item.get('tipo') == 'formula':
