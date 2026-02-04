@@ -655,8 +655,28 @@ def tabela_rpr_ajax(request):
 
             if campo == 'var0':
                 linha_totalizadora[campo] = "TOTAL"
-            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var13', 'var43', 'var68', 'tipo_operacao']:
+            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var43', 'var68', 'tipo_operacao']:
                 linha_totalizadora[campo] = ""
+            elif campo == 'var13':
+                # Núm. de Parcelas - calcular média ponderada por volume
+                soma_parcelas_ponderada = Decimal('0')
+                volume_total = Decimal('0')
+                for linha in todas_linhas:
+                    parcelas = linha.get('var13', 0)
+                    volume = linha.get('var11', 0)
+                    if parcelas and volume:
+                        try:
+                            parcelas_num = Decimal(str(parcelas))
+                            volume_num = Decimal(str(volume))
+                            soma_parcelas_ponderada += parcelas_num * volume_num
+                            volume_total += volume_num
+                        except (ValueError, TypeError, InvalidOperation):
+                            pass
+                if volume_total > 0:
+                    media_ponderada = soma_parcelas_ponderada / volume_total
+                    linha_totalizadora[campo] = float(media_ponderada.quantize(Decimal('0.01')))
+                else:
+                    linha_totalizadora[campo] = ""
             elif campo in colunas_percentuais:
                 linha_totalizadora[campo] = ""
             elif campo in colunas_monetarias or item.get('tipo') == 'formula':
@@ -829,6 +849,7 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 if var11_total > 0:
                     media_ponderada = soma_parcelas_ponderada / var11_total
                     linha_totalizadora[campo] = media_ponderada.quantize(Decimal('0.01'))
+                    registrar_log('portais.admin', f"RPR - Média ponderada parcelas: {linha_totalizadora[campo]} (soma_ponderada={soma_parcelas_ponderada}, volume_total={var11_total})")
                 else:
                     linha_totalizadora[campo] = Decimal('0.00')
             elif campo in ['var43']:
