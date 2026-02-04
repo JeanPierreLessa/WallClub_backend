@@ -2006,6 +2006,7 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             # Variável conhecida do banco
             valor = transacao.get(campo, '') if isinstance(transacao, dict) else getattr(transacao, campo, '')
 
+            # SEMPRE incluir o campo no dict linha (importante para totalizadores)
             # Formatação para exibição
             if not para_export and campo in obter_colunas_monetarias_rpr():
                 try:
@@ -2035,6 +2036,9 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             elif not para_export and campo in ['var11'] and isinstance(valor, (int, float)) and valor > 0:
                 # var11 deve ser formatado como monetário
                 linha[campo] = f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+            elif campo in ['var113_A', 'var109_A', 'var116_A', 'var118_A']:
+                # Campos monetários usados em fórmulas - sempre incluir no dict (para totalizadores)
+                linha[campo] = valor if valor else 0
             else:
                 linha[campo] = str(valor) if valor else ''
 
