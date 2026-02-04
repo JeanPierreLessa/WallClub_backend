@@ -2039,6 +2039,8 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             elif campo in ['var113_A', 'var109_A', 'var116_A', 'var118_A']:
                 # Campos monetários usados em fórmulas - sempre incluir no dict (para totalizadores)
                 linha[campo] = valor if valor else 0
+                if campo == 'var113_A':
+                    registrar_log('portais.admin', f"DEBUG - Incluindo var113_A na linha: valor={valor}")
             else:
                 linha[campo] = str(valor) if valor else ''
 
