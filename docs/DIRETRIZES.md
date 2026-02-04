@@ -1,9 +1,16 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.6
+**Versão:** 5.7
 **Data:** 03/02/2026
 **Fontes:** Fases 1-7 (100%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- **Portal Admin - RPR - Refinamento Completo de Métricas (03/02/2026)**
+  - Coluna "Custo ajuste nos Repasses" reposicionada (antes de var98) e renomeada
+  - Nova coluna "Resultado Operacional Ajustado" = Resultado Operacional + Custo ajuste nos Repasses
+  - Box "Custo Direto Total": sinal invertido, "Custos POS/Equip" removido
+  - Box "Resultado Financeiro": totalizador recalculado (Receita Financeira - Custo Direto)
+  - Nova linha "Resultado após Custos de POS's" no box Resultado Financeiro
+  - Percentual de comissão dinâmico (tabela canal_comissao) sincronizado entre tela e exports
 - **Own Financial - Payload Otimizado (03/02/2026)**
   - Campos estruturados de cliente e endereço implementados
   - CheckoutCliente e CheckoutToken: `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`, `data_nascimento`, `email`

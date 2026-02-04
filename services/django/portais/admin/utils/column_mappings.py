@@ -49,7 +49,7 @@ def obter_mapeamento_colunas_completo():
         "var38": "(38) Valor Venda c/ Wall deduzido MDR Wall (R$)",
         "var39": "(39) Taxa Antec. Wall (%a.m.)",
         "var40": "(40) Taxa Antec. Wall Período (%)",
-        "var41": "(41) Custo Antec. Wall Período (R$)",
+        "var41": "(41) Receita Antec. Wall Período (R$)",
         "var42": "(42) Valor Previsto Repasse Loja (R$)",
         "var43": "(43) Data Prev. Pgto. Repasse",
         "var44": "(44) Valor pago Repasse Loja (R$)",

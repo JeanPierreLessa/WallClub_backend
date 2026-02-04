@@ -18,8 +18,12 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
   - ✅ Portal Lojista: Sistema de Ofertas ativo (menu visível)
   - ✅ Portal Lojista: Sistema de Cashback Loja (CRUD completo)
   - ✅ Portal Admin: Gestão de Terminais com histórico (20/12/2025)
-  - ✅ Portal Admin: RPR - Nova métrica "Ajuste pagos de repasses" (30/01/2026)
-  - ✅ Portal Admin: Tabelas RPR e Gestão Admin - Colunas mais largas e alinhamento à direita (30/01/2026)
+  - ✅ Portal Admin: RPR - Refinamento completo de métricas (03/02/2026)
+    - Coluna "Custo ajuste nos Repasses" reposicionada e renomeada
+    - Nova coluna "Resultado Operacional Ajustado" (Resultado Operacional + Custo ajuste)
+    - Box "Resultado Financeiro" recalculado (Receita Financeira - Custo Direto)
+    - "Custos POS/Equip" movido para box Resultado Financeiro
+    - Percentual de comissão dinâmico (tabela canal_comissao) em tela e exports
   - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
   - ✅ Sistema de Cupom: Validação e aplicação de descontos
@@ -697,24 +701,50 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025
-**Última atualização:** 24/01/2026
+**Última atualização:** 03/02/2026
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (30/01/2026)
-- ✅ **Portal Admin - RPR - Nova Métrica "Ajuste pagos de repasses"**
+### Atualizações Recentes (03/02/2026)
+- **Portal Admin - RPR - Refinamento Completo de Métricas**
+  - **Tabela Analítica:**
+    - Coluna "Custo ajuste nos Repasses (R$)" reposicionada (antes de var98)
+    - Nova coluna "Resultado Operacional Ajustado (R$)" = Resultado Operacional + Custo ajuste nos Repasses
+  - **Box "Custo Direto Total":**
+    - Linha renomeada: "Custo ajuste nos Repasses"
+    - Sinal invertido para exibição (valor positivo)
+    - "Custos POS/Equip" removido deste box
+    - Cálculo: `custo_mdr + custo_antecipacao + impostos - ajuste_repasses + lancamentos_manuais`
+  - **Box "Resultado Financeiro":**
+    - Totalizador = `Receita Financeira Total - Custo Direto Total`
+    - Comissão Total a Pagar = `Totalizador × Percentual Comissão`
+    - "Custos POS/Equip" movido para este box
+    - Nova linha: "Resultado após Custos de POS's" = `Totalizador - Custos POS/Equip`
+    - Comissão Total Líquida = `Resultado após Custos POS × Percentual Comissão`
+  - **Percentual de Comissão:**
+    - Cálculo dinâmico usando tabela `canal_comissao`
+    - Média ponderada por volume quando sem filtro de canal
+    - Sincronizado entre tela e exports (antes era hardcoded 15% no export))
+  - JavaScript: Removido truncamento de cabeçalhos (antes limitava a 15 caracteres)
+
+- **Own Financial E-commerce - Correções de Ambiente e Payload**
+  - Ambiente dinâmico: `ENVIRONMENT=production` → `LIVE`, `development` → `TEST`
+  - Correção do campo `paymentMethod`: movido de `customParameters` para campo direto
+
+### Atualizações Anteriores (24/01/2026)
+- **Portal Admin - RPR - Nova Métrica "Ajuste pagos de repasses"**
   - Fórmula: `Resultado Caixa (var98 - var101) - (Resultado MDR + Resultado Antecipação)`
   - Exibida no box "Custo Direto Total" e como nova coluna na tabela RPR
   - Valor arredondado para 2 casas decimais com `.quantize(Decimal('0.01'))`
   - Coluna posicionada após "(98) Valor Recebido Uptal"
 
-- ✅ **Portal Admin - Tabelas RPR e Gestão Admin - UX Melhorada**
+- **Portal Admin - Tabelas RPR e Gestão Admin - UX Melhorada**
   - Largura mínima de colunas aumentada de 150px para 200px
   - Largura máxima de células aumentada de 250px para 350px
   - Truncamento de texto removido (sem `text-overflow: ellipsis`)
   - Alinhamento à direita para todas as células (valores monetários e percentuais)
   - JavaScript: Removido truncamento de cabeçalhos (antes limitava a 15 caracteres)
 
-- ✅ **Own Financial E-commerce - Correções de Ambiente e Payload**
+- **Own Financial E-commerce - Correções de Ambiente e Payload**
   - Ambiente dinâmico: `ENVIRONMENT=production` → `LIVE`, `development` → `TEST`
   - Correção do campo `paymentMethod`: movido de `customParameters` para campo direto
   - API de consulta de tokens por contrato documentada: `GET /agilli/ecommerce/token?numeroContrato=XXX`

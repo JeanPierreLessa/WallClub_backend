@@ -166,7 +166,7 @@ def obter_estrutura_colunas_rpr():
         {'tipo': 'variavel', 'campo': 'var101', 'nome': None},
 
         # 31-33: Fórmulas resultado caixa e operacional
-        {'tipo': 'formula', 'campo': 'variavel_nova_9', 'nome': 'Resultado Caixa (Rcebtos - Repasses) R$', 'formula': '"Não Finalizada" if var101 == 0 else var98 - var101'},
+        {'tipo': 'formula', 'campo': 'variavel_nova_9', 'nome': 'Resultado Caixa (Rcebtos - Repasses) R$', 'formula': '0 if var101 == 0 else var98 - var101'},
         {'tipo': 'formula', 'campo': 'variavel_nova_11', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) R$', 'formula': '"Não Finalizada" if var101 == 0 else var113_A'},
         {'tipo': 'formula', 'campo': 'variavel_nova_10', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_11 / var11 if var11 != 0 else 0'},
 
@@ -778,7 +778,8 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 SUM(CAST(var109_A AS DECIMAL(10,2))) as soma_var109_A,
                 SUM(CAST(var113_A AS DECIMAL(10,2))) as soma_var113_A,
                 SUM(CAST(var116_A AS DECIMAL(10,2))) as soma_var116_A,
-                SUM(CAST(var118_A AS DECIMAL(10,2))) as soma_var118_A
+                SUM(CAST(var118_A AS DECIMAL(10,2))) as soma_var118_A,
+                SUM(CAST(var13 AS DECIMAL(10,2)) * CAST(var11 AS DECIMAL(10,2))) as soma_parcelas_ponderada
             FROM base_transacoes_unificadas
             WHERE {where_clause}
         """
@@ -806,6 +807,7 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 'var113_A': row[13] or Decimal('0'),
                 'var116_A': row[14] or Decimal('0'),
                 'var118_A': row[15] or Decimal('0'),
+                'soma_parcelas_ponderada': row[16] or Decimal('0'),
             }
         else:
             totais_sql = {}
@@ -820,8 +822,17 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
             elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var68', 'tipo_operacao']:
                 # Campos de texto/identificação - deixar vazio
                 linha_totalizadora[campo] = ""
-            elif campo in ['var13', 'var43']:
-                # Campos que não fazem sentido totalizar (Núm. Parcelas, Data Prev. Pgto)
+            elif campo == 'var13':
+                # Núm. de Parcelas - calcular média ponderada por volume
+                var11_total = totais_sql.get('var11', Decimal('0'))
+                soma_parcelas_ponderada = totais_sql.get('soma_parcelas_ponderada', Decimal('0'))
+                if var11_total > 0:
+                    media_ponderada = soma_parcelas_ponderada / var11_total
+                    linha_totalizadora[campo] = media_ponderada.quantize(Decimal('0.01'))
+                else:
+                    linha_totalizadora[campo] = Decimal('0.00')
+            elif campo in ['var43']:
+                # Campos que não fazem sentido totalizar (Data Prev. Pgto)
                 linha_totalizadora[campo] = ""
             elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
                 # Percentuais - deixar vazio
