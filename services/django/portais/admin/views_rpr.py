@@ -815,6 +815,10 @@ def tabela_rpr_ajax(request):
                 if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
                     # Identificar campos necessários para o cálculo
                     campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
+                    # Debug: verificar se campos existem nas linhas
+                    if todas_linhas:
+                        primeira_linha = todas_linhas[0]
+                        registrar_log('portais.admin', f"RPR - Primeira linha tem var113_A? {('var113_A' in primeira_linha)}, valor: {primeira_linha.get('var113_A', 'N/A')}")
                     totais = calcular_totais_de_linhas(todas_linhas, campos_necessarios)
                     percentual = calcular_percentual_totalizador(campo, totais)
                     registrar_log('portais.admin', f"RPR - Percentual {campo}: {percentual}")
