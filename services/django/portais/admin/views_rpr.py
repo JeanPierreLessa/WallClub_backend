@@ -139,7 +139,14 @@ def calcular_totais_de_linhas(linhas, campos_necessarios):
             valor = linha.get(campo, 0)
             if valor and valor != '' and valor != 'Não Finalizada':
                 try:
-                    total += Decimal(str(valor))
+                    # Se for string, tentar limpar formatação monetária
+                    if isinstance(valor, str):
+                        # Remover "R$", ".", "," e "%"
+                        valor_limpo = valor.replace('R$', '').replace('%', '').replace('.', '').replace(',', '.').strip()
+                        if valor_limpo:
+                            total += Decimal(valor_limpo)
+                    else:
+                        total += Decimal(str(valor))
                 except (ValueError, TypeError, InvalidOperation):
                     pass
         totais[campo] = total
@@ -152,6 +159,12 @@ def calcular_totais_de_linhas(linhas, campos_necessarios):
             volume = linha.get('var11', 0)
             if parcelas and volume:
                 try:
+                    # Limpar formatação se necessário
+                    if isinstance(parcelas, str):
+                        parcelas = parcelas.replace('R$', '').replace('.', '').replace(',', '.').strip()
+                    if isinstance(volume, str):
+                        volume = volume.replace('R$', '').replace('.', '').replace(',', '.').strip()
+
                     parcelas_num = Decimal(str(parcelas))
                     volume_num = Decimal(str(volume))
                     soma_parcelas_ponderada += parcelas_num * volume_num
@@ -804,7 +817,8 @@ def tabela_rpr_ajax(request):
                     campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
                     totais = calcular_totais_de_linhas(todas_linhas, campos_necessarios)
                     percentual = calcular_percentual_totalizador(campo, totais)
-                    registrar_log('portais.admin', f"RPR - Percentual {campo}: {percentual} (totais: var11={totais.get('var11')}, var26={totais.get('var26')})")
+                    registrar_log('portais.admin', f"RPR - Percentual {campo}: {percentual}")
+                    registrar_log('portais.admin', f"RPR - Totais: var11={totais.get('var11')}, var113_A={totais.get('var113_A')}, var109_A={totais.get('var109_A')}, var116_A={totais.get('var116_A')}")
                     # Formatar como percentual para tela: multiplicar por 100 e adicionar %
                     if percentual != 0:
                         percentual_formatado = float(percentual) * 100
