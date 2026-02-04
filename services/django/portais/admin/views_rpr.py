@@ -1974,6 +1974,9 @@ def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
             campo = item['campo']
             # Transação vem como dict da query SQL
             valor = transacao.get(campo, '') if isinstance(transacao, dict) else getattr(transacao, campo, '')
+            # Debug para var113_A
+            if campo == 'var113_A':
+                registrar_log('portais.admin', f"DEBUG FASE1 - var113_A encontrado na transação: valor={valor}, tipo={type(valor)}")
             # Armazenar no cache para cálculos
             try:
                 if isinstance(valor, str):
