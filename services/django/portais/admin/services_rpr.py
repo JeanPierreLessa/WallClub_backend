@@ -600,14 +600,11 @@ class RPRService:
     def calcular_totais_de_linhas(linhas, campos_necessarios):
         """Calcula totais de campos específicos a partir de uma lista de linhas"""
         from decimal import Decimal, InvalidOperation
-        import logging
-        logger = logging.getLogger('portais.admin')
 
         totais = {}
 
         for campo in campos_necessarios:
             total = Decimal('0')
-            contador = 0
             for linha in linhas:
                 valor = linha.get(campo, 0)
                 if valor and valor != '' and valor != 'Não Finalizada':
@@ -615,22 +612,12 @@ class RPRService:
                         if isinstance(valor, str):
                             valor_limpo = valor.replace('R$', '').replace('%', '').replace('.', '').replace(',', '.').strip()
                             if valor_limpo:
-                                valor_decimal = Decimal(valor_limpo)
-                                total += valor_decimal
-                                if campo == 'variavel_nova_17' and contador < 3:
-                                    logger.info(f"DEBUG SOMA {campo}: valor_original={valor}, valor_limpo={valor_limpo}, valor_decimal={valor_decimal}, total_parcial={total}")
-                                contador += 1
+                                total += Decimal(valor_limpo)
                         else:
-                            valor_decimal = Decimal(str(valor))
-                            total += valor_decimal
-                            if campo == 'variavel_nova_17' and contador < 3:
-                                logger.info(f"DEBUG SOMA {campo}: valor_original={valor}, tipo={type(valor)}, valor_decimal={valor_decimal}, total_parcial={total}")
-                            contador += 1
+                            total += Decimal(str(valor))
                     except (ValueError, TypeError, InvalidOperation):
                         pass
             totais[campo] = total
-            if campo == 'variavel_nova_17':
-                logger.info(f"DEBUG TOTAL FINAL {campo}: {total} (somou {contador} valores)")
 
         # Calcular soma ponderada de parcelas se var13 estiver nos campos
         if 'var13' in campos_necessarios and 'var11' in campos_necessarios:
