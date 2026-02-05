@@ -309,7 +309,7 @@ class RPRService:
         for item in estrutura:
             campo = item['campo']
             # Variáveis monetárias conhecidas (exceto campos auxiliares para totalizadores)
-            if campo in ['var11', 'var15', 'var26', 'var37', 'var41', 'var90', 'var94_A', 'var98', 'variavel_nova_18', 'variavel_nova_19', 'var101', 'var58', 'var111_A']:
+            if campo in ['var11', 'var15', 'var26', 'var37', 'var41', 'var90', 'var94_A', 'var98', 'var101', 'var58', 'var111_A']:
                 colunas_monetarias.append(campo)
             # Fórmulas que resultam em valores monetários (R$)
             elif item['tipo'] == 'formula' and 'R$' in item['nome']:
