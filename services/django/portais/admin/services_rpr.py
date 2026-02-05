@@ -550,17 +550,25 @@ class RPRService:
             return (variavel_nova_2 / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_7':  # Resultado Operacional (projetado) %
+            # variavel_nova_8 = variavel_nova_5 + variavel_nova_2
+            # variavel_nova_5 = variavel_nova_4 - var94_A
+            # variavel_nova_4 = var15 + var41
+            # variavel_nova_2 = var37 - var90
             var15_total = totais.get('var15', Decimal('0'))
             var41_total = totais.get('var41', Decimal('0'))
             var94_A_total = totais.get('var94_A', Decimal('0'))
             var37_total = totais.get('var37', Decimal('0'))
             var90_total = totais.get('var90', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
-            variavel_nova_8 = ((var15_total + var41_total) - var94_A_total) + (var37_total - var90_total)
-            return (variavel_nova_8 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            variavel_nova_4_total = var15_total + var41_total
+            variavel_nova_5_total = variavel_nova_4_total - var94_A_total
+            variavel_nova_2_total = var37_total - var90_total
+            variavel_nova_8_total = variavel_nova_5_total + variavel_nova_2_total
+            return (variavel_nova_8_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) %
-            # variavel_nova_11 = var113_A (quando finalizada)
+            # variavel_nova_11 = var113_A (quando finalizada) = var98 - var101 (resultado caixa)
+            # Mas var113_A já é o valor correto nas linhas, então somar está correto
             variavel_nova_11_total = totais.get('variavel_nova_11', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
             return (variavel_nova_11_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
@@ -571,14 +579,16 @@ class RPRService:
             return (var58_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_14':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - %
-            # variavel_nova_15 = var116_A (quando finalizada)
+            # variavel_nova_15 = var116_A (quando finalizada) - valor já calculado nas linhas
             variavel_nova_15_total = totais.get('variavel_nova_15', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
             return (variavel_nova_15_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) %
             # variavel_nova_17 = variavel_nova_11 - variavel_nova_13
-            variavel_nova_17_total = totais.get('variavel_nova_17', Decimal('0'))
+            variavel_nova_11_total = totais.get('variavel_nova_11', Decimal('0'))
+            variavel_nova_13_total = totais.get('variavel_nova_13', Decimal('0'))
+            variavel_nova_17_total = variavel_nova_11_total - variavel_nova_13_total
             var11_total = totais.get('var11', Decimal('0'))
             return (variavel_nova_17_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
