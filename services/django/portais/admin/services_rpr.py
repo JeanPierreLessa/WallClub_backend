@@ -672,9 +672,9 @@ class RPRService:
                     linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%"
                 else:
                     linha_totalizadora[campo] = float(percentual)
-            elif campo in colunas_percentuais:
-                # Outros percentuais que não devem ser somados
-                linha_totalizadora[campo] = ""
+            elif campo in colunas_percentuais or campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                # Percentuais já calculados acima - não processar novamente
+                pass
             elif campo in colunas_monetarias or item.get('tipo') == 'formula':
                 # Somar valores numéricos
                 total = Decimal('0')
