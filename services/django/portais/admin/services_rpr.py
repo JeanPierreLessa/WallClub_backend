@@ -6,7 +6,7 @@ Centraliza toda a lógica de negócio do relatório RPR
 from django.db import connection
 from django.db.models import Q, Sum
 from datetime import datetime, date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import decimal
 import re
 import csv
@@ -649,10 +649,6 @@ class RPRService:
         Returns:
             Dict com linha totalizadora
         """
-        import logging
-        logger = logging.getLogger('portais.admin')
-        logger.info(f"DEBUG INICIO calcular_totalizador_rpr - para_tela={para_tela}, total_linhas={len(dados)}")
-
         linha_totalizadora = {}
         colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
         colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
