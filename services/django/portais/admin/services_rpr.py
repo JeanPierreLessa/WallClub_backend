@@ -676,6 +676,11 @@ class RPRService:
                     campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
                     totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                     percentual = RPRService.calcular_percentual_totalizador(campo, totais)
+
+                    # Debug log
+                    from portais.admin.utils.logging_utils import registrar_log
+                    registrar_log('portais.admin', f"DEBUG RPR Totalizador - {campo}: percentual={percentual}, var11={totais.get('var11')}, var58={totais.get('var58')}, var113_A={totais.get('var113_A')}, var116_A={totais.get('var116_A')}")
+
                     if para_tela:
                         linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%" if percentual != 0 else ""
                     else:
