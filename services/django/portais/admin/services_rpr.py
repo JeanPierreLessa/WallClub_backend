@@ -677,11 +677,18 @@ class RPRService:
                     # Incluir fórmulas calculadas necessárias para os percentuais
                     campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'variavel_nova_8', 'variavel_nova_11', 'variavel_nova_13', 'variavel_nova_15', 'variavel_nova_17']
                     totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
-                    percentual = RPRService.calcular_percentual_totalizador(campo, totais)
 
-                    # Debug detalhado
+                    # Debug: verificar se estamos somando percentuais ou valores monetários
                     import logging
                     logger = logging.getLogger('portais.admin')
+                    if campo == 'variavel_nova_16':
+                        logger.info(f"DEBUG TOTAIS COMPLETOS: {totais}")
+                        # Verificar primeiras 3 linhas
+                        for i, linha in enumerate(dados[:3]):
+                            logger.info(f"DEBUG LINHA {i}: variavel_nova_17={linha.get('variavel_nova_17')}, var11={linha.get('var11')}, variavel_nova_16={linha.get('variavel_nova_16')}")
+
+                    percentual = RPRService.calcular_percentual_totalizador(campo, totais)
+
                     if campo in ['variavel_nova_7', 'variavel_nova_10', 'variavel_nova_14', 'variavel_nova_16']:
                         logger.info(f"DEBUG {campo}: percentual={percentual}, var11={totais.get('var11')}, variavel_nova_8={totais.get('variavel_nova_8')}, variavel_nova_11={totais.get('variavel_nova_11')}, variavel_nova_15={totais.get('variavel_nova_15')}, variavel_nova_17={totais.get('variavel_nova_17')}")
 
