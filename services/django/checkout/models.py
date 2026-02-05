@@ -216,6 +216,20 @@ class CheckoutTransaction(models.Model):
     ]
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='PENDENTE', db_index=True)
 
+    # Gateway de pagamento
+    GATEWAY_CHOICES = [
+        ('PINBANK', 'Pinbank'),
+        ('OWN', 'Own Financial'),
+    ]
+    gateway = models.CharField(
+        max_length=20,
+        choices=GATEWAY_CHOICES,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Gateway usado para processar o pagamento"
+    )
+
     # Dados do pagamento
     forma_pagamento = models.CharField(max_length=50, null=True, blank=True, help_text="Tipo de pagamento usado")
     parcelas = models.IntegerField(null=True, blank=True, help_text="Número de parcelas (NULL quando cliente ainda não escolheu)")

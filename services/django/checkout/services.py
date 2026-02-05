@@ -600,6 +600,7 @@ class CheckoutService:
                 cartao_tokenizado=cartao,
                 origem='CHECKOUT',
                 loja_id=cliente.loja_id,
+                gateway='OWN' if gateway == GatewayRouter.GATEWAY_OWN else 'PINBANK',
                 nsu=nsu,
                 codigo_autorizacao=codigo_autorizacao,
                 valor_transacao_original=valor_original,
@@ -817,6 +818,7 @@ class CheckoutService:
                 cartao_tokenizado=None,  # Cartão NÃO tokenizado
                 origem='CHECKOUT',
                 loja_id=cliente.loja_id,
+                gateway='OWN' if gateway == GatewayRouter.GATEWAY_OWN else 'PINBANK',
                 nsu=nsu,
                 codigo_autorizacao=codigo_autorizacao,
                 valor_transacao_original=valor,
