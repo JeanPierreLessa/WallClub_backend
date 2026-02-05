@@ -677,10 +677,16 @@ class RPRService:
                     totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                     percentual = RPRService.calcular_percentual_totalizador(campo, totais)
 
+                    # Debug temporário
+                    import logging
+                    logger = logging.getLogger('portais.admin')
+                    if campo in ['variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                        logger.info(f"DEBUG TOTALIZADOR {campo}: percentual={percentual}, var11={totais.get('var11')}, var15={totais.get('var15')}, var41={totais.get('var41')}, var94_A={totais.get('var94_A')}, var37={totais.get('var37')}, var90={totais.get('var90')}, var58={totais.get('var58')}, var113_A={totais.get('var113_A')}, var116_A={totais.get('var116_A')}")
+
                     if para_tela:
-                        linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%" if percentual != 0 else ""
+                        linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%"
                     else:
-                        linha_totalizadora[campo] = float(percentual) if percentual != 0 else ""
+                        linha_totalizadora[campo] = float(percentual)
                 else:
                     linha_totalizadora[campo] = ""
             elif campo in colunas_monetarias or item.get('tipo') == 'formula':
