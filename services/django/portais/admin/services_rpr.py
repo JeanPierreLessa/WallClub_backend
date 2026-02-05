@@ -269,7 +269,7 @@ class RPRService:
             {'tipo': 'formula', 'campo': 'variavel_nova_13', 'nome': 'Impostos Diretos pagos (R$)', 'formula': '"Não Finalizada" if var101 == 0 else var109_A'},
             {'tipo': 'formula', 'campo': 'variavel_nova_14', 'nome': 'Resultado Final (pós impostos - sem POS) - Visão Gestão - %', 'formula': '"Não Finalizada" if var101 == 0 else var118_A'},
             {'tipo': 'formula', 'campo': 'variavel_nova_15', 'nome': 'Resultado Final (pós impostos - sem POS) - Visão Gestão - R$', 'formula': '"Não Finalizada" if var101 == 0 else var116_A'},
-            {'tipo': 'formula', 'campo': 'variavel_nova_16', 'nome': 'Resultado Final (pós impostos - sem POS) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_17 / var26 if var26 != 0 else 0'},
+            {'tipo': 'formula', 'campo': 'variavel_nova_16', 'nome': 'Resultado Final (pós impostos - sem POS) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_17 / var11 if var11 != 0 else 0'},
             {'tipo': 'formula', 'campo': 'variavel_nova_17', 'nome': 'Resultado Final (pós impostos - sem POS) R$', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_11 - variavel_nova_13'},
 
             # 42-46: Variáveis finais
@@ -675,9 +675,15 @@ class RPRService:
                 # Calcular percentuais com totalização
                 if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
                     # Incluir fórmulas calculadas necessárias para os percentuais
-                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'variavel_nova_11', 'variavel_nova_13', 'variavel_nova_15', 'variavel_nova_17']
+                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'variavel_nova_8', 'variavel_nova_11', 'variavel_nova_13', 'variavel_nova_15', 'variavel_nova_17']
                     totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                     percentual = RPRService.calcular_percentual_totalizador(campo, totais)
+
+                    # Debug detalhado
+                    import logging
+                    logger = logging.getLogger('portais.admin')
+                    if campo in ['variavel_nova_7', 'variavel_nova_10', 'variavel_nova_14', 'variavel_nova_16']:
+                        logger.info(f"DEBUG {campo}: percentual={percentual}, var11={totais.get('var11')}, variavel_nova_8={totais.get('variavel_nova_8')}, variavel_nova_11={totais.get('variavel_nova_11')}, variavel_nova_15={totais.get('variavel_nova_15')}, variavel_nova_17={totais.get('variavel_nova_17')}")
 
                     if para_tela:
                         linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%"
