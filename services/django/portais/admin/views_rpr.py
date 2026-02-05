@@ -579,8 +579,7 @@ def tabela_rpr_ajax(request):
         linha = RPRService.calcular_linha_rpr(transacao, estrutura_colunas)
         dados_tabela.append(linha)
 
-    # Para totalizadora, buscar TODAS as transações e somar valores calculados
-    # (não usar SQL agregado pois valores são calculados por fórmulas)
+    # Para totalizadora, buscar TODAS as transações e calcular totalizador unificado
     if total <= 5000:  # Limite de segurança
         todas_transacoes, _ = RPRService.buscar_transacoes_rpr(
             filtros=filtros,
@@ -589,75 +588,23 @@ def tabela_rpr_ajax(request):
             per_page=total
         )
 
-        linha_totalizadora = {}
-        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
-
         # Calcular todas as linhas
         todas_linhas = []
         for transacao in todas_transacoes:
             linha_calc = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             todas_linhas.append(linha_calc)
 
-        # Somar valores
-        for item in estrutura_colunas:
-            campo = item['campo']
+        # Usar função unificada de totalização (com formatação para tela)
+        linha_totalizadora = RPRService.calcular_totalizador_rpr(todas_linhas, estrutura_colunas, para_tela=True)
 
-            if campo == 'var0':
-                linha_totalizadora[campo] = "TOTAL"
-            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var43', 'var68', 'tipo_operacao']:
-                linha_totalizadora[campo] = ""
-            elif campo == 'var13':
-                # Núm. de Parcelas - calcular média ponderada usando função auxiliar
-                campos_necessarios = ['var11', 'var13']
-                totais = calcular_totais_de_linhas(todas_linhas, campos_necessarios)
-                media = calcular_media_ponderada_parcelas(totais)
-                linha_totalizadora[campo] = float(media) if media > 0 else ""
-            elif campo in colunas_percentuais:
-                # Calcular percentuais usando função auxiliar
-                if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                    # Identificar campos necessários para o cálculo
-                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
-                    # Debug: verificar se campos existem nas linhas
-                    if todas_linhas:
-                        primeira_linha = todas_linhas[0]
-                        registrar_log('portais.admin', f"RPR - Primeira linha tem var113_A? {('var113_A' in primeira_linha)}, valor: {primeira_linha.get('var113_A', 'N/A')}")
-                    totais = calcular_totais_de_linhas(todas_linhas, campos_necessarios)
-                    percentual = calcular_percentual_totalizador(campo, totais)
-                    registrar_log('portais.admin', f"RPR - Percentual {campo}: {percentual}")
-                    registrar_log('portais.admin', f"RPR - Totais: var11={totais.get('var11')}, var113_A={totais.get('var113_A')}, var109_A={totais.get('var109_A')}, var116_A={totais.get('var116_A')}")
-                    # Formatar como percentual para tela: multiplicar por 100 e adicionar %
-                    if percentual != 0:
-                        percentual_formatado = float(percentual) * 100
-                        linha_totalizadora[campo] = f"{percentual_formatado:.2f}%"
-                    else:
-                        linha_totalizadora[campo] = ""
-                else:
-                    linha_totalizadora[campo] = ""
-            elif campo in colunas_monetarias or item.get('tipo') == 'formula':
-                total_campo = Decimal('0')
-                for linha in todas_linhas:
-                    valor = linha.get(campo, 0)
-                    if valor and valor != '' and valor != 'Não Finalizada':
-                        try:
-                            total_campo += Decimal(str(valor))
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                # Formatar como monetário brasileiro: R$ 1.234.567,89
-                if total_campo != 0:
-                    linha_totalizadora[campo] = f"R$ {float(total_campo):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        # Formatar valores monetários para tela (R$ 1.234,56)
+        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
+        for campo, valor in linha_totalizadora.items():
+            if campo in colunas_monetarias and isinstance(valor, Decimal):
+                if valor != 0:
+                    linha_totalizadora[campo] = f"R$ {float(valor):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
                 else:
                     linha_totalizadora[campo] = "R$ 0,00"
-            else:
-                total_campo = Decimal('0')
-                for linha in todas_linhas:
-                    valor = linha.get(campo, 0)
-                    if valor and valor != '':
-                        try:
-                            total_campo += Decimal(str(valor))
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                linha_totalizadora[campo] = float(total_campo) if total_campo != 0 else ""
     else:
         # Se mais de 5000 registros, usar SQL agregado (fallback)
         linha_totalizadora = calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colunas)
@@ -812,8 +759,8 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                     linha_totalizadora[campo] = f"{percentual_formatado:.2f}%"
                 else:
                     linha_totalizadora[campo] = ""
-            elif campo in ['var39', 'var92', 'var40', 'var93_A']:
-                # Outros percentuais - deixar vazio
+            elif campo in ['var39', 'var92', 'var40', 'var93_A', 'variavel_nova_3', 'variavel_nova_6']:
+                # Percentuais sem totalização - deixar vazio
                 linha_totalizadora[campo] = ""
             elif tipo == 'formula':
                 # Calcular fórmulas monetárias
@@ -1247,56 +1194,8 @@ def exportar_rpr_excel(request):
             linha = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             dados.append(linha)
 
-        # Gerar linha totalizadora somando valores das linhas processadas
-        linha_totalizadora = {}
-        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
-
-        for item in estrutura_colunas:
-            campo = item['campo']
-
-            if campo == 'var0':
-                linha_totalizadora[campo] = "TOTAL"
-            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var43', 'var68', 'tipo_operacao']:
-                # Campos de texto/identificação
-                linha_totalizadora[campo] = ""
-            elif campo == 'var13':
-                # Núm. de Parcelas - usar função auxiliar
-                campos_necessarios = ['var11', 'var13']
-                totais = calcular_totais_de_linhas(dados, campos_necessarios)
-                media = calcular_media_ponderada_parcelas(totais)
-                linha_totalizadora[campo] = float(media) if media > 0 else ""
-            elif campo in colunas_percentuais:
-                # Calcular percentuais usando função auxiliar
-                if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
-                    totais = calcular_totais_de_linhas(dados, campos_necessarios)
-                    percentual = calcular_percentual_totalizador(campo, totais)
-                    linha_totalizadora[campo] = float(percentual) if percentual != 0 else ""
-                else:
-                    linha_totalizadora[campo] = ""
-            elif campo in colunas_monetarias or item.get('tipo') == 'formula':
-                # Somar valores numéricos das linhas
-                total = Decimal('0')
-                for linha in dados:
-                    valor = linha.get(campo, 0)
-                    if valor and valor != '' and valor != 'Não Finalizada':
-                        try:
-                            total += Decimal(str(valor))
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                linha_totalizadora[campo] = total
-            else:
-                # Outros campos - somar se numérico
-                total = Decimal('0')
-                for linha in dados:
-                    valor = linha.get(campo, 0)
-                    if valor and valor != '':
-                        try:
-                            total += Decimal(str(valor))
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                linha_totalizadora[campo] = total if total != 0 else ""
+        # Gerar linha totalizadora usando função unificada
+        linha_totalizadora = RPRService.calcular_totalizador_rpr(dados, estrutura_colunas, para_tela=False)
 
         # Criar workbook
         wb = openpyxl.Workbook()
@@ -1506,46 +1405,8 @@ def exportar_rpr_csv(request):
             linha = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             dados.append(linha)
 
-        # Gerar linha totalizadora
-        linha_totalizadora = {}
-        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
-
-        for item in estrutura_colunas:
-            campo = item['campo']
-
-            if campo == 'var0':
-                linha_totalizadora[campo] = "TOTAL"
-            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var43', 'var68', 'tipo_operacao']:
-                linha_totalizadora[campo] = ""
-            elif campo == 'var13':
-                # Núm. de Parcelas - usar função auxiliar
-                campos_necessarios = ['var11', 'var13']
-                totais = calcular_totais_de_linhas(dados, campos_necessarios)
-                media = calcular_media_ponderada_parcelas(totais)
-                linha_totalizadora[campo] = float(media) if media > 0 else ""
-            elif campo in colunas_percentuais:
-                # Calcular percentuais usando função auxiliar
-                if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
-                    totais = calcular_totais_de_linhas(dados, campos_necessarios)
-                    percentual = calcular_percentual_totalizador(campo, totais)
-                    linha_totalizadora[campo] = float(percentual) if percentual != 0 else ""
-                else:
-                    linha_totalizadora[campo] = ""
-            elif campo in colunas_monetarias or item.get('tipo') == 'formula':
-                # Somar valores numéricos
-                total = Decimal('0')
-                for linha in dados:
-                    valor = linha.get(campo, 0)
-                    if valor and valor != '' and valor != 'Não Finalizada':
-                        try:
-                            total += Decimal(str(valor))
-                        except (ValueError, TypeError, InvalidOperation):
-                            pass
-                linha_totalizadora[campo] = float(total) if total != 0 else 0
-            else:
-                linha_totalizadora[campo] = ""
+        # Gerar linha totalizadora usando função unificada
+        linha_totalizadora = RPRService.calcular_totalizador_rpr(dados, estrutura_colunas, para_tela=False)
 
         # Adicionar linha totalizadora aos dados
         dados.append(linha_totalizadora)

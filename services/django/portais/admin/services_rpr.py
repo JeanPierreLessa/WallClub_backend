@@ -524,3 +524,185 @@ class RPRService:
                     linha[campo] = str(resultado) if resultado else ''
 
         return linha
+
+    # ==================== TOTALIZAÇÃO RPR ====================
+
+    @staticmethod
+    def calcular_percentual_totalizador(campo, totais):
+        """Calcula percentuais dos totalizadores baseados nos totais agregados"""
+        from decimal import Decimal
+
+        if campo == 'var36':  # Valor MDR Wall (pago Loja) - %
+            var37_total = totais.get('var37', Decimal('0'))
+            var26_total = totais.get('var26', Decimal('0'))
+            return (var37_total / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
+
+        elif campo == 'var89':  # MDR Pago Uptal (%)
+            var90_total = totais.get('var90', Decimal('0'))
+            var26_total = totais.get('var26', Decimal('0'))
+            return (var90_total / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
+
+        elif campo == 'variavel_nova_1':  # Resultado MDR (%)
+            var37_total = totais.get('var37', Decimal('0'))
+            var90_total = totais.get('var90', Decimal('0'))
+            var26_total = totais.get('var26', Decimal('0'))
+            variavel_nova_2 = var37_total - var90_total
+            return (variavel_nova_2 / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
+
+        elif campo == 'variavel_nova_7':  # Resultado Operacional (projetado) %
+            var15_total = totais.get('var15', Decimal('0'))
+            var41_total = totais.get('var41', Decimal('0'))
+            var94_A_total = totais.get('var94_A', Decimal('0'))
+            var37_total = totais.get('var37', Decimal('0'))
+            var90_total = totais.get('var90', Decimal('0'))
+            var11_total = totais.get('var11', Decimal('0'))
+            variavel_nova_8 = ((var15_total + var41_total) - var94_A_total) + (var37_total - var90_total)
+            return (variavel_nova_8 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+        elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) %
+            var113_A_total = totais.get('var113_A', Decimal('0'))
+            var11_total = totais.get('var11', Decimal('0'))
+            return (var113_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+        elif campo == 'variavel_nova_12':  # Cashback pago à Loja (%)
+            var58_total = totais.get('var58', Decimal('0'))
+            var11_total = totais.get('var11', Decimal('0'))
+            return (var58_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+        elif campo == 'variavel_nova_14':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - %
+            var116_A_total = totais.get('var116_A', Decimal('0'))
+            var11_total = totais.get('var11', Decimal('0'))
+            return (var116_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+        elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) %
+            var113_A_total = totais.get('var113_A', Decimal('0'))
+            var109_A_total = totais.get('var109_A', Decimal('0'))
+            var11_total = totais.get('var11', Decimal('0'))
+            variavel_nova_17 = var113_A_total - var109_A_total
+            return (variavel_nova_17 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+
+        return Decimal('0')
+
+    @staticmethod
+    def calcular_media_ponderada_parcelas(totais):
+        """Calcula média ponderada de parcelas por volume"""
+        from decimal import Decimal
+
+        var11_total = totais.get('var11', Decimal('0'))
+        soma_parcelas_ponderada = totais.get('soma_parcelas_ponderada', Decimal('0'))
+
+        if var11_total > 0:
+            return (soma_parcelas_ponderada / var11_total).quantize(Decimal('0.01'))
+        return Decimal('0.00')
+
+    @staticmethod
+    def calcular_totais_de_linhas(linhas, campos_necessarios):
+        """Calcula totais de campos específicos a partir de uma lista de linhas"""
+        from decimal import Decimal, InvalidOperation
+
+        totais = {}
+
+        for campo in campos_necessarios:
+            total = Decimal('0')
+            for linha in linhas:
+                valor = linha.get(campo, 0)
+                if valor and valor != '' and valor != 'Não Finalizada':
+                    try:
+                        if isinstance(valor, str):
+                            valor_limpo = valor.replace('R$', '').replace('%', '').replace('.', '').replace(',', '.').strip()
+                            if valor_limpo:
+                                total += Decimal(valor_limpo)
+                        else:
+                            total += Decimal(str(valor))
+                    except (ValueError, TypeError, InvalidOperation):
+                        pass
+            totais[campo] = total
+
+        # Calcular soma ponderada de parcelas se var13 estiver nos campos
+        if 'var13' in campos_necessarios and 'var11' in campos_necessarios:
+            soma_parcelas_ponderada = Decimal('0')
+            for linha in linhas:
+                var13 = linha.get('var13', 0)
+                var11 = linha.get('var11', 0)
+                if var13 and var11:
+                    try:
+                        parcelas = Decimal(str(var13)) if var13 else Decimal('0')
+                        volume = Decimal(str(var11)) if var11 else Decimal('0')
+                        soma_parcelas_ponderada += parcelas * volume
+                    except (ValueError, TypeError, InvalidOperation):
+                        pass
+            totais['soma_parcelas_ponderada'] = soma_parcelas_ponderada
+
+        return totais
+
+    @staticmethod
+    def calcular_totalizador_rpr(dados, estrutura_colunas, para_tela=False):
+        """
+        Calcula linha totalizadora do RPR de forma unificada
+
+        Args:
+            dados: Lista de linhas já calculadas (com para_export=True)
+            estrutura_colunas: Estrutura de colunas RPR
+            para_tela: Se True, formata percentuais como string (ex: "2.50%")
+
+        Returns:
+            Dict com linha totalizadora
+        """
+        from decimal import Decimal, InvalidOperation
+
+        linha_totalizadora = {}
+        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
+
+        for item in estrutura_colunas:
+            campo = item['campo']
+
+            if campo == 'var0':
+                linha_totalizadora[campo] = "TOTAL"
+            elif campo in ['var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var12', 'var43', 'var68', 'tipo_operacao']:
+                linha_totalizadora[campo] = ""
+            elif campo in ['var39', 'var92', 'var40', 'var93_A', 'variavel_nova_3', 'variavel_nova_6']:
+                # Percentuais sem totalização
+                linha_totalizadora[campo] = ""
+            elif campo == 'var13':
+                # Média ponderada de parcelas
+                campos_necessarios = ['var11', 'var13']
+                totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
+                media = RPRService.calcular_media_ponderada_parcelas(totais)
+                linha_totalizadora[campo] = float(media) if media > 0 else ""
+            elif campo in colunas_percentuais:
+                # Calcular percentuais com totalização
+                if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
+                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
+                    totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
+                    percentual = RPRService.calcular_percentual_totalizador(campo, totais)
+                    if para_tela:
+                        linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%" if percentual != 0 else ""
+                    else:
+                        linha_totalizadora[campo] = float(percentual) if percentual != 0 else ""
+                else:
+                    linha_totalizadora[campo] = ""
+            elif campo in colunas_monetarias or item.get('tipo') == 'formula':
+                # Somar valores numéricos
+                total = Decimal('0')
+                for linha in dados:
+                    valor = linha.get(campo, 0)
+                    if valor and valor != '' and valor != 'Não Finalizada':
+                        try:
+                            total += Decimal(str(valor))
+                        except (ValueError, TypeError, InvalidOperation):
+                            pass
+                linha_totalizadora[campo] = total
+            else:
+                # Outros campos - somar se numérico
+                total = Decimal('0')
+                for linha in dados:
+                    valor = linha.get(campo, 0)
+                    if valor and valor != '':
+                        try:
+                            total += Decimal(str(valor))
+                        except (ValueError, TypeError, InvalidOperation):
+                            pass
+                linha_totalizadora[campo] = total if total != 0 else ""
+
+        return linha_totalizadora
