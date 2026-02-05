@@ -78,7 +78,7 @@ class RPRService:
             # 29-36: Fórmulas resultado final
             {'tipo': 'variavel', 'campo': 'var98', 'nome': None},
             {'tipo': 'variavel', 'campo': 'var101', 'nome': None},
-            {'tipo': 'formula', 'campo': 'variavel_nova_9', 'nome': 'Resultado Caixa (Rcebtos - Repasses) R$', 'formula': '"Não Finalizada" if var101 == 0 else var98 - var101'},
+            {'tipo': 'formula', 'campo': 'variavel_nova_9', 'nome': 'Resultado Caixa (Rcebtos - Repasses) R$', 'formula': '0 if var101 == 0 else var98 - var101'},
             {'tipo': 'variavel', 'campo': 'var113_A', 'nome': None},  # Necessário para cálculo de totalizadores
             {'tipo': 'formula', 'campo': 'variavel_nova_11', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) R$', 'formula': '"Não Finalizada" if var101 == 0 else var113_A'},
             {'tipo': 'formula', 'campo': 'variavel_nova_10', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_11 / var11 if var11 != 0 else 0'},
