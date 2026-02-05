@@ -564,7 +564,9 @@ class RPRService:
             variavel_nova_5_total = variavel_nova_4_total - var94_A_total
             variavel_nova_2_total = var37_total - var90_total
             variavel_nova_8_total = variavel_nova_5_total + variavel_nova_2_total
-            return (variavel_nova_8_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            resultado = (variavel_nova_8_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            registrar_log('portais.admin', f"DEBUG variavel_nova_7: var15={var15_total}, var41={var41_total}, var94_A={var94_A_total}, var37={var37_total}, var90={var90_total}, var11={var11_total}, variavel_nova_8={variavel_nova_8_total}, resultado={resultado}")
+            return resultado
 
         elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) %
             # variavel_nova_11 = var113_A (quando finalizada) = var98 - var101 (resultado caixa)
@@ -597,7 +599,9 @@ class RPRService:
             variavel_nova_11_total = var98_total - var101_total
             variavel_nova_17_total = variavel_nova_11_total - var109_A_total
             var11_total = totais.get('var11', Decimal('0'))
-            return (variavel_nova_17_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            resultado = (variavel_nova_17_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            registrar_log('portais.admin', f"DEBUG variavel_nova_16: var98={var98_total}, var101={var101_total}, var109_A={var109_A_total}, var11={var11_total}, variavel_nova_11={variavel_nova_11_total}, variavel_nova_17={variavel_nova_17_total}, resultado={resultado}")
+            return resultado
 
         return Decimal('0')
 
