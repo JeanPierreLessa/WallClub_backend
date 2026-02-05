@@ -640,14 +640,7 @@ class RPRService:
     def calcular_totalizador_rpr(dados, estrutura_colunas, para_tela=False):
         """
         Calcula linha totalizadora do RPR de forma unificada
-
-        Args:
-            dados: Lista de linhas já calculadas (com para_export=True)
-            estrutura_colunas: Estrutura de colunas RPR
-            para_tela: Se True, formata percentuais como string (ex: "2.50%")
-
-        Returns:
-            Dict com linha totalizadora
+        VERSAO: 2026-02-05-1831
         """
         linha_totalizadora = {}
         colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
