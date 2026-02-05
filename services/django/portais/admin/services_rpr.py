@@ -603,6 +603,35 @@ class RPRService:
             registrar_log('portais.admin', f"DEBUG variavel_nova_16: var98={var98_total}, var101={var101_total}, var109_A={var109_A_total}, var11={var11_total}, variavel_nova_11={variavel_nova_11_total}, variavel_nova_17={variavel_nova_17_total}, resultado={resultado}")
             return resultado
 
+        elif campo == 'variavel_nova_18':  # Custo ajuste nos Repasses (R$)
+            # variavel_nova_18 = (var98 - var101) - (variavel_nova_2 + variavel_nova_5)
+            # variavel_nova_2 = var37 - var90
+            # variavel_nova_5 = variavel_nova_4 - var94_A
+            # variavel_nova_4 = var15 + var41
+            var98_total = totais.get('var98', Decimal('0'))
+            var101_total = totais.get('var101', Decimal('0'))
+            var15_total = totais.get('var15', Decimal('0'))
+            var41_total = totais.get('var41', Decimal('0'))
+            var94_A_total = totais.get('var94_A', Decimal('0'))
+            var37_total = totais.get('var37', Decimal('0'))
+            var90_total = totais.get('var90', Decimal('0'))
+
+            resultado_caixa = var98_total - var101_total
+            variavel_nova_4_total = var15_total + var41_total
+            variavel_nova_5_total = variavel_nova_4_total - var94_A_total
+            variavel_nova_2_total = var37_total - var90_total
+            variavel_nova_8_total = variavel_nova_5_total + variavel_nova_2_total
+
+            return resultado_caixa - variavel_nova_8_total
+
+        elif campo == 'variavel_nova_19':  # Resultado Operacional Ajustado (R$)
+            # variavel_nova_19 = variavel_nova_8 + variavel_nova_18
+            var98_total = totais.get('var98', Decimal('0'))
+            var101_total = totais.get('var101', Decimal('0'))
+
+            # variavel_nova_19 = var98 - var101 (resultado caixa)
+            return var98_total - var101_total
+
         return Decimal('0')
 
     @staticmethod
@@ -683,20 +712,23 @@ class RPRService:
                 totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                 media = RPRService.calcular_media_ponderada_parcelas(totais)
                 linha_totalizadora[campo] = float(media) if media > 0 else ""
-            elif campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                # Calcular percentuais com totalização
+            elif campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16', 'variavel_nova_18', 'variavel_nova_19']:
+                # Calcular percentuais e fórmulas com totalização
                 campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var98', 'var101', 'var109_A', 'variavel_nova_15']
                 totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
-                percentual = RPRService.calcular_percentual_totalizador(campo, totais)
+                resultado = RPRService.calcular_percentual_totalizador(campo, totais)
 
-                if para_tela:
-                    linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%"
+                if campo in ['variavel_nova_18', 'variavel_nova_19']:
+                    # Campos monetários calculados
+                    linha_totalizadora[campo] = float(resultado) if isinstance(resultado, Decimal) else resultado
+                elif para_tela:
+                    linha_totalizadora[campo] = f"{float(resultado) * 100:.2f}%"
                 else:
-                    linha_totalizadora[campo] = float(percentual)
+                    linha_totalizadora[campo] = float(resultado)
             elif campo in colunas_percentuais:
                 # Outros percentuais sem totalização
                 linha_totalizadora[campo] = ""
-            elif campo in colunas_monetarias or (item.get('tipo') == 'formula' and campo not in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']):
+            elif campo in colunas_monetarias or (item.get('tipo') == 'formula' and campo not in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16', 'variavel_nova_18', 'variavel_nova_19']):
                 # Somar valores numéricos
                 total = Decimal('0')
                 for linha in dados:
