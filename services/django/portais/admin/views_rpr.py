@@ -1249,7 +1249,8 @@ def exportar_rpr_excel(request):
                 # Converter para número se for campo monetário ou percentual
                 if campo in colunas_monetarias or campo in colunas_percentuais:
                     if valor == '' or valor is None or valor == 'Não Finalizada':
-                        row_data.append(0)
+                        # Manter vazio (não converter para 0)
+                        row_data.append('')
                     else:
                         try:
                             row_data.append(float(valor))
@@ -1269,7 +1270,8 @@ def exportar_rpr_excel(request):
             # Converter para número se for campo monetário ou percentual
             if campo in colunas_monetarias or campo in colunas_percentuais:
                 if valor == '' or valor is None:
-                    row_totalizadora.append(0)
+                    # Manter vazio para colunas sem totalização
+                    row_totalizadora.append('')
                 else:
                     try:
                         row_totalizadora.append(float(valor))
