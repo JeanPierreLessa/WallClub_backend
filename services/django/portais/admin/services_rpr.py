@@ -560,9 +560,10 @@ class RPRService:
             return (variavel_nova_8 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) %
-            var113_A_total = totais.get('var113_A', Decimal('0'))
+            # variavel_nova_11 = var113_A (quando finalizada)
+            variavel_nova_11_total = totais.get('variavel_nova_11', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
-            return (var113_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            return (variavel_nova_11_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_12':  # Cashback pago à Loja (%)
             var58_total = totais.get('var58', Decimal('0'))
@@ -570,16 +571,16 @@ class RPRService:
             return (var58_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_14':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - %
-            var116_A_total = totais.get('var116_A', Decimal('0'))
+            # variavel_nova_15 = var116_A (quando finalizada)
+            variavel_nova_15_total = totais.get('variavel_nova_15', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
-            return (var116_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            return (variavel_nova_15_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) %
-            var113_A_total = totais.get('var113_A', Decimal('0'))
-            var109_A_total = totais.get('var109_A', Decimal('0'))
+            # variavel_nova_17 = variavel_nova_11 - variavel_nova_13
+            variavel_nova_17_total = totais.get('variavel_nova_17', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
-            variavel_nova_17 = var113_A_total - var109_A_total
-            return (variavel_nova_17 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
+            return (variavel_nova_17_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         return Decimal('0')
 
@@ -673,15 +674,10 @@ class RPRService:
             elif campo in colunas_percentuais:
                 # Calcular percentuais com totalização
                 if campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var113_A', 'var109_A', 'var116_A']
+                    # Incluir fórmulas calculadas necessárias para os percentuais
+                    campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'variavel_nova_11', 'variavel_nova_13', 'variavel_nova_15', 'variavel_nova_17']
                     totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                     percentual = RPRService.calcular_percentual_totalizador(campo, totais)
-
-                    # Debug temporário
-                    import logging
-                    logger = logging.getLogger('portais.admin')
-                    if campo in ['variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                        logger.info(f"DEBUG TOTALIZADOR {campo}: percentual={percentual}, var11={totais.get('var11')}, var15={totais.get('var15')}, var41={totais.get('var41')}, var94_A={totais.get('var94_A')}, var37={totais.get('var37')}, var90={totais.get('var90')}, var58={totais.get('var58')}, var113_A={totais.get('var113_A')}, var116_A={totais.get('var116_A')}")
 
                     if para_tela:
                         linha_totalizadora[campo] = f"{float(percentual) * 100:.2f}%"
