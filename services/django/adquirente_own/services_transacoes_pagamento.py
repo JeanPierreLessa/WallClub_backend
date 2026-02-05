@@ -272,7 +272,7 @@ class TransacoesOwnService:
             'card.expiryMonth': card_data['expiry_month'],
             'card.expiryYear': expiry_year,
             'card.cvv': card_data['cvv'],
-            'testMode': 'EXTERNAL',  # End-to-end testing com processador
+            #'testMode': 'EXTERNAL',  # End-to-end testing com processador
             'transactionCategory': 'EC',
             'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
             'merchant.mcc': dados_loja['mcc'],
