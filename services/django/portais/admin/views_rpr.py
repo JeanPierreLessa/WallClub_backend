@@ -26,76 +26,12 @@ from .utils.column_mappings import (
 )
 from wallclub_core.utilitarios.export_utils import exportar_csv
 from wallclub_core.utilitarios.log_control import registrar_log
+from .services_rpr import RPRService
 
 
 # ============================================================================
-# FUNÇÕES AUXILIARES PARA CÁLCULO DE TOTALIZADORES (eliminar duplicação)
+# FUNÇÕES AUXILIARES PARA CÁLCULO DE TOTALIZADORES
 # ============================================================================
-
-def calcular_percentual_totalizador(campo, totais):
-    """
-    Calcula percentuais dos totalizadores baseados nos totais agregados.
-
-    Args:
-        campo: Nome do campo percentual a calcular
-        totais: Dict com totais das colunas (pode vir do SQL ou soma Python)
-
-    Returns:
-        Decimal com o percentual em formato decimal (0.0247 = 2.47%) ou Decimal('0') se denominador for zero
-    """
-    from decimal import Decimal
-
-    if campo == 'var36':  # (36) Valor MDR Wall (pago Loja) - % = var37 / var26
-        var37_total = totais.get('var37', Decimal('0'))
-        var26_total = totais.get('var26', Decimal('0'))
-        return (var37_total / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
-
-    elif campo == 'var89':  # (89) MDR Pago Uptal (%) = var90 / var26
-        var90_total = totais.get('var90', Decimal('0'))
-        var26_total = totais.get('var26', Decimal('0'))
-        return (var90_total / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
-
-    elif campo == 'variavel_nova_1':  # Resultado MDR (%) = variavel_nova_2 / var26
-        var37_total = totais.get('var37', Decimal('0'))
-        var90_total = totais.get('var90', Decimal('0'))
-        var26_total = totais.get('var26', Decimal('0'))
-        variavel_nova_2 = var37_total - var90_total
-        return (variavel_nova_2 / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
-
-    elif campo == 'variavel_nova_7':  # Resultado Operacional (projetado) % = variavel_nova_8 / var11
-        var15_total = totais.get('var15', Decimal('0'))
-        var41_total = totais.get('var41', Decimal('0'))
-        var94_A_total = totais.get('var94_A', Decimal('0'))
-        var37_total = totais.get('var37', Decimal('0'))
-        var90_total = totais.get('var90', Decimal('0'))
-        var11_total = totais.get('var11', Decimal('0'))
-        variavel_nova_8 = ((var15_total + var41_total) - var94_A_total) + (var37_total - var90_total)
-        return (variavel_nova_8 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
-
-    elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) % = variavel_nova_11 / var11
-        var113_A_total = totais.get('var113_A', Decimal('0'))
-        var11_total = totais.get('var11', Decimal('0'))
-        return (var113_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
-
-    elif campo == 'variavel_nova_12':  # Cashback pago à Loja (%) = var58 / var11
-        var58_total = totais.get('var58', Decimal('0'))
-        var11_total = totais.get('var11', Decimal('0'))
-        return (var58_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
-
-    elif campo == 'variavel_nova_14':  # Resultado Final (pós impostos - sem POS) - Visão Gestão - % = variavel_nova_15 / var11
-        var116_A_total = totais.get('var116_A', Decimal('0'))
-        var11_total = totais.get('var11', Decimal('0'))
-        return (var116_A_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
-
-    elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) % = variavel_nova_17 / var11
-        var113_A_total = totais.get('var113_A', Decimal('0'))
-        var109_A_total = totais.get('var109_A', Decimal('0'))
-        var11_total = totais.get('var11', Decimal('0'))
-        variavel_nova_17 = var113_A_total - var109_A_total
-        return (variavel_nova_17 / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
-
-    return Decimal('0')
-
 
 def calcular_media_ponderada_parcelas(totais):
     """
@@ -753,7 +689,7 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                 linha_totalizadora[campo] = ""
             elif campo in ['var36', 'var89']:
                 # Percentuais de variáveis - usar função auxiliar e formatar para tela
-                percentual = calcular_percentual_totalizador(campo, totais_sql)
+                percentual = RPRService.calcular_percentual_totalizador(campo, totais_sql)
                 if percentual != 0:
                     percentual_formatado = float(percentual) * 100
                     linha_totalizadora[campo] = f"{percentual_formatado:.2f}%"
@@ -801,7 +737,7 @@ def calcular_linha_totalizadora_rpr_sql(filtros, canais_usuario, estrutura_colun
                     linha_totalizadora[campo] = var113_A_total - var109_A_total
                 elif campo in ['variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
                     # Fórmulas percentuais - usar função auxiliar e formatar para tela
-                    percentual = calcular_percentual_totalizador(campo, totais_sql)
+                    percentual = RPRService.calcular_percentual_totalizador(campo, totais_sql)
                     if percentual != 0:
                         percentual_formatado = float(percentual) * 100
                         linha_totalizadora[campo] = f"{percentual_formatado:.2f}%"
