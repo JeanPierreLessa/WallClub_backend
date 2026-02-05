@@ -649,7 +649,9 @@ class RPRService:
         Returns:
             Dict com linha totalizadora
         """
-        from decimal import Decimal, InvalidOperation
+        import logging
+        logger = logging.getLogger('portais.admin')
+        logger.info(f"DEBUG INICIO calcular_totalizador_rpr - para_tela={para_tela}, total_linhas={len(dados)}")
 
         linha_totalizadora = {}
         colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
