@@ -35,13 +35,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from datetime import timedelta
-        service = CargaTransacoesOwnService()
-        
+        service = CargaExtratoOwnService()
+
         if options['diaria']:
             # Carga diária
             self.stdout.write(self.style.SUCCESS('🔄 Executando carga diária...'))
             resultado = service.executar_carga_diaria(cnpj_cliente=options.get('cnpj'))
-            
+
         else:
             # Determinar período
             if options.get('dias'):
@@ -55,11 +55,11 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.ERROR('❌ Informe --dias OU --data-inicial e --data-final'))
                 return
-            
+
             # Buscar CNPJs cadastrados
             from adquirente_own.cargas_own.models import CredenciaisExtratoContaOwn
             cnpj_especifico = options.get('cnpj')
-            
+
             if cnpj_especifico:
                 # Processar apenas um CNPJ
                 cnpjs = [cnpj_especifico]
@@ -68,31 +68,31 @@ class Command(BaseCommand):
                 cnpjs = list(CredenciaisExtratoContaOwn.objects.filter(
                     ativo=True
                 ).values_list('cnpj_white_label', flat=True))
-                
+
                 if not cnpjs:
                     self.stdout.write(self.style.ERROR('❌ Nenhum CNPJ cadastrado na tabela credenciaisExtratoContaOwn'))
                     return
-            
+
             self.stdout.write(self.style.SUCCESS(f'🔄 Processando {len(cnpjs)} CNPJ(s): {data_inicial.date()} a {data_final.date()}'))
-            
+
             total_geral_transacoes = 0
             total_geral_processadas = 0
-            
+
             # Processar cada CNPJ
             for cnpj in cnpjs:
                 self.stdout.write(f'\n📋 CNPJ: {cnpj}')
-                
+
                 # Buscar transações
                 result = service.buscar_transacoes_gerais(
                     cnpj_cliente=cnpj,
                     data_inicial=data_inicial,
                     data_final=data_final
                 )
-                
+
                 if not result.get('sucesso'):
                     self.stdout.write(self.style.WARNING(f'   ⚠️  {result.get("mensagem")}'))
                     continue
-                
+
                 # Processar transações
                 total_processadas = 0
                 for transacao_data in result.get('transacoes', []):
@@ -100,18 +100,18 @@ class Command(BaseCommand):
                     if not transacao_obj.processado:
                         service.processar_para_base_gestao(transacao_obj)
                         total_processadas += 1
-                
+
                 total_transacoes = result.get('total', 0)
                 total_geral_transacoes += total_transacoes
                 total_geral_processadas += total_processadas
-                
+
                 self.stdout.write(f'   ✅ {total_transacoes} transações, {total_processadas} processadas')
-            
+
             resultado = {
                 'total_transacoes': total_geral_transacoes,
                 'total_processadas': total_geral_processadas
             }
-        
+
         # Exibir resultado
         self.stdout.write(self.style.SUCCESS(f'✅ Carga concluída!'))
         self.stdout.write(f'   Total transações: {resultado.get("total_transacoes", 0)}')
