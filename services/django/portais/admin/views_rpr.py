@@ -190,208 +190,11 @@ def obter_nomes_canais_por_ids(canal_ids):
     return nomes_canais
 
 
-def obter_estrutura_colunas_rpr():
-    """
-    ESTRUTURA COMPLETA DE COLUNAS RPR:
-    ==================================
-
-    tipo_operacao
-    var9
-    var0
-    var1
-    var68
-    var5
-    var6
-    var4
-    var11
-    var26
-    var36
-    var37
-    var89
-    var90
-    (formula) var36 - var89 nome_coluna: "Resultado MDR (%)"  #variavel_nova_1
-    (formula) var37 - var90 nome_coluna: "Resultado MDR (R$)" #variavel_nova_2
-    var39
-    var92
-    var40
-    var93_A
-    var41
-    (formula) volta o modulo de var14 (valor absoluto) nome_coluna: "Encargos Cobrados Clientes Finais (%)"  #variavel_nova_3
-    var15
-    (formula) var15 + var41 nome_coluna: "Receita Total Antec. + Encargos (Total - R$)" #variavel_nova_4
-    var94_A
-    (formula) variavel_nova_5 / var11 nome_coluna: "Resultado Antecipação & Parcelamento (%)" #variavel_nova_6
-    (formula) variavel_nova_4 - var94_A nome_coluna: "Resultado Antecipação & Parcelamento (R$)" #variavel_nova_5
-    (formula) se var11<>0 entao variavel_nova_8/ var11 nome_coluna: "Resultado Operacional (projetado) %" #variavel_nova_7
-    (formula) variavel_nova_5 + variavel_nova_2 nome_coluna: "Resultado Operacional (projetado) R$" #variavel_nova_8
-    var98
-    var101
-    (formula) Se var101=0 mostra "Não Finalizada", senao  var98-var101  nome_coluna: "Resultado Caixa (Rcebtos - Repasses) R$" #variavel_nova_9
-    (formula) Se var101=0 mostra "Não Finalizada", senao #variavel_nova_11/var11 nome_coluna: "Resultado Operacional (antes Cashback e Chargeback) %" #variavel_nova_10
-    (formula) se var101=0 mostra "Não Finalizada", senao var113_A nome_coluna: "Resultado Operacional (antes Cashback e Chargeback) R$" #variavel_nova_11
-    (formula) var58/var11 nome_coluna: "Cashback pago à Loja (%)" #variavel_nova_12
-    var58
-    var111_A
-    (formula) Se var101=0 mostra "Não Finalizada", senao var109_A nome_coluna: "Impostos Diretos pagos (R$)" #variavel_nova_13
-    (formula) Se var101=0 mostra "Não Finalizada", senao var118_A nome_coluna: "Resultado Final (pós impostos - sem POS) - Visão Gestão - %" #variavel_nova_14
-    (formula) Se var101=0 mostra "Não Finalizada", senao var116_A nome_coluna: "Resultado Final (pós impostos - sem POS) - Visão Gestão - R$" #variavel_nova_15
-    (formula) Se var101=0 mostra "Não Finalizada", senao #variavel_nova_17/var26 nome_coluna: "Resultado Final (pós impostos - sem POS) %" #variavel_nova_16
-    (formula) Se var101=0 mostra "Não Finalizada", senao #variavel_nova_11-#variavel_nova_13 nome_coluna: "Resultado Final (pós impostos - sem POS) R$" #variavel_nova_17
-    var10
-    var8
-    var12
-    var13
-    var43
-    """
-    return [
-        # 1-7: Variáveis base iniciais
-        {'tipo': 'variavel', 'campo': 'var9', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var0', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var1', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var68', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var5', 'nome': 'Nome do Estabelecimento'},
-
-        # Modalidade (tipo_operacao movido para depois de var5)
-        {'tipo': 'variavel', 'campo': 'tipo_operacao', 'nome': 'Modalidade'},
-
-        {'tipo': 'variavel', 'campo': 'var8', 'nome': None},  # Plano/Produto
-        {'tipo': 'variavel', 'campo': 'var12', 'nome': None},  # Bandeira
-        {'tipo': 'variavel', 'campo': 'var6', 'nome': None},
-
-        # Continuação variáveis base
-        {'tipo': 'variavel', 'campo': 'var4', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var11', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var26', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var36', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var37', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var89', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var90', 'nome': None},
-
-        # 14-15: Primeiras fórmulas MDR
-        {'tipo': 'formula', 'campo': 'variavel_nova_1', 'nome': 'Resultado MDR (%)', 'formula': 'var36 - var89'},
-        {'tipo': 'formula', 'campo': 'variavel_nova_2', 'nome': 'Resultado MDR (R$)', 'formula': 'var37 - var90'},
-
-        # 16-20: Mais variáveis
-        {'tipo': 'variavel', 'campo': 'var39', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var92', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var40', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var93_A', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var41', 'nome': None},
-
-        # 21: Fórmula encargos
-        {'tipo': 'formula', 'campo': 'variavel_nova_3', 'nome': 'Encargos Cobrados Clientes Finais (%)', 'formula': 'abs(var14)'},
-
-        # 22: Receita Encargos Cobrados Clientes Finais (R$) - baseado em var86
-        {'tipo': 'formula', 'campo': 'var15', 'nome': 'Receita Encargos Cobrados Clientes Finais (R$)', 'formula': '-var86 if var86 < 0 else 0'},
-
-        # 23: Fórmula receita total
-        {'tipo': 'formula', 'campo': 'variavel_nova_4', 'nome': 'Receita Total Antec. + Encargos (Total - R$)', 'formula': 'var15 + var41'},
-
-        # 24: var94_A
-        {'tipo': 'variavel', 'campo': 'var94_A', 'nome': None},
-
-        # 25: Fórmula antecipação percentual (exibição)
-        {'tipo': 'formula', 'campo': 'variavel_nova_6', 'nome': 'Resultado Antecipação & Parcelamento (%)', 'formula': 'variavel_nova_5 / var11 if var11 != 0 else 0'},
-
-        # 26: Fórmula antecipação monetária (cálculo)
-        {'tipo': 'formula', 'campo': 'variavel_nova_5', 'nome': 'Resultado Antecipação & Parcelamento (R$)', 'formula': 'variavel_nova_4 - var94_A'},
-
-        # 27: Fórmula operacional percentual (exibição)
-        {'tipo': 'formula', 'campo': 'variavel_nova_7', 'nome': 'Resultado Operacional (projetado) %', 'formula': 'variavel_nova_8 / var11 if var11 != 0 else 0'},
-
-        # 28: Fórmula operacional monetária (cálculo)
-        {'tipo': 'formula', 'campo': 'variavel_nova_8', 'nome': 'Resultado Operacional (projetado) R$', 'formula': 'variavel_nova_5 + variavel_nova_2'},
-
-        # Nova coluna: Custo ajuste nos Repasses (movida para antes de var98)
-        {'tipo': 'formula', 'campo': 'variavel_nova_18', 'nome': 'Custo ajuste nos Repasses (R$)', 'formula': '(var98 - var101) - (variavel_nova_2 + variavel_nova_5) if var101 != 0 else "Não Finalizada"'},
-
-        # Nova coluna: Resultado Operacional Ajustado (Resultado Operacional projetado + Custo ajuste nos Repasses)
-        {'tipo': 'formula', 'campo': 'variavel_nova_19', 'nome': 'Resultado Operacional Ajustado (R$)', 'formula': 'variavel_nova_8 + variavel_nova_18 if variavel_nova_18 != "Não Finalizada" else "Não Finalizada"'},
-
-        # 29-30: var98, var101
-        {'tipo': 'variavel', 'campo': 'var98', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var101', 'nome': None},
-
-        # 31-33: Fórmulas resultado caixa e operacional
-        {'tipo': 'formula', 'campo': 'variavel_nova_9', 'nome': 'Resultado Caixa (Rcebtos - Repasses) R$', 'formula': '0 if var101 == 0 else var98 - var101'},
-        {'tipo': 'formula', 'campo': 'variavel_nova_11', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) R$', 'formula': '"Não Finalizada" if var101 == 0 else var113_A'},
-        {'tipo': 'formula', 'campo': 'variavel_nova_10', 'nome': 'Resultado Operacional (antes Cashback e Chargeback) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_11 / var11 if var11 != 0 else 0'},
-
-        # 34: Fórmula cashback
-        {'tipo': 'formula', 'campo': 'variavel_nova_12', 'nome': 'Cashback pago à Loja (%)', 'formula': 'var58 / var11 if var11 != 0 else 0'},
-
-        # 35-36: var58, var111_A
-        {'tipo': 'variavel', 'campo': 'var58', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var111_A', 'nome': None},
-
-        # 37-41: Fórmulas resultado final
-        {'tipo': 'formula', 'campo': 'variavel_nova_13', 'nome': 'Impostos Diretos pagos (R$)', 'formula': '"Não Finalizada" if var101 == 0 else var109_A'},
-        {'tipo': 'formula', 'campo': 'variavel_nova_14', 'nome': 'Resultado Final (pós impostos - sem POS) - Visão Gestão - %', 'formula': '"Não Finalizada" if var101 == 0 else var118_A'},
-        {'tipo': 'formula', 'campo': 'variavel_nova_15', 'nome': 'Resultado Final (pós impostos - sem POS) - Visão Gestão - R$', 'formula': '"Não Finalizada" if var101 == 0 else var116_A'},
-        {'tipo': 'formula', 'campo': 'variavel_nova_16', 'nome': 'Resultado Final (pós impostos - sem POS) %', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_17 / var26 if var26 != 0 else 0'},
-        {'tipo': 'formula', 'campo': 'variavel_nova_17', 'nome': 'Resultado Final (pós impostos - sem POS) R$', 'formula': '"Não Finalizada" if var101 == 0 else variavel_nova_11 - variavel_nova_13'},
-
-        # 42-46: Variáveis finais
-        {'tipo': 'variavel', 'campo': 'var10', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var8', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var12', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var13', 'nome': None},
-        {'tipo': 'variavel', 'campo': 'var43', 'nome': None},
-    ]
-
-
-def obter_mapeamento_colunas_rpr_dinamico():
-    """Retorna mapeamento específico para tabela RPR baseado na nova estrutura"""
-    from .utils.column_mappings import obter_mapeamento_colunas_completo
-
-    mapeamento_completo = obter_mapeamento_colunas_completo()
-    estrutura = obter_estrutura_colunas_rpr()
-
-    mapeamento = {}
-    for item in estrutura:
-        if item['tipo'] == 'variavel':
-            # Usar mapeamento existente
-            if item['campo'] in mapeamento_completo:
-                mapeamento[item['campo']] = mapeamento_completo[item['campo']]
-        elif item['tipo'] == 'formula':
-            # Usar nome personalizado da fórmula
-            mapeamento[item['campo']] = item['nome']
-
-    return mapeamento
-
-
-def obter_colunas_monetarias_rpr_dinamico():
-    """Retorna lista de colunas que devem ser formatadas como monetárias no RPR"""
-    estrutura = obter_estrutura_colunas_rpr()
-    colunas_monetarias = []
-
-    for item in estrutura:
-        campo = item['campo']
-        # Variáveis monetárias conhecidas (exceto campos auxiliares para totalizadores)
-        if campo in ['var11', 'var15', 'var26', 'var37', 'var41', 'var90', 'var94_A', 'var98', 'variavel_nova_18', 'variavel_nova_19', 'var101', 'var58', 'var111_A']:
-            colunas_monetarias.append(campo)
-        # Fórmulas que resultam em valores monetários (R$)
-        elif item['tipo'] == 'formula' and 'R$' in item['nome']:
-            colunas_monetarias.append(campo)
-
-    return colunas_monetarias
-
-
-def obter_colunas_percentuais_rpr_dinamico():
-    """Retorna lista de colunas que devem ser formatadas como percentuais no RPR"""
-    estrutura = obter_estrutura_colunas_rpr()
-    colunas_percentuais = []
-
-    for item in estrutura:
-        campo = item['campo']
-        # Variáveis percentuais conhecidas
-        if campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
-            colunas_percentuais.append(campo)
-        # Fórmulas que resultam em percentuais (%)
-        elif item['tipo'] == 'formula' and '%' in item['nome']:
-            colunas_percentuais.append(campo)
-
-    return colunas_percentuais
+# Funções de estrutura e cálculo RPR foram movidas para services_rpr.py
+# Usar RPRService.obter_estrutura_colunas_rpr()
+# Usar RPRService.obter_mapeamento_colunas_rpr_dinamico()
+# Usar RPRService.obter_colunas_monetarias_rpr_dinamico()
+# Usar RPRService.obter_colunas_percentuais_rpr_dinamico()
 
 
 @require_acesso_padronizado('rpr_view')
@@ -768,12 +571,12 @@ def tabela_rpr_ajax(request):
     registrar_log('portais.admin', f"RPR AJAX - Transações retornadas: {len(transacoes_list)}, Total: {total}")
 
     # Calcular totalizadora e linhas
-    estrutura_colunas = obter_estrutura_colunas_rpr()
+    estrutura_colunas = RPRService.obter_estrutura_colunas_rpr()
 
     # Preparar dados para a tabela
     dados_tabela = []
     for transacao in transacoes_list:
-        linha = calcular_linha_rpr(transacao, estrutura_colunas)
+        linha = RPRService.calcular_linha_rpr(transacao, estrutura_colunas)
         dados_tabela.append(linha)
 
     # Para totalizadora, buscar TODAS as transações e somar valores calculados
@@ -787,13 +590,13 @@ def tabela_rpr_ajax(request):
         )
 
         linha_totalizadora = {}
-        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
+        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
 
         # Calcular todas as linhas
         todas_linhas = []
         for transacao in todas_transacoes:
-            linha_calc = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+            linha_calc = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             todas_linhas.append(linha_calc)
 
         # Somar valores
@@ -864,7 +667,7 @@ def tabela_rpr_ajax(request):
     total_paginas = math.ceil(total / per_page) if total > 0 else 1
 
     # Mapeamento de colunas
-    mapeamento_colunas = obter_mapeamento_colunas_rpr_dinamico()
+    mapeamento_colunas = RPRService.obter_mapeamento_colunas_rpr_dinamico()
 
     # Resposta JSON
     response_data = {
@@ -879,7 +682,7 @@ def tabela_rpr_ajax(request):
             'registros_por_pagina': per_page
         },
         'colunas': mapeamento_colunas,
-        'campos_monetarios': obter_colunas_monetarias_rpr_dinamico()
+        'campos_monetarios': RPRService.obter_colunas_monetarias_rpr_dinamico()
     }
 
     registrar_log('portais.admin', f"RPR - Tabela página {page} - Filtros: {filtros}")
@@ -1078,7 +881,7 @@ def calcular_linha_totalizadora_rpr(queryset, estrutura_colunas):
     # Processar todas as transações para calcular totais
     for transacao in queryset:
         # Calcular linha individual SEM formatação para obter valores numéricos
-        linha_individual = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+        linha_individual = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
 
         # Somar valores numéricos
         for campo, valor in linha_individual.items():
@@ -1438,16 +1241,16 @@ def exportar_rpr_excel(request):
         )
 
         dados = []
-        estrutura_colunas = obter_estrutura_colunas_rpr()
+        estrutura_colunas = RPRService.obter_estrutura_colunas_rpr()
 
         for transacao in transacoes:
-            linha = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+            linha = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             dados.append(linha)
 
         # Gerar linha totalizadora somando valores das linhas processadas
         linha_totalizadora = {}
-        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
+        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
 
         for item in estrutura_colunas:
             campo = item['campo']
@@ -1522,7 +1325,7 @@ def exportar_rpr_excel(request):
 
         # ABA 2: Detalhamento (com linha totalizadora no final)
         ws_detalhe = wb.create_sheet("Detalhamento")
-        colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
+        colunas_rpr = RPRService.obter_mapeamento_colunas_rpr_dinamico()
 
         # Cabeçalho - usar nomes das colunas do mapeamento
         headers = [colunas_rpr.get(item['campo'], item['campo']) for item in estrutura_colunas]
@@ -1534,8 +1337,8 @@ def exportar_rpr_excel(request):
             cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
         # Identificar colunas monetárias e percentuais
-        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
+        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
 
         # Dados - converter valores para número quando necessário
         for linha in dados:
@@ -1697,16 +1500,16 @@ def exportar_rpr_csv(request):
         )
 
         dados = []
-        estrutura_colunas = obter_estrutura_colunas_rpr()
+        estrutura_colunas = RPRService.obter_estrutura_colunas_rpr()
 
         for transacao in transacoes:
-            linha = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+            linha = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
             dados.append(linha)
 
         # Gerar linha totalizadora
         linha_totalizadora = {}
-        colunas_monetarias = obter_colunas_monetarias_rpr_dinamico()
-        colunas_percentuais = obter_colunas_percentuais_rpr_dinamico()
+        colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
+        colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
 
         for item in estrutura_colunas:
             campo = item['campo']
@@ -1749,7 +1552,7 @@ def exportar_rpr_csv(request):
 
         # Usar utilitário comum para exportar
         nome_arquivo = f"rpr_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
+        colunas_rpr = RPRService.obter_mapeamento_colunas_rpr_dinamico()
 
         return exportar_csv(nome_arquivo, dados, colunas_rpr)
 
@@ -1792,8 +1595,8 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
             total_processados = 0
 
             # Estrutura e mapeamento
-            estrutura_colunas = obter_estrutura_colunas_rpr()
-            colunas_rpr = obter_mapeamento_colunas_rpr_dinamico()
+            estrutura_colunas = RPRService.obter_estrutura_colunas_rpr()
+            colunas_rpr = RPRService.obter_mapeamento_colunas_rpr_dinamico()
 
             # Calcular número de páginas
             import math
@@ -1838,7 +1641,7 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
 
                     for transacao in batch:
                         # Calcular linha RPR
-                        linha_individual = calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+                        linha_individual = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
 
                         # Escrever linha usando mesma ordem dos cabeçalhos
                         linha = {}
@@ -1846,7 +1649,7 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                             valor = linha_individual.get(campo, '')
 
                             # Formatação para campos percentuais
-                            if campo in obter_colunas_percentuais_rpr_dinamico() and valor:
+                            if campo in RPRService.obter_colunas_percentuais_rpr_dinamico() and valor:
                                 try:
                                     if isinstance(valor, (int, float)):
                                         percentual = valor * 100
@@ -1864,7 +1667,7 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
                                 except:
                                     valor = str(valor) if valor else ''
                             # Formatação para campos monetários
-                            elif campo in obter_colunas_monetarias_rpr_dinamico() and valor:
+                            elif campo in RPRService.obter_colunas_monetarias_rpr_dinamico() and valor:
                                 try:
                                     if isinstance(valor, (int, float)):
                                         valor = f"{valor:.2f}".replace('.', ',')
@@ -1962,221 +1765,6 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
     return HttpResponse(html_response, content_type='text/html')
 
 
-def calcular_linha_rpr(transacao, estrutura_colunas, para_export=False):
-    """Calcula uma linha da tabela RPR com variáveis e fórmulas"""
-    linha = {}
-    variaveis_calculadas = {}  # Cache para variáveis novas
-
-    # FASE 1: Calcular todas as variáveis na ordem de dependências
-    # Primeiro processar variáveis do banco
-    for item in estrutura_colunas:
-        if item['tipo'] == 'variavel':
-            campo = item['campo']
-            # Transação vem como dict da query SQL
-            valor = transacao.get(campo, '') if isinstance(transacao, dict) else getattr(transacao, campo, '')
-            # Debug para var113_A
-            if campo == 'var113_A':
-                registrar_log('portais.admin', f"DEBUG FASE1 - var113_A encontrado na transação: valor={valor}, tipo={type(valor)}")
-            # Armazenar no cache para cálculos
-            try:
-                if isinstance(valor, str):
-                    variaveis_calculadas[campo] = float(valor.replace(',', '.')) if valor else 0
-                else:
-                    variaveis_calculadas[campo] = float(valor) if valor else 0
-            except (ValueError, TypeError):
-                variaveis_calculadas[campo] = 0
-
-    # Depois processar fórmulas na ordem correta de dependências
-    formulas_ordenadas = [
-        'variavel_nova_1', 'variavel_nova_2', 'variavel_nova_3', 'var15', 'variavel_nova_4',
-        'variavel_nova_5', 'variavel_nova_6', 'variavel_nova_8', 'variavel_nova_7',
-        'variavel_nova_18', 'variavel_nova_19', 'variavel_nova_9', 'variavel_nova_11', 'variavel_nova_10', 'variavel_nova_12',
-        'variavel_nova_13', 'variavel_nova_14', 'variavel_nova_15', 'variavel_nova_17', 'variavel_nova_16'
-    ]
-
-    for campo_formula in formulas_ordenadas:
-        for item in estrutura_colunas:
-            if item['tipo'] == 'formula' and item['campo'] == campo_formula:
-                resultado = calcular_formula(item['formula'], transacao, variaveis_calculadas)
-                variaveis_calculadas[campo_formula] = resultado
-                break
-
-    # FASE 2: Montar linha na ordem de exibição com formatação
-    for item in estrutura_colunas:
-        campo = item['campo']
-
-        if item['tipo'] == 'variavel':
-            # Variável conhecida do banco
-            valor = transacao.get(campo, '') if isinstance(transacao, dict) else getattr(transacao, campo, '')
-
-            # SEMPRE incluir o campo no dict linha (importante para totalizadores)
-            # Formatação para exibição
-            if not para_export and campo in obter_colunas_monetarias_rpr():
-                try:
-                    if valor and str(valor).strip():
-                        valor_float = float(str(valor).replace(',', '.'))
-                        linha[campo] = f"R$ {valor_float:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-                    else:
-                        linha[campo] = 'R$ 0,00'
-                except (ValueError, TypeError):
-                    linha[campo] = str(valor) if valor else ''
-            elif campo in ['var36', 'var89', 'var39', 'var92', 'var40', 'var93_A']:
-                # Variáveis percentuais
-                try:
-                    valor_float = float(str(valor).replace(',', '.')) if valor else 0
-                    if para_export:
-                        # Para export: manter como decimal (0.015)
-                        linha[campo] = valor_float
-                    else:
-                        # Para tela: formatar como string "1.50%"
-                        if valor_float != 0:
-                            percentual = valor_float * 100
-                            linha[campo] = f"{percentual:.2f}%"
-                        else:
-                            linha[campo] = '0.00%'
-                except (ValueError, TypeError):
-                    linha[campo] = 0 if para_export else '0.00%'
-            elif not para_export and campo in ['var11'] and isinstance(valor, (int, float)) and valor > 0:
-                # var11 deve ser formatado como monetário
-                linha[campo] = f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-            elif campo in ['var113_A', 'var109_A', 'var116_A', 'var118_A']:
-                # Campos monetários usados em fórmulas - sempre incluir no dict (para totalizadores)
-                linha[campo] = valor if valor else 0
-                if campo == 'var113_A':
-                    registrar_log('portais.admin', f"DEBUG - Incluindo var113_A na linha: valor={valor}")
-            else:
-                linha[campo] = str(valor) if valor else ''
-
-            # Guardar valor numérico para cálculos
-            try:
-                if isinstance(valor, str):
-                    variaveis_calculadas[campo] = float(valor.replace(',', '.')) if valor else 0
-                else:
-                    variaveis_calculadas[campo] = float(valor) if valor else 0
-            except (ValueError, TypeError):
-                variaveis_calculadas[campo] = 0
-
-        elif item['tipo'] == 'formula':
-            # Variável calculada - usar valor já calculado na FASE 1
-            resultado = variaveis_calculadas.get(campo, 0)
-
-            # Formatação para exibição
-            if campo in ['variavel_nova_1', 'variavel_nova_3', 'variavel_nova_6', 'variavel_nova_7',
-                        'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
-                # Fórmulas percentuais
-                try:
-                    valor_float = float(str(resultado).replace(',', '.')) if resultado else 0
-                    if para_export:
-                        # Para export: manter como decimal (0.015)
-                        linha[campo] = valor_float
-                    else:
-                        # Para tela: formatar como string "1.50%"
-                        if valor_float != 0:
-                            percentual = valor_float * 100
-                            linha[campo] = f"{percentual:.2f}%"
-                        else:
-                            linha[campo] = '0.00%'
-                except (ValueError, TypeError):
-                    linha[campo] = 0 if para_export else '0.00%'
-            elif campo == 'var15' or (not para_export and resultado != 0):
-                # var15 e outras fórmulas monetárias
-                try:
-                    valor_num = float(resultado) if resultado else 0
-                    if para_export:
-                        linha[campo] = valor_num
-                    else:
-                        linha[campo] = f"R$ {valor_num:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-                except (ValueError, TypeError):
-                    linha[campo] = str(resultado) if resultado else ''
-            else:
-                linha[campo] = str(resultado) if resultado else ''
-
-
-    return linha
-
-
-def calcular_formula(formula, transacao, variaveis_calculadas):
-    try:
-        from decimal import Decimal
-        import re
-
-        # Substituir variáveis do banco de dados
-        formula_processada = formula
-
-        # Buscar todas as variáveis na fórmula (incluindo variavel_nova_X)
-        import re
-        vars_encontradas = re.findall(r'var\d+(?:_A)?|variavel_nova_\d+', formula_processada)
-
-        for var_name in vars_encontradas:
-            if var_name in formula_processada:
-                # Se é variável calculada, buscar do cache primeiro
-                if var_name.startswith('variavel_nova_') or var_name in variaveis_calculadas:
-                    if var_name in variaveis_calculadas:
-                        valor_calculado = variaveis_calculadas[var_name]
-                        try:
-                            valor_num = Decimal(str(valor_calculado))
-                        except:
-                            valor_num = Decimal('0')
-                        formula_processada = formula_processada.replace(var_name, str(valor_num))
-
-
-                # Se é variável do banco, buscar do objeto transacao
-                elif var_name.startswith('var'):
-                    valor = transacao.get(var_name, 0) if isinstance(transacao, dict) else getattr(transacao, var_name, 0)
-
-                    try:
-                        from decimal import Decimal
-                        if isinstance(valor, str):
-                            valor_num = Decimal(valor.replace(',', '.')) if valor else Decimal('0')
-                        elif isinstance(valor, Decimal):
-                            valor_num = valor
-                        else:
-                            valor_num = Decimal(str(valor)) if valor else Decimal('0')
-                    except (ValueError, TypeError):
-                        valor_num = Decimal('0')
-
-                    formula_processada = formula_processada.replace(var_name, str(valor_num))
-
-
-        # Substituir variáveis calculadas (remover seção duplicada - já processado acima)
-
-        # Processar função abs()
-        if 'abs(' in formula_processada:
-            abs_matches = re.findall(r'abs\(([^)]+)\)', formula_processada)
-            for match in abs_matches:
-                try:
-                    valor_abs = abs(Decimal(match))
-                    formula_processada = formula_processada.replace(f'abs({match})', str(valor_abs))
-                except:
-                    formula_processada = formula_processada.replace(f'abs({match})', '0')
-
-        # Processar condicionais simples
-        if 'if' in formula_processada and 'else' in formula_processada:
-            conditional_match = re.match(r'(.+?)\s+if\s+(.+?)\s+else\s+(.+)', formula_processada)
-            if conditional_match:
-                expr_true, condition, expr_false = conditional_match.groups()
-
-                try:
-                    if eval(condition):
-                        formula_processada = expr_true.strip()
-                    else:
-                        formula_processada = expr_false.strip()
-                except:
-                    formula_processada = '0'
-
-        # Avaliar expressão final
-        try:
-            # Usar eval com contexto Decimal para manter precisão
-            from decimal import Decimal
-            resultado = eval(formula_processada, {"__builtins__": {}, "Decimal": Decimal})
-
-
-            # Converter para float apenas no final se necessário
-            if isinstance(resultado, Decimal):
-                return float(resultado)
-            return float(resultado) if isinstance(resultado, (int, float)) else resultado
-        except Exception as e:
-            return 0
-
-    except Exception:
-        return 0
+# Funções calcular_linha_rpr() e calcular_formula() foram movidas para services_rpr.py
+# Usar RPRService.calcular_linha_rpr()
+# Usar RPRService.calcular_formula()
