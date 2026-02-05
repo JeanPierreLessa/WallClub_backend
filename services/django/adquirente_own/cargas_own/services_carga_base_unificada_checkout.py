@@ -57,11 +57,11 @@ class CargaBaseUnificadaCheckoutOwnService:
                 ct.forma_pagamento,
                 ct.codigo_autorizacao,
                 l.canal_id,
-                l.nome as loja_nome,
+                l.razao_social as loja_nome,
                 c.nome as canal_nome
             FROM checkout_transactions ct
-            INNER JOIN estr_organizacional_loja l ON ct.loja_id = l.id
-            INNER JOIN estr_organizacional_canal c ON l.canal_id = c.id
+            INNER JOIN loja l ON ct.loja_id = l.id
+            INNER JOIN canal c ON l.canal_id = c.id
             WHERE ct.gateway = 'OWN'
                 AND ct.status = 'APROVADA'
                 AND ct.processed_at IS NOT NULL
