@@ -79,10 +79,17 @@ class CargaBaseUnificadaCheckoutOwnService:
         total_processadas = 0
 
         with connection.cursor() as cursor:
+            # LOG TEMPORÁRIO: Ver query completa
+            registrar_log('own.cargas_own', f"🔍 QUERY: {query}")
+
             cursor.execute(query)
             transacoes = cursor.fetchall()
 
             registrar_log('own.cargas_own', f"📊 Encontradas {len(transacoes)} transações OWN checkout para processar")
+
+            # LOG TEMPORÁRIO: Ver primeiras transações
+            if transacoes:
+                registrar_log('own.cargas_own', f"📋 Primeira transação: {transacoes[0]}")
 
             for row in transacoes:
                 try:
@@ -99,14 +106,33 @@ class CargaBaseUnificadaCheckoutOwnService:
                         loja_nome = row[9]
                         canal_nome = row[10]
 
-                        # Preparar dados para calculadora
+                        # Preparar dados para calculadora (compatível com CalculadoraBaseUnificada)
                         dados_transacao = {
+                            'id': checkout_transaction_id,
                             'NsuOperacao': nsu,
                             'DataTransacao': data_transacao.strftime('%Y-%m-%d') if data_transacao else '',
                             'HoraTransacao': data_transacao.strftime('%H:%M:%S') if data_transacao else '',
                             'ValorTransacao': valor,
+                            'ValorBruto': valor,
+                            'valor_original': valor,
+                            'ValorBrutoParcela': valor / parcelas if parcelas > 0 else valor,
                             'QuantidadeParcelas': parcelas,
+                            'NumeroTotalParcelas': parcelas,
                             'FormaPagamento': forma_pagamento,
+                            'TipoCompra': 'CREDITO' if 'CREDIT' in forma_pagamento.upper() else 'DEBITO',
+                            'Bandeira': 'VISA',  # Extrair da forma_pagamento se necessário
+                            'SerialNumber': '',
+                            'idTerminal': None,
+                            'nsuAcquirer': codigo_autorizacao or '',
+                            'cpf': '',  # Checkout não tem CPF do cliente
+                            'ValorTaxaAdm': 0,
+                            'ValorTaxaMes': 0,
+                            'DescricaoStatus': 'APROVADA',
+                            'ValorSplit': 0,
+                            'DataFuturaPagamento': None,
+                            'DescricaoStatusPagamento': 'Pendente',
+                            'IdStatusPagamento': 1,
+                            'DataCancelamento': None,
                             'tipo_operacao': 'Wallet',
                             'adquirente': 'OWN'
                         }
@@ -114,12 +140,14 @@ class CargaBaseUnificadaCheckoutOwnService:
                         info_loja = {
                             'id': loja_id,
                             'nome': loja_nome,
+                            'loja': loja_nome,
                             'canal_id': canal_id
                         }
 
                         info_canal = {
                             'id': canal_id,
-                            'nome': canal_nome
+                            'nome': canal_nome,
+                            'canal': canal_nome
                         }
 
                         # Calcular variáveis
