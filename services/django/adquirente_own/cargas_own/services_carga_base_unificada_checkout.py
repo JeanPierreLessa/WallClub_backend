@@ -116,8 +116,8 @@ class CargaBaseUnificadaCheckoutOwnService:
                             'ValorBruto': valor,
                             'valor_original': valor,
                             'ValorBrutoParcela': valor / parcelas if parcelas > 0 else valor,
-                            'QuantidadeParcelas': str(parcelas),
-                            'NumeroTotalParcelas': str(parcelas),
+                            'QuantidadeParcelas': parcelas,
+                            'NumeroTotalParcelas': parcelas,
                             'FormaPagamento': str(forma_pagamento),
                             'TipoCompra': 'CREDITO' if 'CREDIT' in str(forma_pagamento).upper() else 'DEBITO',
                             'Bandeira': 'VISA',  # Extrair da forma_pagamento se necessário
@@ -125,14 +125,14 @@ class CargaBaseUnificadaCheckoutOwnService:
                             'idTerminal': '',
                             'nsuAcquirer': str(codigo_autorizacao) if codigo_autorizacao else '',
                             'cpf': '',  # Checkout não tem CPF do cliente
-                            'ValorTaxaAdm': '0',
-                            'ValorTaxaMes': '0',
+                            'ValorTaxaAdm': 0,
+                            'ValorTaxaMes': 0,
                             'DescricaoStatus': 'APROVADA',
-                            'ValorSplit': '0',
-                            'DataFuturaPagamento': '',
+                            'ValorSplit': 0,
+                            'DataFuturaPagamento': None,
                             'DescricaoStatusPagamento': 'Pendente',
                             'IdStatusPagamento': 1,
-                            'DataCancelamento': '',
+                            'DataCancelamento': None,
                             'tipo_operacao': 'Wallet',
                             'adquirente': 'OWN'
                         }
