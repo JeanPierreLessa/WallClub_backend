@@ -101,31 +101,34 @@ class CargaBaseUnificadaCheckoutOwnService:
 
                         # Preparar dados para calculadora
                         dados_transacao = {
-                            'var0': data_transacao,  # Data da transação
-                            'var1': data_transacao.strftime('%H:%M:%S') if data_transacao else '',  # Hora
-                            'var4': canal_id,  # Código Canal
-                            'var5': canal_nome,  # Nome Canal
-                            'var6': loja_id,  # Código Loja
-                            'var8': forma_pagamento,  # Forma de Pagamento
-                            'var9': nsu,  # NSU
-                            'var11': valor,  # Valor da Venda
-                            'var13': parcelas,  # Número de Parcelas
-                            'tipo_operacao': 'Wallet',  # Tipo de operação
-                            'adquirente': 'OWN'  # Adquirente
+                            'NsuOperacao': nsu,
+                            'DataTransacao': data_transacao.strftime('%Y-%m-%d') if data_transacao else '',
+                            'HoraTransacao': data_transacao.strftime('%H:%M:%S') if data_transacao else '',
+                            'ValorTransacao': valor,
+                            'QuantidadeParcelas': parcelas,
+                            'FormaPagamento': forma_pagamento,
+                            'tipo_operacao': 'Wallet',
+                            'adquirente': 'OWN'
+                        }
+
+                        info_loja = {
+                            'id': loja_id,
+                            'nome': loja_nome,
+                            'canal_id': canal_id
+                        }
+
+                        info_canal = {
+                            'id': canal_id,
+                            'nome': canal_nome
                         }
 
                         # Calcular variáveis
-                        resultado = self.calculadora.calcular_variaveis(dados_transacao)
-
-                        if not resultado.get('sucesso'):
-                            registrar_log(
-                                'own.cargas_own',
-                                f"❌ Erro ao calcular variáveis para NSU {nsu}: {resultado.get('mensagem')}",
-                                nivel='ERROR'
-                            )
-                            continue
-
-                        variaveis = resultado.get('variaveis', {})
+                        variaveis = self.calculadora.calcular_valores_primarios(
+                            dados_linha=dados_transacao,
+                            tabela='checkout_transactions',
+                            info_loja=info_loja,
+                            info_canal=info_canal
+                        )
 
                         # Inserir na base unificada
                         self._inserir_base_unificada(variaveis)
