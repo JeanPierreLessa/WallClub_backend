@@ -493,12 +493,7 @@ class CalculadoraDesconto:
                 )
 
         # CRÍTICO: Ajuste especial para parcelados Wall S e C (PHP linha 113-116)
-        # REGRA: Só ajustar se houver desconto ou encargos
-        # Se desconto=0 e encargos=0, manter valor original (mesmo com dízima)
-        tem_desconto = self.valores[14] > 0 or self.valores[17] > 0
-        tem_encargos = self.valores[15] > 0
-
-        if self.valores[13] > 0 and wall in ['S', 'C'] and (tem_desconto or tem_encargos):
+        if self.valores[13] > 0 and wall in ['S', 'C']:
             ref = self._format_decimal(self.valores[19] / self.valores[13])
             self.valores[19] = self._format_decimal(ref * self.valores[13])
 
