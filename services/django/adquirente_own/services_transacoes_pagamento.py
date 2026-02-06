@@ -381,13 +381,9 @@ class TransacoesOwnService:
             data=data
         )
 
-        # LOG TEMPORÁRIO: Ver resposta completa da OWN
-        import json
-        registrar_log('own.transacao', f'📋 RESPOSTA COMPLETA OWN: {json.dumps(response, indent=2, ensure_ascii=False)}')
-
         # Verificar sucesso
         result_code = response.get('result', {}).get('code', '')
-        acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
+        acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '') if response.get('resultDetails') else ''
 
         # Sucesso se: código na lista OU acquirer aprovou (00)
         if result_code in self.SUCCESS_CODES or acquirer_response == '00':
