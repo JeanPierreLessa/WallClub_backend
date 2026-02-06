@@ -39,7 +39,7 @@ class CargaExtratoOwnService:
         """
         from adquirente_own.models_cadastro import LojaOwn
         from wallclub_core.estr_organizacional.loja import Loja
-        from adquirente_own.services_config import ConfigManager
+        from adquirente_own.services_credenciais import CredenciaisOwnService
 
         # Obter loja OWN
         loja = Loja.objects.filter(cnpj=cnpj_cliente).first()
@@ -51,7 +51,7 @@ class CargaExtratoOwnService:
             }
 
         loja_own = LojaOwn.objects.filter(
-            loja=loja,
+            loja_id=loja.id,
             status_credenciamento='APROVADO',
             sincronizado=True
         ).first()
@@ -63,11 +63,20 @@ class CargaExtratoOwnService:
                 'mensagem': 'Loja OWN não encontrada ou não aprovada'
             }
 
-        # Usar credenciais globais da OWN
-        config = ConfigManager()
-        client_id = config.get_own_core_id()
-        client_secret = config.get_own_secret()
-        scope = config.get_own_scope()
+        # Obter credenciais globais da OWN (AWS Secrets Manager)
+        credenciais_service = CredenciaisOwnService()
+        credenciais = credenciais_service.obter_credenciais_core()
+
+        if not credenciais:
+            registrar_log('adquirente_own.cargas_own', f'❌ Credenciais OWN não encontradas', nivel='ERROR')
+            return {
+                'sucesso': False,
+                'mensagem': 'Credenciais OWN não encontradas'
+            }
+
+        client_id = credenciais['client_id']
+        client_secret = credenciais['client_secret']
+        scope = credenciais['scope']
 
         # Preparar payload
         payload = {
