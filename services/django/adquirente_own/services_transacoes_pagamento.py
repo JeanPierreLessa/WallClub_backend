@@ -381,6 +381,10 @@ class TransacoesOwnService:
             data=data
         )
 
+        # LOG TEMPORÁRIO: Resposta completa da OWN
+        import json
+        registrar_log('own.transacao', f'📋 RESPOSTA COMPLETA OWN: {json.dumps(response, indent=2, ensure_ascii=False)}')
+
         # Verificar sucesso
         result_code = response.get('result', {}).get('code', '')
         acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '') if response.get('resultDetails') else ''
