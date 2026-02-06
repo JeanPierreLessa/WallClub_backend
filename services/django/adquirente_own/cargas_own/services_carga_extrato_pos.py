@@ -23,7 +23,8 @@ class CargaExtratoOwnService:
         cnpj_cliente: str,
         data_inicial: datetime,
         data_final: datetime,
-        doc_parceiro: str = None
+        doc_parceiro: str = None,
+        identificador_transacao: str = None
     ) -> Dict[str, Any]:
         """
         Busca transações gerais da API Own
@@ -33,6 +34,7 @@ class CargaExtratoOwnService:
             data_inicial: Data inicial da busca
             data_final: Data final da busca
             doc_parceiro: CNPJ do parceiro (opcional)
+            identificador_transacao: NSU específico da transação (opcional)
 
         Returns:
             Dict com sucesso e lista de transações
@@ -88,7 +90,11 @@ class CargaExtratoOwnService:
         if doc_parceiro:
             payload['docParceiro'] = doc_parceiro
 
-        registrar_log('adquirente_own.cargas_own', f'📥 Buscando transações: {data_inicial} a {data_final}')
+        if identificador_transacao:
+            payload['identificadorTransacao'] = identificador_transacao
+            registrar_log('adquirente_own.cargas_own', f'🔍 Buscando NSU específico: {identificador_transacao}')
+        else:
+            registrar_log('adquirente_own.cargas_own', f'📥 Buscando transações: {data_inicial} a {data_final}')
 
         # Inicializar service com environment correto (baseado em ENVIRONMENT)
         environment = CredenciaisOwnService.obter_environment()

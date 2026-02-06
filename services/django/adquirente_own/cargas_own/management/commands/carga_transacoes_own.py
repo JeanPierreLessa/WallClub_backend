@@ -32,6 +32,11 @@ class Command(BaseCommand):
             type=str,
             help='Data final (YYYY-MM-DD)'
         )
+        parser.add_argument(
+            '--nsu',
+            type=str,
+            help='NSU específico da transação (identificadorTransacao)'
+        )
 
     def handle(self, *args, **options):
         from datetime import timedelta
@@ -88,11 +93,16 @@ class Command(BaseCommand):
             for cnpj in cnpjs:
                 self.stdout.write(f'\n📋 CNPJ: {cnpj}')
 
-                # Buscar transações
+                # Buscar por NSU específico ou por período
+                nsu = options.get('nsu')
+                if nsu:
+                    self.stdout.write(f'🔍 Buscando NSU: {nsu}')
+
                 result = service.buscar_transacoes_gerais(
                     cnpj_cliente=cnpj,
                     data_inicial=data_inicial,
-                    data_final=data_final
+                    data_final=data_final,
+                    identificador_transacao=nsu
                 )
 
                 if not result.get('sucesso'):
