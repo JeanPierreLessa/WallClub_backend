@@ -191,7 +191,9 @@ class CargaBaseUnificadaCheckoutOwnService:
 
         for campo, valor in variaveis.items():
             if valor is not None and valor != '':
-                campos.append(str(campo))  # Converter para string
+                # Adicionar prefixo 'var' se for número
+                nome_campo = f'var{campo}' if isinstance(campo, int) else str(campo)
+                campos.append(nome_campo)
                 valores.append(valor)
 
         if not campos:
