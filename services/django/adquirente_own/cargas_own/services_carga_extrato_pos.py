@@ -132,6 +132,9 @@ class CargaExtratoOwnService:
                 'modalidade': transacao_data.get('modalidade'),
                 'codigoAutorizacao': transacao_data.get('codigoAutorizacao'),
                 'numeroCartao': transacao_data.get('numeroCartao'),
+                'codigoTransacao': transacao_data.get('codigoTransacao'),
+                'transClienteId': transacao_data.get('transClienteId'),
+                'dataCancelamento': datetime.fromisoformat(transacao_data['dataCancelamento'].replace('T', ' ')) if transacao_data.get('dataCancelamento') else None,
                 'lido': False,
                 'processado': False
             }
@@ -162,21 +165,22 @@ class CargaExtratoOwnService:
 
         registrar_log('adquirente_own.cargas_own', f'🔍 Primeira parcela: {primeira_parcela}')
 
+        import json as json_lib
+
         transacao_obj.parcelaId = primeira_parcela.get('parcelaId')
         transacao_obj.statusPagamento = primeira_parcela.get('statusPagamento')
         transacao_obj.dataHoraTransacao = datetime.fromisoformat(primeira_parcela['dataHoraTransacao'].replace('T', ' ')) if primeira_parcela.get('dataHoraTransacao') else None
-        transacao_obj.mdrParcela = primeira_parcela.get('mdr', 0) / 100 if primeira_parcela.get('mdr') else None
+        transacao_obj.mdrParcela = primeira_parcela.get('mdr')  # API já retorna em reais
         transacao_obj.numeroParcela = primeira_parcela.get('numeroParcela')
-
-        valor_parcela_raw = primeira_parcela.get('valorParcela')
-        transacao_obj.valorParcela = valor_parcela_raw / 100 if valor_parcela_raw else None
-        registrar_log('adquirente_own.cargas_own', f'💰 valorParcela calculado: {transacao_obj.valorParcela} (raw: {valor_parcela_raw})')
+        transacao_obj.valorParcela = primeira_parcela.get('valorParcela')  # API já retorna em reais
         transacao_obj.dataPagamentoPrevista = datetime.strptime(primeira_parcela['dataPagamentoPrevista'], '%Y-%m-%d').date() if primeira_parcela.get('dataPagamentoPrevista') else None
         transacao_obj.dataPagamentoReal = datetime.strptime(primeira_parcela['dataPagamentoReal'], '%Y-%m-%d').date() if primeira_parcela.get('dataPagamentoReal') else None
-        transacao_obj.valorAntecipado = primeira_parcela.get('valorAntecipado', 0) / 100 if primeira_parcela.get('valorAntecipado') else None
+        transacao_obj.valorAntecipado = primeira_parcela.get('valorAntecipado')  # API já retorna em reais
         transacao_obj.taxaAntecipada = primeira_parcela.get('taxaAntecipada')
         transacao_obj.antecipado = primeira_parcela.get('antecipado')
         transacao_obj.numeroTitulo = primeira_parcela.get('numeroTitulo')
+        transacao_obj.detalheEfeito = json_lib.dumps(primeira_parcela.get('detalheEfeito')) if primeira_parcela.get('detalheEfeito') else None
+        transacao_obj.detalheAntecipacao = json_lib.dumps(primeira_parcela.get('detalheAntecipacao')) if primeira_parcela.get('detalheAntecipacao') else None
 
         transacao_obj.save()
 
