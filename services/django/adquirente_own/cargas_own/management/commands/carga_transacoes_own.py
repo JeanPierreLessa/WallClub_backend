@@ -57,7 +57,7 @@ class Command(BaseCommand):
                 return
 
             # Buscar lojas OWN cadastradas
-            from adquirente_own.models import LojaOwn
+            from adquirente_own.models_cadastro import LojaOwn
             from wallclub_core.models import Loja
             cnpj_especifico = options.get('cnpj')
 

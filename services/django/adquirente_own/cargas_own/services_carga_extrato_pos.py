@@ -37,7 +37,7 @@ class CargaExtratoOwnService:
         Returns:
             Dict com sucesso e lista de transações
         """
-        from adquirente_own.models import LojaOwn
+        from adquirente_own.models_cadastro import LojaOwn
         from wallclub_core.models import Loja
         from adquirente_own.services_config import ConfigManager
 
@@ -198,7 +198,7 @@ class CargaExtratoOwnService:
         Returns:
             Dict com resultado da carga
         """
-        from adquirente_own.models import LojaOwn
+        from adquirente_own.models_cadastro import LojaOwn
         from wallclub_core.models import Loja
 
         # Data de ontem
