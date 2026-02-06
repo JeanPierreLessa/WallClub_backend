@@ -16,13 +16,16 @@ from wallclub_core.utilitarios.log_control import registrar_log
 class CadastroOwnService:
     """Serviço para cadastro de estabelecimentos na Own Financial"""
 
-    def __init__(self, environment: str = 'LIVE'):
+    def __init__(self, environment: str = None):
         """
         Inicializa serviço de cadastro
 
         Args:
-            environment: 'LIVE' ou 'TEST'
+            environment: 'LIVE' ou 'TEST' (None = usa ENVIRONMENT do sistema)
         """
+        from adquirente_own.services_credenciais import CredenciaisOwnService
+        if environment is None:
+            environment = CredenciaisOwnService.obter_environment()
         self.own_service = OwnService(environment=environment)
         self.environment = environment
 

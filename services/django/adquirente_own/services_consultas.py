@@ -16,13 +16,16 @@ class ConsultasOwnService:
     CACHE_TIMEOUT_CNAE = 3600  # 1 hora
     CACHE_TIMEOUT_CESTAS = 1800  # 30 minutos
 
-    def __init__(self, environment: str = 'LIVE'):
+    def __init__(self, environment: str = None):
         """
         Inicializa serviço de consultas
 
         Args:
-            environment: 'LIVE' ou 'TEST'
+            environment: 'LIVE' ou 'TEST' (None = usa ENVIRONMENT do sistema)
         """
+        from adquirente_own.services_credenciais import CredenciaisOwnService
+        if environment is None:
+            environment = CredenciaisOwnService.obter_environment()
         self.own_service = OwnService(environment=environment)
         self.environment = environment
 

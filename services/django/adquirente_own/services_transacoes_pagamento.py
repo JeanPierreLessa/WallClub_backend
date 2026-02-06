@@ -30,14 +30,17 @@ class TransacoesOwnService:
         '000.100.112',  # Request successfully processed (please review manually)
     ]
 
-    def __init__(self, loja_id: int = None, environment: str = 'TEST'):
+    def __init__(self, loja_id: int = None, environment: str = None):
         """
         Inicializa o serviço de transações Own
 
         Args:
             loja_id: ID da loja
-            environment: 'TEST' ou 'LIVE'
+            environment: 'TEST' ou 'LIVE' (None = usa ENVIRONMENT do sistema)
         """
+        from adquirente_own.services_credenciais import CredenciaisOwnService
+        if environment is None:
+            environment = CredenciaisOwnService.obter_environment()
         self.loja_id = loja_id
         self.own_service = OwnService(environment=environment)
 

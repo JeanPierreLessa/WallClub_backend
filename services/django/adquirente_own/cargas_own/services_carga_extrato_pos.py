@@ -90,8 +90,9 @@ class CargaExtratoOwnService:
 
         registrar_log('adquirente_own.cargas_own', f'📥 Buscando transações: {data_inicial} a {data_final}')
 
-        # Inicializar service com environment de produção
-        own_service = OwnService(environment='production')
+        # Inicializar service com environment correto (baseado em ENVIRONMENT)
+        environment = CredenciaisOwnService.obter_environment()
+        own_service = OwnService(environment=environment)
 
         # Fazer requisição
         response = own_service.fazer_requisicao_autenticada(
