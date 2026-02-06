@@ -48,31 +48,29 @@ class CargaBaseUnificadaCheckoutOwnService:
         # Query para buscar transações OWN de checkout não processadas
         query = f"""
             SELECT
-                ct.id as checkout_transaction_id,
-                ct.nsu,
+                oet.id,
+                oet.identificadorTransacao,
                 ct.loja_id,
-                ct.valor_transacao_final as valor,
-                ct.parcelas,
-                ct.processed_at as data_transacao,
-                ct.forma_pagamento,
-                ct.codigo_autorizacao,
+                oet.valor,
+                oet.quantidadeParcelas,
+                oet.dataHoraTransacao,
+                oet.modalidade,
+                oet.codigoAutorizacao,
                 l.canal_id,
                 l.razao_social as loja_nome,
-                c.nome as canal_nome
-            FROM checkout_transactions ct
+                c.nome as canal_nome,
+                oet.bandeira,
+                oet.numeroCartao,
+                ct.id as checkout_transaction_id
+            FROM ownExtratoTransacoes oet
+            INNER JOIN checkout_transactions ct ON oet.codigoTransacao = ct.nsu
             INNER JOIN loja l ON ct.loja_id = l.id
             INNER JOIN canal c ON l.canal_id = c.id
-            WHERE ct.gateway = 'OWN'
+            WHERE oet.lido = 0
+                AND ct.gateway = 'OWN'
                 AND ct.status = 'APROVADA'
-                AND ct.processed_at IS NOT NULL
-                AND NOT EXISTS (
-                    SELECT 1 FROM base_transacoes_unificadas btu
-                    WHERE btu.var9 = ct.nsu
-                    AND btu.adquirente = 'OWN'
-                    AND btu.tipo_operacao = 'Wallet'
-                )
                 {nsu_clause}
-            ORDER BY ct.processed_at DESC
+            ORDER BY oet.id
             {limit_clause}
         """
 
@@ -94,22 +92,25 @@ class CargaBaseUnificadaCheckoutOwnService:
             for row in transacoes:
                 try:
                     with transaction.atomic():
-                        checkout_transaction_id = row[0]
-                        nsu = row[1]
+                        oet_id = row[0]
+                        identificador_transacao = row[1]
                         loja_id = row[2]
                         valor = float(row[3])
                         parcelas = row[4] or 1
                         data_transacao = row[5]
-                        forma_pagamento = row[6]
+                        modalidade = row[6]
                         codigo_autorizacao = row[7]
                         canal_id = row[8]
                         loja_nome = row[9]
                         canal_nome = row[10]
+                        bandeira = row[11]
+                        numero_cartao = row[12]
+                        checkout_transaction_id = row[13]
 
                         # Preparar dados para calculadora (compatível com CalculadoraBaseUnificada)
                         dados_transacao = {
-                            'id': checkout_transaction_id,
-                            'NsuOperacao': str(nsu),
+                            'id': oet_id,
+                            'NsuOperacao': str(identificador_transacao),
                             'DataTransacao': data_transacao.strftime('%Y-%m-%dT%H:%M:%S') if data_transacao else '',
                             'HoraTransacao': data_transacao.strftime('%H:%M:%S') if data_transacao else '',
                             'ValorTransacao': valor,
@@ -118,23 +119,16 @@ class CargaBaseUnificadaCheckoutOwnService:
                             'ValorBrutoParcela': valor / parcelas if parcelas > 0 else valor,
                             'QuantidadeParcelas': parcelas,
                             'NumeroTotalParcelas': parcelas,
-                            'FormaPagamento': str(forma_pagamento),
-                            'TipoCompra': 'CREDITO' if 'CREDIT' in str(forma_pagamento).upper() else 'DEBITO',
-                            'Bandeira': 'VISA',  # Extrair da forma_pagamento se necessário
-                            'SerialNumber': '',
-                            'idTerminal': '',
-                            'nsuAcquirer': str(codigo_autorizacao) if codigo_autorizacao else '',
-                            'cpf': '',  # Checkout não tem CPF do cliente
-                            'ValorTaxaAdm': 0,
-                            'ValorTaxaMes': 0,
-                            'DescricaoStatus': 'APROVADA',
-                            'ValorSplit': 0,
-                            'DataFuturaPagamento': None,
-                            'DescricaoStatusPagamento': 'Pendente',
-                            'IdStatusPagamento': 1,
+                            'NumeroParcela': 1,
+                            'Bandeira': bandeira or 'VISA',
+                            'TipoCompra': 'CREDITO' if 'CREDITO' in (modalidade or '') else 'DEBITO',
+                            'CodigoAutorizacao': codigo_autorizacao or '',
+                            'nsuAcquirer': codigo_autorizacao or '',
+                            'cpf': '',  # Checkout não tem CPF
                             'DataCancelamento': None,
                             'tipo_operacao': 'Wallet',
-                            'adquirente': 'OWN'
+                            'adquirente': 'OWN',
+                            'origem_transacao': 'Checkout'
                         }
 
                         info_loja = {
@@ -167,6 +161,10 @@ class CargaBaseUnificadaCheckoutOwnService:
                         # Inserir na base unificada
                         self._inserir_base_unificada(variaveis)
 
+                        # Marcar como lido e processado na tabela ownExtratoTransacoes
+                        from adquirente_own.models import OwnExtratoTransacoes
+                        OwnExtratoTransacoes.objects.filter(id=oet_id).update(lido=1, processado=1)
+
                         total_processadas += 1
 
                         if total_processadas % 100 == 0:
@@ -176,7 +174,7 @@ class CargaBaseUnificadaCheckoutOwnService:
                     import traceback
                     registrar_log(
                         'own.cargas_own',
-                        f"❌ Erro ao processar transação {nsu}: {str(e)}\n{traceback.format_exc()}",
+                        f"❌ Erro ao processar transação {identificador_transacao}: {str(e)}\n{traceback.format_exc()}",
                         nivel='ERROR'
                     )
                     continue
@@ -191,14 +189,19 @@ class CargaBaseUnificadaCheckoutOwnService:
         Args:
             variaveis: Dicionário com todas as variáveis calculadas
         """
-        # Preparar campos e valores
-        campos = []
-        valores = []
+        # Preparar campos e valores - começar com campos obrigatórios
+        campos = ['tipo_operacao', 'adquirente', 'origem_transacao', 'data_transacao']
+        valores = [
+            variaveis.get('tipo_operacao'),
+            variaveis.get('adquirente'),
+            variaveis.get('origem_transacao'),
+            variaveis.get('data_transacao')
+        ]
 
         for campo, valor in variaveis.items():
             if valor is not None and valor != '':
-                # Pular campos que não existem na tabela
-                if campo in ['id_fila_extrato', 'canal_id']:
+                # Pular campos que não existem na tabela ou já foram adicionados
+                if campo in ['id_fila_extrato', 'canal_id', 'tipo_operacao', 'adquirente', 'origem_transacao', 'data_transacao']:
                     continue
 
                 # Se valor é dict, extrair chave '0' (valor para Wallet/e-commerce)
