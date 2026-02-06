@@ -158,6 +158,12 @@ class CargaBaseUnificadaCheckoutOwnService:
                             info_canal=info_canal
                         )
 
+                        # DEBUG: Log do tipo e amostra das variáveis
+                        registrar_log('own.cargas_own', f"DEBUG variaveis type: {type(variaveis)}")
+                        if variaveis:
+                            amostra = {k: v for k, v in list(variaveis.items())[:5]}
+                            registrar_log('own.cargas_own', f"DEBUG variaveis amostra: {amostra}")
+
                         # Inserir na base unificada
                         self._inserir_base_unificada(variaveis)
 
