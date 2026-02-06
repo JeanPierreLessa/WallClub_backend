@@ -852,19 +852,20 @@ wallclub_django/
 ├── pinbank/cargas_pinbank/     # Cargas automáticas Pinbank
 │   ├── services.py            # Extrato POS
 │   └── services_ajustes_manuais.py
-├── adquirente_own/             # Integração Own Financial ✅ COMPLETO (05/02)
+├── adquirente_own/             # Integração Own Financial ✅ COMPLETO (05/02) + E-commerce (06/02)
 │   ├── services.py            # OwnService (OAuth 2.0)
 │   ├── services_credenciais.py # CredenciaisOwnService (ambiente centralizado)
-│   ├── services_transacoes_pagamento.py # E-commerce OPPWA
-│   ├── views_webhook.py       # Webhooks tempo real (endpoints implementados)
+│   ├── services_transacoes_pagamento.py # E-commerce OPPWA (QA/PROD)
+│   ├── views_webhook.py       # Webhooks tempo real ✅ TESTADO (06/02)
+│   │   └── webhook_transacao  # Recebe identificadorTransacao (POS + E-commerce)
 │   ├── models_cadastro.py     # LojaOwn (credenciais por loja)
 │   └── cargas_own/            # Cargas automáticas Own
 │       ├── models.py          # OwnExtratoTransacoes, OwnLiquidacoes
-│       ├── services_carga_extrato_pos.py # API /buscaTransacoesGerais (POS only)
+│       ├── services_carga_extrato_pos.py # API /buscaTransacoesGerais (POS only - não retorna e-commerce)
 │       ├── services_carga_liquidacoes.py # API /consultaLiquidacoes
 │       ├── services_carga_base_unificada_checkout.py # checkout_transactions → base_transacoes_unificadas
 │       └── management/commands/
-│           ├── carga_transacoes_own.py # --nsu, --data-inicial, --data-final
+│           ├── carga_transacoes_own.py # --nsu, --data-inicial, --data-final (POS only)
 │           ├── carga_liquidacoes_own.py
 │           └── carga_base_unificada_checkout_own.py
 ├── portais/                    # 4 Portais web
@@ -3822,4 +3823,103 @@ django_info{version="4.2.23"} 1
 **Conteúdo:**
 - Métricas implementadas
 - Instruções Node Exporter para banco em produção
+
+---
+
+## 🛒 INTEGRAÇÃO OWN E-COMMERCE (06/02/2026)
+
+### Status Atual
+
+**Implementado:**
+- ✅ API OPPWA (QA/PROD) para pagamentos e-commerce
+- ✅ Webhook de transações testado e funcional
+- ✅ Campos adicionais em `checkout_transactions` (card_bin, card_last4, payment_brand_response, result_code, tx_transaction_id)
+- ✅ GatewayRouter integrado com Own Financial
+
+**Pendente (aguardando OWN):**
+- ⏳ Configuração do webhook de e-commerce na OWN
+- ⏳ Confirmação do payload do webhook para transações e-commerce
+- ⏳ Documentação sobre registro de webhook via API (se disponível)
+
+### Limitações Identificadas
+
+**API `buscaTransacoesGerais`:**
+- ❌ **NÃO retorna transações de e-commerce** (apenas POS físico)
+- ❌ `merchantTransactionId` não funciona como `identificadorTransacao`
+- ❌ `id` da transação OPPWA não funciona como `identificadorTransacao`
+- ✅ Apenas o `identificadorTransacao` do webhook funciona para consultas
+
+**Resposta OPPWA `/v1/payments`:**
+```json
+{
+  "id": "8acda4a49c2816b5019c33453cae5939",
+  "merchantTransactionId": "WC-nhtTzm68vDZ9dLv4",
+  "result": { "code": "000.000.000" },
+  "card": { "bin": "411049", "last4Digits": "4420" }
+}
+```
+- ✅ Campos disponíveis: `id`, `merchantTransactionId`, `card`, `result`
+- ❌ **NÃO contém:** `TxTransactionId`, `resultDetails`, `identificadorTransacao`
+
+### Arquitetura de Webhooks
+
+**Endpoint:** `https://wcapi.wallclub.com.br/webhook/own/transacao/`
+
+**Payload Esperado (POS):**
+```json
+{
+  "identificadorTransacao": "260206001862123456",
+  "tipoTransacao": "VENDA CONFIRMADA",
+  "cnpjCliente": "54430621000134",
+  "docParceiro": "42567249000123",
+  "valor": 1.15,
+  "data": "06/02/2026 11:05:05",
+  "bandeira": "VISA",
+  "modalide": "CREDITO"
+}
+```
+
+**Payload E-commerce (aguardando confirmação OWN):**
+- Deve incluir `merchantTransactionId` para correlação com `checkout_transactions`
+- Deve incluir `identificadorTransacao` para consultas posteriores via API
+
+**Processamento:**
+1. Webhook recebe notificação
+2. Salva em `OwnExtratoTransacoes` (tabela de staging)
+3. TODO: Atualizar `checkout_transactions.tx_transaction_id` usando `merchantTransactionId`
+
+### Campos Checkout Transactions
+
+**Novos campos (06/02/2026):**
+```sql
+ALTER TABLE checkout_transactions
+ADD COLUMN card_bin VARCHAR(6),
+ADD COLUMN card_last4 VARCHAR(4),
+ADD COLUMN payment_brand_response VARCHAR(50),
+ADD COLUMN result_code VARCHAR(20),
+ADD COLUMN tx_transaction_id VARCHAR(100);
+```
+
+**Mapeamento OWN → WallClub:**
+- `response.card.bin` → `card_bin`
+- `response.card.last4Digits` → `card_last4`
+- `response.paymentBrand` → `payment_brand_response`
+- `response.result.code` → `result_code`
+- `webhook.identificadorTransacao` → `tx_transaction_id` (via webhook)
+- `response.id` → `nsu` (ID OPPWA temporário)
+
+### Próximos Passos
+
+1. **Solicitar à OWN:**
+   - Configuração do webhook: `https://wcapi.wallclub.com.br/webhook/own/transacao/`
+   - Confirmação do payload para transações e-commerce
+   - Documentação sobre registro de webhook via API
+
+2. **Implementar:**
+   - Atualização de `checkout_transactions.tx_transaction_id` quando webhook chegar
+   - Correlação via `merchantTransactionId`
+
+3. **Deploy:**
+   - Código já corrigido (campos novos, gateway, etc.)
+   - Aguardando confirmação da OWN para deploy final
 - Evolução futura (Thanos, S3, retenção)

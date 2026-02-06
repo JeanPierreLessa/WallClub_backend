@@ -4,6 +4,19 @@
 **Data:** 03/02/2026
 **Fontes:** Fases 1-7 (100%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- **Own Financial - E-commerce e Webhooks (06/02/2026)**
+  - **Limitação Crítica:** API `/buscaTransacoesGerais` NÃO retorna transações e-commerce (apenas POS físico)
+  - **Identificadores:** `merchantTransactionId` e `id` (OPPWA) não funcionam como `identificadorTransacao` para consultas
+  - **Webhook Obrigatório:** Único meio de obter `identificadorTransacao` para transações e-commerce
+  - **Endpoint Testado:** `https://wcapi.wallclub.com.br/webhook/own/transacao/` ✅ funcional
+  - **Campos Novos em `checkout_transactions`:**
+    - `card_bin` VARCHAR(6) - Primeiros 6 dígitos do cartão
+    - `card_last4` VARCHAR(4) - Últimos 4 dígitos do cartão
+    - `payment_brand_response` VARCHAR(50) - Bandeira retornada pela OWN
+    - `result_code` VARCHAR(20) - Código de resultado da transação
+    - `tx_transaction_id` VARCHAR(100) - identificadorTransacao (vem do webhook)
+  - **Renomeações:** `pinbank_response` → `gateway_response`, `erro_pinbank` → `erro_gateway`
+  - **Pendente:** Configuração do webhook de e-commerce com a OWN
 - **Portal Admin - RPR - Refinamento Completo de Métricas (03/02/2026)**
   - Coluna "Custo ajuste nos Repasses" reposicionada (antes de var98) e renomeada
   - Nova coluna "Resultado Operacional Ajustado" = Resultado Operacional + Custo ajuste nos Repasses

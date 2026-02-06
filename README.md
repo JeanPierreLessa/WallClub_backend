@@ -56,9 +56,9 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
 - ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
-- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (05/02/2026)**
+- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (06/02/2026)**
   - ✅ APIs Adquirência (OAuth 2.0) - Produção funcionando
-  - ✅ Webhooks tempo real (transações, liquidações, cadastro) - endpoints implementados
+  - ✅ Webhooks tempo real (transações, liquidações, cadastro) - endpoints implementados e testados
   - ✅ API OPPWA E-commerce - Integração completa e validada
   - ✅ **Ambiente Centralizado (05/02):** `CredenciaisOwnService.obter_environment()` usado em todos os 7 services
   - ✅ API de consulta de tokens e-commerce por contrato documentada
@@ -75,7 +75,14 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
     - `carga_liquidacoes_own` - Busca liquidações via API `/consultaLiquidacoes`
     - `carga_base_unificada_checkout_own` - Processa checkout_transactions (gateway='OWN') para base_transacoes_unificadas
     - Suporte a busca por NSU específico (`--nsu`) e período (`--data-inicial`, `--data-final`)
-  - ⚠️ **Pendente:** Configuração de webhooks OWN para e-commerce (verificar com suporte)
+  - ✅ **E-commerce e Webhooks (06/02):**
+    - Webhook testado: `https://wcapi.wallclub.com.br/webhook/own/transacao/` ✅ funcional
+    - Campos novos em `checkout_transactions`: `card_bin`, `card_last4`, `payment_brand_response`, `result_code`, `tx_transaction_id`
+    - Renomeações: `pinbank_response` → `gateway_response`, `erro_pinbank` → `erro_gateway`
+    - **Limitação:** API `/buscaTransacoesGerais` NÃO retorna transações e-commerce (apenas POS físico)
+    - **Identificadores:** `merchantTransactionId` e `id` (OPPWA) não funcionam como `identificadorTransacao`
+    - **Webhook obrigatório:** Único meio de obter `identificadorTransacao` para transações e-commerce
+  - ⏳ **Pendente:** Configuração do webhook de e-commerce com a OWN (aguardando suporte)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 

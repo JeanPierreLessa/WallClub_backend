@@ -212,62 +212,6 @@ def webhook_liquidacao(request):
         }, status=500)
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def webhook_cadastro(request):
-    """
-    Recebe notificações de cadastro de estabelecimentos
-
-    Payload esperado:
-    {
-        "protocoloCore": "000000002842",
-        "identificadorCliente": "32430",
-        "contrato": "029-196-35",
-        "status": "SUCESSO" ou "ERRO",
-        "tipo": "CREDENCIAMENTO",
-        "reenvio": "N",
-        "motivo": "INDEFERIMENTO..." (apenas se status=ERRO)
-    }
-    """
-    try:
-        payload = json.loads(request.body.decode('utf-8'))
-
-        protocolo = payload.get('protocoloCore')
-        status = payload.get('status')
-        identificador = payload.get('identificadorCliente')
-
-        registrar_log('adquirente_own', f'📥 Webhook cadastro: {protocolo} - {status}')
-
-        # Log do resultado
-        if status == 'SUCESSO':
-            contrato = payload.get('contrato')
-            registrar_log('adquirente_own', f'✅ Cadastro aprovado: {identificador} - Contrato: {contrato}')
-        else:
-            motivo = payload.get('motivo', 'Não informado')
-            registrar_log('adquirente_own', f'❌ Cadastro reprovado: {identificador} - Motivo: {motivo}', nivel='WARNING')
-
-        # TODO: Implementar lógica de atualização de status do estabelecimento
-        # Exemplo: atualizar tabela de lojas com status de credenciamento
-
-        return JsonResponse({
-            'sucesso': True,
-            'mensagem': 'Notificação de cadastro recebida',
-            'protocolo': protocolo,
-            'status': status
-        }, status=200)
-
-    except json.JSONDecodeError as e:
-        registrar_log('adquirente_own', f'❌ Erro ao decodificar JSON: {str(e)}', nivel='ERROR')
-        return JsonResponse({'sucesso': False, 'mensagem': 'JSON inválido'}, status=400)
-
-    except Exception as e:
-        registrar_log('adquirente_own', f'❌ Erro ao processar webhook: {str(e)}', nivel='ERROR')
-        return JsonResponse({
-            'sucesso': False,
-            'mensagem': f'Erro ao processar: {str(e)}'
-        }, status=500)
-
-
 # =====================================================
 # Funções auxiliares
 # =====================================================
@@ -309,16 +253,29 @@ def _parse_data_br(data_str):
 @require_http_methods(["POST"])
 def webhook_credenciamento(request):
     """
-    Recebe notificações de status de credenciamento da Own
+    Recebe notificações de status de credenciamento/cadastro da Own
 
-    Payload esperado:
+    Documentação: DOCUMENTACAO_APIs_v3_Descritivo.txt - Página 45
+
+    Payload esperado (DEFERIMENTO):
     {
-        "protocolo": "PROTO123456",
-        "cnpj": "12345678000199",
-        "status": "APROVADO",
-        "conveniadaId": "OWN987654",
-        "dataCredenciamento": "2026-01-13T21:00:00Z",
-        "mensagem": "Credenciamento aprovado com sucesso"
+        "protocoloCore": "000000002842",
+        "identificadorCliente": "32430",
+        "contrato": "029-196-35",
+        "status": "SUCESSO",
+        "tipo": "CREDENCIAMENTO",
+        "reenvio": "N"
+    }
+
+    Payload esperado (INDEFERIMENTO):
+    {
+        "protocoloCore": "000000002828",
+        "identificadorCliente": "32396",
+        "contrato": " ",
+        "status": "ERRO",
+        "tipo": "CREDENCIAMENTO",
+        "motivo": "INDEFERIMENTO FILA MANUAL: 01 - Sem comprovante de endereço",
+        "reenvio": "S"
     }
     """
     try:
@@ -329,13 +286,32 @@ def webhook_credenciamento(request):
             registrar_log('adquirente_own', '❌ JSON inválido no webhook de credenciamento', nivel='ERROR')
             return JsonResponse({'erro': 'JSON inválido'}, status=400)
 
-        registrar_log('adquirente_own', f'📥 Webhook credenciamento recebido: {payload.get("protocolo")} - {payload.get("status")}')
+        # Aceitar ambos os formatos: protocoloCore (documentação) ou protocolo (legado)
+        protocolo = payload.get('protocoloCore') or payload.get('protocolo')
+        status = payload.get('status')
+        identificador = payload.get('identificadorCliente')
+        contrato = payload.get('contrato')
+        motivo = payload.get('motivo')
 
-        # Processar webhook
+        registrar_log('adquirente_own', f'📥 Webhook credenciamento recebido: {protocolo} - {status}')
+
+        # Log detalhado do resultado
+        if status == 'SUCESSO':
+            registrar_log('adquirente_own', f'✅ Credenciamento aprovado: {identificador} - Contrato: {contrato}')
+        else:
+            registrar_log('adquirente_own', f'❌ Credenciamento reprovado: {identificador} - Motivo: {motivo or "Não informado"}', nivel='WARNING')
+
+        # Processar webhook via service (se existir lógica de atualização)
         from adquirente_own.services_webhook import WebhookOwnService
 
         service = WebhookOwnService()
-        resultado = service.processar_callback_credenciamento(payload)
+
+        # Normalizar payload para o service (usar 'protocolo' internamente)
+        payload_normalizado = payload.copy()
+        if 'protocoloCore' in payload_normalizado:
+            payload_normalizado['protocolo'] = payload_normalizado.pop('protocoloCore')
+
+        resultado = service.processar_callback_credenciamento(payload_normalizado)
 
         if not resultado.get('sucesso'):
             return JsonResponse(
@@ -345,7 +321,9 @@ def webhook_credenciamento(request):
 
         return JsonResponse({
             'sucesso': True,
-            'mensagem': resultado.get('mensagem')
+            'mensagem': resultado.get('mensagem'),
+            'protocolo': protocolo,
+            'status': status
         })
 
     except Exception as e:
