@@ -603,6 +603,11 @@ class CheckoutService:
                 gateway='OWN' if gateway == GatewayRouter.GATEWAY_OWN else 'PINBANK',
                 nsu=nsu,
                 codigo_autorizacao=codigo_autorizacao,
+                card_bin=resultado.get('card_bin'),
+                card_last4=resultado.get('card_last4'),
+                payment_brand_response=resultado.get('payment_brand'),
+                result_code=resultado.get('result', {}).get('code') if isinstance(resultado.get('result'), dict) else None,
+                tx_transaction_id=resultado.get('nsu'),
                 valor_transacao_original=valor_original,
                 valor_transacao_final=valor_final,
                 status=status,
@@ -611,8 +616,8 @@ class CheckoutService:
                 pedido_origem_loja=pedido_origem_loja,
                 cod_item_origem_loja=cod_item_origem_loja,
                 vendedor_id=portais_usuarios_id,
-                pinbank_response=resultado.get('resposta_completa'),
-                erro_pinbank=erro_pinbank,
+                gateway_response=resultado.get('resposta_completa'),
+                erro_gateway=erro_pinbank,
                 processed_at=datetime.now()
             )
 
@@ -639,11 +644,13 @@ class CheckoutService:
             # Salvar transação com erro para auditoria
             try:
                 from datetime import datetime
+                gateway_erro = GatewayRouter.obter_gateway_loja(cliente.loja_id) if cliente else 'PINBANK'
                 CheckoutTransaction.objects.create(
                     cliente_id=cliente_id,
                     cartao_tokenizado_id=cartao_id,
                     origem='CHECKOUT',
                     loja_id=cliente.loja_id if cliente else None,
+                    gateway=gateway_erro,
                     valor_transacao_original=valor_transacao_original or valor,
                     valor_transacao_final=valor_transacao_final or valor,
                     status='NEGADA',
@@ -652,7 +659,7 @@ class CheckoutService:
                     pedido_origem_loja=pedido_origem_loja,
                     cod_item_origem_loja=cod_item_origem_loja,
                     vendedor_id=portais_usuarios_id,
-                    erro_pinbank=f"Erro interno: {str(e)}",
+                    erro_gateway=f"Erro interno: {str(e)}",
                     processed_at=datetime.now()
                 )
             except Exception as save_error:
@@ -821,6 +828,11 @@ class CheckoutService:
                 gateway='OWN' if gateway == GatewayRouter.GATEWAY_OWN else 'PINBANK',
                 nsu=nsu,
                 codigo_autorizacao=codigo_autorizacao,
+                card_bin=resultado.get('card_bin'),
+                card_last4=resultado.get('card_last4'),
+                payment_brand_response=resultado.get('payment_brand'),
+                result_code=resultado.get('result', {}).get('code') if isinstance(resultado.get('result'), dict) else None,
+                tx_transaction_id=resultado.get('nsu'),
                 valor_transacao_original=valor,
                 valor_transacao_final=valor,
                 status=status,
@@ -829,8 +841,8 @@ class CheckoutService:
                 pedido_origem_loja=pedido_origem_loja,
                 cod_item_origem_loja=cod_item_origem_loja,
                 vendedor_id=portais_usuarios_id,
-                pinbank_response=resultado.get('resposta_completa'),
-                erro_pinbank=erro_pinbank,
+                gateway_response=resultado.get('resposta_completa'),
+                erro_gateway=erro_pinbank,
                 processed_at=timezone.now()
             )
 
