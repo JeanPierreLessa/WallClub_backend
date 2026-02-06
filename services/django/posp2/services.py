@@ -275,21 +275,23 @@ class POSP2Service:
             # 3. SIMULAR CRÉDITO - buscar apenas parcelas ativas do banco
             from parametros_wallclub.models import ParametrosWall, Plano
 
-            # Buscar planos ativos (parametro_loja_1 > 0) para esta loja
-            parcelas_ativas = ParametrosWall.objects.filter(
+            # Buscar id_planos ativos (parametro_loja_1 > 0) para esta loja
+            ids_planos_ativos = ParametrosWall.objects.filter(
                 loja_id=id_loja,
                 wall=wall,
                 vigencia_fim__isnull=True,
                 parametro_loja_1__gt=0
-            ).select_related('plano').values_list('plano__prazo_dias', 'plano__nome').distinct().order_by('plano__prazo_dias')
+            ).values_list('id_plano', flat=True).distinct()
 
-            registrar_log('posp2', f'posp2.simular_parcelas - Parcelas ativas encontradas: {list(parcelas_ativas)}')
+            # Buscar informações dos planos
+            planos_ativos = Plano.objects.filter(
+                id__in=ids_planos_ativos,
+                nome__in=['A VISTA', 'PARCELADO SEM JUROS']
+            ).values_list('prazo_dias', 'nome').order_by('prazo_dias')
 
-            for prazo_dias, nome_plano in parcelas_ativas:
-                # Filtrar apenas crédito (A VISTA e PARCELADO SEM JUROS)
-                if nome_plano not in ['A VISTA', 'PARCELADO SEM JUROS']:
-                    continue
+            registrar_log('posp2', f'posp2.simular_parcelas - Parcelas ativas encontradas: {list(planos_ativos)}')
 
+            for prazo_dias, nome_plano in planos_ativos:
                 parcelas = prazo_dias
 
                 # Definir o tipo de forma de pagamento com base no número de parcelas
