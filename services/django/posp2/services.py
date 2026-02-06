@@ -272,9 +272,27 @@ class POSP2Service:
                 }
                 registrar_log('posp2', f'posp2.simular_parcelas - Resultado DÉBITO: Total={valor_com_desconto}, Cashback={valor_cashback}')
 
-            # 3. SIMULAR CRÉDITO 1x até 12x (igual ao PHP)
-            for parcelas in range(1, 13):
-                # Definir o tipo de forma de pagamento com base no número de parcelas (igual ao PHP)
+            # 3. SIMULAR CRÉDITO - buscar apenas parcelas ativas do banco
+            from parametros_wallclub.models import ParametrosWall, Plano
+
+            # Buscar planos ativos (parametro_loja_1 > 0) para esta loja
+            parcelas_ativas = ParametrosWall.objects.filter(
+                loja_id=id_loja,
+                wall=wall,
+                vigencia_fim__isnull=True,
+                parametro_loja_1__gt=0
+            ).select_related('plano').values_list('plano__prazo_dias', 'plano__nome').distinct().order_by('plano__prazo_dias')
+
+            registrar_log('posp2', f'posp2.simular_parcelas - Parcelas ativas encontradas: {list(parcelas_ativas)}')
+
+            for prazo_dias, nome_plano in parcelas_ativas:
+                # Filtrar apenas crédito (A VISTA e PARCELADO SEM JUROS)
+                if nome_plano not in ['A VISTA', 'PARCELADO SEM JUROS']:
+                    continue
+
+                parcelas = prazo_dias
+
+                # Definir o tipo de forma de pagamento com base no número de parcelas
                 if parcelas == 1:
                     formap = "CREDIT_ONE_INSTALLMENT"
                     formapx = "A VISTA"
@@ -652,7 +670,7 @@ class POSP2Service:
             # 1. Buscar cliente no cadastro usando API interna
             try:
                 from wallclub_core.integracoes.api_interna_service import APIInternaService
-                
+
                 # Chamar API interna para buscar cliente
                 response = APIInternaService.chamar_api_interna(
                     metodo='POST',
@@ -663,15 +681,15 @@ class POSP2Service:
                     },
                     contexto='apis'
                 )
-                
+
                 if response.get('sucesso') and response.get('cliente'):
                     cliente_data = response['cliente']
                     resultado['id'] = str(cliente_data.get('id', ''))
                     resultado['celular'] = cliente_data.get('celular', '')
                     tem_firebase_token = bool(cliente_data.get('firebase_token'))
-                    
+
                     registrar_log('posp2', f'posp2.validar_cpf - CONSULTA valida_cpf - CPF encontrado no cadastro, ID: {resultado["id"]}, Celular: {resultado["celular"]}')
-                    
+
                     # 2. Verificar se possui token Firebase
                     if tem_firebase_token:
                         resultado['mensagem'] = 'cpf_cadastrado'
@@ -687,7 +705,7 @@ class POSP2Service:
                             'mensagem_cliente': resultado['mensagem_cliente']
                         }
                     }
-                    
+
                     # 3. Cliente cadastrado, tem celular, mas sem token firebase (sem app)
                     if resultado['celular'] and not tem_firebase_token:
                         resultado['mensagem'] = 'cpf_cadastrado_sem_app'
@@ -703,7 +721,7 @@ class POSP2Service:
                                 'mensagem_cliente': resultado['mensagem_cliente']
                             }
                         }
-                    
+
                     # 4. Cliente cadastrado mas sem celular
                     if not resultado['celular']:
                         resultado['mensagem'] = 'cpf_cadastrado_sem_celular'
@@ -737,7 +755,7 @@ class POSP2Service:
                     },
                     contexto='apis'
                 )
-                
+
                 resultado_cadastro = response if response else {'sucesso': False, 'mensagem': 'Erro ao chamar API'}
 
                 if not resultado_cadastro['sucesso']:
@@ -815,7 +833,7 @@ class POSP2Service:
                     SELECT top.id, top.operador
                     FROM terminais_operadores_pos top
                     INNER JOIN terminais_operadores toper ON top.operador = toper.operador
-                    WHERE top.terminal_id = %s 
+                    WHERE top.terminal_id = %s
                       AND top.ativo = 1
                       AND toper.ativo = 1
                     ORDER BY top.operador
@@ -1047,7 +1065,7 @@ class POSP2Service:
         """
         try:
             from wallclub_core.integracoes.api_interna_service import APIInternaService
-            
+
             registrar_log('posp2', '========================================')
             registrar_log('posp2', f'{datetime.now().strftime("%d/%m/%Y %H:%M:%S")} posp2.atualiza_celular_envia_msg_app')
             registrar_log('posp2', '========================================')
@@ -1102,7 +1120,7 @@ class POSP2Service:
                         id_template='baixar_app'
                     )
                     registrar_log('posp2', f'[DEBUG] Template preparado: {tpl}')
-                    
+
                     if tpl:
                         registrar_log('posp2', f'[DEBUG] Enviando WhatsApp baixar_app - Template: {tpl["nome_template"]}, Idioma: {tpl["idioma"]}, Corpo: {tpl["parametros_corpo"]}, Botao: {tpl["parametros_botao"]}')
                         resultado_whatsapp = WhatsAppService.envia_whatsapp(
