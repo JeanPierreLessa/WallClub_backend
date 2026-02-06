@@ -56,21 +56,23 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR('❌ Informe --dias OU --data-inicial e --data-final'))
                 return
 
-            # Buscar CNPJs cadastrados
-            from adquirente_own.cargas_own.models import CredenciaisExtratoContaOwn
+            # Buscar lojas OWN cadastradas
+            from adquirente_own.models import LojaOwn
+            from wallclub_core.models import Loja
             cnpj_especifico = options.get('cnpj')
 
             if cnpj_especifico:
                 # Processar apenas um CNPJ
                 cnpjs = [cnpj_especifico]
             else:
-                # Processar todos os CNPJs cadastrados
-                cnpjs = list(CredenciaisExtratoContaOwn.objects.filter(
-                    ativo=True
-                ).values_list('cnpj_white_label', flat=True))
+                # Processar todos os CNPJs de lojas OWN aprovadas
+                cnpjs = list(LojaOwn.objects.filter(
+                    status_credenciamento='APROVADO',
+                    sincronizado=True
+                ).select_related('loja').values_list('loja__cnpj', flat=True))
 
                 if not cnpjs:
-                    self.stdout.write(self.style.ERROR('❌ Nenhum CNPJ cadastrado na tabela credenciaisExtratoContaOwn'))
+                    self.stdout.write(self.style.ERROR('❌ Nenhuma loja OWN aprovada encontrada'))
                     return
 
             self.stdout.write(self.style.SUCCESS(f'🔄 Processando {len(cnpjs)} CNPJ(s): {data_inicial.date()} a {data_final.date()}'))
