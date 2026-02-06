@@ -167,9 +167,10 @@ class CargaBaseUnificadaCheckoutOwnService:
                             registrar_log('own.cargas_own', f"✅ Processadas {total_processadas} transações...")
 
                 except Exception as e:
+                    import traceback
                     registrar_log(
                         'own.cargas_own',
-                        f"❌ Erro ao processar transação {nsu}: {str(e)}",
+                        f"❌ Erro ao processar transação {nsu}: {str(e)}\n{traceback.format_exc()}",
                         nivel='ERROR'
                     )
                     continue
