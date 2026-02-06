@@ -110,7 +110,7 @@ class CargaBaseUnificadaCheckoutOwnService:
                         dados_transacao = {
                             'id': checkout_transaction_id,
                             'NsuOperacao': nsu,
-                            'DataTransacao': data_transacao.strftime('%Y-%m-%d') if data_transacao else '',
+                            'DataTransacao': data_transacao.strftime('%Y-%m-%dT%H:%M:%S') if data_transacao else '',
                             'HoraTransacao': data_transacao.strftime('%H:%M:%S') if data_transacao else '',
                             'ValorTransacao': valor,
                             'ValorBruto': valor,
