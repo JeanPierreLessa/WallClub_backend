@@ -197,10 +197,19 @@ class CargaBaseUnificadaCheckoutOwnService:
 
         for campo, valor in variaveis.items():
             if valor is not None and valor != '':
-                # DEBUG: Verificar se algum valor é dict
+                # Pular campo id_fila_extrato (não existe na tabela)
+                if campo == 'id_fila_extrato':
+                    continue
+
+                # Se valor é dict, extrair chave '0' (valor para Wallet/e-commerce)
                 if isinstance(valor, dict):
-                    registrar_log('own.cargas_own', f"⚠️ Campo {campo} contém dict: {valor}", nivel='WARNING')
-                    continue  # Pular dicionários
+                    if '0' in valor:
+                        valor = valor['0']
+                    elif 'A' in valor:
+                        valor = valor['A']
+                    else:
+                        registrar_log('own.cargas_own', f"⚠️ Campo {campo} dict sem chave '0' ou 'A': {valor}", nivel='WARNING')
+                        continue
 
                 # Adicionar prefixo 'var' se for número
                 nome_campo = f'var{campo}' if isinstance(campo, int) else str(campo)
