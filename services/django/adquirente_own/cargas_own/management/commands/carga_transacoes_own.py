@@ -118,18 +118,18 @@ class Command(BaseCommand):
                     continue
 
                 # Processar transações
-                total_processadas = 0
+                total_novas = 0
                 for transacao_data in result.get('transacoes', []):
                     transacao_obj = service.salvar_transacao(transacao_data)
-                    if not transacao_obj.processado:
-                        service.processar_para_base_gestao(transacao_obj)
-                        total_processadas += 1
+                    # Contar apenas transações novas (created=True no update_or_create)
+                    if transacao_obj:
+                        total_novas += 1
 
                 total_transacoes = result.get('total', 0)
                 total_geral_transacoes += total_transacoes
-                total_geral_processadas += total_processadas
+                total_geral_processadas += total_novas
 
-                self.stdout.write(f'   ✅ {total_transacoes} transações, {total_processadas} processadas')
+                self.stdout.write(f'   ✅ {total_transacoes} transações encontradas, {total_novas} novas salvas')
 
             resultado = {
                 'total_transacoes': total_geral_transacoes,

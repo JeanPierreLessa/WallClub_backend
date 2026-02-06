@@ -122,10 +122,10 @@ class CargaExtratoOwnService:
                 'cnpjCpfParceiro': transacao_data.get('cnpjCpfParceiro'),
                 'data': datetime.fromisoformat(transacao_data['data'].replace('T', ' ')),
                 'numeroSerieEquipamento': transacao_data.get('numeroSerieEquipamento'),
-                'valor': transacao_data.get('valor', 0) / 100,  # Converter centavos para reais
+                'valor': transacao_data.get('valor', 0),  # API já retorna em reais
                 'quantidadeParcelas': transacao_data.get('quantidadeParcelas', 1),
-                'mdr': transacao_data.get('mdr') / 100 if transacao_data.get('mdr') is not None else None,
-                'valorAntecipacaoTotal': transacao_data.get('valorAntecipacaoTotal') / 100 if transacao_data.get('valorAntecipacaoTotal') else None,
+                'mdr': transacao_data.get('mdr'),
+                'valorAntecipacaoTotal': transacao_data.get('valorAntecipacaoTotal'),
                 'taxaAntecipacaoTotal': transacao_data.get('taxaAntecipacaoTotal'),
                 'statusTransacao': transacao_data.get('statusTransacao'),
                 'bandeira': transacao_data.get('bandeira'),
