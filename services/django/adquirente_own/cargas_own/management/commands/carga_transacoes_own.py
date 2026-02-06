@@ -49,9 +49,9 @@ class Command(BaseCommand):
                 data_final = datetime.now()
                 data_inicial = data_final - timedelta(days=options['dias'])
             elif options['data_inicial'] and options['data_final']:
-                # Usar datas específicas
+                # Usar datas específicas (dia completo: 00:00 até 23:59)
                 data_inicial = datetime.strptime(options['data_inicial'], '%Y-%m-%d')
-                data_final = datetime.strptime(options['data_final'], '%Y-%m-%d')
+                data_final = datetime.strptime(options['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
             else:
                 self.stdout.write(self.style.ERROR('❌ Informe --dias OU --data-inicial e --data-final'))
                 return
