@@ -400,7 +400,9 @@ class TransacoesOwnService:
                 'mensagem': response.get('result', {}).get('description', ''),
                 'card_bin': response.get('card', {}).get('bin'),
                 'card_last4': response.get('card', {}).get('last4Digits'),
-                'payment_brand': response.get('paymentBrand', '')
+                'payment_brand': response.get('paymentBrand', ''),
+                'result_code': result_code,
+                'tx_transaction_id': response.get('resultDetails', {}).get('TxTransactionId', '') if response.get('resultDetails') else ''
             }
         else:
             registrar_log('own.transacao', f'❌ Pagamento reprovado: {result_code} (Acquirer: {acquirer_response})', nivel='WARNING')
