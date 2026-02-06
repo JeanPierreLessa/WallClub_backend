@@ -197,8 +197,8 @@ class CargaBaseUnificadaCheckoutOwnService:
 
         for campo, valor in variaveis.items():
             if valor is not None and valor != '':
-                # Pular campo id_fila_extrato (não existe na tabela)
-                if campo == 'id_fila_extrato':
+                # Pular campos que não existem na tabela
+                if campo in ['id_fila_extrato', 'canal_id']:
                     continue
 
                 # Se valor é dict, extrair chave '0' (valor para Wallet/e-commerce)
