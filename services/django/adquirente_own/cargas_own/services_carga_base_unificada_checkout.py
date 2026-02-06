@@ -191,7 +191,7 @@ class CargaBaseUnificadaCheckoutOwnService:
 
         for campo, valor in variaveis.items():
             if valor is not None and valor != '':
-                campos.append(campo)
+                campos.append(str(campo))  # Converter para string
                 valores.append(valor)
 
         if not campos:
