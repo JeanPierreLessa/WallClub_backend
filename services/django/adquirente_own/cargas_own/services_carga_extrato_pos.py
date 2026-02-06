@@ -211,16 +211,19 @@ class CargaExtratoOwnService:
         lojas_own = LojaOwn.objects.filter(
             status_credenciamento='APROVADO',
             sincronizado=True
-        ).select_related('loja')
-
-        if cnpj_cliente:
-            lojas_own = lojas_own.filter(loja__cnpj=cnpj_cliente)
+        )
 
         total_transacoes = 0
         total_processadas = 0
 
         for loja_own in lojas_own:
-            loja = loja_own.loja
+            loja = Loja.objects.filter(id=loja_own.loja_id).first()
+            if not loja:
+                continue
+
+            if cnpj_cliente and loja.cnpj != cnpj_cliente:
+                continue
+
             registrar_log('adquirente_own.cargas_own', f'📋 Processando: {loja.razao_social} (CNPJ: {loja.cnpj})')
 
             # Buscar transações

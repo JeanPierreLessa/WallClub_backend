@@ -66,10 +66,14 @@ class Command(BaseCommand):
                 cnpjs = [cnpj_especifico]
             else:
                 # Processar todos os CNPJs de lojas OWN aprovadas
-                cnpjs = list(LojaOwn.objects.filter(
+                lojas_own_ids = LojaOwn.objects.filter(
                     status_credenciamento='APROVADO',
                     sincronizado=True
-                ).select_related('loja').values_list('loja__cnpj', flat=True))
+                ).values_list('loja_id', flat=True)
+
+                cnpjs = list(Loja.objects.filter(
+                    id__in=lojas_own_ids
+                ).values_list('cnpj', flat=True))
 
                 if not cnpjs:
                     self.stdout.write(self.style.ERROR('❌ Nenhuma loja OWN aprovada encontrada'))
