@@ -11,6 +11,15 @@
   - Box "Resultado Financeiro": totalizador recalculado (Receita Financeira - Custo Direto)
   - Nova linha "Resultado após Custos de POS's" no box Resultado Financeiro
   - Percentual de comissão dinâmico (tabela canal_comissao) sincronizado entre tela e exports
+- **Own Financial - Rotinas de Carga e Ambiente (05/02/2026)**
+  - **Ambiente Centralizado:** `CredenciaisOwnService.obter_environment()` usado em todos os 7 services
+  - **API `/buscaTransacoesGerais`:** Retorna APENAS transações POS (não retorna e-commerce)
+  - **Rotinas de Carga:**
+    - `carga_transacoes_own` - Busca transações POS via API (suporte a `--nsu`, `--data-inicial`, `--data-final`)
+    - `carga_liquidacoes_own` - Busca liquidações via API `/consultaLiquidacoes`
+    - `carga_base_unificada_checkout_own` - Processa `checkout_transactions` (gateway='OWN') para `base_transacoes_unificadas`
+  - **Webhooks:** Endpoints implementados (`/webhook/transacao/`, `/webhook/liquidacao/`) - pendente configuração com suporte OWN
+  - **Campo `gateway_ativo`:** Obrigatório na tabela `loja` para seleção correta do gateway ('PINBANK' ou 'OWN')
 - **Own Financial - Payload Otimizado (03/02/2026)**
   - Campos estruturados de cliente e endereço implementados
   - CheckoutCliente e CheckoutToken: `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`, `data_nascimento`, `email`

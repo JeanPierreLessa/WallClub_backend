@@ -852,14 +852,21 @@ wallclub_django/
 ├── pinbank/cargas_pinbank/     # Cargas automáticas Pinbank
 │   ├── services.py            # Extrato POS
 │   └── services_ajustes_manuais.py
-├── adquirente_own/             # Integração Own Financial ✅ NOVO
+├── adquirente_own/             # Integração Own Financial ✅ COMPLETO (05/02)
 │   ├── services.py            # OwnService (OAuth 2.0)
+│   ├── services_credenciais.py # CredenciaisOwnService (ambiente centralizado)
 │   ├── services_transacoes_pagamento.py # E-commerce OPPWA
-│   ├── views_webhook.py       # Webhooks tempo real
+│   ├── views_webhook.py       # Webhooks tempo real (endpoints implementados)
+│   ├── models_cadastro.py     # LojaOwn (credenciais por loja)
 │   └── cargas_own/            # Cargas automáticas Own
-│       ├── models.py          # OwnExtratoTransacoes, Liquidacoes
-│       ├── services_carga_transacoes.py
-│       └── services_carga_liquidacoes.py
+│       ├── models.py          # OwnExtratoTransacoes, OwnLiquidacoes
+│       ├── services_carga_extrato_pos.py # API /buscaTransacoesGerais (POS only)
+│       ├── services_carga_liquidacoes.py # API /consultaLiquidacoes
+│       ├── services_carga_base_unificada_checkout.py # checkout_transactions → base_transacoes_unificadas
+│       └── management/commands/
+│           ├── carga_transacoes_own.py # --nsu, --data-inicial, --data-final
+│           ├── carga_liquidacoes_own.py
+│           └── carga_base_unificada_checkout_own.py
 ├── portais/                    # 4 Portais web
 │   ├── controle_acesso/       # Multi-portal
 │   ├── admin/                 # 45+ templates

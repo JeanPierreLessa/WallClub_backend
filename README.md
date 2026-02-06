@@ -56,20 +56,26 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
 - ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
-- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (03/02/2026)**
-  - ✅ APIs Adquirência (OAuth 2.0) - QA/Sandbox funcionando
-  - ✅ Webhooks tempo real (transações, liquidações, cadastro)
+- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (05/02/2026)**
+  - ✅ APIs Adquirência (OAuth 2.0) - Produção funcionando
+  - ✅ Webhooks tempo real (transações, liquidações, cadastro) - endpoints implementados
   - ✅ API OPPWA E-commerce - Integração completa e validada
-  - ✅ Ambiente dinâmico (ENVIRONMENT=production → LIVE, development → TEST)
+  - ✅ **Ambiente Centralizado (05/02):** `CredenciaisOwnService.obter_environment()` usado em todos os 7 services
   - ✅ API de consulta de tokens e-commerce por contrato documentada
   - ✅ Documentação oficial OPPWA referenciada: https://docs.payments-own.financial/reference/parameters
   - ✅ Portal de Vendas com GatewayRouter (seleção dinâmica Pinbank/Own)
   - ✅ Tokenização, pagamento com token, pagamento direto, estorno e exclusão
-  - ✅ **Payload Otimizado (03/02/2026):** Campos estruturados de cliente e endereço
+  - ✅ **Payload Otimizado (03/02):** Campos estruturados de cliente e endereço
     - Merchant: `taxId` (CNPJ), `id` (razão social), `postcode` (CEP)
     - Customer: `birthDate`, `email`, `phone`, `identificationDocType: TAXSTATEMENT`
     - Billing/Shipping: `city`, `state`, `postcode`, `country`
   - ✅ Transação aprovada com payload completo (NSU: 8ac7a4a19c22cdec019c2357e13915e2)
+  - ✅ **Rotinas de Carga (05/02):**
+    - `carga_transacoes_own` - Busca transações POS via API `/buscaTransacoesGerais` (não retorna e-commerce)
+    - `carga_liquidacoes_own` - Busca liquidações via API `/consultaLiquidacoes`
+    - `carga_base_unificada_checkout_own` - Processa checkout_transactions (gateway='OWN') para base_transacoes_unificadas
+    - Suporte a busca por NSU específico (`--nsu`) e período (`--data-inicial`, `--data-final`)
+  - ⚠️ **Pendente:** Configuração de webhooks OWN para e-commerce (verificar com suporte)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 
