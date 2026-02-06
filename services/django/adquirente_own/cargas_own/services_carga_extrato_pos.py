@@ -39,31 +39,7 @@ class CargaExtratoOwnService:
         Returns:
             Dict com sucesso e lista de transações
         """
-        from adquirente_own.models_cadastro import LojaOwn
-        from wallclub_core.estr_organizacional.loja import Loja
         from adquirente_own.services_credenciais import CredenciaisOwnService
-
-        # Obter loja OWN
-        loja = Loja.objects.filter(cnpj=cnpj_cliente).first()
-        if not loja:
-            registrar_log('adquirente_own.cargas_own', f'❌ Loja não encontrada: {cnpj_cliente}', nivel='ERROR')
-            return {
-                'sucesso': False,
-                'mensagem': 'Loja não encontrada'
-            }
-
-        loja_own = LojaOwn.objects.filter(
-            loja_id=loja.id,
-            status_credenciamento='APROVADO',
-            sincronizado=True
-        ).first()
-
-        if not loja_own:
-            registrar_log('adquirente_own.cargas_own', f'❌ Loja OWN não encontrada ou não aprovada: {cnpj_cliente}', nivel='ERROR')
-            return {
-                'sucesso': False,
-                'mensagem': 'Loja OWN não encontrada ou não aprovada'
-            }
 
         # Obter credenciais globais da OWN (AWS Secrets Manager)
         credenciais_service = CredenciaisOwnService()
@@ -95,6 +71,10 @@ class CargaExtratoOwnService:
             registrar_log('adquirente_own.cargas_own', f'🔍 Buscando NSU específico: {identificador_transacao}')
         else:
             registrar_log('adquirente_own.cargas_own', f'📥 Buscando transações: {data_inicial} a {data_final}')
+
+        # LOG TEMPORÁRIO: Ver payload completo
+        import json
+        registrar_log('adquirente_own.cargas_own', f'📋 PAYLOAD: {json.dumps(payload, ensure_ascii=False)}')
 
         # Inicializar service com environment correto (baseado em ENVIRONMENT)
         environment = CredenciaisOwnService.obter_environment()
