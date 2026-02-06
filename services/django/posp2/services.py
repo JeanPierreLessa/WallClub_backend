@@ -365,16 +365,12 @@ class POSP2Service:
 
             registrar_log('posp2', f'posp2.simular_parcelas - Simulação concluída - {len(parcelas_resultado)} opções geradas')
 
-            # Definir cards principais (3, 6, 10, 12) mas filtrar apenas os que existem
-            cards_sugeridos = [3, 6, 10, 12]
-            cards_principais = [c for c in cards_sugeridos if str(c) in parcelas_resultado]
-
             resposta_json = {
                 'sucesso': True,
                 'mensagem': 'Simulação realizada com sucesso',
                 'dados': {
                     'parcelas': parcelas_resultado,
-                    'cards_principais': cards_principais
+                    'cards_principais': [3, 6, 10, 12]
                 }
             }
 
