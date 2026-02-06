@@ -197,6 +197,11 @@ class CargaBaseUnificadaCheckoutOwnService:
 
         for campo, valor in variaveis.items():
             if valor is not None and valor != '':
+                # DEBUG: Verificar se algum valor é dict
+                if isinstance(valor, dict):
+                    registrar_log('own.cargas_own', f"⚠️ Campo {campo} contém dict: {valor}", nivel='WARNING')
+                    continue  # Pular dicionários
+
                 # Adicionar prefixo 'var' se for número
                 nome_campo = f'var{campo}' if isinstance(campo, int) else str(campo)
                 campos.append(nome_campo)
