@@ -247,9 +247,14 @@ class CheckoutTransaction(models.Model):
     # Vendedor que criou a transação (portais_usuarios renomeado)
     vendedor_id = models.BigIntegerField(null=True, blank=True, db_index=True, db_column='vendedor_id', help_text="ID do vendedor que criou (ex-portais_usuarios_id)")
 
-    # Dados da API Pinbank
-    pinbank_response = models.JSONField(null=True, blank=True, help_text="Resposta completa do Pinbank")
-    erro_pinbank = models.TextField(null=True, blank=True, help_text="Mensagem de erro se houver")
+    # Dados do Gateway (Pinbank/OWN)
+    card_bin = models.CharField(max_length=6, null=True, blank=True, help_text="Primeiros 6 dígitos do cartão")
+    card_last4 = models.CharField(max_length=4, null=True, blank=True, help_text="Últimos 4 dígitos do cartão")
+    payment_brand_response = models.CharField(max_length=20, null=True, blank=True, help_text="Bandeira retornada pelo gateway")
+    result_code = models.CharField(max_length=20, null=True, blank=True, help_text="Código do resultado da transação")
+    tx_transaction_id = models.CharField(max_length=50, null=True, blank=True, db_index=True, help_text="ID da transação no gateway (TxTransactionId para OWN)")
+    gateway_response = models.JSONField(null=True, blank=True, help_text="Resposta completa do gateway")
+    erro_gateway = models.TextField(null=True, blank=True, help_text="Mensagem de erro se houver")
 
     # Dados do Antifraude (Risk Engine)
     score_risco = models.IntegerField(null=True, blank=True, db_index=True, help_text="Score de risco 0-100")
@@ -347,8 +352,8 @@ class CheckoutTransactionAttempt(models.Model):
     tentativa_numero = models.IntegerField(help_text="Número da tentativa (1, 2, 3...)")
 
     # Dados do erro
-    erro_pinbank = models.TextField(null=True, blank=True, help_text="Mensagem de erro do Pinbank")
-    pinbank_response = models.JSONField(null=True, blank=True, help_text="Resposta completa da API Pinbank")
+    erro_gateway = models.TextField(null=True, blank=True, help_text="Mensagem de erro do gateway")
+    gateway_response = models.JSONField(null=True, blank=True, help_text="Resposta completa da API do gateway")
 
     # Dados do cliente nesta tentativa
     ip_address_cliente = models.GenericIPAddressField(help_text="IP do cliente nesta tentativa")

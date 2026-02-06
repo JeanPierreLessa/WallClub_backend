@@ -292,8 +292,8 @@ class LinkPagamentoService:
                 CheckoutTransactionAttempt.objects.create(
                     transaction=transacao,
                     tentativa_numero=token_obj.tentativas_pagamento,
-                    erro_pinbank=resultado_transacao.get('mensagem', 'Erro desconhecido'),
-                    pinbank_response=sanitize_for_json(resultado_transacao),
+                    erro_gateway=resultado_transacao.get('mensagem', 'Erro desconhecido'),
+                    gateway_response=sanitize_for_json(resultado_transacao),
                     ip_address_cliente=ip_address,
                     user_agent_cliente=user_agent,
                     numero_cartao_hash=cartao_hash
@@ -302,8 +302,8 @@ class LinkPagamentoService:
                 # Atualizar transação se limite de tentativas atingido
                 if token_obj.tentativas_pagamento >= 3:
                     transacao.status = 'NEGADA'
-                    transacao.erro_pinbank = f"Limite de tentativas atingido: {resultado_transacao.get('mensagem')}"
-                    transacao.pinbank_response = sanitize_for_json(resultado_transacao)
+                    transacao.erro_gateway = f"Limite de tentativas atingido: {resultado_transacao.get('mensagem')}"
+                    transacao.gateway_response = sanitize_for_json(resultado_transacao)
                     transacao.save()
 
                 # Verificar quantas tentativas restam
@@ -336,7 +336,7 @@ class LinkPagamentoService:
             transacao.parcelas = session.parcelas
             transacao.valor_transacao_original = valor_original
             transacao.valor_transacao_final = valor_final
-            transacao.pinbank_response = sanitize_for_json(resultado_transacao)
+            transacao.gateway_response = sanitize_for_json(resultado_transacao)
             transacao.ip_address_cliente = ip_address
             transacao.user_agent_cliente = user_agent
             transacao.processed_at = datetime.now()
