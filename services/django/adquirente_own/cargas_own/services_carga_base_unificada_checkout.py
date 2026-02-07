@@ -61,7 +61,11 @@ class CargaBaseUnificadaCheckoutOwnService:
                 c.nome as canal_nome,
                 oet.bandeira,
                 oet.numeroCartao,
-                ct.id as checkout_transaction_id
+                ct.id as checkout_transaction_id,
+                oet.mdr,
+                oet.statusTransacao,
+                oet.statusPagamento,
+                oet.dataPagamentoPrevista
             FROM ownExtratoTransacoes oet
             INNER JOIN checkout_transactions ct ON oet.identificadorTransacao = ct.tx_transaction_id
             INNER JOIN loja l ON ct.loja_id = l.id
@@ -106,6 +110,10 @@ class CargaBaseUnificadaCheckoutOwnService:
                         bandeira = row[11]
                         numero_cartao = row[12]
                         checkout_transaction_id = row[13]
+                        mdr = float(row[14]) if row[14] else 0
+                        status_transacao = row[15]
+                        status_pagamento = row[16]
+                        data_pagamento_prevista = row[17]
 
                         # Preparar dados para calculadora (compatível com CalculadoraBaseUnificada)
                         dados_transacao = {
@@ -130,7 +138,14 @@ class CargaBaseUnificadaCheckoutOwnService:
                             'DataCancelamento': None,
                             'tipo_operacao': 'Wallet',
                             'adquirente': 'OWN',
-                            'origem_transacao': 'Checkout'
+                            'origem_transacao': 'Checkout',
+                            # Campos específicos da OWN
+                            'ValorTaxaAdm': mdr,
+                            'ValorTaxaMes': mdr,  # Mesmo valor do MDR
+                            'DescricaoStatus': status_transacao or '',
+                            'ValorSplit': 0,  # Checkout não tem split
+                            'DataFuturaPagamento': data_pagamento_prevista,
+                            'DescricaoStatusPagamento': status_pagamento or ''
                         }
 
                         info_loja = {
