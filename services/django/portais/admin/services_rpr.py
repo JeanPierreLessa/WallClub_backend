@@ -712,23 +712,20 @@ class RPRService:
                 totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                 media = RPRService.calcular_media_ponderada_parcelas(totais)
                 linha_totalizadora[campo] = float(media) if media > 0 else ""
-            elif campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16', 'variavel_nova_18', 'variavel_nova_19']:
+            elif campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
                 # Calcular percentuais e fórmulas com totalização
                 campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var98', 'var101', 'var109_A', 'variavel_nova_15']
                 totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                 resultado = RPRService.calcular_percentual_totalizador(campo, totais)
 
-                if campo in ['variavel_nova_18', 'variavel_nova_19']:
-                    # Campos monetários calculados
-                    linha_totalizadora[campo] = float(resultado) if isinstance(resultado, Decimal) else resultado
-                elif para_tela:
+                if para_tela:
                     linha_totalizadora[campo] = f"{float(resultado) * 100:.2f}%"
                 else:
                     linha_totalizadora[campo] = float(resultado)
             elif campo in colunas_percentuais:
                 # Outros percentuais sem totalização
                 linha_totalizadora[campo] = ""
-            elif campo in colunas_monetarias or (item.get('tipo') == 'formula' and campo not in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16', 'variavel_nova_18', 'variavel_nova_19']):
+            elif campo in colunas_monetarias or (item.get('tipo') == 'formula' and campo not in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']):
                 # Somar valores numéricos
                 total = Decimal('0')
                 for linha in dados:

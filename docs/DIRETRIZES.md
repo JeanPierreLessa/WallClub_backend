@@ -30,7 +30,11 @@
   - **Rotinas de Carga:**
     - `carga_transacoes_own` - Busca transações POS via API (suporte a `--nsu`, `--data-inicial`, `--data-final`)
     - `carga_liquidacoes_own` - Busca liquidações via API `/consultaLiquidacoes`
-    - `carga_base_unificada_checkout_own` - Processa `checkout_transactions` (gateway='OWN') para `base_transacoes_unificadas`
+    - `carga_base_unificada_checkout_own` - Processa checkout OWN para `base_transacoes_unificadas`
+      - **JOIN:** `ownExtratoTransacoes.identificadorTransacao = checkout_transactions.tx_transaction_id`
+      - **Filtro:** `ownExtratoTransacoes.lido = 0` (marca como `lido=1` após processar)
+      - **Campos mapeados:** `mdr`, `statusTransacao`, `statusPagamento`, `dataPagamentoPrevista`
+      - **TxTransactionId:** Salvo em `checkout_transactions.tx_transaction_id` no momento da venda (campo `resultDetails.TxTransactionId` da resposta OWN)
   - **Webhooks:** Endpoints implementados (`/webhook/transacao/`, `/webhook/liquidacao/`) - pendente configuração com suporte OWN
   - **Campo `gateway_ativo`:** Obrigatório na tabela `loja` para seleção correta do gateway ('PINBANK' ou 'OWN')
 - **Own Financial - Payload Otimizado (03/02/2026)**
