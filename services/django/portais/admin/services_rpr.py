@@ -653,10 +653,15 @@ class RPRService:
                 if valor and valor != '' and valor != 'Não Finalizada':
                     try:
                         if isinstance(valor, str):
-                            valor_limpo = valor.replace('R$', '').replace('%', '').replace('.', '').replace(',', '.').strip()
+                            # Remover símbolos mas preservar formato numérico correto
+                            valor_limpo = valor.replace('R$', '').replace('%', '').strip()
+                            # Se tem vírgula, assumir formato brasileiro (1.234,56)
+                            if ',' in valor_limpo:
+                                valor_limpo = valor_limpo.replace('.', '').replace(',', '.')
                             if valor_limpo:
                                 total += Decimal(valor_limpo)
                         else:
+                            # Valor já é numérico, usar diretamente
                             total += Decimal(str(valor))
                     except (ValueError, TypeError, InvalidOperation):
                         pass
