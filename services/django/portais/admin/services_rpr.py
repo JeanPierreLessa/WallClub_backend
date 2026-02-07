@@ -550,22 +550,11 @@ class RPRService:
             return (variavel_nova_2 / var26_total).quantize(Decimal('0.0001')) if var26_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_7':  # Resultado Operacional (projetado) %
-            # variavel_nova_8 = variavel_nova_5 + variavel_nova_2
-            # variavel_nova_5 = variavel_nova_4 - var94_A
-            # variavel_nova_4 = var15 + var41
-            # variavel_nova_2 = var37 - var90
-            var15_total = totais.get('var15', Decimal('0'))
-            var41_total = totais.get('var41', Decimal('0'))
-            var94_A_total = totais.get('var94_A', Decimal('0'))
-            var37_total = totais.get('var37', Decimal('0'))
-            var90_total = totais.get('var90', Decimal('0'))
+            # Usar a soma da coluna variavel_nova_8 já calculada
+            variavel_nova_8_total = totais.get('variavel_nova_8', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
-            variavel_nova_4_total = var15_total + var41_total
-            variavel_nova_5_total = variavel_nova_4_total - var94_A_total
-            variavel_nova_2_total = var37_total - var90_total
-            variavel_nova_8_total = variavel_nova_5_total + variavel_nova_2_total
             resultado = (variavel_nova_8_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
-            registrar_log('portais.admin', f"DEBUG variavel_nova_7: var15={var15_total}, var41={var41_total}, var94_A={var94_A_total}, var37={var37_total}, var90={var90_total}, var11={var11_total}, variavel_nova_8={variavel_nova_8_total}, resultado={resultado}")
+            registrar_log('portais.admin', f"DEBUG variavel_nova_7: variavel_nova_8_total={variavel_nova_8_total}, var11_total={var11_total}, resultado={resultado}")
             return resultado
 
         elif campo == 'variavel_nova_10':  # Resultado Operacional (antes Cashback e Chargeback) %
@@ -590,17 +579,11 @@ class RPRService:
             return (variavel_nova_15_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
 
         elif campo == 'variavel_nova_16':  # Resultado Final (pós impostos - sem POS) %
-            # variavel_nova_17 = variavel_nova_11 - variavel_nova_13
-            # variavel_nova_11 = var98 - var101
-            # variavel_nova_13 = var109_A
-            var98_total = totais.get('var98', Decimal('0'))
-            var101_total = totais.get('var101', Decimal('0'))
-            var109_A_total = totais.get('var109_A', Decimal('0'))
-            variavel_nova_11_total = var98_total - var101_total
-            variavel_nova_17_total = variavel_nova_11_total - var109_A_total
+            # Usar a soma da coluna variavel_nova_17 já calculada
+            variavel_nova_17_total = totais.get('variavel_nova_17', Decimal('0'))
             var11_total = totais.get('var11', Decimal('0'))
             resultado = (variavel_nova_17_total / var11_total).quantize(Decimal('0.0001')) if var11_total > 0 else Decimal('0')
-            registrar_log('portais.admin', f"DEBUG variavel_nova_16: var98={var98_total}, var101={var101_total}, var109_A={var109_A_total}, var11={var11_total}, variavel_nova_11={variavel_nova_11_total}, variavel_nova_17={variavel_nova_17_total}, resultado={resultado}")
+            registrar_log('portais.admin', f"DEBUG variavel_nova_16: variavel_nova_17_total={variavel_nova_17_total}, var11_total={var11_total}, resultado={resultado}")
             return resultado
 
         elif campo == 'variavel_nova_18':  # Custo ajuste nos Repasses (R$)
@@ -675,13 +658,22 @@ class RPRService:
             for linha in linhas:
                 var13 = linha.get('var13', 0)
                 var11 = linha.get('var11', 0)
-                if var13 and var11:
-                    try:
-                        parcelas = Decimal(str(var13)) if var13 else Decimal('0')
-                        volume = Decimal(str(var11)) if var11 else Decimal('0')
+
+                # Pular se var13 ou var11 estiverem vazios, None ou "Não Finalizada"
+                if not var13 or var13 == '' or var13 == 'Não Finalizada':
+                    continue
+                if not var11 or var11 == '' or var11 == 'Não Finalizada':
+                    continue
+
+                try:
+                    parcelas = Decimal(str(var13))
+                    volume = Decimal(str(var11))
+
+                    # Só incluir se parcelas > 0 (transações parceladas)
+                    if parcelas > 0 and volume > 0:
                         soma_parcelas_ponderada += parcelas * volume
-                    except (ValueError, TypeError, InvalidOperation):
-                        pass
+                except (ValueError, TypeError, InvalidOperation):
+                    pass
             totais['soma_parcelas_ponderada'] = soma_parcelas_ponderada
 
         return totais
@@ -714,7 +706,7 @@ class RPRService:
                 linha_totalizadora[campo] = float(media) if media > 0 else ""
             elif campo in ['var36', 'var89', 'variavel_nova_1', 'variavel_nova_7', 'variavel_nova_10', 'variavel_nova_12', 'variavel_nova_14', 'variavel_nova_16']:
                 # Calcular percentuais e fórmulas com totalização
-                campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var98', 'var101', 'var109_A', 'variavel_nova_15']
+                campos_necessarios = ['var11', 'var26', 'var37', 'var90', 'var15', 'var41', 'var94_A', 'var58', 'var98', 'var101', 'var109_A', 'variavel_nova_15', 'variavel_nova_8', 'variavel_nova_17']
                 totais = RPRService.calcular_totais_de_linhas(dados, campos_necessarios)
                 resultado = RPRService.calcular_percentual_totalizador(campo, totais)
 
