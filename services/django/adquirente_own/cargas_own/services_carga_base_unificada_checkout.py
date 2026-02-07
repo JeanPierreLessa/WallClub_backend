@@ -185,7 +185,7 @@ class CargaBaseUnificadaCheckoutOwnService:
                         self._inserir_base_unificada(variaveis)
 
                         # Marcar como lido e processado na tabela ownExtratoTransacoes
-                        from adquirente_own.models import OwnExtratoTransacoes
+                        from adquirente_own.cargas_own.models import OwnExtratoTransacoes
                         OwnExtratoTransacoes.objects.filter(id=oet_id).update(lido=1, processado=1)
 
                         total_processadas += 1
