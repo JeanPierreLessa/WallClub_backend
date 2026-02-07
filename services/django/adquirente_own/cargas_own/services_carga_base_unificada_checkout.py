@@ -110,6 +110,8 @@ class CargaBaseUnificadaCheckoutOwnService:
                         # Preparar dados para calculadora (compatível com CalculadoraBaseUnificada)
                         dados_transacao = {
                             'id': oet_id,
+                            'SerialNumber': '',  # Checkout não tem serial
+                            'idTerminal': 0,  # Checkout não tem terminal
                             'NsuOperacao': str(identificador_transacao),
                             'DataTransacao': data_transacao.strftime('%Y-%m-%dT%H:%M:%S') if data_transacao else '',
                             'HoraTransacao': data_transacao.strftime('%H:%M:%S') if data_transacao else '',
