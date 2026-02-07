@@ -169,6 +169,12 @@ class CargaBaseUnificadaCheckoutOwnService:
                             info_canal=info_canal
                         )
 
+                        # Adicionar campos que não são retornados pela calculadora
+                        variaveis['tipo_operacao'] = 'Wallet'
+                        variaveis['adquirente'] = 'OWN'
+                        variaveis['origem_transacao'] = 'Checkout'
+                        variaveis['data_transacao'] = data_transacao
+
                         # DEBUG: Log do tipo e amostra das variáveis
                         registrar_log('own.cargas_own', f"DEBUG variaveis type: {type(variaveis)}")
                         if variaveis:
