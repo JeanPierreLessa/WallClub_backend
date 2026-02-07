@@ -63,7 +63,7 @@ class CargaBaseUnificadaCheckoutOwnService:
                 oet.numeroCartao,
                 ct.id as checkout_transaction_id
             FROM ownExtratoTransacoes oet
-            INNER JOIN checkout_transactions ct ON oet.codigoTransacao = ct.nsu
+            INNER JOIN checkout_transactions ct ON oet.identificadorTransacao = ct.tx_transaction_id
             INNER JOIN loja l ON ct.loja_id = l.id
             INNER JOIN canal c ON l.canal_id = c.id
             WHERE oet.lido = 0
