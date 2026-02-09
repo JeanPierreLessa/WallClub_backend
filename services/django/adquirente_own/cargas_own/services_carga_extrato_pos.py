@@ -173,7 +173,7 @@ class CargaExtratoOwnService:
         transacao_obj.mdrParcela = primeira_parcela.get('mdr')  # API já retorna em reais
         transacao_obj.numeroParcela = primeira_parcela.get('numeroParcela')
         transacao_obj.valorParcela = primeira_parcela.get('valorParcela')  # API já retorna em reais
-        transacao_obj.dataPagamentoPrevista = datetime.strptime(primeira_parcela['dataPagamentoPrevista'], '%Y-%m-%d').date() if primeira_parcela.get('dataPagamentoPrevista') else None
+        transacao_obj.dataPagamentoPrevista = datetime.strptime(primeira_parcela['dataPrevistaPagamento'], '%Y-%m-%d').date() if primeira_parcela.get('dataPrevistaPagamento') else None
         transacao_obj.dataPagamentoReal = datetime.strptime(primeira_parcela['dataPagamentoReal'], '%Y-%m-%d').date() if primeira_parcela.get('dataPagamentoReal') else None
         transacao_obj.valorAntecipado = primeira_parcela.get('valorAntecipado')  # API já retorna em reais
         transacao_obj.taxaAntecipada = primeira_parcela.get('taxaAntecipada')
