@@ -49,7 +49,12 @@ class Command(BaseCommand):
 
         else:
             # Determinar período
-            if options.get('dias'):
+            if options.get('nsu'):
+                # Se buscar por NSU, usar período amplo (últimos 30 dias)
+                data_final = datetime.now()
+                data_inicial = data_final - timedelta(days=30)
+                self.stdout.write(self.style.SUCCESS(f'🔍 Buscando NSU específico nos últimos 30 dias'))
+            elif options.get('dias'):
                 # Usar dias retroativos
                 data_final = datetime.now()
                 data_inicial = data_final - timedelta(days=options['dias'])
@@ -58,7 +63,7 @@ class Command(BaseCommand):
                 data_inicial = datetime.strptime(options['data_inicial'], '%Y-%m-%d')
                 data_final = datetime.strptime(options['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
             else:
-                self.stdout.write(self.style.ERROR('❌ Informe --dias OU --data-inicial e --data-final'))
+                self.stdout.write(self.style.ERROR('❌ Informe --nsu OU --dias OU --data-inicial e --data-final'))
                 return
 
             # Buscar lojas OWN cadastradas
