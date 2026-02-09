@@ -66,11 +66,12 @@ class CargaBaseUnificadaCheckoutOwnService:
                 oet.statusTransacao,
                 oet.statusPagamento,
                 oet.dataPagamentoPrevista,
-                ct.customer_document
+                COALESCE(cc.cpf, cc.cnpj) as documento_cliente
             FROM ownExtratoTransacoes oet
             INNER JOIN checkout_transactions ct ON oet.identificadorTransacao = ct.tx_transaction_id
             INNER JOIN loja l ON ct.loja_id = l.id
             INNER JOIN canal c ON l.canal_id = c.id
+            LEFT JOIN checkout_cliente cc ON ct.cliente_id = cc.id
             WHERE oet.lido = 0
                 AND ct.gateway = 'OWN'
                 AND ct.status = 'APROVADA'
