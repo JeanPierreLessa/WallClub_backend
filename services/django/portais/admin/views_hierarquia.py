@@ -1215,7 +1215,6 @@ def loja_edit(request, loja_id):
         ramo_atividade = request.POST.get('ramo_atividade', '').strip()
         faturamento_previsto = request.POST.get('faturamento_previsto', '').strip()
         faturamento_contratado = request.POST.get('faturamento_contratado', '').strip()
-        quantidade_pos = request.POST.get('quantidade_pos', '1').strip()
         antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N').strip()
         tipo_antecipacao = request.POST.get('tipo_antecipacao', 'ROTATIVO').strip()
         responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
@@ -1291,7 +1290,7 @@ def loja_edit(request, loja_id):
                     loja_own.mcc = mcc or None
                     loja_own.faturamento_previsto = converter_valor_br(faturamento_previsto)
                     loja_own.faturamento_contratado = converter_valor_br(faturamento_contratado)
-                    loja_own.quantidade_pos = int(quantidade_pos) if quantidade_pos else 0
+                    loja_own.quantidade_pos = 0  # POS cadastrado via API específica (configuraEquipamento)
                     loja_own.antecipacao_automatica = antecipacao_automatica or 'N'
                     loja_own.tipo_antecipacao = tipo_antecipacao or 'ROTATIVO'
                     loja_own.responsavel_assinatura = responsavel_assinatura or None
@@ -1490,7 +1489,7 @@ def loja_edit(request, loja_id):
                                 'responsavel_assinatura': responsavel_assinatura,
                                 'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
                                 'responsavel_assinatura_email': responsavel_assinatura_email,
-                                'quantidade_pos': quantidade_pos,
+                                'quantidade_pos': 0,  # POS cadastrado via API específica (configuraEquipamento)
                                 'antecipacao_automatica': antecipacao_automatica,
                                 'tipo_antecipacao': tipo_antecipacao,
                                 'tarifacao': tarifacao,

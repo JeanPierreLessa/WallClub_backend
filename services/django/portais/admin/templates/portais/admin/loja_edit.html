@@ -316,8 +316,8 @@
                                 <label class="form-label required-field">CNAE</label>
                                 <select class="form-select" id="cnae" name="cnae">
                                     <option value="">Carregando...</option>
-                                    {% if loja.cnae %}
-                                    <option value="{{ loja.cnae }}" selected>{{ loja.cnae }}</option>
+                                    {% if loja_own.cnae %}
+                                    <option value="{{ loja_own.cnae }}" selected>{{ loja_own.cnae }}</option>
                                     {% endif %}
                                 </select>
                             </div>
@@ -370,11 +370,6 @@
                         <!-- Configurações de Captura e Antecipação -->
                         <div class="row mb-3">
                             <div class="col-md-3">
-                                <label class="form-label">Quantidade de POS</label>
-                                <input type="number" class="form-control" id="quantidade_pos"
-                                       name="quantidade_pos" value="{{ loja_own.quantidade_pos|default:0 }}" min="0">
-                            </div>
-                            <div class="col-md-2">
                             <label class="form-label">Antecipação Automática</label>
                             <select class="form-select" id="antecipacao_automatica"
                                     name="antecipacao_automatica">

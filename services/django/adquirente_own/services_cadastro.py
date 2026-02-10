@@ -393,19 +393,27 @@ class CadastroOwnService:
                 defaults={
                     'cadastrar': True,
                     'protocolo': protocolo,
-                    'conveniada_id': conveniada_id,
                     'status_credenciamento': 'PENDENTE',
                     'data_credenciamento': datetime.now(),
                     'mensagem_status': 'Cadastro enviado com sucesso'
                 }
             )
 
-            registrar_log('adquirente_own', f'✅ Cadastro enviado: protocolo={protocolo}, conveniada_id={conveniada_id}')
+            # Salvar histórico do protocolo
+            from adquirente_own.models_cadastro import LojaOwnProtocoloHistorico
+            LojaOwnProtocoloHistorico.objects.create(
+                loja_id=loja_id,
+                protocolo=protocolo,
+                tipo='ADITIVO' if loja_data.get('contrato') else 'CREDENCIAMENTO',
+                reenvio='S' if loja_data.get('protocolo') else 'N',
+                status='EM ANALISE'
+            )
+
+            registrar_log('adquirente_own', f'✅ Cadastro enviado: protocolo={protocolo}')
 
             return {
                 'sucesso': True,
                 'protocolo': protocolo,
-                'conveniada_id': conveniada_id,
                 'mensagem': 'Cadastro enviado com sucesso. Aguardando processamento da Own.'
             }
 

@@ -94,8 +94,10 @@ class WebhookOwnService:
             loja_own.status_credenciamento = status_credenciamento
             loja_own.mensagem_status = mensagem
 
-            if conveniada_id:
-                loja_own.conveniada_id = conveniada_id
+            # Atualizar contrato se veio no payload
+            contrato = payload.get('contrato')
+            if contrato and contrato.strip():
+                loja_own.contrato = contrato
 
             if data_credenciamento:
                 loja_own.data_credenciamento = data_credenciamento
@@ -104,9 +106,24 @@ class WebhookOwnService:
             loja_own.ultima_sincronizacao = datetime.now()
             loja_own.save()
 
+            # Atualizar histórico do protocolo
+            from adquirente_own.models_cadastro import LojaOwnProtocoloHistorico
+            historico = LojaOwnProtocoloHistorico.objects.filter(
+                loja_id=loja_own.loja_id,
+                protocolo=protocolo
+            ).first()
+
+            if historico:
+                historico.status = payload.get('status', status_credenciamento)
+                historico.motivo = payload.get('motivo', mensagem)
+                historico.contrato = contrato
+                historico.data_retorno = datetime.now()
+                historico.save()
+                registrar_log('adquirente_own', f'✅ Histórico de protocolo atualizado: {protocolo}')
+
             registrar_log(
                 'adquirente_own',
-                f'✅ Status atualizado: loja_id={loja_own.loja_id}, status={status_credenciamento}, conveniada_id={conveniada_id}'
+                f'✅ Status atualizado: loja_id={loja_own.loja_id}, status={status_credenciamento}, contrato={contrato}'
             )
 
             # TODO: Enviar notificação (email/push) para responsável
