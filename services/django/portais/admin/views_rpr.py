@@ -1175,6 +1175,32 @@ def exportar_rpr_excel(request):
         colunas_monetarias = RPRService.obter_colunas_monetarias_rpr_dinamico()
         colunas_percentuais = RPRService.obter_colunas_percentuais_rpr_dinamico()
 
+        # Linha totalizadora PRIMEIRO (logo após cabeçalho) - converter para número
+        row_totalizadora = []
+        for item in estrutura_colunas:
+            campo = item['campo']
+            valor = linha_totalizadora.get(campo, '')
+
+            # Converter para número se for campo monetário ou percentual
+            if campo in colunas_monetarias or campo in colunas_percentuais:
+                if valor == '' or valor is None:
+                    # Manter vazio para colunas sem totalização
+                    row_totalizadora.append('')
+                else:
+                    try:
+                        row_totalizadora.append(float(valor))
+                    except (ValueError, TypeError):
+                        row_totalizadora.append(valor)
+            else:
+                row_totalizadora.append(valor)
+
+        ws_detalhe.append(row_totalizadora)
+
+        # Formatação da linha totalizadora (linha 2)
+        for cell in ws_detalhe[2]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
         # Dados - converter valores para número quando necessário
         for linha in dados:
             row_data = []
@@ -1197,36 +1223,9 @@ def exportar_rpr_excel(request):
 
             ws_detalhe.append(row_data)
 
-        # Linha totalizadora no final - converter para número
-        row_totalizadora = []
-        for item in estrutura_colunas:
-            campo = item['campo']
-            valor = linha_totalizadora.get(campo, '')
-
-            # Converter para número se for campo monetário ou percentual
-            if campo in colunas_monetarias or campo in colunas_percentuais:
-                if valor == '' or valor is None:
-                    # Manter vazio para colunas sem totalização
-                    row_totalizadora.append('')
-                else:
-                    try:
-                        row_totalizadora.append(float(valor))
-                    except (ValueError, TypeError):
-                        row_totalizadora.append(valor)
-            else:
-                row_totalizadora.append(valor)
-
-        ws_detalhe.append(row_totalizadora)
-
-        # Formatação da linha totalizadora (última linha)
-        ultima_linha = ws_detalhe.max_row
-        for cell in ws_detalhe[ultima_linha]:
-            cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-
         # Aplicar formato de número nas colunas monetárias
         from openpyxl.styles import numbers
-        for row_idx in range(2, ws_detalhe.max_row + 1):  # Pular header
+        for row_idx in range(2, ws_detalhe.max_row + 1):  # Linha 2 = totalizadora, linha 3+ = dados
             for col_idx, item in enumerate(estrutura_colunas, start=1):
                 campo = item['campo']
                 cell = ws_detalhe.cell(row=row_idx, column=col_idx)
@@ -1346,8 +1345,8 @@ def exportar_rpr_csv(request):
         # Gerar linha totalizadora usando função unificada
         linha_totalizadora = RPRService.calcular_totalizador_rpr(dados, estrutura_colunas, para_tela=False)
 
-        # Adicionar linha totalizadora aos dados
-        dados.append(linha_totalizadora)
+        # Adicionar linha totalizadora NO INÍCIO dos dados
+        dados.insert(0, linha_totalizadora)
 
         # Usar utilitário comum para exportar
         nome_arquivo = f"rpr_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -1427,6 +1426,68 @@ def _exportar_rpr_csv_email(request, filtros, canais_usuario, total_registros):
 
                 # Escrever cabeçalho com nomes de exibição
                 writer.writerow(colunas_rpr)
+
+                # Calcular e escrever linha totalizadora PRIMEIRO
+                # Buscar todas as transações para calcular totalizadora
+                todas_transacoes, _ = RPRService.buscar_transacoes_rpr(
+                    filtros=filtros,
+                    canais_usuario=canais_usuario,
+                    page=1,
+                    per_page=total_registros
+                )
+
+                dados_totalizadora = []
+                for transacao in todas_transacoes:
+                    linha_calc = RPRService.calcular_linha_rpr(transacao, estrutura_colunas, para_export=True)
+                    dados_totalizadora.append(linha_calc)
+
+                linha_totalizadora = RPRService.calcular_totalizador_rpr(dados_totalizadora, estrutura_colunas, para_tela=False)
+
+                # Formatar e escrever linha totalizadora
+                linha_total_formatada = {}
+                for campo in campos_ordenados:
+                    valor = linha_totalizadora.get(campo, '')
+
+                    # Formatação para campos percentuais
+                    if campo in RPRService.obter_colunas_percentuais_rpr_dinamico() and valor:
+                        try:
+                            if isinstance(valor, (int, float)):
+                                percentual = valor * 100
+                                valor = f"{percentual:.2f}%"
+                            elif isinstance(valor, str) and valor != 'Não Finalizada':
+                                valor_float = float(str(valor).replace(',', '.').replace('%', ''))
+                                if valor_float > 1:
+                                    valor = f"{valor_float:.2f}%"
+                                else:
+                                    percentual = valor_float * 100
+                                    valor = f"{percentual:.2f}%"
+                            else:
+                                valor = str(valor) if valor else ''
+                        except:
+                            valor = str(valor) if valor else ''
+                    # Formatação para campos monetários
+                    elif campo in RPRService.obter_colunas_monetarias_rpr_dinamico() and valor:
+                        try:
+                            if isinstance(valor, (int, float)):
+                                valor = f"{valor:.2f}".replace('.', ',')
+                            elif isinstance(valor, str) and valor != 'Não Finalizada':
+                                valor_float = float(str(valor).replace(',', '.'))
+                                valor = f"{valor_float:.2f}".replace('.', ',')
+                            else:
+                                valor = str(valor) if valor else ''
+                        except:
+                            valor = str(valor) if valor else ''
+                    else:
+                        valor = str(valor) if valor else ''
+
+                    # Remover acentos do valor
+                    if isinstance(valor, str):
+                        valor = remover_acentos(valor)
+
+                    linha_total_formatada[campo] = valor
+
+                writer.writerow(linha_total_formatada)
+                registrar_log('portais.admin', f"RPR CSV - Linha totalizadora escrita")
 
                 # Processar em batches (paginação no banco)
                 for pagina in range(1, total_paginas + 1):
