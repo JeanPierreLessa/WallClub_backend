@@ -41,7 +41,6 @@ class WebhookOwnService:
             protocolo = payload.get('protocolo')
             cnpj = payload.get('cnpj')
             status_credenciamento = payload.get('status')
-            conveniada_id = payload.get('conveniadaId')
             data_credenciamento_str = payload.get('dataCredenciamento')
             mensagem = payload.get('mensagem', '')
 

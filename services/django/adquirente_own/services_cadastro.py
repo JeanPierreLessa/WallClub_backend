@@ -385,7 +385,6 @@ class CadastroOwnService:
             # Processar resposta
             dados_resposta = resultado.get('dados', {})
             protocolo = dados_resposta.get('protocolo', '')
-            conveniada_id = dados_resposta.get('conveniadaId', '')
 
             # Atualizar ou criar registro LojaOwn
             loja_own, created = LojaOwn.objects.update_or_create(
