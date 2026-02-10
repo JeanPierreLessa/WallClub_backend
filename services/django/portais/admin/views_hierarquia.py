@@ -1217,7 +1217,7 @@ def loja_edit(request, loja_id):
         faturamento_contratado = request.POST.get('faturamento_contratado', '').strip()
         quantidade_pos = request.POST.get('quantidade_pos', '1').strip()
         antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N').strip()
-        taxa_antecipacao = request.POST.get('taxa_antecipacao', '0').strip()
+        tipo_antecipacao = request.POST.get('tipo_antecipacao', 'ROTATIVO').strip()
         responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
         responsavel_assinatura_cpf = request.POST.get('responsavel_assinatura_cpf', '').strip()
         responsavel_assinatura_email = request.POST.get('responsavel_assinatura_email', '').strip()
@@ -1293,8 +1293,7 @@ def loja_edit(request, loja_id):
                     loja_own.faturamento_contratado = converter_valor_br(faturamento_contratado)
                     loja_own.quantidade_pos = int(quantidade_pos) if quantidade_pos else 0
                     loja_own.antecipacao_automatica = antecipacao_automatica or 'N'
-                    loja_own.taxa_antecipacao = converter_valor_br(taxa_antecipacao) or 0.00
-                    loja_own.tipo_antecipacao = 'ROTATIVO'
+                    loja_own.tipo_antecipacao = tipo_antecipacao or 'ROTATIVO'
                     loja_own.responsavel_assinatura = responsavel_assinatura or None
                     loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
                     loja_own.responsavel_assinatura_email = responsavel_assinatura_email or None
@@ -1493,8 +1492,7 @@ def loja_edit(request, loja_id):
                                 'responsavel_assinatura_email': responsavel_assinatura_email,
                                 'quantidade_pos': quantidade_pos,
                                 'antecipacao_automatica': antecipacao_automatica,
-                                'taxa_antecipacao': taxa_antecipacao,
-                                'tipo_antecipacao': 'ROTATIVO',
+                                'tipo_antecipacao': tipo_antecipacao,
                                 'tarifacao': tarifacao,
                                 'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1',
                                 'protocolo': loja_own.protocolo if loja_own else '',  # Protocolo salvo para alterações
