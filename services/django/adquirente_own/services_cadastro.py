@@ -82,7 +82,7 @@ class CadastroOwnService:
             # Configurações de pagamento
             "quantidadePos": int(loja_data.get('quantidade_pos', 1)),
             "antecipacaoAutomatica": loja_data.get('antecipacao_automatica', 'N'),
-            "taxaAntecipacao": 0.01 if loja_data.get('antecipacao_automatica') == 'S' else 0,  # Mínimo 0.01% se habilitada
+            "taxaAntecipacao": 0.02 if loja_data.get('antecipacao_automatica') == 'S' else 0,  # Mínimo 0.02% (API exige > 0.01%)
             "tipoAntecipacao": loja_data.get('tipo_antecipacao', 'ROTATIVO'),
 
             # Dados bancários
