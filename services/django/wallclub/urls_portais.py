@@ -22,13 +22,10 @@ def get_portal_urlpatterns(portal_name=None):
     Returns:
         Lista de URLpatterns configurados para o portal específico ou padrão.
     """
-    # Import da view de métricas
-    from monitoring.metrics_view import metrics_view
-
     # Rotas globais (disponíveis em todos os portais)
     base_patterns = [
         # Métricas Prometheus
-        path('metrics', metrics_view, name='prometheus-metrics'),
+        path('', include('django_prometheus.urls')),
 
         # Monitoramento e Health Checks
         path('health/', include('monitoring.urls')),

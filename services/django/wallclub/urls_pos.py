@@ -9,12 +9,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Rotas globais (monitoramento)
-from monitoring.metrics_view import metrics_view
-
 urlpatterns = [
     # Métricas Prometheus
-    path('metrics', metrics_view, name='prometheus-metrics'),
+    path('', include('django_prometheus.urls')),
 
     # Monitoramento e Health Checks
     path('health/', include('monitoring.urls')),
