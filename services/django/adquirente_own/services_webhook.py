@@ -11,7 +11,7 @@ from wallclub_core.utilitarios.log_control import registrar_log
 class WebhookOwnService:
     """Serviço para processar webhooks da Own Financial"""
 
-    STATUS_VALIDOS = ['PENDENTE', 'APROVADO', 'REPROVADO', 'PROCESSANDO', 'EM_ANALISE']
+    STATUS_VALIDOS = ['PENDENTE', 'APROVADO', 'REPROVADO', 'PROCESSANDO', 'EM_ANALISE', 'SUCESSO']
 
     def processar_callback_credenciamento(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """

@@ -317,7 +317,7 @@ class CalculadoraBaseUnificada:
             valores[39] = self._format_decimal(self._to_decimal(param_13, 4), 4)
 
             # Variável 40 - Cálculo complexo baseado em 39 e 13
-            valores[40] = self._format_decimal(valores[39] * (1 + valores[13]) / 2, 2)
+            valores[40] = self._format_decimal(valores[39] * (1 + valores[13]) / 2, 4)
 
             # Variável 41 - Produto entre valor 38 e 40
             valores[41] = self._format_decimal(valores[38] * valores[40], 2)

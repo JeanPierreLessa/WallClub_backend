@@ -6,7 +6,7 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 31/01/2026
+**Última Atualização:** 10/02/2026
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
@@ -82,15 +82,29 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
     - **Limitação:** API `/buscaTransacoesGerais` NÃO retorna transações e-commerce (apenas POS físico)
     - **Identificadores:** `merchantTransactionId` e `id` (OPPWA) não funcionam como `identificadorTransacao`
     - **Webhook obrigatório:** Único meio de obter `identificadorTransacao` para transações e-commerce
+  - ✅ **Credenciamento OWN (10/02):**
+    - Portal Admin: Tela de edição de loja com campos OWN (CNAE, tipo antecipação, cestas)
+    - Taxa de antecipação: 0.02% quando habilitada (mínimo exigido pela API)
+    - Campo `conveniada_id` removido (não utilizado)
+    - Histórico de protocolos: tabela `loja_own_protocolo_historico` para rastreamento
+    - Webhook credenciamento: `https://wcapi.wallclub.com.br/webhook/own/credenciamento/` ✅ funcional
+    - Quantidade POS fixada em 0 (configuração via API específica)
   - ⏳ **Pendente:** Configuração do webhook de e-commerce com a OWN (aguardando suporte)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
 
-### Sistema de Monitoramento ⭐ **NOVO (31/01/2026)**
+### Sistema de Monitoramento ⭐ **ATUALIZADO (10/02/2026)**
 - ✅ **Prometheus** (porta 9090) - Coleta de métricas (retenção 15 dias)
 - ✅ **Alertmanager** (porta 9093) - Gerenciamento de alertas
 - ✅ **Node Exporter** (porta 9100) - Métricas de sistema (CPU, memória, disco)
 - ✅ **Redis Exporter** (porta 9121) - Métricas do Redis
+- ✅ **Django Prometheus (10/02):** Métricas completas de aplicação
+  - HTTP Requests/segundo por método e view
+  - Latência de requisições (percentis p50, p95, p99)
+  - Respostas por status code (2xx, 4xx, 5xx)
+  - Exceções por tipo
+  - Queries no banco (duração e total)
+  - Dashboard Grafana funcional
 - ✅ **14 Alertas Configurados:**
   - Críticos: ServiceDown (30s), RedisDown (1min), MySQLDown (1min), DiskSpaceLowCritical (<10%)
   - Warnings: HighCPU (>80%), HighMemory (>90%), LowAvailability (<95%), e mais
