@@ -9,16 +9,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Executa ajustes manuais de base"""
         self.stdout.write(self.style.SUCCESS('🔧 Iniciando ajustes manuais de base...'))
-        
+
         try:
             resultado = AjustesManuaisService.ajustes_manuais_base()
-            
+
             self.stdout.write(self.style.SUCCESS('\n✅ Ajustes concluídos com sucesso!'))
-            self.stdout.write(self.style.SUCCESS(f"   📊 Inseridos em transactiondata: {resultado['inseridos_transactiondata']}"))
-            self.stdout.write(self.style.SUCCESS(f"   🗑️  Duplicatas removidas de baseTransacoesGestao: {resultado['deletados_base_gestao']}"))
-            
+            self.stdout.write(self.style.SUCCESS(f"   📊 Inseridos em transactiondata_pos: {resultado['inseridos_transactiondata']}"))
+
             registrar_log('pinbank.cargas_pinbank', f"Ajustes manuais concluídos - {resultado}")
-            
+
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'❌ Erro ao executar ajustes: {str(e)}'))
             registrar_log('pinbank.cargas_pinbank', f"Erro em ajustes manuais: {str(e)}", nivel='error')

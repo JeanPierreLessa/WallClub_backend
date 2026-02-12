@@ -315,12 +315,15 @@ class CalculadoraBaseUnificada:
             if param_13 is None:
                 param_13 = 0
             valores[39] = self._format_decimal(self._to_decimal(param_13, 4), 4)
+            registrar_log('parametros_wallclub', f"var39 = {valores[39]} (param_13={param_13})", nivel='DEBUG')
 
             # Variável 40 - Cálculo complexo baseado em 39 e 13
             valores[40] = self._format_decimal(valores[39] * (1 + valores[13]) / 2, 4)
+            registrar_log('parametros_wallclub', f"var40 = {valores[40]} (var39={valores[39]} * (1 + var13={valores[13]}) / 2)", nivel='DEBUG')
 
             # Variável 41 - Produto entre valor 38 e 40
             valores[41] = self._format_decimal(valores[38] * valores[40], 2)
+            registrar_log('parametros_wallclub', f"var41 = {valores[41]} (var38={valores[38]} * var40={valores[40]})", nivel='DEBUG')
 
             # Variável 46 - Soma dos valores 30 e 33
             if valores[30] is None or valores[33] is None:
@@ -330,6 +333,7 @@ class CalculadoraBaseUnificada:
 
             # Variável 42 - Diferença entre valor 38 e 41
             valores[42] = self._format_decimal(valores[38] - valores[41], 2)
+            registrar_log('parametros_wallclub', f"var42 = {valores[42]} (var38={valores[38]} - var41={valores[41]})", nivel='DEBUG')
 
             # Variável 43 - Data com dias adicionados (parâmetro 18)
             param_18 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 18, wall)
