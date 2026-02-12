@@ -293,9 +293,9 @@ class CalculadoraBaseUnificada:
 
             # Variável 35 - Percentual baseado no valor 11
             if valores[11] > 0:
-                valores[35] = self._format_decimal(valores[34] / valores[11], 2)
+                valores[35] = self._format_decimal(valores[34] / valores[11], 4)
             else:
-                valores[35] = self._format_decimal(0, 2)
+                valores[35] = self._format_decimal(0, 4)
 
             # Variável 36 - Parâmetro 12
             param_12 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 12, wall)
@@ -368,9 +368,9 @@ class CalculadoraBaseUnificada:
 
             # Variável 50 - Percentual baseado em 49 e 11
             if valores[11] > 0:
-                valores[50] = self._format_decimal(valores[49] / valores[11], 2)
+                valores[50] = self._format_decimal(valores[49] / valores[11], 4)
             else:
-                valores[50] = self._format_decimal(0, 2)
+                valores[50] = self._format_decimal(0, 4)
 
             # Variável 47 - Parâmetro 21
             param_21 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 21, wall)
@@ -404,10 +404,10 @@ class CalculadoraBaseUnificada:
 
             # Variável 94 - Array com produto (PHP: valores[94]["0"] apenas - var94["A"] calculada depois)
             if valores[26] is None:
-                valores[94] = {"0": self._format_decimal(0, 2)}
+                valores[94] = {"0": self._format_decimal(0, 4)}
             else:
                 valores[94] = {
-                    "0": self._format_decimal(valores[26] * valores[93]["0"], 2)
+                    "0": self._format_decimal(valores[26] * valores[93]["0"], 4)
                 }
 
             # Variável 95 - Diferença com taxas (PHP: usa var94["0"])
@@ -734,7 +734,7 @@ class CalculadoraBaseUnificada:
             # var94["A"] e var94["B"] - Calculadas como no PHP (linha 846-857)
             vrepasse = self._to_decimal(dados_linha.get('vRepasse') or 0, 2)
             var90 = self._to_decimal(valores.get(90) or 0, 2)
-            valores[94]["A"] = self._format_decimal(self._to_decimal(dados_linha['ValorBruto'], 2) - vrepasse - var90, 2)
+            valores[94]["A"] = self._format_decimal(self._to_decimal(dados_linha['ValorBruto'], 2) - vrepasse - var90, 4)
 
             if valores[69] == "Pendente":
                 valores[94]["B"] = "Não Recebido"
