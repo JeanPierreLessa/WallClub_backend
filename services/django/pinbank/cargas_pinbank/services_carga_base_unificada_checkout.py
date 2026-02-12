@@ -178,8 +178,8 @@ class CargaBaseUnificadaCheckoutService:
                                 canal_id = linha.get('canal_id')
                                 info_canal = canais_cache.get(canal_id)
                                 if not info_canal:
-                                    registrar_log('pinbank.cargas_pinbank', 
-                                                f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                    registrar_log('pinbank.cargas_pinbank',
+                                                f"⚠️ Canal ID {canal_id} não encontrado no cache",
                                                 nivel='WARNING')
                                     info_canal = {
                                         'id': canal_id,
@@ -250,8 +250,8 @@ class CargaBaseUnificadaCheckoutService:
                             canal_id = linha.get('canal_id')
                             info_canal = canais_cache.get(canal_id)
                             if not info_canal:
-                                registrar_log('pinbank.cargas_pinbank', 
-                                            f"⚠️ Canal ID {canal_id} não encontrado no cache", 
+                                registrar_log('pinbank.cargas_pinbank',
+                                            f"⚠️ Canal ID {canal_id} não encontrado no cache",
                                             nivel='WARNING')
                                 info_canal = {
                                     'id': canal_id,
