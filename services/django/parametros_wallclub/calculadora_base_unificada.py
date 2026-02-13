@@ -742,8 +742,8 @@ class CalculadoraBaseUnificada:
                 valores[94]["B"] = self._format_decimal(valores[94]["A"] - valores[94]["0"], 2)
 
             # var93["A"] - Calculada após var94["A"] como no PHP (linha 890)
-            if valores[26] is not None and valores[26] > valores[90]:
-                valores[93]["A"] = self._format_decimal(valores[94]["A"] / (valores[26] - valores[90]), 4)
+            if valores[26] is not None and valores[26] > 0:
+                valores[93]["A"] = self._format_decimal(valores[94]["A"] / valores[26], 4)
             else:
                 valores[93]["A"] = self._format_decimal(0, 4)
 
