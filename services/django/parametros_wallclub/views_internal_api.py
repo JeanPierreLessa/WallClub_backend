@@ -53,33 +53,34 @@ def buscar_configuracoes_loja(request):
         # Serializar
         configs_list = []
         for config in configuracoes:
-            configs_list.append({
+            config_dict = {
                 'id': config.id,
                 'loja_id': config.loja_id,
                 'id_plano': config.id_plano,
                 'wall': config.wall,
                 'vigencia_inicio': config.vigencia_inicio.isoformat(),
                 'vigencia_fim': config.vigencia_fim.isoformat() if config.vigencia_fim else None,
-                'parametro_loja_1': str(config.parametro_loja_1),
-                'parametro_loja_2': str(config.parametro_loja_2),
-                'parametro_loja_3': str(config.parametro_loja_3),
-                'parametro_loja_4': str(config.parametro_loja_4),
-                'parametro_loja_5': str(config.parametro_loja_5),
-                'parametro_loja_6': str(config.parametro_loja_6),
-                'parametro_loja_7': str(config.parametro_loja_7),
-                'parametro_uptal_1': str(config.parametro_uptal_1),
-                'parametro_uptal_2': str(config.parametro_uptal_2),
-                'parametro_uptal_3': str(config.parametro_uptal_3),
-                'parametro_uptal_4': str(config.parametro_uptal_4),
-                'parametro_uptal_5': str(config.parametro_uptal_5),
-                'parametro_uptal_6': str(config.parametro_uptal_6),
-                'parametro_wall_1': str(config.parametro_wall_1),
-                'parametro_wall_2': str(config.parametro_wall_2),
-                'parametro_wall_3': str(config.parametro_wall_3),
-                'parametro_wall_4': str(config.parametro_wall_4),
-                'criado_em': config.criado_em.isoformat(),
-                'atualizado_em': config.atualizado_em.isoformat(),
-            })
+            }
+
+            # Adicionar parametro_loja_1 até parametro_loja_30
+            for i in range(1, 31):
+                valor = getattr(config, f'parametro_loja_{i}', None)
+                config_dict[f'parametro_loja_{i}'] = str(valor) if valor is not None else None
+
+            # Adicionar parametro_uptal_1 até parametro_uptal_6
+            for i in range(1, 7):
+                valor = getattr(config, f'parametro_uptal_{i}', None)
+                config_dict[f'parametro_uptal_{i}'] = str(valor) if valor is not None else None
+
+            # Adicionar parametro_wall_1 até parametro_wall_4
+            for i in range(1, 5):
+                valor = getattr(config, f'parametro_wall_{i}', None)
+                config_dict[f'parametro_wall_{i}'] = str(valor) if valor is not None else None
+
+            config_dict['criado_em'] = config.criado_em.isoformat()
+            config_dict['atualizado_em'] = config.atualizado_em.isoformat()
+
+            configs_list.append(config_dict)
 
         registrar_log('parametros_wallclub',
                      f"Buscar configs loja {loja_id} - Total: {len(configs_list)}")
