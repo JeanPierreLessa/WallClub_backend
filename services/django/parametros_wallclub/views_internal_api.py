@@ -53,34 +53,56 @@ def buscar_configuracoes_loja(request):
         # Serializar
         configs_list = []
         for config in configuracoes:
-            config_dict = {
+            configs_list.append({
                 'id': config.id,
                 'loja_id': config.loja_id,
                 'id_plano': config.id_plano,
                 'wall': config.wall,
                 'vigencia_inicio': config.vigencia_inicio.isoformat(),
                 'vigencia_fim': config.vigencia_fim.isoformat() if config.vigencia_fim else None,
-            }
-
-            # Adicionar parametro_loja_1 até parametro_loja_30
-            for i in range(1, 31):
-                valor = getattr(config, f'parametro_loja_{i}', None)
-                config_dict[f'parametro_loja_{i}'] = str(valor) if valor is not None else None
-
-            # Adicionar parametro_uptal_1 até parametro_uptal_6
-            for i in range(1, 7):
-                valor = getattr(config, f'parametro_uptal_{i}', None)
-                config_dict[f'parametro_uptal_{i}'] = str(valor) if valor is not None else None
-
-            # Adicionar parametro_wall_1 até parametro_wall_4
-            for i in range(1, 5):
-                valor = getattr(config, f'parametro_wall_{i}', None)
-                config_dict[f'parametro_wall_{i}'] = str(valor) if valor is not None else None
-
-            config_dict['criado_em'] = config.criado_em.isoformat()
-            config_dict['atualizado_em'] = config.atualizado_em.isoformat()
-
-            configs_list.append(config_dict)
+                'parametro_loja_1': str(config.parametro_loja_1) if config.parametro_loja_1 is not None else '',
+                'parametro_loja_2': str(config.parametro_loja_2) if config.parametro_loja_2 is not None else '',
+                'parametro_loja_3': str(config.parametro_loja_3) if config.parametro_loja_3 is not None else '',
+                'parametro_loja_4': str(config.parametro_loja_4) if config.parametro_loja_4 is not None else '',
+                'parametro_loja_5': str(config.parametro_loja_5) if config.parametro_loja_5 is not None else '',
+                'parametro_loja_6': str(config.parametro_loja_6) if config.parametro_loja_6 is not None else '',
+                'parametro_loja_7': str(config.parametro_loja_7) if config.parametro_loja_7 is not None else '',
+                'parametro_loja_8': str(config.parametro_loja_8) if config.parametro_loja_8 is not None else '',
+                'parametro_loja_9': str(config.parametro_loja_9) if config.parametro_loja_9 is not None else '',
+                'parametro_loja_10': str(config.parametro_loja_10) if config.parametro_loja_10 is not None else '',
+                'parametro_loja_11': str(config.parametro_loja_11) if config.parametro_loja_11 is not None else '',
+                'parametro_loja_12': str(config.parametro_loja_12) if config.parametro_loja_12 is not None else '',
+                'parametro_loja_13': str(config.parametro_loja_13) if config.parametro_loja_13 is not None else '',
+                'parametro_loja_14': str(config.parametro_loja_14) if config.parametro_loja_14 is not None else '',
+                'parametro_loja_15': str(config.parametro_loja_15) if config.parametro_loja_15 is not None else '',
+                'parametro_loja_16': str(config.parametro_loja_16) if config.parametro_loja_16 is not None else '',
+                'parametro_loja_17': str(config.parametro_loja_17) if config.parametro_loja_17 is not None else '',
+                'parametro_loja_18': str(config.parametro_loja_18) if config.parametro_loja_18 is not None else '',
+                'parametro_loja_19': str(config.parametro_loja_19) if config.parametro_loja_19 is not None else '',
+                'parametro_loja_20': str(config.parametro_loja_20) if config.parametro_loja_20 is not None else '',
+                'parametro_loja_21': str(config.parametro_loja_21) if config.parametro_loja_21 is not None else '',
+                'parametro_loja_22': str(config.parametro_loja_22) if config.parametro_loja_22 is not None else '',
+                'parametro_loja_23': str(config.parametro_loja_23) if config.parametro_loja_23 is not None else '',
+                'parametro_loja_24': str(config.parametro_loja_24) if config.parametro_loja_24 is not None else '',
+                'parametro_loja_25': str(config.parametro_loja_25) if config.parametro_loja_25 is not None else '',
+                'parametro_loja_26': str(config.parametro_loja_26) if config.parametro_loja_26 is not None else '',
+                'parametro_loja_27': str(config.parametro_loja_27) if config.parametro_loja_27 is not None else '',
+                'parametro_loja_28': str(config.parametro_loja_28) if config.parametro_loja_28 is not None else '',
+                'parametro_loja_29': str(config.parametro_loja_29) if config.parametro_loja_29 is not None else '',
+                'parametro_loja_30': str(config.parametro_loja_30) if config.parametro_loja_30 is not None else '',
+                'parametro_uptal_1': str(config.parametro_uptal_1) if config.parametro_uptal_1 is not None else '',
+                'parametro_uptal_2': str(config.parametro_uptal_2) if config.parametro_uptal_2 is not None else '',
+                'parametro_uptal_3': str(config.parametro_uptal_3) if config.parametro_uptal_3 is not None else '',
+                'parametro_uptal_4': str(config.parametro_uptal_4) if config.parametro_uptal_4 is not None else '',
+                'parametro_uptal_5': str(config.parametro_uptal_5) if config.parametro_uptal_5 is not None else '',
+                'parametro_uptal_6': str(config.parametro_uptal_6) if config.parametro_uptal_6 is not None else '',
+                'parametro_wall_1': str(config.parametro_wall_1) if config.parametro_wall_1 is not None else '',
+                'parametro_wall_2': str(config.parametro_wall_2) if config.parametro_wall_2 is not None else '',
+                'parametro_wall_3': str(config.parametro_wall_3) if config.parametro_wall_3 is not None else '',
+                'parametro_wall_4': str(config.parametro_wall_4) if config.parametro_wall_4 is not None else '',
+                'criado_em': config.criado_em.isoformat(),
+                'atualizado_em': config.atualizado_em.isoformat(),
+            })
 
         registrar_log('parametros_wallclub',
                      f"Buscar configs loja {loja_id} - Total: {len(configs_list)}")
