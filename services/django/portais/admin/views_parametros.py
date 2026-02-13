@@ -165,24 +165,56 @@ def parametros_download_csv(request, loja_id):
                 'wall': config['wall']
             }
 
-            # Adicionar parâmetros loja (1-7 disponíveis na API)
-            for i in range(1, 8):
+            # Adicionar parâmetros loja (1-30)
+            for i in range(1, 31):
                 valor = config.get(f'parametro_loja_{i}')
-                linha_dados[f'parametro_loja_{i}'] = valor if valor is not None else ''
-
-            # Preencher demais parâmetros loja com vazio (8-30)
-            for i in range(8, 31):
-                linha_dados[f'parametro_loja_{i}'] = ''
+                # Formatar para evitar notação científica
+                if valor and valor not in ['', 'None']:
+                    try:
+                        from decimal import Decimal
+                        dec_val = Decimal(str(valor))
+                        if dec_val == 0:
+                            linha_dados[f'parametro_loja_{i}'] = '0'
+                        else:
+                            linha_dados[f'parametro_loja_{i}'] = f'{dec_val:.10f}'.rstrip('0').rstrip('.')
+                    except:
+                        linha_dados[f'parametro_loja_{i}'] = valor
+                else:
+                    linha_dados[f'parametro_loja_{i}'] = ''
 
             # Parâmetros uptal (1-6)
             for i in range(1, 7):
                 valor = config.get(f'parametro_uptal_{i}')
-                linha_dados[f'parametro_uptal_{i}'] = valor if valor is not None else ''
+                # Formatar para evitar notação científica
+                if valor and valor not in ['', 'None']:
+                    try:
+                        from decimal import Decimal
+                        dec_val = Decimal(str(valor))
+                        if dec_val == 0:
+                            linha_dados[f'parametro_uptal_{i}'] = '0'
+                        else:
+                            linha_dados[f'parametro_uptal_{i}'] = f'{dec_val:.10f}'.rstrip('0').rstrip('.')
+                    except:
+                        linha_dados[f'parametro_uptal_{i}'] = valor
+                else:
+                    linha_dados[f'parametro_uptal_{i}'] = ''
 
             # Parâmetros wall (1-4)
             for i in range(1, 5):
                 valor = config.get(f'parametro_wall_{i}')
-                linha_dados[f'parametro_wall_{i}'] = valor if valor is not None else ''
+                # Formatar para evitar notação científica
+                if valor and valor not in ['', 'None']:
+                    try:
+                        from decimal import Decimal
+                        dec_val = Decimal(str(valor))
+                        if dec_val == 0:
+                            linha_dados[f'parametro_wall_{i}'] = '0'
+                        else:
+                            linha_dados[f'parametro_wall_{i}'] = f'{dec_val:.10f}'.rstrip('0').rstrip('.')
+                    except:
+                        linha_dados[f'parametro_wall_{i}'] = valor
+                else:
+                    linha_dados[f'parametro_wall_{i}'] = ''
 
             dados.append(linha_dados)
             log_func('portais.admin', f"DEBUG CSV: Linha adicionada aos dados")
