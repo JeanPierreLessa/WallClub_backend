@@ -45,7 +45,9 @@ class ParametrosService:
         try:
             # Se id_plano e wall foram fornecidos, fazer busca específica
             if id_plano is not None and wall is not None:
-                return ParametrosWall.objects.filter(
+                registrar_log('parametros_wallclub', f"DEBUG get_configuracao_ativa: loja_id={loja_id}, id_plano={id_plano}, wall={wall.upper()}, data_ref={data_referencia}", nivel='DEBUG')
+
+                configs = ParametrosWall.objects.filter(
                     loja_id=loja_id,
                     id_plano=id_plano,
                     wall=wall.upper(),
@@ -53,7 +55,16 @@ class ParametrosService:
                 ).filter(
                     models.Q(vigencia_fim__isnull=True) |
                     models.Q(vigencia_fim__gte=data_referencia)
-                ).first()
+                )
+
+                registrar_log('parametros_wallclub', f"DEBUG get_configuracao_ativa: encontrados {configs.count()} registros", nivel='DEBUG')
+                for cfg in configs:
+                    registrar_log('parametros_wallclub', f"DEBUG config encontrado: id={cfg.id}, loja_id={cfg.loja_id}, id_plano={cfg.id_plano}, wall={cfg.wall}, vigencia_inicio={cfg.vigencia_inicio}, vigencia_fim={cfg.vigencia_fim}", nivel='DEBUG')
+
+                result = configs.first()
+                if result:
+                    registrar_log('parametros_wallclub', f"DEBUG get_configuracao_ativa: retornando config.id={result.id}", nivel='DEBUG')
+                return result
             else:
                 # Busca tradicional apenas por loja e data
                 return ParametrosWall.get_configuracao_ativa(loja_id, data_referencia)
