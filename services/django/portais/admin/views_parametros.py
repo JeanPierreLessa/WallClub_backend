@@ -174,13 +174,15 @@ def parametros_download_csv(request, loja_id):
             for i in range(8, 31):
                 linha_dados[f'parametro_loja_{i}'] = ''
 
-            # Parâmetros uptal (1-6) - não disponíveis na API simplificada
+            # Parâmetros uptal (1-6)
             for i in range(1, 7):
-                linha_dados[f'parametro_uptal_{i}'] = ''
+                valor = config.get(f'parametro_uptal_{i}')
+                linha_dados[f'parametro_uptal_{i}'] = valor if valor is not None else ''
 
-            # Parâmetros wall (1-4) - não disponíveis na API simplificada
+            # Parâmetros wall (1-4)
             for i in range(1, 5):
-                linha_dados[f'parametro_wall_{i}'] = ''
+                valor = config.get(f'parametro_wall_{i}')
+                linha_dados[f'parametro_wall_{i}'] = valor if valor is not None else ''
 
             dados.append(linha_dados)
             log_func('portais.admin', f"DEBUG CSV: Linha adicionada aos dados")
