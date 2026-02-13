@@ -321,9 +321,9 @@ class CalculadoraBaseUnificada:
             valores[40] = self._format_decimal(valores[39] * (1 + valores[13]) / 2, 4)
             registrar_log('parametros_wallclub', f"var40 = {valores[40]} (var39={valores[39]} * (1 + var13={valores[13]}) / 2)", nivel='DEBUG')
 
-            # Variável 41 - Produto entre valor 38 e 40
-            valores[41] = self._format_decimal(valores[38] * valores[40], 2)
-            registrar_log('parametros_wallclub', f"var41 = {valores[41]} (var38={valores[38]} * var40={valores[40]})", nivel='DEBUG')
+            # Variável 41 - Produto entre valor 26 e 40
+            valores[41] = self._format_decimal(valores[26] * valores[40], 2)
+            registrar_log('parametros_wallclub', f"var41 = {valores[41]} (var26={valores[26]} * var40={valores[40]})", nivel='DEBUG')
 
             # Variável 46 - Soma dos valores 30 e 33
             if valores[30] is None or valores[33] is None:
