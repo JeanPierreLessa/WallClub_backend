@@ -380,9 +380,11 @@ class CalculadoraBaseUnificada:
 
             # Variável 87 - Parâmetro wall 1 (usa ID da loja, não do canal)
             param_wall_1 = ParametrosService.retornar_parametro_uptal(info_loja['id'], data_ref, id_plano, 1, wall)
+            registrar_log('parametros_wallclub', f"var87 DEBUG: loja_id={info_loja['id']}, data_ref={data_ref}, id_plano={id_plano}, wall={wall}, param_wall_1={param_wall_1}", nivel='DEBUG')
             if param_wall_1 is None:
                 param_wall_1 = 0
             valores[87] = self._format_decimal(self._to_decimal(param_wall_1, 4), 4)
+            registrar_log('parametros_wallclub', f"var87 = {valores[87]} (parametro_uptal_1={param_wall_1})", nivel='DEBUG')
 
             # Variável 88 - Valor 26 com taxa 87 aplicada
             if valores[26] is None or valores[87] is None:
