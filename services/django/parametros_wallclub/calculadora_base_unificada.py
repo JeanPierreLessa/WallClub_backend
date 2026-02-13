@@ -744,10 +744,13 @@ class CalculadoraBaseUnificada:
                 valores[94]["B"] = self._format_decimal(valores[94]["A"] - valores[94]["0"], 2)
 
             # var93["A"] - Calculada após var94["A"] como no PHP (linha 890)
+            registrar_log('parametros_wallclub', f"DEBUG var93[A]: var26={valores[26]}, var94[A]={valores[94].get('A')}", nivel='DEBUG')
             if valores[26] is not None and valores[26] > 0:
                 valores[93]["A"] = self._format_decimal(valores[94]["A"] / valores[26], 4)
+                registrar_log('parametros_wallclub', f"DEBUG var93[A] = {valores[93]['A']} (var94[A]={valores[94]['A']} / var26={valores[26]})", nivel='DEBUG')
             else:
                 valores[93]["A"] = self._format_decimal(0, 4)
+                registrar_log('parametros_wallclub', f"DEBUG var93[A] = 0 (var26 é None ou zero)", nivel='DEBUG')
 
             # var98 - Lógica pendente/cálculo
             if valores[69] == "Pendente":
