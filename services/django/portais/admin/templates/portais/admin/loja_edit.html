@@ -351,21 +351,31 @@
                             </div>
                         </div>
 
-                        <!-- Cesta de Tarifas -->
+                        <!-- Cestas de Tarifas -->
                         <div class="row mb-3">
                             <div class="col-md-12">
-                                <label class="form-label required-field">Cesta de Tarifas</label>
-                                <select class="form-select" id="id_cesta" name="id_cesta">
-                                    <option value="">Carregando...</option>
-                                    {% if loja_own.id_cesta %}
-                                    <option value="{{ loja_own.id_cesta }}" selected>Cesta {{ loja_own.id_cesta }}</option>
-                                    {% endif %}
-                                </select>
+                                <h5 class="mb-3">Tarifas (editáveis)</h5>
+                                <p class="text-muted small">As tarifas serão aplicadas automaticamente baseado nas cestas: POS (1+2) ou POS+E-commerce (1+2+3)</p>
+
+                                <!-- Cesta 1: Por Bandeira -->
+                                <div id="cesta_bandeira" class="mb-4">
+                                    <h6 class="text-primary">Cesta de Serviços - Por Bandeira</h6>
+                                    <div id="tarifas_cesta_bandeira"></div>
+                                </div>
+
+                                <!-- Cesta 2: Por Parcela POS -->
+                                <div id="cesta_parcela_pos" class="mb-4">
+                                    <h6 class="text-primary">Cesta de Serviços - Por Parcela (POS)</h6>
+                                    <div id="tarifas_cesta_parcela_pos"></div>
+                                </div>
+
+                                <!-- Cesta 3: Por Parcela E-commerce (só aparece se checkbox marcado) -->
+                                <div id="cesta_parcela_ecommerce" class="mb-4" style="display: {% if loja_own.aceita_ecommerce %}block{% else %}none{% endif %};">
+                                    <h6 class="text-primary">Cesta de Serviços - Por Parcela (E-commerce)</h6>
+                                    <div id="tarifas_cesta_parcela_ecommerce"></div>
+                                </div>
                             </div>
                         </div>
-
-                        <!-- Preview das Tarifas -->
-                        <div id="tarifas_preview" class="mb-3"></div>
 
                         <!-- Configurações de Captura e Antecipação -->
                         <div class="row mb-3">
