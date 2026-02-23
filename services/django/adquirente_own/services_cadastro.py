@@ -44,6 +44,9 @@ class CadastroOwnService:
         cestas_ids = loja_data.get('cestas_ids', [])
         id_cesta_principal = cestas_ids[0] if cestas_ids else 0
 
+        # Extrair array de tarifação
+        tarifacao = loja_data.get('tarifacao', [])
+
         payload = {
             # Dados do estabelecimento
             "cnpj": loja_data['cnpj'],
