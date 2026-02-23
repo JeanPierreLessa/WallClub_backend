@@ -1,9 +1,17 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.7
-**Data:** 03/02/2026
+**Versão:** 5.8
+**Data:** 23/02/2026
 **Fontes:** Fases 1-7 (100%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- **Login Biométrico - App Mobile (23/02/2026)**
+  - **Endpoint:** `POST /api/v1/cliente/login_biometrico/` ✅ funcional
+  - **Autenticação:** CPF + device_fingerprint + canal_id
+  - **Validação:** `DeviceManagementService.validar_dispositivo()` verifica dispositivo confiável (30 dias)
+  - **Retorno:** JWT token + refresh_token + dados do cliente
+  - **Segurança:** Requer OAuth token (`@require_oauth_apps`)
+  - **Modelo Cliente:** Campo `is_active` (não `ativo`)
+  - **Arquivo:** `apps/cliente/views_login_biometrico.py`
 - **Own Financial - E-commerce e Webhooks (06/02/2026)**
   - **Limitação Crítica:** API `/buscaTransacoesGerais` NÃO retorna transações e-commerce (apenas POS físico)
   - **Identificadores:** `merchantTransactionId` e `id` (OPPWA) não funcionam como `identificadorTransacao` para consultas
