@@ -76,7 +76,7 @@ def login_biometrico(request):
 
         return Response({
             'success': True,
-            'auth_token': jwt_data['auth_token'],
+            'token': jwt_data['token'],
             'refresh_token': jwt_data['refresh_token'],
             'cliente': {
                 'id': cliente.id,
