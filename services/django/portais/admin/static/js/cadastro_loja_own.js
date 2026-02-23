@@ -8,6 +8,7 @@ class CadastroLojaOwn {
         this.cnaeData = [];
         this.cestasData = [];
         this.tarifasData = [];
+        this.tarifaCounter = 0;
         this.csrfToken = this.getCsrfToken();
         this.init();
     }
@@ -238,6 +239,19 @@ class CadastroLojaOwn {
         if (cestas.parcela_ecommerce) {
             await this.carregarTarifasCesta(cestas.parcela_ecommerce, 'cesta_parcela_ecommerce');
         }
+
+        // Adicionar campo hidden com total de tarifas no formulário
+        const form = document.getElementById('form_cadastro_loja');
+        if (form) {
+            let totalInput = form.querySelector('input[name="total_tarifas"]');
+            if (!totalInput) {
+                totalInput = document.createElement('input');
+                totalInput.type = 'hidden';
+                totalInput.name = 'total_tarifas';
+                form.appendChild(totalInput);
+            }
+            totalInput.value = this.tarifaCounter;
+        }
     }
 
     async carregarTarifasCesta(cestaId, containerId) {
@@ -253,14 +267,14 @@ class CadastroLojaOwn {
             if (!response.ok) throw new Error('Erro ao carregar tarifas');
 
             const data = await response.json();
-            this.renderizarTarifas(data, containerId);
+            this.renderizarTarifas(data, containerId, cestaId);
         } catch (error) {
             console.error('Erro ao carregar tarifas:', error);
             this.mostrarErro('Erro ao carregar tarifas da cesta');
         }
     }
 
-    renderizarTarifas(data, containerId) {
+    renderizarTarifas(data, containerId, cestaId) {
         const containerDiv = document.getElementById(containerId);
         if (!containerDiv) return;
 
@@ -284,20 +298,22 @@ class CadastroLojaOwn {
                         <tbody>
         `;
 
-        data.tarifas.forEach((tarifa, index) => {
+        data.tarifas.forEach((tarifa) => {
             const valorMinimo = parseFloat(tarifa.valor_minimo || 0);
             const valorAtual = parseFloat(tarifa.valor || valorMinimo);
+            const currentIndex = this.tarifaCounter++;
 
             html += `
                 <tr>
                     <td>
                         ${tarifa.descricao || 'Tarifa'}
-                        <input type="hidden" name="tarifa_id_${index}" value="${tarifa.cesta_valor_id}">
+                        <input type="hidden" name="tarifa_id_${currentIndex}" value="${tarifa.cesta_valor_id}">
+                        <input type="hidden" name="tarifa_cesta_id_${currentIndex}" value="${cestaId}">
                     </td>
                     <td class="text-end">
                         <input type="number"
                                class="form-control form-control-sm text-end tarifa-valor"
-                               name="tarifa_valor_${index}"
+                               name="tarifa_valor_${currentIndex}"
                                data-tarifa-id="${tarifa.cesta_valor_id}"
                                data-valor-minimo="${valorMinimo}"
                                value="${valorAtual.toFixed(2)}"
@@ -315,9 +331,6 @@ class CadastroLojaOwn {
         html += `
                         </tbody>
                     </table>
-                    <input type="hidden" id="total_tarifas" name="total_tarifas" value="${data.tarifas.length}">
-                </div>
-            </div>
         `;
 
         container.innerHTML = html;

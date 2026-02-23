@@ -994,19 +994,28 @@ def loja_create(request):
                 # Verificar se aceita e-commerce
                 aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
 
-                # Montar tarifação automaticamente com todas as cestas aplicáveis
-                service = CadastroOwnService(environment='LIVE')
-                resultado_tarifacao = service.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
+                # Coletar tarifas editadas do formulário
+                total_tarifas = int(request.POST.get('total_tarifas', 0))
+                tarifacao = []
+                cestas_ids_set = set()
 
-                if not resultado_tarifacao.get('sucesso'):
-                    messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
-                    return redirect('portais_admin:loja_create')
+                for i in range(total_tarifas):
+                    tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                    tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                    tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
 
-                tarifacao = resultado_tarifacao.get('tarifacao', [])
-                cestas_ids = resultado_tarifacao.get('cestas_ids', [])
+                    if tarifa_id and tarifa_valor:
+                        tarifacao.append({
+                            'id': int(tarifa_id),
+                            'valor': float(tarifa_valor)
+                        })
+                        if tarifa_cesta_id:
+                            cestas_ids_set.add(int(tarifa_cesta_id))
+
+                cestas_ids = list(cestas_ids_set)
 
                 registrar_log('admin.hierarquia',
-                    f'📊 Tarifação montada: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                    f'📊 Tarifação coletada do formulário: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                     f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                 # Montar dados para Own
@@ -1448,19 +1457,28 @@ def loja_edit(request, loja_id):
                             # Verificar se aceita e-commerce
                             aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
 
-                            # Montar tarifação automaticamente com todas as cestas aplicáveis
-                            service_tarif = CadastroOwnService(environment='LIVE')
-                            resultado_tarifacao = service_tarif.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
+                            # Coletar tarifas editadas do formulário
+                            total_tarifas = int(request.POST.get('total_tarifas', 0))
+                            tarifacao = []
+                            cestas_ids_set = set()
 
-                            if not resultado_tarifacao.get('sucesso'):
-                                messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
-                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
+                            for i in range(total_tarifas):
+                                tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                                tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                                tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
 
-                            tarifacao = resultado_tarifacao.get('tarifacao', [])
-                            cestas_ids = resultado_tarifacao.get('cestas_ids', [])
+                                if tarifa_id and tarifa_valor:
+                                    tarifacao.append({
+                                        'id': int(tarifa_id),
+                                        'valor': float(tarifa_valor)
+                                    })
+                                    if tarifa_cesta_id:
+                                        cestas_ids_set.add(int(tarifa_cesta_id))
+
+                            cestas_ids = list(cestas_ids_set)
 
                             registrar_log('admin.hierarquia',
-                                f'📊 Tarifação montada (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                                f'📊 Tarifação coletada do formulário (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                                 f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                             loja_data = {
