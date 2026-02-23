@@ -5,7 +5,8 @@ from django.urls import path
 from . import (
     views, views_saldo, views_2fa_login, views_senha,
     views_dispositivos, views_revalidacao, views_refresh_jwt,
-    views_cadastro, views_reset_senha, views_autenticacao_analise
+    views_cadastro, views_reset_senha, views_autenticacao_analise,
+    views_login_biometrico
 )
 
 app_name = 'cliente'
@@ -13,6 +14,7 @@ app_name = 'cliente'
 urlpatterns = [
     # Autenticação
     path('login/', views.cliente_login, name='cliente_login'),  # API Key + CPF + SENHA → auth_token
+    path('login_biometrico/', views_login_biometrico.login_biometrico, name='login_biometrico'),  # API Key + CPF + Device Fingerprint → auth_token
     path('refresh/', views_refresh_jwt.refresh_jwt_token, name='refresh_jwt'),  # API Key + Refresh Token
 
     # Cadastro Completo no App
@@ -32,7 +34,7 @@ urlpatterns = [
     path('atualiza_celular/', views.atualiza_celular, name='atualiza_celular'),  # API Key + JWT Token
     path('atualiza_email/', views.atualiza_email, name='atualiza_email'),  # API Key + JWT Token
     path('grava_firebase_token/', views.grava_firebase_token, name='grava_firebase_token'),
-    
+
     # Exclusão de conta
     path('excluir/', views.excluir_conta, name='excluir_conta'),  # API Key + JWT Token
 
@@ -66,8 +68,8 @@ urlpatterns = [
     path('dispositivos/revogar/', views_dispositivos.revogar_meu_dispositivo, name='dispositivos_revogar'),
 
     # API v1 - Análise de Autenticação (usado pelo riskengine)
-    path('api/v1/autenticacao/analise/<str:cpf>/', 
-         views_autenticacao_analise.ClienteAutenticacaoAnaliseView.as_view(), 
+    path('api/v1/autenticacao/analise/<str:cpf>/',
+         views_autenticacao_analise.ClienteAutenticacaoAnaliseView.as_view(),
          name='autenticacao_analise'),
 
 ]
