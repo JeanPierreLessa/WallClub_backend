@@ -890,8 +890,6 @@ def loja_create(request):
             loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
             loja_own.responsavel_assinatura_email = responsavel_assinatura_email or None
             loja_own.aceita_ecommerce = aceita_ecommerce
-            id_cesta = request.POST.get('id_cesta', '').strip()
-            loja_own.id_cesta = int(id_cesta) if id_cesta else None
             loja_own.save()
 
             # Processar upload de documentos do responsável e da empresa
@@ -993,17 +991,23 @@ def loja_create(request):
             registrar_log('admin.hierarquia', f'📋 Checkbox cadastrar_own: {cadastrar_own} (valor POST: {request.POST.get("cadastrar_own")})')
 
             if cadastrar_own:
-                # Coletar tarifas editadas do formulário
-                total_tarifas = int(request.POST.get('total_tarifas', 0))
-                tarifacao = []
-                for i in range(total_tarifas):
-                    tarifa_id = request.POST.get(f'tarifa_id_{i}')
-                    tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
-                    if tarifa_id and tarifa_valor:
-                        tarifacao.append({
-                            'id': int(tarifa_id),
-                            'valor': float(tarifa_valor)
-                        })
+                # Verificar se aceita e-commerce
+                aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
+
+                # Montar tarifação automaticamente com todas as cestas aplicáveis
+                service = CadastroOwnService(environment='LIVE')
+                resultado_tarifacao = service.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
+
+                if not resultado_tarifacao.get('sucesso'):
+                    messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
+                    return redirect('portais_admin:loja_create')
+
+                tarifacao = resultado_tarifacao.get('tarifacao', [])
+                cestas_ids = resultado_tarifacao.get('cestas_ids', [])
+
+                registrar_log('admin.hierarquia',
+                    f'📊 Tarifação montada: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                    f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                 # Montar dados para Own
                 loja_data = {
@@ -1033,7 +1037,6 @@ def loja_create(request):
                     'ramo_atividade': ramo_atividade,
                     'faturamento_previsto': faturamento_previsto,
                     'faturamento_contratado': faturamento_contratado,
-                    'id_cesta': request.POST.get('id_cesta'),
                     'responsavel_assinatura': responsavel_assinatura,
                     'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
                     'responsavel_assinatura_email': responsavel_assinatura_email,
@@ -1041,6 +1044,7 @@ def loja_create(request):
                     'antecipacao_automatica': antecipacao_automatica,
                     'taxa_antecipacao': taxa_antecipacao,
                     'tipo_antecipacao': 'ROTATIVO',
+                    'aceita_ecommerce': aceita_ecommerce,
                     'tarifacao': tarifacao
                 }
 
@@ -1297,8 +1301,6 @@ def loja_edit(request, loja_id):
                     loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
                     loja_own.responsavel_assinatura_email = responsavel_assinatura_email or None
                     loja_own.aceita_ecommerce = aceita_ecommerce
-                    id_cesta = request.POST.get('id_cesta', '').strip()
-                    loja_own.id_cesta = int(id_cesta) if id_cesta else None
                     loja_own.save()
 
                     # Processar upload de documentos do responsável e da empresa
@@ -1429,10 +1431,6 @@ def loja_edit(request, loja_id):
                     if cadastrar_own:
                         try:
                             # Validar campos obrigatórios para Own
-                            id_cesta = request.POST.get('id_cesta')
-                            if not id_cesta:
-                                messages.warning(request, 'Loja atualizada, mas é necessário selecionar uma Cesta de Tarifas para cadastrar na Own.')
-                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
 
                             if not cnae or not mcc or not ramo_atividade:
                                 messages.warning(request, 'Loja atualizada, mas é necessário selecionar um CNAE para cadastrar na Own.')
@@ -1446,17 +1444,23 @@ def loja_edit(request, loja_id):
                                 messages.warning(request, 'Loja atualizada, mas é necessário informar o Responsável pela Assinatura para cadastrar na Own.')
                                 return redirect('portais_admin:loja_detail', loja_id=loja_id)
 
-                            # Coletar tarifas editadas do formulário
-                            total_tarifas = int(request.POST.get('total_tarifas', 0))
-                            tarifacao = []
-                            for i in range(total_tarifas):
-                                tarifa_id = request.POST.get(f'tarifa_id_{i}')
-                                tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
-                                if tarifa_id and tarifa_valor:
-                                    tarifacao.append({
-                                        'id': int(tarifa_id),
-                                        'valor': float(tarifa_valor)
-                                    })
+                            # Verificar se aceita e-commerce
+                            aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
+
+                            # Montar tarifação automaticamente com todas as cestas aplicáveis
+                            service_tarif = CadastroOwnService(environment='LIVE')
+                            resultado_tarifacao = service_tarif.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
+
+                            if not resultado_tarifacao.get('sucesso'):
+                                messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
+                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
+
+                            tarifacao = resultado_tarifacao.get('tarifacao', [])
+                            cestas_ids = resultado_tarifacao.get('cestas_ids', [])
+
+                            registrar_log('admin.hierarquia',
+                                f'📊 Tarifação montada (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                                f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                             loja_data = {
                                 'loja_id': loja_id,
@@ -1485,17 +1489,16 @@ def loja_edit(request, loja_id):
                                 'ramo_atividade': ramo_atividade,
                                 'faturamento_previsto': faturamento_previsto,
                                 'faturamento_contratado': faturamento_contratado,
-                                'id_cesta': request.POST.get('id_cesta'),
                                 'responsavel_assinatura': responsavel_assinatura,
                                 'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
                                 'responsavel_assinatura_email': responsavel_assinatura_email,
-                                'quantidade_pos': 0,  # POS cadastrado via API específica (configuraEquipamento)
+                                'quantidade_pos': 0,
                                 'antecipacao_automatica': antecipacao_automatica,
                                 'tipo_antecipacao': tipo_antecipacao,
                                 'tarifacao': tarifacao,
-                                'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1',
-                                'protocolo': loja_own.protocolo if loja_own else '',  # Protocolo salvo para alterações
-                                'contrato': loja_own.contrato if loja_own else ''  # Número do contrato para aditivos
+                                'aceita_ecommerce': aceita_ecommerce,
+                                'protocolo': loja_own.protocolo if loja_own else '',
+                                'contrato': loja_own.contrato if loja_own else ''
                             }
 
                             registrar_log('admin.hierarquia', f'🔄 Iniciando cadastro Own para loja {loja_id} - {razao_social}')
