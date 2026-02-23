@@ -1473,29 +1473,45 @@ def loja_edit(request, loja_id):
                             # Verificar se aceita e-commerce
                             aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
 
-                            # Coletar tarifas editadas do formulário
-                            total_tarifas = int(request.POST.get('total_tarifas', 0))
-                            tarifacao = []
-                            cestas_ids_set = set()
+                            # Verificar modelo de tarifação
+                            modelo_tarifacao = request.POST.get('modelo_tarifacao', 'FLEX')
 
-                            for i in range(total_tarifas):
-                                tarifa_id = request.POST.get(f'tarifa_id_{i}')
-                                tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
-                                tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
+                            if modelo_tarifacao == 'FLEX':
+                                # Coletar tarifas editadas do formulário
+                                total_tarifas = int(request.POST.get('total_tarifas', 0))
+                                tarifacao = []
+                                cestas_ids_set = set()
 
-                                if tarifa_id and tarifa_valor:
-                                    tarifacao.append({
-                                        'id': int(tarifa_id),
-                                        'valor': float(tarifa_valor)
-                                    })
-                                    if tarifa_cesta_id:
-                                        cestas_ids_set.add(int(tarifa_cesta_id))
+                                for i in range(total_tarifas):
+                                    tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                                    tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                                    tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
 
-                            cestas_ids = list(cestas_ids_set)
+                                    if tarifa_id and tarifa_valor:
+                                        tarifacao.append({
+                                            'id': int(tarifa_id),
+                                            'valor': float(tarifa_valor)
+                                        })
+                                        if tarifa_cesta_id:
+                                            cestas_ids_set.add(int(tarifa_cesta_id))
 
-                            registrar_log('admin.hierarquia',
-                                f'📊 Tarifação coletada do formulário (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
-                                f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+                                cestas_ids = list(cestas_ids_set)
+                                antecipacao_automatica = 'N'
+                                taxa_antecipacao = 0
+
+                                registrar_log('admin.hierarquia',
+                                    f'📊 Modelo FLEX (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                                    f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+                            else:
+                                # Modelo MDR - taxa única
+                                tarifacao = []
+                                cestas_ids = []
+                                taxa_mdr = float(request.POST.get('taxa_mdr', 2.5))
+                                antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
+                                taxa_antecipacao = converter_valor_br(request.POST.get('taxa_antecipacao', '0')) if antecipacao_automatica == 'S' else 0
+
+                                registrar_log('admin.hierarquia',
+                                    f'📊 Modelo MDR (edição): Taxa {taxa_mdr}% - Antecipação: {antecipacao_automatica} ({taxa_antecipacao}%)')
 
                             loja_data = {
                                 'loja_id': loja_id,
