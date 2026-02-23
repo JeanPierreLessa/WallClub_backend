@@ -83,6 +83,29 @@ class CadastroLojaOwn {
             inputCnae.addEventListener('input', (e) => this.buscarCNAE(e.target.value));
         }
 
+        // Radio buttons modelo de tarifação - alternar entre FLEX e MDR
+        const radioFlex = document.getElementById('modelo_flex');
+        const radioMdr = document.getElementById('modelo_mdr');
+        if (radioFlex && radioMdr) {
+            const toggleModelo = () => {
+                const isFlex = radioFlex.checked;
+                const secaoFlex = document.getElementById('secao_flex');
+                const secaoMdr = document.getElementById('secao_mdr');
+                const camposAntecipacao = document.getElementById('antecipacao_automatica')?.closest('.col-md-3');
+                const campoTaxaAntecipacao = document.getElementById('taxa_antecipacao')?.closest('.col-md-3');
+
+                if (secaoFlex) secaoFlex.style.display = isFlex ? 'block' : 'none';
+                if (secaoMdr) secaoMdr.style.display = isFlex ? 'none' : 'block';
+
+                // Ocultar antecipação no modelo FLEX
+                if (camposAntecipacao) camposAntecipacao.style.display = isFlex ? 'none' : 'block';
+                if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = isFlex ? 'none' : 'block';
+            };
+
+            radioFlex.addEventListener('change', toggleModelo);
+            radioMdr.addEventListener('change', toggleModelo);
+        }
+
         // Checkbox e-commerce - mostrar/ocultar cesta 3
         const checkboxEcommerce = document.getElementById('aceita_ecommerce');
         if (checkboxEcommerce) {
