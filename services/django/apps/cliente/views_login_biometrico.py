@@ -56,23 +56,18 @@ def login_biometrico(request):
             }, status=status.HTTP_404_NOT_FOUND)
 
         # Verificar se dispositivo está cadastrado e confiável
-        dispositivo_confiavel = DeviceManagementService.verificar_dispositivo_confiavel(
-            cliente_id=cliente.id,
-            device_fingerprint=device_fingerprint
+        valido, dispositivo, mensagem = DeviceManagementService.validar_dispositivo(
+            user_id=cliente.id,
+            tipo_usuario='cliente',
+            fingerprint=device_fingerprint
         )
 
-        if not dispositivo_confiavel:
-            registrar_log('apps.cliente', f"Login biométrico falhou: Device fingerprint não confiável para CPF {cpf}", nivel='WARNING')
+        if not valido:
+            registrar_log('apps.cliente', f"Login biométrico falhou: {mensagem} - CPF {cpf}", nivel='WARNING')
             return Response({
                 'success': False,
                 'error': 'Dispositivo não autorizado para login biométrico'
             }, status=status.HTTP_403_FORBIDDEN)
-
-        # Registrar acesso do dispositivo
-        DeviceManagementService.registrar_acesso_dispositivo(
-            cliente_id=cliente.id,
-            device_fingerprint=device_fingerprint
-        )
 
         # Gerar tokens JWT
         jwt_data = generate_cliente_jwt_token(cliente, request=request)
