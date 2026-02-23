@@ -22,7 +22,8 @@ def login_biometrico(request):
     Payload esperado:
     {
         "cpf": "12345678901",
-        "device_fingerprint": "hash_do_dispositivo"
+        "device_fingerprint": "hash_do_dispositivo",
+        "canal_id": 1
     }
 
     Retorna:
@@ -36,30 +37,23 @@ def login_biometrico(request):
     try:
         cpf = request.data.get('cpf', '').strip()
         device_fingerprint = request.data.get('device_fingerprint', '').strip()
+        canal_id = request.data.get('canal_id')
 
-        if not cpf or not device_fingerprint:
+        if not cpf or not device_fingerprint or not canal_id:
             return Response({
                 'success': False,
-                'error': 'CPF e device_fingerprint são obrigatórios'
+                'error': 'CPF, device_fingerprint e canal_id são obrigatórios'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Buscar cliente
-        try:
-            cliente = Cliente.objects.get(cpf=cpf)
-        except Cliente.DoesNotExist:
-            registrar_log('apps.cliente', f"Login biométrico falhou: CPF {cpf} não encontrado", nivel='WARNING')
+        # Buscar cliente (filter + first para evitar MultipleObjectsReturned)
+        cliente = Cliente.objects.filter(cpf=cpf, ativo=True).first()
+
+        if not cliente:
+            registrar_log('apps.cliente', f"Login biométrico falhou: CPF {cpf} não encontrado ou inativo", nivel='WARNING')
             return Response({
                 'success': False,
                 'error': 'Cliente não encontrado'
             }, status=status.HTTP_404_NOT_FOUND)
-
-        # Verificar se cliente está ativo
-        if not cliente.ativo:
-            registrar_log('apps.cliente', f"Login biométrico falhou: Cliente {cpf} inativo", nivel='WARNING')
-            return Response({
-                'success': False,
-                'error': 'Cliente inativo'
-            }, status=status.HTTP_403_FORBIDDEN)
 
         # Verificar se dispositivo está cadastrado e confiável
         dispositivo_confiavel = DeviceManagementService.verificar_dispositivo_confiavel(
@@ -98,11 +92,6 @@ def login_biometrico(request):
             }
         })
 
-    except json.JSONDecodeError:
-        return Response({
-            'success': False,
-            'error': 'JSON inválido'
-        }, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         registrar_log('apps.cliente', f"Erro no login biométrico: {str(e)}", nivel='ERROR')
         return Response({
