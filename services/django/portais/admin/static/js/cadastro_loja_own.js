@@ -9,6 +9,7 @@ class CadastroLojaOwn {
         this.cestasData = [];
         this.tarifasData = [];
         this.tarifaCounter = 0;
+        this.cestasCarregadas = false;
         this.csrfToken = this.getCsrfToken();
         this.init();
     }
@@ -252,6 +253,10 @@ class CadastroLojaOwn {
             }
             totalInput.value = this.tarifaCounter;
         }
+
+        // Marcar cestas como carregadas
+        this.cestasCarregadas = true;
+        console.log(`✅ Cestas carregadas: ${this.tarifaCounter} tarifas`);
     }
 
     async carregarTarifasCesta(cestaId, containerId) {
@@ -399,9 +404,14 @@ class CadastroLojaOwn {
             erros.push('CNAE é obrigatório para cadastro na Own');
         }
 
+        // Validar que as cestas foram carregadas
+        if (!this.cestasCarregadas) {
+            erros.push('Aguarde o carregamento das cestas de tarifas antes de salvar.');
+        }
+
         // Validar que existem tarifas
-        const tarifasInputs = document.querySelectorAll('input[name^="tarifa_id_"]');
-        if (tarifasInputs.length === 0) {
+        const totalTarifas = parseInt(document.querySelector('input[name="total_tarifas"]')?.value || '0');
+        if (totalTarifas === 0) {
             erros.push('Nenhuma tarifa carregada. Aguarde o carregamento das cestas.');
         }
 
