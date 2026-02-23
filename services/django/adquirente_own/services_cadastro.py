@@ -39,9 +39,10 @@ class CadastroOwnService:
         Returns:
             Payload formatado para API Own
         """
-        # Extrair primeiro ID de cesta das tarifas (se API Own exigir idCesta)
-        tarifacao = loja_data.get('tarifacao', [])
-        id_cesta_principal = tarifacao[0].get('id') if tarifacao else 0
+        # Extrair primeiro cestaId das cestas aplicáveis (se API Own exigir idCesta)
+        # O campo idCesta deve ser o ID da CESTA, não o ID da tarifa individual
+        cestas_ids = loja_data.get('cestas_ids', [])
+        id_cesta_principal = cestas_ids[0] if cestas_ids else 0
 
         payload = {
             # Dados do estabelecimento
