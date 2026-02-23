@@ -1045,7 +1045,8 @@ def loja_create(request):
                     'taxa_antecipacao': taxa_antecipacao,
                     'tipo_antecipacao': 'ROTATIVO',
                     'aceita_ecommerce': aceita_ecommerce,
-                    'tarifacao': tarifacao
+                    'tarifacao': tarifacao,
+                    'cestas_ids': cestas_ids
                 }
 
                 registrar_log('admin.hierarquia', f'🔄 Iniciando cadastro Own para loja {loja_id} - {razao_social}')
@@ -1496,6 +1497,7 @@ def loja_edit(request, loja_id):
                                 'antecipacao_automatica': antecipacao_automatica,
                                 'tipo_antecipacao': tipo_antecipacao,
                                 'tarifacao': tarifacao,
+                                'cestas_ids': cestas_ids,
                                 'aceita_ecommerce': aceita_ecommerce,
                                 'protocolo': loja_own.protocolo if loja_own else '',
                                 'contrato': loja_own.contrato if loja_own else ''
