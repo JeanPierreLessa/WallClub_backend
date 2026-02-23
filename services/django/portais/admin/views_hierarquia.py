@@ -871,7 +871,7 @@ def loja_create(request):
 
             # Função para converter formato brasileiro para float
             def converter_valor_br(valor_str):
-                if not valor_str:
+                if not valor_str or valor_str == 'N/A':
                     return None
                 # Remove pontos (separador de milhar) e substitui vírgula por ponto
                 return float(valor_str.replace('.', '').replace(',', '.'))
@@ -1309,7 +1309,7 @@ def loja_edit(request, loja_id):
 
                     # Função para converter formato brasileiro para float
                     def converter_valor_br(valor_str):
-                        if not valor_str:
+                        if not valor_str or valor_str == 'N/A':
                             return None
                         # Remove pontos (separador de milhar) e substitui vírgula por ponto
                         return float(valor_str.replace('.', '').replace(',', '.'))
