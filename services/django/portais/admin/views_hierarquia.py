@@ -1024,15 +1024,33 @@ def loja_create(request):
                         f'📊 Modelo FLEX: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                         f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
                 else:
-                    # Modelo MDR - taxa única
-                    tarifacao = []
-                    cestas_ids = []
+                    # Modelo MDR - usar cesta de bandeira com taxa fixa
                     taxa_mdr = float(request.POST.get('taxa_mdr', 2.5))
                     antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
-                    taxa_antecipacao = converter_valor_br(request.POST.get('taxa_antecipacao', '0')) if antecipacao_automatica == 'S' else 0
+
+                    # Montar tarifação com cesta de bandeira usando taxa MDR fixa
+                    service = CadastroOwnService(environment='LIVE')
+                    resultado_tarifacao = service.montar_tarifacao_completa(aceita_ecommerce=False)
+
+                    if not resultado_tarifacao.get('sucesso'):
+                        messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
+                        return redirect('portais_admin:loja_create')
+
+                    # Usar apenas cesta de bandeira e aplicar taxa MDR fixa
+                    tarifacao = []
+                    cestas_ids = []
+                    for tarifa in resultado_tarifacao.get('tarifacao', []):
+                        # Pegar apenas tarifas da primeira cesta (bandeira)
+                        if len(tarifacao) < 20:  # Limitar às primeiras tarifas (bandeira)
+                            tarifacao.append({
+                                'id': tarifa['id'],
+                                'valor': taxa_mdr  # Aplicar taxa MDR fixa
+                            })
+
+                    cestas_ids = resultado_tarifacao.get('cestas_ids', [])[:1]  # Apenas primeira cesta
 
                     registrar_log('admin.hierarquia',
-                        f'📊 Modelo MDR: Taxa {taxa_mdr}% - Antecipação: {antecipacao_automatica} ({taxa_antecipacao}%)')
+                        f'📊 Modelo MDR: Taxa {taxa_mdr}% aplicada em {len(tarifacao)} tarifas - Antecipação: {antecipacao_automatica}')
 
                 # Montar dados para Own
                 loja_data = {
@@ -1497,21 +1515,37 @@ def loja_edit(request, loja_id):
 
                                 cestas_ids = list(cestas_ids_set)
                                 antecipacao_automatica = 'N'
-                                taxa_antecipacao = 0
 
                                 registrar_log('admin.hierarquia',
                                     f'📊 Modelo FLEX (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                                     f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
                             else:
-                                # Modelo MDR - taxa única
-                                tarifacao = []
-                                cestas_ids = []
+                                # Modelo MDR - usar cesta de bandeira com taxa fixa
                                 taxa_mdr = float(request.POST.get('taxa_mdr', 2.5))
                                 antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
-                                taxa_antecipacao = converter_valor_br(request.POST.get('taxa_antecipacao', '0')) if antecipacao_automatica == 'S' else 0
+
+                                # Montar tarifação com cesta de bandeira usando taxa MDR fixa
+                                service_tarif = CadastroOwnService(environment='LIVE')
+                                resultado_tarifacao = service_tarif.montar_tarifacao_completa(aceita_ecommerce=False)
+
+                                if not resultado_tarifacao.get('sucesso'):
+                                    messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
+                                    return redirect('portais_admin:loja_detail', loja_id=loja_id)
+
+                                # Usar apenas cesta de bandeira e aplicar taxa MDR fixa
+                                tarifacao = []
+                                cestas_ids = []
+                                for tarifa in resultado_tarifacao.get('tarifacao', []):
+                                    if len(tarifacao) < 20:
+                                        tarifacao.append({
+                                            'id': tarifa['id'],
+                                            'valor': taxa_mdr
+                                        })
+
+                                cestas_ids = resultado_tarifacao.get('cestas_ids', [])[:1]
 
                                 registrar_log('admin.hierarquia',
-                                    f'📊 Modelo MDR (edição): Taxa {taxa_mdr}% - Antecipação: {antecipacao_automatica} ({taxa_antecipacao}%)')
+                                    f'📊 Modelo MDR (edição): Taxa {taxa_mdr}% aplicada em {len(tarifacao)} tarifas - Antecipação: {antecipacao_automatica}')
 
                             loja_data = {
                                 'loja_id': loja_id,
