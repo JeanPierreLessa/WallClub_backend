@@ -179,6 +179,109 @@ class ClienteService:
         except CheckoutCliente.DoesNotExist:
             raise ValidationError('Cliente não encontrado')
 
+    @staticmethod
+    def buscar_ou_criar_cliente_pos(
+        loja_id: int,
+        cpf: str,
+        nome: str = None,
+        email: str = None,
+        data_nascimento: str = None,
+        ip_address: str = None
+    ) -> tuple[CheckoutCliente, bool]:
+        """
+        Busca ou cria cliente para transação POS com validação Bureau
+
+        Args:
+            loja_id: ID da loja
+            cpf: CPF do cliente (apenas números)
+            nome: Nome do cliente (opcional se já existir)
+            email: Email do cliente (opcional, gera genérico se não informado)
+            data_nascimento: Data de nascimento YYYY-MM-DD (opcional)
+            ip_address: IP do terminal POS
+
+        Returns:
+            tuple: (CheckoutCliente, criado: bool)
+
+        Raises:
+            ValidationError: Se CPF inválido, não existe no Bureau ou menor de idade
+        """
+        import json
+        from datetime import datetime
+        from wallclub_core.integracoes.bureau_service import BureauService
+        from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
+
+        try:
+            # Limpar CPF
+            cpf_limpo = ''.join(filter(str.isdigit, cpf))
+            if len(cpf_limpo) != 11:
+                raise ValidationError('CPF inválido')
+
+            # Validar loja
+            loja = HierarquiaOrganizacionalService.get_loja(loja_id)
+            if not loja:
+                raise ValidationError(f'Loja {loja_id} não encontrada')
+
+            # Buscar cliente existente
+            cliente_existente = ClienteService.buscar_cliente(loja_id, cpf=cpf_limpo)
+            if cliente_existente:
+                registrar_log('checkout', f"Cliente POS encontrado: {cliente_existente.id} - {cpf_limpo}")
+                return (cliente_existente, False)
+
+            # Cliente não existe - consultar Bureau
+            registrar_log('checkout', f"Cliente POS não existe, consultando Bureau: {cpf_limpo}")
+            dados_bureau = BureauService.consulta_bureau(cpf_limpo)
+
+            if not dados_bureau:
+                raise ValidationError('CPF não encontrado no Bureau ou irregular')
+
+            # Validar idade (maior de 18 anos)
+            nascimento_bureau = dados_bureau.get('nascimento')
+            if nascimento_bureau:
+                try:
+                    dt_nascimento = datetime.strptime(nascimento_bureau, '%Y-%m-%d')
+                    idade = (datetime.now() - dt_nascimento).days // 365
+                    if idade < 18:
+                        raise ValidationError('Cliente menor de idade')
+                except ValueError:
+                    registrar_log('checkout', f"Erro ao validar idade - data: {nascimento_bureau}", nivel='WARNING')
+
+            # Preparar dados do cliente
+            nome_final = nome or dados_bureau.get('nome', 'Cliente POS')
+            email_final = email or f"pos_{cpf_limpo}@wallclub.com.br"
+            data_nascimento_final = data_nascimento or nascimento_bureau
+
+            # Verificar restrições (loga mas não bloqueia)
+            restricoes = dados_bureau.get('restricoes', [])
+            bureau_restricoes_json = None
+            if restricoes:
+                bureau_restricoes_json = json.dumps(restricoes, ensure_ascii=False)
+                registrar_log(
+                    'checkout',
+                    f"Cliente POS com restrições no Bureau: {cpf_limpo} - {len(restricoes)} restrição(ões)",
+                    nivel='WARNING'
+                )
+
+            # Criar cliente
+            cliente = CheckoutCliente.objects.create(
+                loja_id=loja_id,
+                cpf=cpf_limpo,
+                nome=nome_final,
+                email=email_final,
+                data_nascimento=data_nascimento_final,
+                bureau_restricoes=bureau_restricoes_json,
+                ip_address=ip_address,
+                ativo=True
+            )
+
+            registrar_log('checkout', f"Cliente POS criado via Bureau: {cliente.id} - {nome_final}")
+            return (cliente, True)
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            registrar_log('checkout', f"Erro ao buscar/criar cliente POS: {str(e)}", nivel='ERROR')
+            raise ValidationError(f'Erro ao processar cliente: {str(e)}')
+
 
 class CartaoTokenizadoService:
     """Serviço para tokenização e gerenciamento de cartões via gateway da loja (Pinbank ou OWN)"""

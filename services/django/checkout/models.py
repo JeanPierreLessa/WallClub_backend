@@ -33,6 +33,9 @@ class CheckoutCliente(models.Model):
     estado = models.CharField(max_length=2, null=True, blank=True)
     cep = models.CharField(max_length=8, null=True, blank=True)
 
+    # Bureau de Crédito
+    bureau_restricoes = models.TextField(null=True, blank=True, help_text="JSON com restrições do Bureau")
+
     # Auditoria
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(null=True, blank=True)
@@ -170,6 +173,7 @@ class CheckoutTransaction(models.Model):
         ('CHECKOUT', 'Portal de Vendas - Link Enviado'),
         ('LINK', 'Integração Direta API'),
         ('RECORRENCIA', 'Recorrência Agendada'),
+        ('POS', 'Terminal POS'),
     ]
     origem = models.CharField(max_length=20, choices=ORIGEM_CHOICES, default='CHECKOUT')
 
@@ -246,6 +250,9 @@ class CheckoutTransaction(models.Model):
 
     # Vendedor que criou a transação (portais_usuarios renomeado)
     vendedor_id = models.BigIntegerField(null=True, blank=True, db_index=True, db_column='vendedor_id', help_text="ID do vendedor que criou (ex-portais_usuarios_id)")
+
+    # Operador POS (para transações origem='POS')
+    operador_pos = models.CharField(max_length=50, null=True, blank=True, db_index=True, help_text="ID do operador que processou no POS")
 
     # Dados do Gateway (Pinbank/OWN)
     card_bin = models.CharField(max_length=6, null=True, blank=True, help_text="Primeiros 6 dígitos do cartão")

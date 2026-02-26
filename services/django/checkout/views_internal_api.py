@@ -16,9 +16,9 @@ from wallclub_core.utilitarios.log_control import registrar_log
 def listar_recorrencias(request):
     """
     Lista recorrências por filtros
-    
+
     GET /api/internal/checkout/recorrencias/?loja_id=1&vendedor_id=5&status=ativo
-    
+
     Response: {
         "sucesso": true,
         "total": 10,
@@ -27,22 +27,22 @@ def listar_recorrencias(request):
     """
     try:
         from checkout.models_recorrencia import RecorrenciaAgendada
-        
+
         loja_id = request.GET.get('loja_id')
         vendedor_id = request.GET.get('vendedor_id')
         status = request.GET.get('status', 'ativo')
-        
+
         queryset = RecorrenciaAgendada.objects.select_related(
             'cliente', 'cartao_tokenizado', 'loja'
         )
-        
+
         if loja_id:
             queryset = queryset.filter(loja_id=loja_id)
         if vendedor_id:
             queryset = queryset.filter(vendedor_id=vendedor_id)
         if status:
             queryset = queryset.filter(status=status)
-        
+
         recorrencias = []
         for rec in queryset[:100]:  # Limitar 100 resultados
             recorrencias.append({
@@ -56,16 +56,16 @@ def listar_recorrencias(request):
                 'tentativas_falhas': rec.tentativas_falhas_consecutivas,
                 'loja_nome': rec.loja.nome if rec.loja else None,
             })
-        
+
         registrar_log('checkout',
                      f"Lista recorrências - Loja: {loja_id}, Status: {status}, Total: {len(recorrencias)}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'total': len(recorrencias),
             'recorrencias': recorrencias
         })
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao listar recorrências: {str(e)}",
@@ -81,7 +81,7 @@ def listar_recorrencias(request):
 def criar_recorrencia(request):
     """
     Cria nova recorrência
-    
+
     POST /api/internal/checkout/recorrencias/
     Body: {
         "cliente_id": 123,
@@ -93,7 +93,7 @@ def criar_recorrencia(request):
         "dia_cobranca": 10,
         "descricao": "Assinatura mensal"
     }
-    
+
     Response: {
         "sucesso": true,
         "recorrencia_id": 789,
@@ -103,9 +103,9 @@ def criar_recorrencia(request):
     try:
         from checkout.models_recorrencia import RecorrenciaAgendada
         from datetime import datetime, timedelta
-        
+
         data = json.loads(request.body)
-        
+
         cliente_id = data.get('cliente_id')
         loja_id = data.get('loja_id')
         vendedor_id = data.get('vendedor_id')
@@ -114,13 +114,13 @@ def criar_recorrencia(request):
         periodicidade = data.get('periodicidade', 'mensal')
         dia_cobranca = data.get('dia_cobranca', 10)
         descricao = data.get('descricao', '')
-        
+
         if not all([cliente_id, loja_id, vendedor_id, cartao_tokenizado_id, valor_recorrencia]):
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'Campos obrigatórios: cliente_id, loja_id, vendedor_id, cartao_tokenizado_id, valor_recorrencia'
             }, status=400)
-        
+
         # Calcular próxima cobrança
         hoje = datetime.now().date()
         if periodicidade == 'mensal':
@@ -133,7 +133,7 @@ def criar_recorrencia(request):
                 proxima = hoje.replace(day=dia_cobranca)
         else:
             proxima = hoje + timedelta(days=7)  # Semanal default
-        
+
         # Criar recorrência
         recorrencia = RecorrenciaAgendada.objects.create(
             cliente_id=cliente_id,
@@ -148,17 +148,17 @@ def criar_recorrencia(request):
             status='ativo',
             tentativas_falhas_consecutivas=0
         )
-        
+
         registrar_log('checkout',
                      f"Recorrência criada - ID: {recorrencia.id}, Cliente: {cliente_id}, Valor: R$ {valor_recorrencia}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'recorrencia_id': recorrencia.id,
             'proxima_cobranca': proxima.isoformat(),
             'mensagem': 'Recorrência criada com sucesso'
         })
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao criar recorrência: {str(e)}",
@@ -174,12 +174,12 @@ def criar_recorrencia(request):
 def pausar_recorrencia(request, recorrencia_id):
     """
     Pausa recorrência (não cobra até reativar)
-    
+
     POST /api/internal/checkout/recorrencias/{id}/pausar/
     Body: {
         "motivo": "Solicitação do cliente"
     }
-    
+
     Response: {
         "sucesso": true,
         "mensagem": "Recorrência pausada"
@@ -187,22 +187,22 @@ def pausar_recorrencia(request, recorrencia_id):
     """
     try:
         from checkout.models_recorrencia import RecorrenciaAgendada
-        
+
         data = json.loads(request.body)
         motivo = data.get('motivo', 'Pausado manualmente')
-        
+
         recorrencia = RecorrenciaAgendada.objects.get(id=recorrencia_id)
         recorrencia.status = 'pausado'
         recorrencia.save()
-        
+
         registrar_log('checkout',
                      f"Recorrência pausada - ID: {recorrencia_id}, Motivo: {motivo}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'mensagem': 'Recorrência pausada com sucesso'
         })
-        
+
     except RecorrenciaAgendada.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -223,12 +223,12 @@ def pausar_recorrencia(request, recorrencia_id):
 def reativar_recorrencia(request, recorrencia_id):
     """
     Reativa recorrência pausada ou em hold
-    
+
     POST /api/internal/checkout/recorrencias/{id}/reativar/
     Body: {
         "nova_data": "2025-12-10"  # opcional
     }
-    
+
     Response: {
         "sucesso": true,
         "proxima_cobranca": "2025-12-10"
@@ -237,28 +237,28 @@ def reativar_recorrencia(request, recorrencia_id):
     try:
         from checkout.models_recorrencia import RecorrenciaAgendada
         from datetime import datetime
-        
+
         data = json.loads(request.body)
         nova_data = data.get('nova_data')
-        
+
         recorrencia = RecorrenciaAgendada.objects.get(id=recorrencia_id)
         recorrencia.status = 'ativo'
         recorrencia.tentativas_falhas_consecutivas = 0
-        
+
         if nova_data:
             recorrencia.proxima_cobranca = datetime.strptime(nova_data, '%Y-%m-%d').date()
-        
+
         recorrencia.save()
-        
+
         registrar_log('checkout',
                      f"Recorrência reativada - ID: {recorrencia_id}, Próxima: {recorrencia.proxima_cobranca}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'proxima_cobranca': recorrencia.proxima_cobranca.isoformat(),
             'mensagem': 'Recorrência reativada com sucesso'
         })
-        
+
     except RecorrenciaAgendada.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -279,9 +279,9 @@ def reativar_recorrencia(request, recorrencia_id):
 def cobrar_recorrencia(request, recorrencia_id):
     """
     Processa cobrança manual de recorrência
-    
+
     POST /api/internal/checkout/recorrencias/{id}/cobrar/
-    
+
     Response: {
         "sucesso": true,
         "nsu": "148482386",
@@ -290,9 +290,9 @@ def cobrar_recorrencia(request, recorrencia_id):
     """
     try:
         from portais.vendas.services import CheckoutVendasService
-        
+
         resultado = CheckoutVendasService.processar_cobranca_agendada(recorrencia_id)
-        
+
         if resultado['sucesso']:
             registrar_log('checkout',
                          f"Cobrança manual aprovada - ID: {recorrencia_id}, NSU: {resultado.get('nsu')}")
@@ -300,9 +300,9 @@ def cobrar_recorrencia(request, recorrencia_id):
             registrar_log('checkout',
                          f"Cobrança manual negada - ID: {recorrencia_id}, Motivo: {resultado.get('mensagem')}",
                          nivel='WARNING')
-        
+
         return JsonResponse(resultado)
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao cobrar recorrência {recorrencia_id}: {str(e)}",
@@ -318,14 +318,14 @@ def cobrar_recorrencia(request, recorrencia_id):
 def atualizar_recorrencia(request, recorrencia_id):
     """
     Atualiza dados da recorrência
-    
+
     PUT /api/internal/checkout/recorrencias/{id}/
     Body: {
         "valor_recorrencia": "200.00",
         "cartao_tokenizado_id": 999,
         "descricao": "Nova descrição"
     }
-    
+
     Response: {
         "sucesso": true,
         "mensagem": "Recorrência atualizada"
@@ -333,10 +333,10 @@ def atualizar_recorrencia(request, recorrencia_id):
     """
     try:
         from checkout.models_recorrencia import RecorrenciaAgendada
-        
+
         data = json.loads(request.body)
         recorrencia = RecorrenciaAgendada.objects.get(id=recorrencia_id)
-        
+
         if 'valor_recorrencia' in data:
             recorrencia.valor_recorrencia = Decimal(str(data['valor_recorrencia']))
         if 'cartao_tokenizado_id' in data:
@@ -345,17 +345,17 @@ def atualizar_recorrencia(request, recorrencia_id):
             recorrencia.descricao = data['descricao']
         if 'dia_cobranca' in data:
             recorrencia.dia_cobranca = data['dia_cobranca']
-        
+
         recorrencia.save()
-        
+
         registrar_log('checkout',
                      f"Recorrência atualizada - ID: {recorrencia_id}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'mensagem': 'Recorrência atualizada com sucesso'
         })
-        
+
     except RecorrenciaAgendada.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -376,9 +376,9 @@ def atualizar_recorrencia(request, recorrencia_id):
 def deletar_recorrencia(request, recorrencia_id):
     """
     Cancela/deleta recorrência
-    
+
     DELETE /api/internal/checkout/recorrencias/{id}/
-    
+
     Response: {
         "sucesso": true,
         "mensagem": "Recorrência cancelada"
@@ -386,19 +386,19 @@ def deletar_recorrencia(request, recorrencia_id):
     """
     try:
         from checkout.models_recorrencia import RecorrenciaAgendada
-        
+
         recorrencia = RecorrenciaAgendada.objects.get(id=recorrencia_id)
         recorrencia.status = 'cancelado'
         recorrencia.save()
-        
+
         registrar_log('checkout',
                      f"Recorrência cancelada - ID: {recorrencia_id}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'mensagem': 'Recorrência cancelada com sucesso'
         })
-        
+
     except RecorrenciaAgendada.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -419,9 +419,9 @@ def deletar_recorrencia(request, recorrencia_id):
 def obter_recorrencia(request, recorrencia_id):
     """
     Obtém detalhes de uma recorrência
-    
+
     GET /api/internal/checkout/recorrencias/{id}/
-    
+
     Response: {
         "sucesso": true,
         "recorrencia": {...}
@@ -429,11 +429,11 @@ def obter_recorrencia(request, recorrencia_id):
     """
     try:
         from checkout.models_recorrencia import RecorrenciaAgendada
-        
+
         recorrencia = RecorrenciaAgendada.objects.select_related(
             'cliente', 'cartao_tokenizado', 'loja'
         ).get(id=recorrencia_id)
-        
+
         dados = {
             'id': recorrencia.id,
             'cliente': {
@@ -454,12 +454,12 @@ def obter_recorrencia(request, recorrencia_id):
             'descricao': recorrencia.descricao,
             'criado_em': recorrencia.criado_em.isoformat() if hasattr(recorrencia, 'criado_em') else None,
         }
-        
+
         return JsonResponse({
             'sucesso': True,
             'recorrencia': dados
         })
-        
+
     except RecorrenciaAgendada.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -484,13 +484,13 @@ def obter_recorrencia(request, recorrencia_id):
 def listar_clientes(request):
     """
     Lista clientes de checkout por filtros
-    
+
     POST /api/internal/checkout/clientes/listar/
     Body: {
         "loja_id": 1,
         "cpf": "12345678900"  # opcional
     }
-    
+
     Response: {
         "sucesso": true,
         "total": 10,
@@ -499,15 +499,15 @@ def listar_clientes(request):
     """
     try:
         from checkout.models import CheckoutCliente
-        
+
         data = json.loads(request.body)
         loja_id = data.get('loja_id')
         cpf = data.get('cpf')
         cnpj = data.get('cnpj')
         email = data.get('email')
-        
+
         queryset = CheckoutCliente.objects.filter(ativo=True)
-        
+
         if loja_id:
             queryset = queryset.filter(loja_id=loja_id)
         if cpf:
@@ -516,7 +516,7 @@ def listar_clientes(request):
             queryset = queryset.filter(cnpj=cnpj)
         if email:
             queryset = queryset.filter(email__icontains=email)
-        
+
         clientes = []
         for cliente in queryset[:100]:  # Limitar 100 resultados
             clientes.append({
@@ -530,16 +530,16 @@ def listar_clientes(request):
                 'loja_id': cliente.loja_id,
                 'created_at': cliente.created_at.isoformat(),
             })
-        
+
         registrar_log('checkout',
                      f"Lista clientes - Loja: {loja_id}, Total: {len(clientes)}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'total': len(clientes),
             'clientes': clientes
         })
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao listar clientes: {str(e)}",
@@ -555,7 +555,7 @@ def listar_clientes(request):
 def criar_cliente(request):
     """
     Cria novo cliente de checkout
-    
+
     POST /api/internal/checkout/clientes/
     Body: {
         "loja_id": 1,
@@ -565,7 +565,7 @@ def criar_cliente(request):
         "endereco": "Rua X, 123",
         "cep": "12345678"
     }
-    
+
     Response: {
         "sucesso": true,
         "cliente_id": 123
@@ -573,9 +573,9 @@ def criar_cliente(request):
     """
     try:
         from checkout.models import CheckoutCliente
-        
+
         data = json.loads(request.body)
-        
+
         loja_id = data.get('loja_id')
         cpf = data.get('cpf')
         cnpj = data.get('cnpj')
@@ -583,19 +583,19 @@ def criar_cliente(request):
         email = data.get('email')
         endereco = data.get('endereco', '')
         cep = data.get('cep', '')
-        
+
         if not all([loja_id, nome, email]):
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'Campos obrigatórios: loja_id, nome, email'
             }, status=400)
-        
+
         if not cpf and not cnpj:
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'CPF ou CNPJ é obrigatório'
             }, status=400)
-        
+
         # Verificar se já existe
         if cpf:
             existe = CheckoutCliente.objects.filter(loja_id=loja_id, cpf=cpf, ativo=True).first()
@@ -605,7 +605,7 @@ def criar_cliente(request):
                     'cliente_id': existe.id,
                     'mensagem': 'Cliente já existe'
                 })
-        
+
         # Criar cliente
         cliente = CheckoutCliente.objects.create(
             loja_id=loja_id,
@@ -618,16 +618,16 @@ def criar_cliente(request):
             ip_address=data.get('ip_address'),
             user_agent=data.get('user_agent')
         )
-        
+
         registrar_log('checkout',
                      f"Cliente criado - ID: {cliente.id}, Nome: {nome}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'cliente_id': cliente.id,
             'mensagem': 'Cliente criado com sucesso'
         })
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao criar cliente: {str(e)}",
@@ -643,12 +643,12 @@ def criar_cliente(request):
 def obter_cliente(request):
     """
     Obtém detalhes de um cliente
-    
+
     POST /api/internal/checkout/clientes/obter/
     Body: {
         "cliente_id": 123
     }
-    
+
     Response: {
         "sucesso": true,
         "cliente": {...}
@@ -656,18 +656,18 @@ def obter_cliente(request):
     """
     try:
         from checkout.models import CheckoutCliente
-        
+
         data = json.loads(request.body)
         cliente_id = data.get('cliente_id')
-        
+
         if not cliente_id:
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'cliente_id é obrigatório'
             }, status=400)
-        
+
         cliente = CheckoutCliente.objects.get(id=cliente_id, ativo=True)
-        
+
         dados = {
             'id': cliente.id,
             'nome': cliente.nome,
@@ -680,12 +680,12 @@ def obter_cliente(request):
             'created_at': cliente.created_at.isoformat(),
             'updated_at': cliente.updated_at.isoformat(),
         }
-        
+
         return JsonResponse({
             'sucesso': True,
             'cliente': dados
         })
-        
+
     except CheckoutCliente.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -706,7 +706,7 @@ def obter_cliente(request):
 def atualizar_cliente(request):
     """
     Atualiza dados do cliente
-    
+
     POST /api/internal/checkout/clientes/atualizar/
     Body: {
         "cliente_id": 123,
@@ -714,7 +714,7 @@ def atualizar_cliente(request):
         "email": "joao.novo@email.com",
         "endereco": "Rua Y, 456"
     }
-    
+
     Response: {
         "sucesso": true,
         "mensagem": "Cliente atualizado"
@@ -722,18 +722,18 @@ def atualizar_cliente(request):
     """
     try:
         from checkout.models import CheckoutCliente
-        
+
         data = json.loads(request.body)
         cliente_id = data.get('cliente_id')
-        
+
         if not cliente_id:
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'cliente_id é obrigatório'
             }, status=400)
-        
+
         cliente = CheckoutCliente.objects.get(id=cliente_id, ativo=True)
-        
+
         if 'nome' in data:
             cliente.nome = data['nome']
         if 'email' in data:
@@ -742,17 +742,17 @@ def atualizar_cliente(request):
             cliente.endereco = data['endereco']
         if 'cep' in data:
             cliente.cep = data['cep']
-        
+
         cliente.save()
-        
+
         registrar_log('checkout',
                      f"Cliente atualizado - ID: {cliente_id}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'mensagem': 'Cliente atualizado com sucesso'
         })
-        
+
     except CheckoutCliente.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -777,14 +777,14 @@ def atualizar_cliente(request):
 def listar_tokens(request):
     """
     Lista tokens/links de pagamento por filtros
-    
+
     POST /api/internal/checkout/tokens/listar/
     Body: {
         "loja_id": 1,
         "cpf": "12345678900",  # opcional
         "usado": true  # opcional
     }
-    
+
     Response: {
         "sucesso": true,
         "total": 10,
@@ -794,14 +794,14 @@ def listar_tokens(request):
     try:
         from checkout.link_pagamento_web.models import CheckoutToken
         from django.utils import timezone
-        
+
         data = json.loads(request.body)
         loja_id = data.get('loja_id')
         cpf = data.get('cpf')
         usado = data.get('usado')
-        
+
         queryset = CheckoutToken.objects.all()
-        
+
         if loja_id:
             queryset = queryset.filter(loja_id=loja_id)
         if cpf:
@@ -809,7 +809,7 @@ def listar_tokens(request):
         if usado is not None:
             # usado vem como boolean no JSON
             queryset = queryset.filter(used=usado)
-        
+
         tokens = []
         for token in queryset.order_by('-created_at')[:100]:  # Limitar 100 resultados
             tokens.append({
@@ -828,16 +828,16 @@ def listar_tokens(request):
                 'tentativas_pagamento': token.tentativas_pagamento,
                 'created_at': token.created_at.isoformat(),
             })
-        
+
         registrar_log('checkout',
                      f"Lista tokens - Loja: {loja_id}, Total: {len(tokens)}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'total': len(tokens),
             'tokens': tokens
         })
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao listar tokens: {str(e)}",
@@ -853,7 +853,7 @@ def listar_tokens(request):
 def criar_token(request):
     """
     Cria novo token/link de pagamento
-    
+
     POST /api/internal/checkout/tokens/
     Body: {
         "loja_id": 1,
@@ -866,7 +866,7 @@ def criar_token(request):
         "pedido_origem_loja": "PED123",
         "created_by": "portal_vendas"
     }
-    
+
     Response: {
         "sucesso": true,
         "token": "abc123...",
@@ -876,9 +876,9 @@ def criar_token(request):
     """
     try:
         from checkout.link_pagamento_web.models import CheckoutToken
-        
+
         data = json.loads(request.body)
-        
+
         loja_id = data.get('loja_id')
         item_nome = data.get('item_nome')
         item_valor = Decimal(str(data.get('item_valor')))
@@ -888,13 +888,13 @@ def criar_token(request):
         endereco_completo = data.get('endereco_completo')
         pedido_origem_loja = data.get('pedido_origem_loja')
         created_by = data.get('created_by', 'api_interna')
-        
+
         if not all([loja_id, item_nome, item_valor, nome_completo, cpf, celular, endereco_completo]):
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'Campos obrigatórios: loja_id, item_nome, item_valor, nome_completo, cpf, celular, endereco_completo'
             }, status=400)
-        
+
         # Criar token usando método da classe
         token_obj = CheckoutToken.generate_token(
             loja_id=loja_id,
@@ -907,13 +907,13 @@ def criar_token(request):
             created_by=created_by,
             pedido_origem_loja=pedido_origem_loja
         )
-        
+
         # TODO: Construir URL completa do link (necessita configuração de domínio)
         link = f"/checkout/{token_obj.token}/"
-        
+
         registrar_log('checkout',
                      f"Token criado - ID: {token_obj.id}, Loja: {loja_id}, Valor: R$ {item_valor}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'token': token_obj.token,
@@ -922,7 +922,7 @@ def criar_token(request):
             'expires_at': token_obj.expires_at.isoformat(),
             'mensagem': 'Token criado com sucesso'
         })
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao criar token: {str(e)}",
@@ -938,12 +938,12 @@ def criar_token(request):
 def obter_token(request):
     """
     Obtém detalhes de um token pelo valor
-    
+
     POST /api/internal/checkout/tokens/obter/
     Body: {
         "token": "abc123..."
     }
-    
+
     Response: {
         "sucesso": true,
         "token": {...}
@@ -951,18 +951,18 @@ def obter_token(request):
     """
     try:
         from checkout.link_pagamento_web.models import CheckoutToken
-        
+
         data = json.loads(request.body)
         token_value = data.get('token')
-        
+
         if not token_value:
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'token é obrigatório'
             }, status=400)
-        
+
         token = CheckoutToken.objects.get(token=token_value)
-        
+
         dados = {
             'id': token.id,
             'token': token.token,
@@ -982,12 +982,12 @@ def obter_token(request):
             'created_by': token.created_by,
             'created_at': token.created_at.isoformat(),
         }
-        
+
         return JsonResponse({
             'sucesso': True,
             'token': dados
         })
-        
+
     except CheckoutToken.DoesNotExist:
         return JsonResponse({
             'sucesso': False,
@@ -1008,12 +1008,12 @@ def obter_token(request):
 def validar_token(request):
     """
     Valida se um token ainda é válido
-    
+
     POST /api/internal/checkout/tokens/validar/
     Body: {
         "token": "abc123..."
     }
-    
+
     Response: {
         "sucesso": true,
         "valido": true,
@@ -1023,16 +1023,16 @@ def validar_token(request):
     try:
         from checkout.link_pagamento_web.models import CheckoutToken
         from django.utils import timezone
-        
+
         data = json.loads(request.body)
         token_value = data.get('token')
-        
+
         if not token_value:
             return JsonResponse({
                 'sucesso': False,
                 'mensagem': 'Token é obrigatório'
             }, status=400)
-        
+
         try:
             token = CheckoutToken.objects.get(token=token_value)
         except CheckoutToken.DoesNotExist:
@@ -1041,7 +1041,7 @@ def validar_token(request):
                 'valido': False,
                 'motivo': 'Token não encontrado'
             })
-        
+
         # Verificar validade
         if token.used:
             motivo = 'Token já utilizado'
@@ -1051,12 +1051,12 @@ def validar_token(request):
             motivo = 'Limite de tentativas excedido'
         else:
             motivo = 'Token válido'
-        
+
         valido = token.is_valid()
-        
+
         registrar_log('checkout',
                      f"Validação token - Válido: {valido}, Motivo: {motivo}")
-        
+
         return JsonResponse({
             'sucesso': True,
             'valido': valido,
@@ -1064,7 +1064,7 @@ def validar_token(request):
             'tentativas_restantes': max(0, 3 - token.tentativas_pagamento) if not token.used else 0,
             'expires_at': token.expires_at.isoformat()
         })
-        
+
     except Exception as e:
         registrar_log('checkout',
                      f"Erro ao validar token: {str(e)}",
@@ -1072,4 +1072,154 @@ def validar_token(request):
         return JsonResponse({
             'sucesso': False,
             'mensagem': f'Erro ao validar token: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def processar_transacao_pos(request):
+    """
+    Processa transação capturada no POS com validação Bureau e antifraude
+
+    POST /api/internal/checkout/transacao-pos/
+    Body: {
+        "loja_id": 1,
+        "operador_pos": "OP001",
+        "cpf": "12345678901",
+        "nome": "CLIENTE TESTE",  // opcional
+        "email": "cliente@email.com",  // opcional
+        "card_data": {
+            "numero": "4444333322221111",
+            "validade": "12/27",
+            "cvv": "123",
+            "nome_titular": "CLIENTE TESTE",
+            "bandeira": "VISA"
+        },
+        "valor": "150.00",
+        "parcelas": 3,
+        "descricao": "Compra POS",
+        "ip_terminal": "192.168.1.100",
+        "pedido_origem_loja": "POS-12345",  // opcional
+        "cod_item_origem_loja": "SKU-001"  // opcional
+    }
+
+    Response: {
+        "sucesso": true,
+        "transacao_id": 123,
+        "cliente_id": 456,
+        "nsu": "123456",
+        "codigo_autorizacao": "ABC123",
+        "status": "APROVADA",
+        "mensagem": "Transação aprovada",
+        "score_risco": 25
+    }
+    """
+    try:
+        from checkout.services import ClienteService, CheckoutService
+        from django.core.exceptions import ValidationError
+
+        data = json.loads(request.body)
+
+        # Validar campos obrigatórios
+        campos_obrigatorios = ['loja_id', 'operador_pos', 'cpf', 'card_data', 'valor', 'parcelas']
+        for campo in campos_obrigatorios:
+            if campo not in data:
+                return JsonResponse({
+                    'sucesso': False,
+                    'mensagem': f'Campo obrigatório ausente: {campo}'
+                }, status=400)
+
+        # Validar card_data
+        card_data = data['card_data']
+        campos_cartao = ['numero', 'validade', 'cvv', 'nome_titular', 'bandeira']
+        for campo in campos_cartao:
+            if campo not in card_data:
+                return JsonResponse({
+                    'sucesso': False,
+                    'mensagem': f'Campo obrigatório do cartão ausente: {campo}'
+                }, status=400)
+
+        loja_id = data['loja_id']
+        operador_pos = data['operador_pos']
+        cpf = data['cpf']
+        nome = data.get('nome')
+        email = data.get('email')
+        ip_terminal = data.get('ip_terminal', request.META.get('REMOTE_ADDR'))
+
+        registrar_log('checkout', f"🏪 Processando transação POS - Loja: {loja_id}, Operador: {operador_pos}, CPF: {cpf[:3]}***")
+
+        # 1. Buscar ou criar cliente com validação Bureau
+        try:
+            cliente, criado = ClienteService.buscar_ou_criar_cliente_pos(
+                loja_id=loja_id,
+                cpf=cpf,
+                nome=nome,
+                email=email,
+                ip_address=ip_terminal
+            )
+
+            if criado:
+                registrar_log('checkout', f"✅ Cliente POS criado via Bureau: {cliente.id}")
+            else:
+                registrar_log('checkout', f"✅ Cliente POS existente: {cliente.id}")
+
+        except ValidationError as e:
+            registrar_log('checkout', f"❌ Validação Bureau falhou: {str(e)}", nivel='WARNING')
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': str(e),
+                'motivo': 'validacao_bureau'
+            }, status=400)
+
+        # 2. Processar pagamento com cartão direto
+        try:
+            resultado = CheckoutService.processar_pagamento_cartao_direto(
+                cliente_id=cliente.id,
+                numero_cartao=card_data['numero'],
+                validade=card_data['validade'],
+                cvv=card_data['cvv'],
+                nome_titular=card_data['nome_titular'],
+                valor=Decimal(data['valor']),
+                parcelas=int(data['parcelas']),
+                bandeira=card_data['bandeira'],
+                descricao=data.get('descricao', 'Compra POS'),
+                ip_address=ip_terminal,
+                user_agent=f"POS-Terminal/{operador_pos}",
+                pedido_origem_loja=data.get('pedido_origem_loja'),
+                cod_item_origem_loja=data.get('cod_item_origem_loja'),
+                portais_usuarios_id=None  # POS não tem vendedor_id
+            )
+
+            # 3. Atualizar transação com dados do POS
+            if resultado.get('sucesso') and resultado.get('transacao_id'):
+                from checkout.models import CheckoutTransaction
+                transacao = CheckoutTransaction.objects.get(id=resultado['transacao_id'])
+                transacao.origem = 'POS'
+                transacao.operador_pos = operador_pos
+                transacao.save(update_fields=['origem', 'operador_pos'])
+
+                registrar_log('checkout', f"✅ Transação POS processada: {transacao.id} - Status: {resultado['status']}")
+
+            # 4. Adicionar cliente_id na resposta
+            resultado['cliente_id'] = cliente.id
+
+            return JsonResponse(resultado)
+
+        except ValidationError as e:
+            registrar_log('checkout', f"❌ Erro ao processar pagamento POS: {str(e)}", nivel='ERROR')
+            return JsonResponse({
+                'sucesso': False,
+                'mensagem': str(e)
+            }, status=400)
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'sucesso': False,
+            'mensagem': 'JSON inválido'
+        }, status=400)
+    except Exception as e:
+        registrar_log('checkout', f"❌ Erro inesperado ao processar transação POS: {str(e)}", nivel='ERROR')
+        return JsonResponse({
+            'sucesso': False,
+            'mensagem': f'Erro ao processar transação: {str(e)}'
         }, status=500)
