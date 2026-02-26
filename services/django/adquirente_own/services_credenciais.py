@@ -11,13 +11,26 @@ from wallclub_core.utilitarios.log_control import registrar_log
 class CredenciaisOwnService:
     """Serviço para obter credenciais Own das variáveis de ambiente"""
 
-    def __init__(self, environment: str = 'LIVE'):
+    @staticmethod
+    def obter_environment() -> str:
+        """
+        Retorna o environment correto baseado na variável ENVIRONMENT
+
+        Returns:
+            'LIVE' para produção, 'TEST' para desenvolvimento
+        """
+        env = os.getenv('ENVIRONMENT', 'development').lower()
+        return 'LIVE' if env == 'production' else 'TEST'
+
+    def __init__(self, environment: str = None):
         """
         Inicializa serviço de credenciais
 
         Args:
-            environment: 'LIVE' ou 'TEST' (não usado, mantido para compatibilidade)
+            environment: 'LIVE' ou 'TEST' (None = usa ENVIRONMENT do sistema)
         """
+        if environment is None:
+            environment = self.obter_environment()
         self.environment = environment
 
     def obter_credenciais_core(self) -> Optional[Dict[str, Any]]:

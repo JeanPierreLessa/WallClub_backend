@@ -60,7 +60,7 @@ class POSP2ServiceV2(POSP2Service):
             # Usar calculadora do parametros_wallclub
             from parametros_wallclub.services import CalculadoraDesconto
             from apps.cashback.services import CashbackService
-            
+
             registrar_log('posp2.v2', 'DEBUG: CalculadoraDesconto importada com sucesso')
             calculadora = CalculadoraDesconto()
             registrar_log('posp2.v2', 'DEBUG: CalculadoraDesconto instanciada com sucesso')
@@ -99,8 +99,27 @@ class POSP2ServiceV2(POSP2Service):
                 descricao_base='Débito'
             )
 
-            # Simular CRÉDITO 1x até 12x
-            for num_parcelas in range(1, 13):
+            # Simular CRÉDITO - buscar apenas parcelas ativas do banco
+            from parametros_wallclub.models import ParametrosWall, Plano
+
+            # Buscar id_planos ativos (parametro_loja_1 > 0) para esta loja
+            ids_planos_ativos = ParametrosWall.objects.filter(
+                loja_id=loja_id,
+                wall=wall,
+                vigencia_fim__isnull=True,
+                parametro_loja_1__gt=0
+            ).values_list('id_plano', flat=True).distinct()
+
+            # Buscar informações dos planos
+            planos_ativos = Plano.objects.filter(
+                id__in=ids_planos_ativos,
+                nome__in=['A VISTA', 'PARCELADO SEM JUROS']
+            ).values_list('prazo_dias', 'nome').order_by('prazo_dias')
+
+            registrar_log('posp2.v2', f'Parcelas ativas encontradas: {list(planos_ativos)}')
+
+            for prazo_dias, nome_plano in planos_ativos:
+                num_parcelas = prazo_dias
                 forma = "A VISTA" if num_parcelas == 1 else "PARCELADO SEM JUROS"
                 forma_key = "CREDIT_ONE_INSTALLMENT" if num_parcelas == 1 else "CREDIT_IN_INSTALLMENTS_WITHOUT_INTEREST"
 
@@ -173,13 +192,13 @@ class POSP2ServiceV2(POSP2Service):
         cashback_wall_parametro_id = None
 
         registrar_log('posp2.v2', f'DEBUG: Iniciando cálculo cashback Wall - wall={wall}')
-        
+
         if wall.upper() == 'S':
             registrar_log('posp2.v2', f'DEBUG: Entrando no bloco de cashback Wall')
             try:
                 from parametros_wallclub.models import Plano
                 from parametros_wallclub.services import ParametrosService
-                
+
                 # Buscar plano
                 if forma == 'PIX':
                     plano = Plano.objects.filter(nome='PIX', prazo_dias=0, bandeira='PIX').first()
@@ -189,9 +208,9 @@ class POSP2ServiceV2(POSP2Service):
                     plano = Plano.objects.filter(nome='A VISTA', prazo_dias=1, bandeira='MASTERCARD').first()
                 else:  # PARCELADO SEM JUROS
                     plano = Plano.objects.filter(nome='PARCELADO SEM JUROS', prazo_dias=num_parcelas, bandeira='MASTERCARD').first()
-                
+
                 registrar_log('posp2.v2', f'Buscando cashback - forma: {forma}, parcelas: {num_parcelas}, plano_id: {plano.id if plano else None}')
-                
+
                 if plano:
                     # Buscar configuração wall='C' para cashback
                     config_cashback = ParametrosService.get_configuracao_ativa(
@@ -200,14 +219,14 @@ class POSP2ServiceV2(POSP2Service):
                         wall='C',
                         data_referencia=datetime.now()
                     )
-                    
+
                     registrar_log('posp2.v2', f'Config cashback encontrada: {config_cashback is not None}')
-                    
+
                     if config_cashback:
                         # Cashback baseado em parametro_loja_7 (percentual)
                         param_7 = getattr(config_cashback, 'parametro_loja_7', None)
                         registrar_log('posp2.v2', f'parametro_loja_7: {param_7}')
-                        
+
                         if param_7 and param_7 > 0:
                             percentual_cashback_wall = param_7 * 100  # Converter para percentual
                             valor_cashback_wall = valor_com_desconto * param_7

@@ -87,24 +87,59 @@
                         <input type="email" class="form-control" id="email" name="email" required>
                     </div>
 
-                    <!-- CEP -->
+                    <!-- Data de Nascimento -->
                     <div class="mb-3">
-                        <label for="cep" class="form-label">CEP</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000"
-                                maxlength="9">
-                            <button class="btn btn-outline-secondary" type="button" id="btnBuscarCEP">
-                                <i class="fas fa-search"></i> Buscar
-                            </button>
+                        <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                        <input type="date" class="form-control" id="data_nascimento" name="data_nascimento">
+                    </div>
+
+                    <h5 class="mt-4 mb-3"><i class="fas fa-map-marker-alt me-2"></i>Endereço</h5>
+
+                    <!-- CEP -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cep" class="form-label">CEP</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000" maxlength="9">
+                                <button class="btn btn-outline-secondary" type="button" id="btnBuscarCEP">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cidade" class="form-label">Cidade</label>
+                            <input type="text" class="form-control" id="cidade" name="cidade">
                         </div>
                     </div>
 
-                    <!-- Endereço -->
-                    <div class="mb-3">
-                        <label for="endereco" class="form-label">Endereço Completo</label>
-                        <textarea class="form-control" id="endereco" name="endereco" rows="2"
-                            placeholder="Rua, Número, Complemento, Bairro, Cidade - UF"></textarea>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="logradouro" class="form-label">Logradouro</label>
+                            <input type="text" class="form-control" id="logradouro" name="logradouro">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="numero" class="form-label">Número</label>
+                            <input type="text" class="form-control" id="numero" name="numero">
+                        </div>
                     </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="complemento" class="form-label">Complemento</label>
+                            <input type="text" class="form-control" id="complemento" name="complemento">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bairro" class="form-label">Bairro</label>
+                            <input type="text" class="form-control" id="bairro" name="bairro">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="estado" class="form-label">Estado (UF)</label>
+                            <input type="text" class="form-control" id="estado" name="estado" maxlength="2" placeholder="SP">
+                        </div>
+                    </div>
+
+                    <!-- Campo oculto para compatibilidade -->
+                    <input type="hidden" id="endereco" name="endereco">
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="{% url 'vendas:dashboard' %}" class="btn btn-secondary">
@@ -199,6 +234,13 @@
                     return;
                 }
 
+                // Preencher campos estruturados
+                document.getElementById('logradouro').value = data.logradouro || '';
+                document.getElementById('bairro').value = data.bairro || '';
+                document.getElementById('cidade').value = data.localidade || '';
+                document.getElementById('estado').value = data.uf || '';
+
+                // Preencher campo oculto para compatibilidade
                 const endereco = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
                 document.getElementById('endereco').value = endereco;
             })
@@ -261,7 +303,7 @@
                     window.location.href = '{% url "vendas:cliente_editar" 0 %}'.replace('0', data.cliente_id);
                     return;
                 }
-                
+
                 // Cliente não existe, preencher nome do app/Bureau
                 const nome = data.cliente && data.cliente.nome ? data.cliente.nome : '';
                 if (nome) {

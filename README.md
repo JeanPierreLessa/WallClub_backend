@@ -6,17 +6,24 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 24/12/2025
+**Última Atualização:** 10/02/2026
 
 ### Produção - 9 Containers Orquestrados
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
   - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)
+  - ✅ **Arquitetura de URLs Refatorada (31/01):** 3 arquivos (antes 8), função helper dinâmica, zero duplicação
   - ✅ Portal Vendas: Sistema de primeiro acesso implementado
   - ✅ Portal Vendas: Filtro por portal corrigido (14/12/2025)
   - ✅ Portal Lojista: Sistema de Ofertas ativo (menu visível)
   - ✅ Portal Lojista: Sistema de Cashback Loja (CRUD completo)
   - ✅ Portal Admin: Gestão de Terminais com histórico (20/12/2025)
+  - ✅ Portal Admin: RPR - Refinamento completo de métricas (03/02/2026)
+    - Coluna "Custo ajuste nos Repasses" reposicionada e renomeada
+    - Nova coluna "Resultado Operacional Ajustado" (Resultado Operacional + Custo ajuste)
+    - Box "Resultado Financeiro" recalculado (Receita Financeira - Custo Direto)
+    - "Custos POS/Equip" movido para box Resultado Financeiro
+    - Percentual de comissão dinâmico (tabela canal_comissao) em tela e exports
   - ⚠️ Portal Admin: Dashboard Celery (`/celery/`) - tasks agendadas não aparecem (em investigação)
 - ✅ **wallclub-pos** (Terminal POS + Pinbank)
   - ✅ Sistema de Cupom: Validação e aplicação de descontos
@@ -27,6 +34,11 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **wallclub-apis** (Mobile + Checkout Web)
   - ✅ Checkout: Domínio dedicado checkout.wallclub.com.br
   - ✅ Checkout: Sistema de Cupom integrado (validação interna)
+  - ✅ **Checkout: Campos estruturados (03/02/2026)**
+    - CheckoutCliente e CheckoutToken com endereço estruturado
+    - Campos: `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`, `data_nascimento`, `email`
+    - Portal de Vendas: Formulários de cadastro/edição atualizados
+    - Integração ViaCEP para preenchimento automático
   - ✅ POSP2 V2: Simulação com cashback Wall + Loja integrado
   - ✅ Checkout 2FA: Integração com Risk Engine completa
   - ✅ Correções 14/12/2025:
@@ -44,12 +56,64 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 - ✅ **AWS Secrets Manager** - Credenciais centralizadas
 - ✅ **MaxMind minFraud** - Score antifraude
 - ✅ **Pinbank** - Gateway de pagamento (Credenciadora)
-- ⚠️ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce)
-  - ✅ APIs Adquirência (OAuth 2.0) - QA/Sandbox funcionando
-  - ✅ Webhooks tempo real (transações, liquidações, cadastro)
-  - ⚠️ API OPPWA E-commerce - Credenciais OK, API QA com timeout (>60s)
+- ✅ **Own Financial** - Gateway de pagamento (Adquirência + E-commerce) ⭐ **COMPLETO (06/02/2026)**
+  - ✅ APIs Adquirência (OAuth 2.0) - Produção funcionando
+  - ✅ Webhooks tempo real (transações, liquidações, cadastro) - endpoints implementados e testados
+  - ✅ API OPPWA E-commerce - Integração completa e validada
+  - ✅ **Ambiente Centralizado (05/02):** `CredenciaisOwnService.obter_environment()` usado em todos os 7 services
+  - ✅ API de consulta de tokens e-commerce por contrato documentada
+  - ✅ Documentação oficial OPPWA referenciada: https://docs.payments-own.financial/reference/parameters
+  - ✅ Portal de Vendas com GatewayRouter (seleção dinâmica Pinbank/Own)
+  - ✅ Tokenização, pagamento com token, pagamento direto, estorno e exclusão
+  - ✅ **Payload Otimizado (03/02):** Campos estruturados de cliente e endereço
+    - Merchant: `taxId` (CNPJ), `id` (razão social), `postcode` (CEP)
+    - Customer: `birthDate`, `email`, `phone`, `identificationDocType: TAXSTATEMENT`
+    - Billing/Shipping: `city`, `state`, `postcode`, `country`
+  - ✅ Transação aprovada com payload completo (NSU: 8ac7a4a19c22cdec019c2357e13915e2)
+  - ✅ **Rotinas de Carga (05/02):**
+    - `carga_transacoes_own` - Busca transações POS via API `/buscaTransacoesGerais` (não retorna e-commerce)
+    - `carga_liquidacoes_own` - Busca liquidações via API `/consultaLiquidacoes`
+    - `carga_base_unificada_checkout_own` - Processa checkout_transactions (gateway='OWN') para base_transacoes_unificadas
+    - Suporte a busca por NSU específico (`--nsu`) e período (`--data-inicial`, `--data-final`)
+  - ✅ **E-commerce e Webhooks (06/02):**
+    - Webhook testado: `https://wcapi.wallclub.com.br/webhook/own/transacao/` ✅ funcional
+    - Campos novos em `checkout_transactions`: `card_bin`, `card_last4`, `payment_brand_response`, `result_code`, `tx_transaction_id`
+    - Renomeações: `pinbank_response` → `gateway_response`, `erro_pinbank` → `erro_gateway`
+    - **Limitação:** API `/buscaTransacoesGerais` NÃO retorna transações e-commerce (apenas POS físico)
+    - **Identificadores:** `merchantTransactionId` e `id` (OPPWA) não funcionam como `identificadorTransacao`
+    - **Webhook obrigatório:** Único meio de obter `identificadorTransacao` para transações e-commerce
+  - ✅ **Credenciamento OWN (10/02):**
+    - Portal Admin: Tela de edição de loja com campos OWN (CNAE, tipo antecipação, cestas)
+    - Taxa de antecipação: 0.02% quando habilitada (mínimo exigido pela API)
+    - Campo `conveniada_id` removido (não utilizado)
+    - Histórico de protocolos: tabela `loja_own_protocolo_historico` para rastreamento
+    - Webhook credenciamento: `https://wcapi.wallclub.com.br/webhook/own/credenciamento/` ✅ funcional
+    - Quantidade POS fixada em 0 (configuração via API específica)
+  - ⏳ **Pendente:** Configuração do webhook de e-commerce com a OWN (aguardando suporte)
 - ✅ **WhatsApp Business API** - 2FA e notificações
 - ✅ **Firebase/APN** - Push notifications
+
+### Sistema de Monitoramento ⭐ **ATUALIZADO (10/02/2026)**
+- ✅ **Prometheus** (porta 9090) - Coleta de métricas (retenção 15 dias)
+- ✅ **Alertmanager** (porta 9093) - Gerenciamento de alertas
+- ✅ **Node Exporter** (porta 9100) - Métricas de sistema (CPU, memória, disco)
+- ✅ **Redis Exporter** (porta 9121) - Métricas do Redis
+- ✅ **Django Prometheus (10/02):** Métricas completas de aplicação
+  - HTTP Requests/segundo por método e view
+  - Latência de requisições (percentis p50, p95, p99)
+  - Respostas por status code (2xx, 4xx, 5xx)
+  - Exceções por tipo
+  - Queries no banco (duração e total)
+  - Dashboard Grafana funcional
+- ✅ **14 Alertas Configurados:**
+  - Críticos: ServiceDown (30s), RedisDown (1min), MySQLDown (1min), DiskSpaceLowCritical (<10%)
+  - Warnings: HighCPU (>80%), HighMemory (>90%), LowAvailability (<95%), e mais
+- ✅ **Notificações:**
+  - Telegram: @Wallclub_monitor_bot
+  - Email: AWS SES
+- ✅ **Métricas Customizadas:** `/metrics` em todos os 4 containers Django
+- ✅ **Health Checks:** `/health/`, `/health/live/`, `/health/ready/`, `/health/startup/`
+- 📖 **Documentação:** `monitoring/README.md`
 
 ### Fases Concluídas
 - ✅ **Fase 1:** Segurança Básica (Rate limiting, OAuth, Auditoria)
@@ -664,10 +728,57 @@ Proprietary - WallClub © 2025
 ---
 
 **Criado em:** 02/11/2025
-**Última atualização:** 24/01/2026
+**Última atualização:** 03/02/2026
 **Responsável:** Equipe WallClub
 
-### Atualizações Recentes (24/01/2026)
+### Atualizações Recentes (03/02/2026)
+- **Portal Admin - RPR - Refinamento Completo de Métricas**
+  - **Tabela Analítica:**
+    - Coluna "Custo ajuste nos Repasses (R$)" reposicionada (antes de var98)
+    - Nova coluna "Resultado Operacional Ajustado (R$)" = Resultado Operacional + Custo ajuste nos Repasses
+  - **Box "Custo Direto Total":**
+    - Linha renomeada: "Custo ajuste nos Repasses"
+    - Sinal invertido para exibição (valor positivo)
+    - "Custos POS/Equip" removido deste box
+    - Cálculo: `custo_mdr + custo_antecipacao + impostos - ajuste_repasses + lancamentos_manuais`
+  - **Box "Resultado Financeiro":**
+    - Totalizador = `Receita Financeira Total - Custo Direto Total`
+    - Comissão Total a Pagar = `Totalizador × Percentual Comissão`
+    - "Custos POS/Equip" movido para este box
+    - Nova linha: "Resultado após Custos de POS's" = `Totalizador - Custos POS/Equip`
+    - Comissão Total Líquida = `Resultado após Custos POS × Percentual Comissão`
+  - **Percentual de Comissão:**
+    - Cálculo dinâmico usando tabela `canal_comissao`
+    - Média ponderada por volume quando sem filtro de canal
+    - Sincronizado entre tela e exports (antes era hardcoded 15% no export))
+  - JavaScript: Removido truncamento de cabeçalhos (antes limitava a 15 caracteres)
+
+- **Own Financial E-commerce - Correções de Ambiente e Payload**
+  - Ambiente dinâmico: `ENVIRONMENT=production` → `LIVE`, `development` → `TEST`
+  - Correção do campo `paymentMethod`: movido de `customParameters` para campo direto
+
+### Atualizações Anteriores (24/01/2026)
+- **Portal Admin - RPR - Nova Métrica "Ajuste pagos de repasses"**
+  - Fórmula: `Resultado Caixa (var98 - var101) - (Resultado MDR + Resultado Antecipação)`
+  - Exibida no box "Custo Direto Total" e como nova coluna na tabela RPR
+  - Valor arredondado para 2 casas decimais com `.quantize(Decimal('0.01'))`
+  - Coluna posicionada após "(98) Valor Recebido Uptal"
+
+- **Portal Admin - Tabelas RPR e Gestão Admin - UX Melhorada**
+  - Largura mínima de colunas aumentada de 150px para 200px
+  - Largura máxima de células aumentada de 250px para 350px
+  - Truncamento de texto removido (sem `text-overflow: ellipsis`)
+  - Alinhamento à direita para todas as células (valores monetários e percentuais)
+  - JavaScript: Removido truncamento de cabeçalhos (antes limitava a 15 caracteres)
+
+- **Own Financial E-commerce - Correções de Ambiente e Payload**
+  - Ambiente dinâmico: `ENVIRONMENT=production` → `LIVE`, `development` → `TEST`
+  - Correção do campo `paymentMethod`: movido de `customParameters` para campo direto
+  - API de consulta de tokens por contrato documentada: `GET /agilli/ecommerce/token?numeroContrato=XXX`
+  - Documentação oficial OPPWA adicionada ao `PLANO_REPLICACAO_ESTRUTURA.md`
+  - Links: API Reference, Server-to-Server Guide, Tokenization, Result Codes, Webhooks
+
+### Atualizações Anteriores (24/01/2026)
 - ✅ **Conta Digital - Débito de Cashback Corrigido**
   - Método `debitar()` agora verifica `tipo_movimentacao.afeta_cashback`
   - Débito de cashback usa `cashback_disponivel` (antes usava `saldo_atual` incorretamente)

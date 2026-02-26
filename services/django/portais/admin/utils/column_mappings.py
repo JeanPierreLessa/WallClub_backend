@@ -49,7 +49,7 @@ def obter_mapeamento_colunas_completo():
         "var38": "(38) Valor Venda c/ Wall deduzido MDR Wall (R$)",
         "var39": "(39) Taxa Antec. Wall (%a.m.)",
         "var40": "(40) Taxa Antec. Wall Período (%)",
-        "var41": "(41) Custo Antec. Wall Período (R$)",
+        "var41": "(41) Receita Antec. Wall Período (R$)",
         "var42": "(42) Valor Previsto Repasse Loja (R$)",
         "var43": "(43) Data Prev. Pgto. Repasse",
         "var44": "(44) Valor pago Repasse Loja (R$)",
@@ -112,6 +112,7 @@ def obter_mapeamento_colunas_completo():
         "var96": "(96) Data Prevista Recebimento p/ Wall",
         "var97": "(97) Data Realizado recebimento",
         "var98": "(98) Valor Recebido Uptal (após MDR-e Antec. (R$)",
+        "variavel_nova_18": "Ajuste pagos de repasses (R$)",
         "var99": "(99) Dif. Valor Recebido x Valor a Receber (R$)",
         "var100": "(100) Motivo Dif. Valor a Rec x Valor Recebido",
         "var101": "(101) Valor Repassado à Loja (R$)",
@@ -177,7 +178,7 @@ def obter_colunas_monetarias_rpr():
     """Retorna lista de colunas monetárias específicas da tabela RPR"""
     return [
         'var11', 'var26', 'var37', 'var90', 'var41', 'var15', 'var98',
-        'var101', 'var58', 'var111_A'
+        'variavel_nova_18', 'var101', 'var58', 'var111_A'
     ]
 
 def obter_colunas_monetarias_gestao_financeira():

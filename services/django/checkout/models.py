@@ -11,7 +11,7 @@ from .models_recorrencia import RecorrenciaAgendada  # noqa: F401
 
 class CheckoutCliente(models.Model):
     """Cadastro permanente de clientes para checkout"""
-    
+
     loja = models.ForeignKey(
         'estr_organizacional.Loja',
         on_delete=models.PROTECT,
@@ -21,18 +21,28 @@ class CheckoutCliente(models.Model):
     cpf = models.CharField(max_length=11, null=True, blank=True, db_index=True)
     cnpj = models.CharField(max_length=14, null=True, blank=True, db_index=True)
     nome = models.CharField(max_length=200)
+    data_nascimento = models.DateField(null=True, blank=True)
     email = models.EmailField(max_length=200)
     # celular removido - agora gerenciado por checkout_cliente_telefone (2FA)
     endereco = models.CharField(max_length=300, null=True, blank=True)
+    logradouro = models.CharField(max_length=200, null=True, blank=True)
+    numero = models.CharField(max_length=20, null=True, blank=True)
+    complemento = models.CharField(max_length=100, null=True, blank=True)
+    bairro = models.CharField(max_length=100, null=True, blank=True)
+    cidade = models.CharField(max_length=100, null=True, blank=True)
+    estado = models.CharField(max_length=2, null=True, blank=True)
     cep = models.CharField(max_length=8, null=True, blank=True)
-    
+
+    # Bureau de Crédito
+    bureau_restricoes = models.TextField(null=True, blank=True, help_text="JSON com restrições do Bureau")
+
     # Auditoria
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(null=True, blank=True)
     ativo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'checkout_cliente'
         verbose_name = 'Cliente de Checkout'
@@ -49,15 +59,15 @@ class CheckoutCliente(models.Model):
             models.Index(fields=['loja', 'cpf'], name='idx_loja_cpf'),
             models.Index(fields=['loja', 'cnpj'], name='idx_loja_cnpj'),
         ]
-    
+
     def clean(self):
         """Validação customizada"""
         if not self.cpf and not self.cnpj:
             raise ValidationError('CPF ou CNPJ é obrigatório')
-        
+
         if self.cpf and self.cnpj:
             raise ValidationError('Informe apenas CPF ou CNPJ, não ambos')
-    
+
     def __str__(self):
         doc = self.cpf or self.cnpj
         return f"{self.nome} - {doc}"
@@ -65,7 +75,7 @@ class CheckoutCliente(models.Model):
 
 class CheckoutCartaoTokenizado(models.Model):
     """Cartões tokenizados (salvos) via Pinbank"""
-    
+
     cliente = models.ForeignKey(
         CheckoutCliente,
         on_delete=models.CASCADE,
@@ -78,14 +88,14 @@ class CheckoutCartaoTokenizado(models.Model):
     validade = models.CharField(max_length=7, help_text="Formato: MM/YYYY")
     bandeira = models.CharField(max_length=50)
     nome_cliente = models.CharField(max_length=200)
-    
+
     # Token do Pinbank (NUNCA armazenar número completo ou CVV)
     id_token = models.CharField(max_length=200, unique=True, db_index=True)
     tokenizadora = models.CharField(max_length=20, default='PINBANK')
-    
+
     valido = models.BooleanField(default=True, help_text="Cartão ativo/válido")
     apelido = models.CharField(max_length=50, null=True, blank=True, help_text="Ex: Cartão Principal")
-    
+
     # Controle de falhas consecutivas
     tentativas_falhas_consecutivas = models.IntegerField(
         default=0,
@@ -112,10 +122,10 @@ class CheckoutCartaoTokenizado(models.Model):
         blank=True,
         help_text="Data/hora da invalidação"
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'checkout_cartao_tokenizado'
         verbose_name = 'Cartão Tokenizado'
@@ -124,7 +134,7 @@ class CheckoutCartaoTokenizado(models.Model):
             models.Index(fields=['cliente', 'valido'], name='idx_cliente_valido'),
             models.Index(fields=['id_token'], name='idx_token'),
         ]
-    
+
     def __str__(self):
         apelido = f" ({self.apelido})" if self.apelido else ""
         return f"{self.bandeira} {self.cartao_mascarado}{apelido}"
@@ -132,7 +142,7 @@ class CheckoutCartaoTokenizado(models.Model):
 
 class CheckoutTransaction(models.Model):
     """Registro de transações do checkout (criada pelo vendedor, finalizada pelo cliente)"""
-    
+
     # Relacionamento com sessão (apenas para link de pagamento)
     session = models.OneToOneField(
         'link_pagamento_web.CheckoutSession',
@@ -141,7 +151,7 @@ class CheckoutTransaction(models.Model):
         null=True,
         blank=True
     )
-    
+
     # Relacionamento com cliente e cartão tokenizado (portal de vendas)
     cliente = models.ForeignKey(
         CheckoutCliente,
@@ -157,15 +167,16 @@ class CheckoutTransaction(models.Model):
         blank=True,
         related_name='transacoes'
     )
-    
+
     # Origem da transação
     ORIGEM_CHOICES = [
         ('CHECKOUT', 'Portal de Vendas - Link Enviado'),
         ('LINK', 'Integração Direta API'),
         ('RECORRENCIA', 'Recorrência Agendada'),
+        ('POS', 'Terminal POS'),
     ]
     origem = models.CharField(max_length=20, choices=ORIGEM_CHOICES, default='CHECKOUT')
-    
+
     # Vínculo com recorrência (se esta transação foi gerada por uma recorrência)
     checkout_recorrencia = models.ForeignKey(
         'checkout.RecorrenciaAgendada',
@@ -177,7 +188,7 @@ class CheckoutTransaction(models.Model):
         db_index=True,
         help_text="Recorrência que gerou esta transação (null se não for recorrente)"
     )
-    
+
     # Relacionamento com loja
     loja = models.ForeignKey(
         'estr_organizacional.Loja',
@@ -187,16 +198,16 @@ class CheckoutTransaction(models.Model):
         blank=False,
         related_name='checkout_transactions'
     )
-    
+
     # Token do link de pagamento (relaciona com CheckoutToken)
     token = models.CharField(max_length=100, unique=True, null=True, blank=True, db_index=True, help_text="Token do link de pagamento")
-    
+
     # Dados da transação
     nsu = models.CharField(max_length=50, unique=True, db_index=True, null=True, blank=True, help_text="NSU retornado pelo Pinbank")
     codigo_autorizacao = models.CharField(max_length=50, null=True, blank=True, help_text="Código de autorização do Pinbank")
     valor_transacao_original = models.DecimalField(max_digits=10, decimal_places=2, help_text="Valor definido pelo vendedor")
     valor_transacao_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Valor final cobrado (após escolha do cliente)")
-    
+
     # Status da transação
     STATUS_CHOICES = [
         ('PENDENTE', 'Pendente - Aguardando Cliente'),
@@ -208,28 +219,50 @@ class CheckoutTransaction(models.Model):
         ('PENDENTE_REVISAO', 'Pendente de Revisão Manual'),
     ]
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='PENDENTE', db_index=True)
-    
+
+    # Gateway de pagamento
+    GATEWAY_CHOICES = [
+        ('PINBANK', 'Pinbank'),
+        ('OWN', 'Own Financial'),
+    ]
+    gateway = models.CharField(
+        max_length=20,
+        choices=GATEWAY_CHOICES,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Gateway usado para processar o pagamento"
+    )
+
     # Dados do pagamento
     forma_pagamento = models.CharField(max_length=50, null=True, blank=True, help_text="Tipo de pagamento usado")
     parcelas = models.IntegerField(null=True, blank=True, help_text="Número de parcelas (NULL quando cliente ainda não escolheu)")
-    
+
     # Cupom de desconto
     cupom_id = models.BigIntegerField(null=True, blank=True, db_index=True, help_text="ID do cupom usado (se aplicável)")
     cupom_valor_desconto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Valor do desconto do cupom aplicado")
-    
+
     # ID do pedido no sistema da loja (opcional)
     pedido_origem_loja = models.CharField(max_length=100, null=True, blank=True, db_index=True)
-    
+
     # Código do item no sistema da loja (opcional)
     cod_item_origem_loja = models.CharField(max_length=100, null=True, blank=True, help_text="Código/SKU do produto")
-    
+
     # Vendedor que criou a transação (portais_usuarios renomeado)
     vendedor_id = models.BigIntegerField(null=True, blank=True, db_index=True, db_column='vendedor_id', help_text="ID do vendedor que criou (ex-portais_usuarios_id)")
-    
-    # Dados da API Pinbank
-    pinbank_response = models.JSONField(null=True, blank=True, help_text="Resposta completa do Pinbank")
-    erro_pinbank = models.TextField(null=True, blank=True, help_text="Mensagem de erro se houver")
-    
+
+    # Operador POS (para transações origem='POS')
+    operador_pos = models.CharField(max_length=50, null=True, blank=True, db_index=True, help_text="ID do operador que processou no POS")
+
+    # Dados do Gateway (Pinbank/OWN)
+    card_bin = models.CharField(max_length=6, null=True, blank=True, help_text="Primeiros 6 dígitos do cartão")
+    card_last4 = models.CharField(max_length=4, null=True, blank=True, help_text="Últimos 4 dígitos do cartão")
+    payment_brand_response = models.CharField(max_length=20, null=True, blank=True, help_text="Bandeira retornada pelo gateway")
+    result_code = models.CharField(max_length=20, null=True, blank=True, help_text="Código do resultado da transação")
+    tx_transaction_id = models.CharField(max_length=50, null=True, blank=True, db_index=True, help_text="ID da transação no gateway (TxTransactionId para OWN)")
+    gateway_response = models.JSONField(null=True, blank=True, help_text="Resposta completa do gateway")
+    erro_gateway = models.TextField(null=True, blank=True, help_text="Mensagem de erro se houver")
+
     # Dados do Antifraude (Risk Engine)
     score_risco = models.IntegerField(null=True, blank=True, db_index=True, help_text="Score de risco 0-100")
     decisao_antifraude = models.CharField(max_length=20, null=True, blank=True, db_index=True, help_text="APROVADO, REPROVADO, REVISAR")
@@ -238,16 +271,16 @@ class CheckoutTransaction(models.Model):
     revisado_por = models.BigIntegerField(null=True, blank=True, help_text="ID do analista que revisou")
     revisado_em = models.DateTimeField(null=True, blank=True, help_text="Quando foi revisado")
     observacao_revisao = models.TextField(null=True, blank=True, help_text="Observação da revisão manual")
-    
+
     # Auditoria do cliente (preenchido apenas quando cliente processa)
     ip_address_cliente = models.GenericIPAddressField(null=True, blank=True, help_text="IP do cliente ao processar")
     user_agent_cliente = models.TextField(null=True, blank=True, help_text="User agent do cliente")
-    
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, help_text="Quando vendedor criou")
     updated_at = models.DateTimeField(auto_now=True, help_text="Última atualização")
     processed_at = models.DateTimeField(null=True, blank=True, db_index=True, help_text="Quando cliente processou")
-    
+
     class Meta:
         db_table = 'checkout_transactions'
         verbose_name = 'Transação de Checkout'
@@ -259,14 +292,14 @@ class CheckoutTransaction(models.Model):
             models.Index(fields=['vendedor_id', 'created_at']),
             models.Index(fields=['checkout_recorrencia', 'created_at']),
         ]
-    
+
     def clean(self):
         """Validações customizadas"""
         # Validar consistência em transações de recorrência
         if self.origem == 'RECORRENCIA':
             if not self.checkout_recorrencia:
                 raise ValidationError('Recorrência obrigatória para origem=RECORRENCIA')
-            
+
             # Validar consistência de cliente
             if self.cliente and self.checkout_recorrencia.cliente:
                 if self.cliente.id != self.checkout_recorrencia.cliente.id:
@@ -274,7 +307,7 @@ class CheckoutTransaction(models.Model):
                         f'Cliente inconsistente: transação tem cliente_id={self.cliente.id}, '
                         f'mas recorrência tem cliente_id={self.checkout_recorrencia.cliente.id}'
                     )
-            
+
             # Validar consistência de cartão
             if self.cartao_tokenizado and self.checkout_recorrencia.cartao_tokenizado:
                 if self.cartao_tokenizado.id != self.checkout_recorrencia.cartao_tokenizado.id:
@@ -282,12 +315,12 @@ class CheckoutTransaction(models.Model):
                         f'Cartão inconsistente: transação tem cartao_id={self.cartao_tokenizado.id}, '
                         f'mas recorrência tem cartao_id={self.checkout_recorrencia.cartao_tokenizado.id}'
                     )
-    
+
     @property
     def valor_transacao(self):
         """Propriedade para compatibilidade: retorna valor final se existir, senão original"""
         return self.valor_transacao_final if self.valor_transacao_final else self.valor_transacao_original
-    
+
     @property
     def nome_cliente(self):
         """Retorna nome do cliente (session ou cliente)"""
@@ -296,7 +329,7 @@ class CheckoutTransaction(models.Model):
         elif self.cliente:
             return self.cliente.nome
         return 'N/A'
-    
+
     @property
     def cpf_cliente(self):
         """Retorna CPF do cliente (session ou cliente)"""
@@ -305,7 +338,7 @@ class CheckoutTransaction(models.Model):
         elif self.cliente:
             return self.cliente.cpf
         return 'N/A'
-    
+
     def __str__(self):
         if self.nsu:
             return f"NSU {self.nsu} - {self.status}"
@@ -314,31 +347,31 @@ class CheckoutTransaction(models.Model):
 
 class CheckoutTransactionAttempt(models.Model):
     """Registro de tentativas frustradas de pagamento"""
-    
+
     # Relacionamento com transação principal
     transaction = models.ForeignKey(
         CheckoutTransaction,
         on_delete=models.CASCADE,
         related_name='attempts'
     )
-    
+
     # Número da tentativa
     tentativa_numero = models.IntegerField(help_text="Número da tentativa (1, 2, 3...)")
-    
+
     # Dados do erro
-    erro_pinbank = models.TextField(null=True, blank=True, help_text="Mensagem de erro do Pinbank")
-    pinbank_response = models.JSONField(null=True, blank=True, help_text="Resposta completa da API Pinbank")
-    
+    erro_gateway = models.TextField(null=True, blank=True, help_text="Mensagem de erro do gateway")
+    gateway_response = models.JSONField(null=True, blank=True, help_text="Resposta completa da API do gateway")
+
     # Dados do cliente nesta tentativa
     ip_address_cliente = models.GenericIPAddressField(help_text="IP do cliente nesta tentativa")
     user_agent_cliente = models.TextField(help_text="User agent do cliente")
-    
+
     # Hash do cartão para auditoria
     numero_cartao_hash = models.CharField(max_length=64, null=True, blank=True, help_text="Hash SHA256 dos últimos 4 dígitos")
-    
+
     # Timestamp
     attempted_at = models.DateTimeField(auto_now_add=True, db_index=True, help_text="Data/hora da tentativa")
-    
+
     class Meta:
         db_table = 'checkout_transaction_attempts'
         verbose_name = 'Tentativa de Pagamento'
@@ -347,6 +380,6 @@ class CheckoutTransactionAttempt(models.Model):
         indexes = [
             models.Index(fields=['transaction', 'attempted_at']),
         ]
-    
+
     def __str__(self):
         return f"Tentativa {self.tentativa_numero} - Transaction {self.transaction_id}"

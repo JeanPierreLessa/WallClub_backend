@@ -25,16 +25,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party apps
     'rest_framework',
     'corsheaders',
-    
+
     # Core
     'wallclub_core',
     'wallclub_core.oauth',
     'wallclub_core.estr_organizacional',  # Necessário para model Loja
-    
+
     # TODOS os apps do projeto (para descobrir todas as tasks)
     'apps.cliente',
     'apps.conta_digital',
@@ -56,7 +56,7 @@ INSTALLED_APPS = [
 ]
 
 # URLs não são necessárias para worker (não recebe HTTP)
-ROOT_URLCONF = 'wallclub.urls'
+ROOT_URLCONF = 'wallclub.urls_portais'
 
 # Middleware mínimo (worker não processa requests HTTP)
 MIDDLEWARE = [

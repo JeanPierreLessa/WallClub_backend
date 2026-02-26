@@ -25,10 +25,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: wallclub-redis
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    mem_limit: 768m
+    cpus: 0.5
     networks:
       - wallclub-network
 
@@ -224,6 +226,106 @@ services:
     networks:
       - wallclub-network
 
+  # Prometheus - Monitoramento
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: wallclub-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    expose:
+      - "9090"
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.5
+    networks:
+      - wallclub-network
+
+  # Alertmanager - Alert Notifications
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: wallclub-alertmanager
+    volumes:
+      - alertmanager-data:/alertmanager
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    env_file:
+      - ./services/django/.env
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    expose:
+      - "9093"
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.25
+    networks:
+      - wallclub-network
+
+  # Grafana - Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: wallclub-grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+    env_file:
+      - ./services/django/.env
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWD:-wallclub2026}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=
+    expose:
+      - "3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+    networks:
+      - wallclub-network
+
+  # Redis Exporter - Métricas do Redis
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: wallclub-redis-exporter
+    command:
+      - '--redis.addr=redis://wallclub-redis:6379'
+    expose:
+      - "9121"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    mem_limit: 64m
+    cpus: 0.1
+    networks:
+      - wallclub-network
+
+  # Node Exporter - Métricas do Sistema
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: wallclub-node-exporter
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - '/:/host:ro'
+    expose:
+      - "9100"
+    restart: unless-stopped
+    mem_limit: 64m
+    cpus: 0.1
+    networks:
+      - wallclub-network
+
 networks:
   wallclub-network:
     driver: bridge
@@ -231,3 +333,6 @@ networks:
 
 volumes:
   redis_data:
+  prometheus-data:
+  alertmanager-data:
+  grafana-data:

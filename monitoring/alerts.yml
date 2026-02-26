@@ -1,0 +1,146 @@
+groups:
+  - name: wallclub_alerts
+    interval: 30s
+    rules:
+      # Alerta: Serviço Down
+      - alert: ServiceDown
+        expr: up{job=~"wallclub-.*"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Serviço {{ $labels.service }} está DOWN"
+          description: "O serviço {{ $labels.service }} ({{ $labels.container }}) não está respondendo há mais de 30 segundos."
+
+      # Alerta: Health Check Falhando
+      - alert: HealthCheckFailing
+        expr: up{job=~"wallclub-.*"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Health check falhando para {{ $labels.service }}"
+          description: "O health check do serviço {{ $labels.service }} está falhando há mais de 5 minutos."
+
+      # Alerta: Alta Latência no Banco de Dados
+      - alert: HighDatabaseLatency
+        expr: db_latency_seconds{job=~"wallclub-.*"} > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Alta latência no banco de dados"
+          description: "O serviço {{ $labels.service }} está com latência de banco acima de 1s há mais de 5 minutos."
+
+      # Alerta: Redis Down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Redis está DOWN"
+          description: "O Redis não está respondendo há mais de 1 minuto. Isso afeta cache e Celery."
+
+      # Alerta: MySQL Down
+      - alert: MySQLDown
+        expr: mysql_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "MySQL está DOWN"
+          description: "O MySQL não está respondendo há mais de 1 minuto. Todos os serviços serão afetados."
+
+      # Alerta: Redis Memory High
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Redis com memória alta"
+          description: "Redis está usando mais de 90% da memória disponível."
+
+      # Alerta: MySQL Connections High
+      - alert: MySQLConnectionsHigh
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "MySQL com muitas conexões"
+          description: "MySQL está usando mais de 80% das conexões disponíveis."
+
+      # Alerta: Celery Tasks Falhando
+      - alert: CeleryTasksFailing
+        expr: celery_tasks_failed_total > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Tarefas Celery falhando"
+          description: "Existem tarefas Celery falhando há mais de 5 minutos."
+
+      # Alerta: Espaço em Disco Baixo (Critical < 10%)
+      - alert: DiskSpaceLowCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Espaço em disco CRÍTICO"
+          description: "Servidor {{ $labels.instance }} tem menos de 10% de espaço em disco disponível no mountpoint {{ $labels.mountpoint }}."
+
+      # Alerta: Espaço em Disco Baixo (Warning < 20%)
+      - alert: DiskSpaceLowWarning
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Espaço em disco baixo"
+          description: "Servidor {{ $labels.instance }} tem menos de 20% de espaço em disco disponível no mountpoint {{ $labels.mountpoint }}."
+
+      # Alerta: CPU Alta
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "CPU alta no servidor"
+          description: "Servidor {{ $labels.instance }} está com CPU acima de 80% há mais de 10 minutos."
+
+      # Alerta: Memória Alta
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Memória alta no servidor"
+          description: "Servidor {{ $labels.instance }} está usando mais de 90% da memória há mais de 10 minutos."
+
+      # Alerta: Baixa Disponibilidade
+      - alert: LowAvailability
+        expr: avg_over_time(up{job=~"wallclub-.*"}[1h]) < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Disponibilidade baixa para {{ $labels.service }}"
+          description: "A disponibilidade do serviço {{ $labels.service }} está abaixo de 95% na última hora."

@@ -871,7 +871,7 @@ def loja_create(request):
 
             # Função para converter formato brasileiro para float
             def converter_valor_br(valor_str):
-                if not valor_str:
+                if not valor_str or valor_str == 'N/A':
                     return None
                 # Remove pontos (separador de milhar) e substitui vírgula por ponto
                 return float(valor_str.replace('.', '').replace(',', '.'))
@@ -890,8 +890,6 @@ def loja_create(request):
             loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
             loja_own.responsavel_assinatura_email = responsavel_assinatura_email or None
             loja_own.aceita_ecommerce = aceita_ecommerce
-            id_cesta = request.POST.get('id_cesta', '').strip()
-            loja_own.id_cesta = int(id_cesta) if id_cesta else None
             loja_own.save()
 
             # Processar upload de documentos do responsável e da empresa
@@ -993,17 +991,64 @@ def loja_create(request):
             registrar_log('admin.hierarquia', f'📋 Checkbox cadastrar_own: {cadastrar_own} (valor POST: {request.POST.get("cadastrar_own")})')
 
             if cadastrar_own:
-                # Coletar tarifas editadas do formulário
-                total_tarifas = int(request.POST.get('total_tarifas', 0))
-                tarifacao = []
-                for i in range(total_tarifas):
-                    tarifa_id = request.POST.get(f'tarifa_id_{i}')
-                    tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
-                    if tarifa_id and tarifa_valor:
+                # Verificar se aceita e-commerce
+                aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
+
+                # Verificar modelo de tarifação
+                modelo_tarifacao = request.POST.get('modelo_tarifacao', 'FLEX')
+
+                if modelo_tarifacao == 'FLEX':
+                    # Coletar tarifas editadas do formulário
+                    total_tarifas = int(request.POST.get('total_tarifas', 0))
+                    tarifacao = []
+                    cestas_ids_set = set()
+
+                    for i in range(total_tarifas):
+                        tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                        tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                        tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
+
+                        if tarifa_id and tarifa_valor:
+                            tarifacao.append({
+                                'id': int(tarifa_id),
+                                'valor': float(tarifa_valor)
+                            })
+                            if tarifa_cesta_id:
+                                cestas_ids_set.add(int(tarifa_cesta_id))
+
+                    cestas_ids = list(cestas_ids_set)
+                    antecipacao_automatica = 'N'
+                    taxa_antecipacao = 0
+
+                    registrar_log('admin.hierarquia',
+                        f'📊 Modelo FLEX: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                        f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+                else:
+                    # Modelo MDR - usar cesta de bandeira com taxa fixa
+                    taxa_mdr = float(request.POST.get('taxa_mdr', 2.5))
+                    antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
+
+                    # Montar tarifação com todas as cestas (POS + E-commerce) usando taxa MDR fixa
+                    service = CadastroOwnService(environment='LIVE')
+                    resultado_tarifacao = service.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
+
+                    if not resultado_tarifacao.get('sucesso'):
+                        messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
+                        return redirect('portais_admin:loja_create')
+
+                    # Aplicar taxa MDR fixa em TODAS as tarifas de TODAS as cestas
+                    tarifacao = []
+                    for tarifa in resultado_tarifacao.get('tarifacao', []):
                         tarifacao.append({
-                            'id': int(tarifa_id),
-                            'valor': float(tarifa_valor)
+                            'id': tarifa['id'],
+                            'valor': taxa_mdr  # Aplicar taxa MDR fixa
                         })
+
+                    cestas_ids = resultado_tarifacao.get('cestas_ids', [])  # TODAS as cestas
+
+                    registrar_log('admin.hierarquia',
+                        f'📊 Modelo MDR: Taxa {taxa_mdr}% aplicada em {len(tarifacao)} tarifas de {len(cestas_ids)} cestas - '
+                        f'Antecipação: {antecipacao_automatica} (E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                 # Montar dados para Own
                 loja_data = {
@@ -1033,7 +1078,6 @@ def loja_create(request):
                     'ramo_atividade': ramo_atividade,
                     'faturamento_previsto': faturamento_previsto,
                     'faturamento_contratado': faturamento_contratado,
-                    'id_cesta': request.POST.get('id_cesta'),
                     'responsavel_assinatura': responsavel_assinatura,
                     'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
                     'responsavel_assinatura_email': responsavel_assinatura_email,
@@ -1041,7 +1085,9 @@ def loja_create(request):
                     'antecipacao_automatica': antecipacao_automatica,
                     'taxa_antecipacao': taxa_antecipacao,
                     'tipo_antecipacao': 'ROTATIVO',
-                    'tarifacao': tarifacao
+                    'aceita_ecommerce': aceita_ecommerce,
+                    'tarifacao': tarifacao,
+                    'cestas_ids': cestas_ids
                 }
 
                 registrar_log('admin.hierarquia', f'🔄 Iniciando cadastro Own para loja {loja_id} - {razao_social}')
@@ -1215,9 +1261,8 @@ def loja_edit(request, loja_id):
         ramo_atividade = request.POST.get('ramo_atividade', '').strip()
         faturamento_previsto = request.POST.get('faturamento_previsto', '').strip()
         faturamento_contratado = request.POST.get('faturamento_contratado', '').strip()
-        quantidade_pos = request.POST.get('quantidade_pos', '1').strip()
         antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N').strip()
-        taxa_antecipacao = request.POST.get('taxa_antecipacao', '0').strip()
+        tipo_antecipacao = request.POST.get('tipo_antecipacao', 'ROTATIVO').strip()
         responsavel_assinatura = request.POST.get('responsavel_assinatura', '').strip()
         responsavel_assinatura_cpf = request.POST.get('responsavel_assinatura_cpf', '').strip()
         responsavel_assinatura_email = request.POST.get('responsavel_assinatura_email', '').strip()
@@ -1280,7 +1325,7 @@ def loja_edit(request, loja_id):
 
                     # Função para converter formato brasileiro para float
                     def converter_valor_br(valor_str):
-                        if not valor_str:
+                        if not valor_str or valor_str == 'N/A':
                             return None
                         # Remove pontos (separador de milhar) e substitui vírgula por ponto
                         return float(valor_str.replace('.', '').replace(',', '.'))
@@ -1291,16 +1336,13 @@ def loja_edit(request, loja_id):
                     loja_own.mcc = mcc or None
                     loja_own.faturamento_previsto = converter_valor_br(faturamento_previsto)
                     loja_own.faturamento_contratado = converter_valor_br(faturamento_contratado)
-                    loja_own.quantidade_pos = int(quantidade_pos) if quantidade_pos else 0
+                    loja_own.quantidade_pos = 0  # POS cadastrado via API específica (configuraEquipamento)
                     loja_own.antecipacao_automatica = antecipacao_automatica or 'N'
-                    loja_own.taxa_antecipacao = converter_valor_br(taxa_antecipacao) or 0.00
-                    loja_own.tipo_antecipacao = 'ROTATIVO'
+                    loja_own.tipo_antecipacao = tipo_antecipacao or 'ROTATIVO'
                     loja_own.responsavel_assinatura = responsavel_assinatura or None
                     loja_own.responsavel_assinatura_cpf = responsavel_assinatura_cpf or None
                     loja_own.responsavel_assinatura_email = responsavel_assinatura_email or None
                     loja_own.aceita_ecommerce = aceita_ecommerce
-                    id_cesta = request.POST.get('id_cesta', '').strip()
-                    loja_own.id_cesta = int(id_cesta) if id_cesta else None
                     loja_own.save()
 
                     # Processar upload de documentos do responsável e da empresa
@@ -1431,10 +1473,6 @@ def loja_edit(request, loja_id):
                     if cadastrar_own:
                         try:
                             # Validar campos obrigatórios para Own
-                            id_cesta = request.POST.get('id_cesta')
-                            if not id_cesta:
-                                messages.warning(request, 'Loja atualizada, mas é necessário selecionar uma Cesta de Tarifas para cadastrar na Own.')
-                                return redirect('portais_admin:loja_detail', loja_id=loja_id)
 
                             if not cnae or not mcc or not ramo_atividade:
                                 messages.warning(request, 'Loja atualizada, mas é necessário selecionar um CNAE para cadastrar na Own.')
@@ -1448,17 +1486,63 @@ def loja_edit(request, loja_id):
                                 messages.warning(request, 'Loja atualizada, mas é necessário informar o Responsável pela Assinatura para cadastrar na Own.')
                                 return redirect('portais_admin:loja_detail', loja_id=loja_id)
 
-                            # Coletar tarifas editadas do formulário
-                            total_tarifas = int(request.POST.get('total_tarifas', 0))
-                            tarifacao = []
-                            for i in range(total_tarifas):
-                                tarifa_id = request.POST.get(f'tarifa_id_{i}')
-                                tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
-                                if tarifa_id and tarifa_valor:
+                            # Verificar se aceita e-commerce
+                            aceita_ecommerce = request.POST.get('aceita_ecommerce') == '1'
+
+                            # Verificar modelo de tarifação
+                            modelo_tarifacao = request.POST.get('modelo_tarifacao', 'FLEX')
+
+                            if modelo_tarifacao == 'FLEX':
+                                # Coletar tarifas editadas do formulário
+                                total_tarifas = int(request.POST.get('total_tarifas', 0))
+                                tarifacao = []
+                                cestas_ids_set = set()
+
+                                for i in range(total_tarifas):
+                                    tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                                    tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                                    tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
+
+                                    if tarifa_id and tarifa_valor:
+                                        tarifacao.append({
+                                            'id': int(tarifa_id),
+                                            'valor': float(tarifa_valor)
+                                        })
+                                        if tarifa_cesta_id:
+                                            cestas_ids_set.add(int(tarifa_cesta_id))
+
+                                cestas_ids = list(cestas_ids_set)
+                                antecipacao_automatica = 'N'
+
+                                registrar_log('admin.hierarquia',
+                                    f'📊 Modelo FLEX (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                                    f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+                            else:
+                                # Modelo MDR - usar todas as cestas com taxa fixa
+                                taxa_mdr = float(request.POST.get('taxa_mdr', 2.5))
+                                antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
+
+                                # Montar tarifação com todas as cestas (POS + E-commerce) usando taxa MDR fixa
+                                service_tarif = CadastroOwnService(environment='LIVE')
+                                resultado_tarifacao = service_tarif.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
+
+                                if not resultado_tarifacao.get('sucesso'):
+                                    messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
+                                    return redirect('portais_admin:loja_detail', loja_id=loja_id)
+
+                                # Aplicar taxa MDR fixa em TODAS as tarifas de TODAS as cestas
+                                tarifacao = []
+                                for tarifa in resultado_tarifacao.get('tarifacao', []):
                                     tarifacao.append({
-                                        'id': int(tarifa_id),
-                                        'valor': float(tarifa_valor)
+                                        'id': tarifa['id'],
+                                        'valor': taxa_mdr
                                     })
+
+                                cestas_ids = resultado_tarifacao.get('cestas_ids', [])
+
+                                registrar_log('admin.hierarquia',
+                                    f'📊 Modelo MDR (edição): Taxa {taxa_mdr}% aplicada em {len(tarifacao)} tarifas de {len(cestas_ids)} cestas - '
+                                    f'Antecipação: {antecipacao_automatica} (E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                             loja_data = {
                                 'loja_id': loja_id,
@@ -1487,18 +1571,17 @@ def loja_edit(request, loja_id):
                                 'ramo_atividade': ramo_atividade,
                                 'faturamento_previsto': faturamento_previsto,
                                 'faturamento_contratado': faturamento_contratado,
-                                'id_cesta': request.POST.get('id_cesta'),
                                 'responsavel_assinatura': responsavel_assinatura,
                                 'responsavel_assinatura_cpf': responsavel_assinatura_cpf,
                                 'responsavel_assinatura_email': responsavel_assinatura_email,
-                                'quantidade_pos': quantidade_pos,
+                                'quantidade_pos': 0,
                                 'antecipacao_automatica': antecipacao_automatica,
-                                'taxa_antecipacao': taxa_antecipacao,
-                                'tipo_antecipacao': 'ROTATIVO',
+                                'tipo_antecipacao': tipo_antecipacao,
                                 'tarifacao': tarifacao,
-                                'aceita_ecommerce': request.POST.get('aceita_ecommerce') == '1',
-                                'protocolo': loja_own.protocolo if loja_own else '',  # Protocolo salvo para alterações
-                                'contrato': loja_own.contrato if loja_own else ''  # Número do contrato para aditivos
+                                'cestas_ids': cestas_ids,
+                                'aceita_ecommerce': aceita_ecommerce,
+                                'protocolo': loja_own.protocolo if loja_own else '',
+                                'contrato': loja_own.contrato if loja_own else ''
                             }
 
                             registrar_log('admin.hierarquia', f'🔄 Iniciando cadastro Own para loja {loja_id} - {razao_social}')

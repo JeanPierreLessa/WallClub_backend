@@ -135,8 +135,8 @@
                     <span class="detail-value medium">R$ {{ dados_metricas.total_lancamentos_manuais|add_thousands_separator }}</span>
                 </div>
                 <div class="metric-detail">
-                    <span class="detail-label">Custos POS / Equip.:</span>
-                    <span class="detail-value medium">R$ {{ dados_metricas.custos_pos_equip|add_thousands_separator }}</span>
+                    <span class="detail-label">Custo ajuste nos Repasses:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.ajuste_pagos_repasses|add_thousands_separator }}</span>
                 </div>
                 <div class="metric-detail">
                     <span class="detail-label">Impostos:</span>
@@ -151,7 +151,7 @@
                 <h3>Resultado Financeiro</h3>
             </div>
             <div class="card-body">
-                <div class="metric-value large">R$ {{ dados_metricas.resultado_financeiro|add_thousands_separator }}
+                <div class="metric-value large">R$ {{ dados_metricas.resultado_financeiro_totalizador|add_thousands_separator }}
                 </div>
                 <div class="metric-detail">
                     <span class="detail-label">Percentual de Comissão:</span>
@@ -160,6 +160,14 @@
                 <div class="metric-detail">
                     <span class="detail-label">Comissão Total a pagar:</span>
                     <span class="detail-value medium">R$ {{ dados_metricas.comissao_total_pagar|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Custos POS / Equip.:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.custos_pos_equip|add_thousands_separator }}</span>
+                </div>
+                <div class="metric-detail">
+                    <span class="detail-label">Resultado após Custos de POS's:</span>
+                    <span class="detail-value medium">R$ {{ dados_metricas.resultado_apos_custos_pos|add_thousands_separator }}</span>
                 </div>
                 <div class="metric-detail">
                     <span class="detail-label">Comissão Total Líquida a Pagar:</span>
@@ -330,7 +338,7 @@
         Object.keys(primeiroRegistro).forEach(campo => {
             const th = document.createElement('th');
             const label = data.colunas[campo] || campo;
-            th.textContent = label.length > 15 ? label.substring(0, 15) + '...' : label;
+            th.textContent = label;
             th.title = label; // Tooltip com texto completo
             cabecalho.appendChild(th);
         });
@@ -350,6 +358,10 @@
                 // Formatação especial para campos monetários
                 if (data.campos_monetarios.includes(campo)) {
                     td.className = 'monetary';
+                    td.textContent = valor || '-';
+                } else if (typeof valor === 'string' && valor.includes('%')) {
+                    // Detectar valores percentuais
+                    td.className = 'percentage';
                     td.textContent = valor || '-';
                 } else {
                     td.textContent = valor || '-';
@@ -372,6 +384,10 @@
                 // Formatação especial para campos monetários (mesmo estilo do Gestão Admin)
                 if (data.campos_monetarios.includes(campo)) {
                     td.className = 'monetary';
+                    td.textContent = valor || '-';
+                } else if (typeof valor === 'string' && valor.includes('%')) {
+                    // Detectar valores percentuais
+                    td.className = 'percentage';
                     td.textContent = valor || '-';
                 } else {
                     td.textContent = valor || '-';

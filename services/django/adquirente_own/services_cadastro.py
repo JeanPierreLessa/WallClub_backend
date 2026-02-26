@@ -16,13 +16,16 @@ from wallclub_core.utilitarios.log_control import registrar_log
 class CadastroOwnService:
     """Serviço para cadastro de estabelecimentos na Own Financial"""
 
-    def __init__(self, environment: str = 'LIVE'):
+    def __init__(self, environment: str = None):
         """
         Inicializa serviço de cadastro
 
         Args:
-            environment: 'LIVE' ou 'TEST'
+            environment: 'LIVE' ou 'TEST' (None = usa ENVIRONMENT do sistema)
         """
+        from adquirente_own.services_credenciais import CredenciaisOwnService
+        if environment is None:
+            environment = CredenciaisOwnService.obter_environment()
         self.own_service = OwnService(environment=environment)
         self.environment = environment
 
@@ -36,6 +39,14 @@ class CadastroOwnService:
         Returns:
             Payload formatado para API Own
         """
+        # Extrair primeiro cestaId das cestas aplicáveis (se API Own exigir idCesta)
+        # O campo idCesta deve ser o ID da CESTA, não o ID da tarifa individual
+        cestas_ids = loja_data.get('cestas_ids', [])
+        id_cesta_principal = cestas_ids[0] if cestas_ids else 0
+
+        # Extrair array de tarifação
+        tarifacao = loja_data.get('tarifacao', [])
+
         payload = {
             # Dados do estabelecimento
             "cnpj": loja_data['cnpj'],
@@ -79,7 +90,7 @@ class CadastroOwnService:
             # Configurações de pagamento
             "quantidadePos": int(loja_data.get('quantidade_pos', 1)),
             "antecipacaoAutomatica": loja_data.get('antecipacao_automatica', 'N'),
-            "taxaAntecipacao": float(loja_data.get('taxa_antecipacao', 0)),
+            "taxaAntecipacao": 1.1 if loja_data.get('antecipacao_automatica') == 'S' else 0,
             "tipoAntecipacao": loja_data.get('tipo_antecipacao', 'ROTATIVO'),
 
             # Dados bancários
@@ -93,8 +104,8 @@ class CadastroOwnService:
             "tipoContrato": "W",  # White Label
             "codConfiguracao": "",
             "cnpjParceiro": "54430621000134",  # CNPJ WallClub
-            "idCesta": int(loja_data['id_cesta']),
-            "tarifacao": loja_data['tarifacao'],  # Lista de tarifas
+            "idCesta": id_cesta_principal,  # Primeiro ID das tarifas (campo legado - tarifacao é o que importa)
+            "tarifacao": tarifacao,  # Lista de tarifas de TODAS as cestas aplicáveis
 
             # Protocolo, contrato e hash
             # Se tem contrato = aditivo (protocoloCore vazio), senão pode ter protocolo para reenvio
@@ -382,7 +393,6 @@ class CadastroOwnService:
             # Processar resposta
             dados_resposta = resultado.get('dados', {})
             protocolo = dados_resposta.get('protocolo', '')
-            conveniada_id = dados_resposta.get('conveniadaId', '')
 
             # Atualizar ou criar registro LojaOwn
             loja_own, created = LojaOwn.objects.update_or_create(
@@ -390,19 +400,49 @@ class CadastroOwnService:
                 defaults={
                     'cadastrar': True,
                     'protocolo': protocolo,
-                    'conveniada_id': conveniada_id,
                     'status_credenciamento': 'PENDENTE',
                     'data_credenciamento': datetime.now(),
-                    'mensagem_status': 'Cadastro enviado com sucesso'
+                    'mensagem_status': 'Cadastro enviado com sucesso',
+                    'aceita_ecommerce': loja_data.get('aceita_ecommerce', False)
                 }
             )
 
-            registrar_log('adquirente_own', f'✅ Cadastro enviado: protocolo={protocolo}, conveniada_id={conveniada_id}')
+            # Salvar tarifas no banco
+            tarifacao = loja_data.get('tarifacao', [])
+            if tarifacao:
+                # Limpar tarifas antigas
+                LojaOwnTarifacao.objects.filter(loja_own_id=loja_own.id).delete()
+
+                # Salvar novas tarifas
+                tarifas_para_criar = []
+                for tarifa in tarifacao:
+                    tarifas_para_criar.append(
+                        LojaOwnTarifacao(
+                            loja_own_id=loja_own.id,
+                            cesta_valor_id=tarifa.get('id'),
+                            valor=tarifa.get('valor'),
+                            descricao=tarifa.get('descricao', '')
+                        )
+                    )
+
+                LojaOwnTarifacao.objects.bulk_create(tarifas_para_criar)
+                registrar_log('adquirente_own', f'💾 {len(tarifas_para_criar)} tarifas salvas no banco')
+
+            # Salvar histórico do protocolo
+            from adquirente_own.models_cadastro import LojaOwnProtocoloHistorico
+            LojaOwnProtocoloHistorico.objects.create(
+                loja_id=loja_id,
+                protocolo=protocolo,
+                tipo='ADITIVO' if loja_data.get('contrato') else 'CREDENCIAMENTO',
+                reenvio='S' if loja_data.get('protocolo') else 'N',
+                status='EM ANALISE'
+            )
+
+            registrar_log('adquirente_own', f'✅ Cadastro enviado: protocolo={protocolo}')
 
             return {
                 'sucesso': True,
                 'protocolo': protocolo,
-                'conveniada_id': conveniada_id,
                 'mensagem': 'Cadastro enviado com sucesso. Aguardando processamento da Own.'
             }
 
@@ -411,6 +451,101 @@ class CadastroOwnService:
             return {
                 'sucesso': False,
                 'mensagem': f'Erro ao cadastrar: {str(e)}'
+            }
+
+    def montar_tarifacao_completa(self, aceita_ecommerce: bool = False) -> Dict[str, Any]:
+        """
+        Monta array de tarifação com TODAS as cestas aplicáveis
+
+        Regra Own Financial:
+        - POS apenas: Cestas 1 (por bandeira) + 2 (por parcela)
+        - POS + E-commerce: Cestas 1 + 2 + 3 (por parcela e-commerce)
+
+        Args:
+            aceita_ecommerce: Se aceita pagamentos e-commerce
+
+        Returns:
+            {
+                'sucesso': bool,
+                'tarifacao': List[Dict],
+                'cestas_ids': List[int],
+                'mensagem': str
+            }
+        """
+        from adquirente_own.services_consultas import ConsultasOwnService
+
+        try:
+            consultas_service = ConsultasOwnService(environment=self.environment)
+
+            # Buscar todas as cestas disponíveis
+            resultado = consultas_service.consultar_cestas()
+
+            if not resultado.get('sucesso'):
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Erro ao consultar cestas de tarifas'
+                }
+
+            todas_cestas = resultado.get('dados', [])
+
+            # Identificar cestas por nome
+            cesta_bandeira = None
+            cesta_parcela_pos = None
+            cesta_parcela_ecommerce = None
+
+            for cesta in todas_cestas:
+                nome = cesta.get('nomeCesta', '').lower()
+                if 'bandeira' in nome:
+                    if not cesta_bandeira:
+                        cesta_bandeira = cesta.get('cestaId')
+                elif 'e-commerce' in nome or 'ecommerce' in nome:
+                    if not cesta_parcela_ecommerce:
+                        cesta_parcela_ecommerce = cesta.get('cestaId')
+                elif 'parcela' in nome:
+                    if not cesta_parcela_pos:
+                        cesta_parcela_pos = cesta.get('cestaId')
+
+            # Determinar quais cestas incluir
+            cestas_aplicaveis = []
+            if cesta_bandeira:
+                cestas_aplicaveis.append(cesta_bandeira)
+            if cesta_parcela_pos:
+                cestas_aplicaveis.append(cesta_parcela_pos)
+            if aceita_ecommerce and cesta_parcela_ecommerce:
+                cestas_aplicaveis.append(cesta_parcela_ecommerce)
+
+            if not cestas_aplicaveis:
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Nenhuma cesta de tarifas encontrada'
+                }
+
+            # Montar array de tarifação com todas as tarifas das cestas aplicáveis
+            tarifacao = []
+            for cesta_id in cestas_aplicaveis:
+                tarifas_cesta = [c for c in todas_cestas if c.get('cestaId') == cesta_id]
+                for tarifa in tarifas_cesta:
+                    tarifacao.append({
+                        'id': tarifa.get('cestaValorId'),
+                        'valor': float(tarifa.get('valor', 0))
+                    })
+
+            registrar_log('adquirente_own',
+                f'✅ Tarifação montada: {len(tarifacao)} tarifas de {len(cestas_aplicaveis)} cestas '
+                f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+
+            return {
+                'sucesso': True,
+                'tarifacao': tarifacao,
+                'cestas_ids': cestas_aplicaveis,
+                'mensagem': f'{len(tarifacao)} tarifas carregadas de {len(cestas_aplicaveis)} cestas'
+            }
+
+        except Exception as e:
+            registrar_log('adquirente_own', f'❌ Erro ao montar tarifação: {str(e)}', nivel='ERROR')
+            return {
+                'sucesso': False,
+                'mensagem': f'Erro ao montar tarifação: {str(e)}'
             }
 
     def validar_dados_cadastro(self, loja_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -438,7 +573,7 @@ class CadastroOwnService:
             'cep', 'logradouro', 'numero_endereco', 'bairro', 'municipio', 'uf',
             'responsavel_assinatura',
             'codigo_banco', 'agencia', 'numero_conta', 'digito_conta',
-            'id_cesta', 'tarifacao'
+            'tarifacao'
         ]
 
         for campo in campos_obrigatorios:

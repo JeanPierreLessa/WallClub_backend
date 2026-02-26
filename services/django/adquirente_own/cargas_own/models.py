@@ -3,17 +3,17 @@ from django.db import models
 
 class OwnExtratoTransacoes(models.Model):
     """Armazena transações consultadas da API Own Financial"""
-    
+
     id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     lido = models.BooleanField(default=False)
-    
+
     # Identificação
     cnpjCpfCliente = models.CharField(max_length=14, db_index=True)
     cnpjCpfParceiro = models.CharField(max_length=14, null=True, blank=True)
     identificadorTransacao = models.CharField(max_length=50, unique=True, db_index=True)
-    
+
     # Dados da transação
     data = models.DateTimeField(db_index=True)
     numeroSerieEquipamento = models.CharField(max_length=50, null=True, blank=True)
@@ -22,14 +22,17 @@ class OwnExtratoTransacoes(models.Model):
     mdr = models.DecimalField(max_digits=10, decimal_places=2)
     valorAntecipacaoTotal = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     taxaAntecipacaoTotal = models.DecimalField(max_digits=12, decimal_places=10, null=True, blank=True)
-    
+
     # Status e classificação
     statusTransacao = models.CharField(max_length=50)
     bandeira = models.CharField(max_length=30)
     modalidade = models.CharField(max_length=100)
     codigoAutorizacao = models.CharField(max_length=20, null=True, blank=True)
     numeroCartao = models.CharField(max_length=20, null=True, blank=True)
-    
+    codigoTransacao = models.CharField(max_length=50, null=True, blank=True, help_text='NSU/Código da transação na OWN')
+    transClienteId = models.CharField(max_length=50, null=True, blank=True)
+    dataCancelamento = models.DateTimeField(null=True, blank=True)
+
     # Dados da parcela
     parcelaId = models.BigIntegerField(null=True, blank=True)
     statusPagamento = models.CharField(max_length=30, null=True, blank=True)
@@ -43,10 +46,12 @@ class OwnExtratoTransacoes(models.Model):
     taxaAntecipada = models.DecimalField(max_digits=12, decimal_places=10, null=True, blank=True)
     antecipado = models.CharField(max_length=1, null=True, blank=True)
     numeroTitulo = models.CharField(max_length=20, null=True, blank=True)
-    
+    detalheEfeito = models.TextField(null=True, blank=True, help_text='JSON com detalhes de efeito da parcela')
+    detalheAntecipacao = models.TextField(null=True, blank=True, help_text='JSON com detalhes de antecipação da parcela')
+
     # Controle
     processado = models.BooleanField(default=False, db_index=True)
-    
+
     class Meta:
         app_label = 'adquirente_own'
         db_table = 'ownExtratoTransacoes'
@@ -59,18 +64,18 @@ class OwnExtratoTransacoes(models.Model):
             models.Index(fields=['lido']),
             models.Index(fields=['processado']),
         ]
-    
+
     def __str__(self):
         return f"Own {self.identificadorTransacao} - R$ {self.valor}"
 
 
 class OwnLiquidacoes(models.Model):
     """Armazena liquidações consultadas da API Own Financial"""
-    
+
     id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    
+
     lancamentoId = models.BigIntegerField(unique=True, db_index=True)
     statusPagamento = models.CharField(max_length=30)
     dataPagamentoPrevista = models.DateField()
@@ -85,9 +90,9 @@ class OwnLiquidacoes(models.Model):
     docParceiro = models.CharField(max_length=14)
     nsuTransacao = models.CharField(max_length=50)
     numeroTitulo = models.CharField(max_length=20)
-    
+
     processado = models.BooleanField(default=False, db_index=True)
-    
+
     class Meta:
         app_label = 'adquirente_own'
         db_table = 'ownLiquidacoes'
@@ -99,7 +104,7 @@ class OwnLiquidacoes(models.Model):
             models.Index(fields=['dataPagamentoReal']),
             models.Index(fields=['processado']),
         ]
-    
+
     def __str__(self):
         return f"Liquidação {self.lancamentoId} - R$ {self.valor}"
 
@@ -107,31 +112,31 @@ class OwnLiquidacoes(models.Model):
 class CredenciaisExtratoContaOwn(models.Model):
     """
     Credenciais OAuth 2.0 do cliente White Label (WallClub)
-    
+
     Cada registro representa um conjunto de credenciais para acessar APIs Own.
     As lojas individuais são identificadas via docParceiro nas consultas.
     """
-    
+
     id = models.AutoField(primary_key=True)
-    
+
     # Identificação do Cliente White Label
     nome = models.CharField(max_length=256, help_text='Nome do cliente White Label')
     cnpj_white_label = models.CharField(
-        max_length=14, 
+        max_length=14,
         unique=True,
         db_index=True,
         help_text='CNPJ do cliente White Label (usado como cnpjCliente nas APIs)'
     )
-    
+
     # OAuth 2.0 (APIs Adquirência)
     client_id = models.CharField(max_length=256, help_text='Identificador do cliente Own')
     client_secret = models.CharField(max_length=512, help_text='Chave secreta OAuth 2.0')
     scope = models.CharField(max_length=256, help_text='Escopo de integração liberado')
-    
+
     # e-SiTef (Transações E-commerce)
     entity_id = models.CharField(max_length=100, help_text='Entity ID para transações e-SiTef')
     access_token = models.CharField(max_length=512, help_text='Access token e-SiTef')
-    
+
     # Ambiente
     environment = models.CharField(
         max_length=10,
@@ -140,12 +145,12 @@ class CredenciaisExtratoContaOwn(models.Model):
         db_index=True,
         help_text='Ambiente: LIVE ou TEST'
     )
-    
+
     # Controle
     ativo = models.BooleanField(default=True, help_text='Credencial ativa')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    
+
     class Meta:
         app_label = 'adquirente_own'
         db_table = 'credenciaisExtratoContaOwn'
@@ -155,6 +160,6 @@ class CredenciaisExtratoContaOwn(models.Model):
             models.Index(fields=['cnpj_white_label']),
             models.Index(fields=['environment']),
         ]
-    
+
     def __str__(self):
         return f"{self.nome} - {self.cnpj_white_label} ({self.environment})"

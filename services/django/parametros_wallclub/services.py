@@ -45,7 +45,9 @@ class ParametrosService:
         try:
             # Se id_plano e wall foram fornecidos, fazer busca específica
             if id_plano is not None and wall is not None:
-                return ParametrosWall.objects.filter(
+                registrar_log('parametros_wallclub', f"DEBUG get_configuracao_ativa: loja_id={loja_id}, id_plano={id_plano}, wall={wall.upper()}, data_ref={data_referencia}", nivel='DEBUG')
+
+                configs = ParametrosWall.objects.filter(
                     loja_id=loja_id,
                     id_plano=id_plano,
                     wall=wall.upper(),
@@ -53,7 +55,16 @@ class ParametrosService:
                 ).filter(
                     models.Q(vigencia_fim__isnull=True) |
                     models.Q(vigencia_fim__gte=data_referencia)
-                ).first()
+                )
+
+                registrar_log('parametros_wallclub', f"DEBUG get_configuracao_ativa: encontrados {configs.count()} registros", nivel='DEBUG')
+                for cfg in configs:
+                    registrar_log('parametros_wallclub', f"DEBUG config encontrado: id={cfg.id}, loja_id={cfg.loja_id}, id_plano={cfg.id_plano}, wall={cfg.wall}, vigencia_inicio={cfg.vigencia_inicio}, vigencia_fim={cfg.vigencia_fim}", nivel='DEBUG')
+
+                result = configs.first()
+                if result:
+                    registrar_log('parametros_wallclub', f"DEBUG get_configuracao_ativa: retornando config.id={result.id}", nivel='DEBUG')
+                return result
             else:
                 # Busca tradicional apenas por loja e data
                 return ParametrosWall.get_configuracao_ativa(loja_id, data_referencia)
@@ -228,7 +239,14 @@ class ParametrosService:
                 # Mapear parâmetro uptal para campo na estrutura consolidada
                 # wclub.parametros_wall → parametro_uptal_{numero}
                 campo_parametro = f'parametro_uptal_{parametro}'
+                registrar_log('parametros_wallclub', f"DEBUG retornar_parametro_uptal: buscando campo '{campo_parametro}' no config.id={config.id}", nivel='DEBUG')
                 valor = getattr(config, campo_parametro, None)
+                registrar_log('parametros_wallclub', f"DEBUG retornar_parametro_uptal: valor encontrado = {valor}", nivel='DEBUG')
+
+                # Log de todos os valores uptal para comparação
+                for i in range(1, 7):
+                    val = getattr(config, f'parametro_uptal_{i}', None)
+                    registrar_log('parametros_wallclub', f"DEBUG config.parametro_uptal_{i} = {val}", nivel='DEBUG')
 
                 return Decimal(str(valor)) if valor is not None else None
 
@@ -493,7 +511,8 @@ class CalculadoraDesconto:
                 )
 
         # CRÍTICO: Ajuste especial para parcelados Wall S e C (PHP linha 113-116)
-        if self.valores[13] > 0 and wall in ['S', 'C']:
+        # Só aplicar se houver desconto ou encargo (valores[19] != valores[11])
+        if self.valores[13] > 0 and wall in ['S', 'C'] and self.valores[19] != self.valores[11]:
             ref = self._format_decimal(self.valores[19] / self.valores[13])
             self.valores[19] = self._format_decimal(ref * self.valores[13])
 

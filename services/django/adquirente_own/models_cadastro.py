@@ -15,14 +15,15 @@ class LojaOwn(models.Model):
     cadastrar = models.BooleanField(default=False, help_text='Indica se deve cadastrar na Own')
 
     # Dados de credenciamento
-    conveniada_id = models.CharField(max_length=50, null=True, blank=True, help_text='ID do estabelecimento na Own')
+    entity_id = models.CharField(max_length=100, null=True, blank=True, help_text='Entity ID para transações e-commerce/POS (obtido via /ecommerce/token)')
+    access_token = models.CharField(max_length=512, null=True, blank=True, help_text='Access token para transações e-commerce/POS (obtido via /ecommerce/token)')
     status_credenciamento = models.CharField(
         max_length=50,
         null=True,
         blank=True,
         help_text='Status: PENDENTE, APROVADO, REPROVADO, PROCESSANDO'
     )
-    protocolo = models.CharField(max_length=50, null=True, blank=True, help_text='Protocolo de cadastro na Own')
+    protocolo = models.CharField(max_length=50, null=True, blank=True, help_text='Protocolo atual de cadastro na Own')
     contrato = models.CharField(max_length=50, null=True, blank=True, help_text='Número do contrato na Own')
     data_credenciamento = models.DateTimeField(null=True, blank=True, help_text='Data do credenciamento')
     mensagem_status = models.TextField(null=True, blank=True, help_text='Mensagem de retorno da Own')
@@ -69,7 +70,6 @@ class LojaOwn(models.Model):
         verbose_name_plural = 'Lojas Own'
         indexes = [
             models.Index(fields=['loja_id']),
-            models.Index(fields=['conveniada_id']),
             models.Index(fields=['status_credenciamento']),
             models.Index(fields=['protocolo']),
             models.Index(fields=['cadastrar']),
@@ -141,6 +141,47 @@ class LojaOwnTarifacao(models.Model):
 
     def __str__(self):
         return f"Tarifação {self.cesta_valor_id} - R$ {self.valor}"
+
+
+class LojaOwnProtocoloHistorico(models.Model):
+    """Histórico de protocolos de cadastro/recadastro na Own"""
+
+    id = models.AutoField(primary_key=True)
+    loja_id = models.IntegerField(db_index=True, help_text='FK para tabela loja')
+
+    # Dados do protocolo
+    protocolo = models.CharField(max_length=50, db_index=True, help_text='Número do protocolo')
+    tipo = models.CharField(max_length=20, help_text='CREDENCIAMENTO ou ADITIVO')
+    reenvio = models.CharField(max_length=1, default='N', help_text='S=Sim, N=Não')
+
+    # Status
+    status = models.CharField(max_length=50, help_text='EM ANALISE, SUCESSO, ERRO, APPROVED, REPROVED')
+    motivo = models.TextField(null=True, blank=True, help_text='Motivo em caso de reprovação')
+
+    # Resultado
+    contrato = models.CharField(max_length=50, null=True, blank=True, help_text='Número do contrato (se aprovado)')
+    data_envio = models.DateTimeField(auto_now_add=True, help_text='Data de envio do protocolo')
+    data_retorno = models.DateTimeField(null=True, blank=True, help_text='Data de retorno do webhook')
+
+    # Auditoria
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'adquirente_own'
+        db_table = 'loja_own_protocolo_historico'
+        verbose_name = 'Histórico de Protocolo Own'
+        verbose_name_plural = 'Histórico de Protocolos Own'
+        indexes = [
+            models.Index(fields=['loja_id']),
+            models.Index(fields=['protocolo']),
+            models.Index(fields=['status']),
+            models.Index(fields=['data_envio']),
+        ]
+        ordering = ['-data_envio']
+
+    def __str__(self):
+        return f"Protocolo {self.protocolo} - Loja {self.loja_id} - {self.status}"
 
 
 class LojaDocumentos(models.Model):

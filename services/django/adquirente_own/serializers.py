@@ -32,7 +32,7 @@ class LojaOwnSerializer(serializers.ModelSerializer):
     class Meta:
         model = LojaOwn
         fields = [
-            'id', 'loja_id', 'cadastrar', 'conveniada_id',
+            'id', 'loja_id', 'cadastrar',
             'status_credenciamento', 'protocolo', 'data_credenciamento',
             'mensagem_status', 'id_cesta', 'aceita_ecommerce',
             'sincronizado', 'ultima_sincronizacao', 'created_at', 'updated_at'
@@ -146,5 +146,4 @@ class CadastroOwnResponseSerializer(serializers.Serializer):
     """Serializer para response de cadastro na Own"""
     sucesso = serializers.BooleanField()
     protocolo = serializers.CharField(required=False)
-    conveniada_id = serializers.CharField(required=False)
     mensagem = serializers.CharField()

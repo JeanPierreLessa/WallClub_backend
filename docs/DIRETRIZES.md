@@ -1,9 +1,74 @@
 # DIRETRIZES UNIFICADAS - WALLCLUB ECOSYSTEM
 
-**Versão:** 5.3
-**Data:** 24/01/2026
-**Fontes:** Fases 1-7 (95%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
+**Versão:** 5.8
+**Data:** 23/02/2026
+**Fontes:** Fases 1-7 (100%) + Django DIRETRIZES.md + Risk Engine DIRETRIZES.md
 **Mudanças:**
+- **Login Biométrico - App Mobile (23/02/2026)**
+  - **Endpoint:** `POST /api/v1/cliente/login_biometrico/` ✅ funcional
+  - **Autenticação:** CPF + device_fingerprint + canal_id
+  - **Validação:** `DeviceManagementService.validar_dispositivo()` verifica dispositivo confiável (30 dias)
+  - **Retorno:** JWT token + refresh_token + dados do cliente
+  - **Segurança:** Requer OAuth token (`@require_oauth_apps`)
+  - **Modelo Cliente:** Campo `is_active` (não `ativo`)
+  - **Arquivo:** `apps/cliente/views_login_biometrico.py`
+- **Own Financial - E-commerce e Webhooks (06/02/2026)**
+  - **Limitação Crítica:** API `/buscaTransacoesGerais` NÃO retorna transações e-commerce (apenas POS físico)
+  - **Identificadores:** `merchantTransactionId` e `id` (OPPWA) não funcionam como `identificadorTransacao` para consultas
+  - **Webhook Obrigatório:** Único meio de obter `identificadorTransacao` para transações e-commerce
+  - **Endpoint Testado:** `https://wcapi.wallclub.com.br/webhook/own/transacao/` ✅ funcional
+  - **Campos Novos em `checkout_transactions`:**
+    - `card_bin` VARCHAR(6) - Primeiros 6 dígitos do cartão
+    - `card_last4` VARCHAR(4) - Últimos 4 dígitos do cartão
+    - `payment_brand_response` VARCHAR(50) - Bandeira retornada pela OWN
+    - `result_code` VARCHAR(20) - Código de resultado da transação
+    - `tx_transaction_id` VARCHAR(100) - identificadorTransacao (vem do webhook)
+  - **Renomeações:** `pinbank_response` → `gateway_response`, `erro_pinbank` → `erro_gateway`
+  - **Pendente:** Configuração do webhook de e-commerce com a OWN
+- **Portal Admin - RPR - Refinamento Completo de Métricas (03/02/2026)**
+  - Coluna "Custo ajuste nos Repasses" reposicionada (antes de var98) e renomeada
+  - Nova coluna "Resultado Operacional Ajustado" = Resultado Operacional + Custo ajuste nos Repasses
+  - Box "Custo Direto Total": sinal invertido, "Custos POS/Equip" removido
+  - Box "Resultado Financeiro": totalizador recalculado (Receita Financeira - Custo Direto)
+  - Nova linha "Resultado após Custos de POS's" no box Resultado Financeiro
+  - Percentual de comissão dinâmico (tabela canal_comissao) sincronizado entre tela e exports
+- **Own Financial - Rotinas de Carga e Ambiente (05/02/2026)**
+  - **Ambiente Centralizado:** `CredenciaisOwnService.obter_environment()` usado em todos os 7 services
+  - **API `/buscaTransacoesGerais`:** Retorna APENAS transações POS (não retorna e-commerce)
+  - **Rotinas de Carga:**
+    - `carga_transacoes_own` - Busca transações POS via API (suporte a `--nsu`, `--data-inicial`, `--data-final`)
+    - `carga_liquidacoes_own` - Busca liquidações via API `/consultaLiquidacoes`
+    - `carga_base_unificada_checkout_own` - Processa checkout OWN para `base_transacoes_unificadas`
+      - **JOIN:** `ownExtratoTransacoes.identificadorTransacao = checkout_transactions.tx_transaction_id`
+      - **Filtro:** `ownExtratoTransacoes.lido = 0` (marca como `lido=1` após processar)
+      - **Campos mapeados:** `mdr`, `statusTransacao`, `statusPagamento`, `dataPagamentoPrevista`
+      - **TxTransactionId:** Salvo em `checkout_transactions.tx_transaction_id` no momento da venda (campo `resultDetails.TxTransactionId` da resposta OWN)
+  - **Webhooks:** Endpoints implementados (`/webhook/transacao/`, `/webhook/liquidacao/`) - pendente configuração com suporte OWN
+  - **Campo `gateway_ativo`:** Obrigatório na tabela `loja` para seleção correta do gateway ('PINBANK' ou 'OWN')
+- **Own Financial - Payload Otimizado (03/02/2026)**
+  - Campos estruturados de cliente e endereço implementados
+  - CheckoutCliente e CheckoutToken: `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`, `data_nascimento`, `email`
+  - Portal de Vendas: Formulários de cadastro/edição com campos estruturados
+  - Payload Own: `merchant.taxId` (CNPJ), `merchant.id` (razão social), `merchant.postcode` (CEP)
+  - Payload Own: `customer.identificationDocType: TAXSTATEMENT`, `customer.birthDate`, `customer.email`
+  - Campos removidos (rejeitados pela API): `customer.browserUserAgent`, `billing.street`, `shipping.street`
+  - Transação aprovada com payload completo (NSU: 8ac7a4a19c22cdec019c2357e13915e2)
+  - Documentação oficial: https://docs.payments-own.financial/reference/parameters
+- **Arquitetura de URLs Refatorada (31/01/2026)**
+  - Redução de 8 para 3 arquivos de URLs (62% redução)
+  - Função helper `get_portal_urlpatterns()` para geração dinâmica
+  - Middleware simplificado usando função helper (zero duplicação)
+  - Subdomínios mantidos funcionando (admin.wallclub.com.br, vendas.wallclub.com.br)
+  - Rotas globais centralizadas (/metrics, /health/, /admin/)
+- **Sistema de Monitoramento Completo (31/01/2026)**
+  - Prometheus + Alertmanager + Exporters (Redis, Node)
+  - 14 alertas configurados (críticos e warnings)
+  - Notificações via Telegram e Email funcionando
+  - Métricas customizadas em todos os containers Django
+- **GatewayRouter - Portal de Vendas com Own Financial completo (29/01/2026)**
+  - `CheckoutService` refatorado para usar `GatewayRouter` ao invés de hardcoded Pinbank
+  - Seleção dinâmica de gateway (Pinbank/Own) por loja via campo `gateway_ativo`
+  - Suporte completo: tokenização, pagamento com token, pagamento direto, estorno e exclusão
 - Conta Digital - Métodos `debitar()` e `estornar_movimentacao()` corrigidos para verificar `afeta_cashback` (24/01/2026)
 - Sistema Backsync POS - Novo endpoint `transactiondata_pos_backsync` para sincronização offline (23/01/2026)
 - Depreciações Planejadas - Endpoints `/transaction_sync_service/` e `/trdata/` marcados para substituição (23/01/2026)
@@ -52,7 +117,9 @@
 - ❌ Completar funções sem pedido direto
 - ❌ Usar dados hardcoded (só quando explícito)
 - ❌ Assumir o que o usuário quer
-- ❌ **EXPOR CREDENCIAIS EM CÓDIGO OU DOCUMENTOS** (usar AWS Secrets Manager)
+- ❌ **🚨 CRÍTICO: EXPOR CREDENCIAIS EM CÓDIGO, ARQUIVOS DE CONFIGURAÇÃO OU DOCUMENTOS**
+- ❌ **🚨 CRÍTICO: USAR FALLBACK COM CREDENCIAIS REAIS** (ex: `os.environ.get('TOKEN', 'credencial_real')`)
+- ❌ **🚨 CRÍTICO: COMMITAR TOKENS, SENHAS, API KEYS EM REPOSITÓRIO GIT**
 - ❌ **CRIAR DOCUMENTOS (README, guias, tutoriais) SEM SOLICITAÇÃO EXPLÍCITA**
 - ❌ Propor soluções que exijam ações do usuário sem perguntar primeiro
 - ❌ Mudar abordagem quando falhar sem consultar o usuário
@@ -646,6 +713,66 @@ cartao.id_token = token_id  # Salvar apenas token
 - ❌ Cache (Redis/Memcached)
 - ❌ Mensagens (WhatsApp/SMS/Email)
 
+### GatewayRouter - Multi-Gateway de Pagamentos ⭐
+
+**Status:** Implementado (29/01/2026)
+
+**Regra de Ouro:** ❌ **NUNCA** instanciar `TransacoesPinbankService` ou `TransacoesOwnService` diretamente. ✅ **SEMPRE** usar `GatewayRouter`.
+
+**Uso Correto:**
+```python
+from checkout.services_gateway_router import GatewayRouter
+
+# Obter gateway ativo da loja
+gateway = GatewayRouter.obter_gateway_loja(loja_id)  # 'PINBANK' ou 'OWN'
+
+# Obter service correto
+service = GatewayRouter.obter_service_transacao(loja_id)
+
+# Processar conforme gateway
+if gateway == GatewayRouter.GATEWAY_OWN:
+    # Own Financial
+    resultado = service.create_payment_with_registration(
+        registration_id=token,
+        amount=valor,
+        parcelas=parcelas,
+        loja_id=loja_id
+    )
+else:
+    # Pinbank
+    resultado = service.efetuar_transacao_cartao_tokenizado(payload)
+```
+
+**Uso INCORRETO:**
+```python
+# ❌ NUNCA fazer isso
+from pinbank.services_transacoes_pagamento import TransacoesPinbankService
+pinbank_service = TransacoesPinbankService(loja_id=loja_id)
+```
+
+**Ativação por Loja:**
+```sql
+-- Ativar Own Financial
+UPDATE loja SET gateway_ativo = 'OWN' WHERE id = 15;
+
+-- Ativar Pinbank (padrão)
+UPDATE loja SET gateway_ativo = 'PINBANK' WHERE id = 15;
+```
+
+**Credenciais Own Financial:**
+- Tabela: `loja_own`
+- Campos: `entity_id`, `access_token`
+- URLs: QA (`eu-test.oppwa.com`) e PROD (`eu-prod.oppwa.com`)
+
+**Métodos Suportados:**
+- Pagamento direto (cartão digitado)
+- Tokenização (salvar cartão)
+- Pagamento com token (MIT)
+- Estorno
+- Exclusão de token
+
+**Arquivo:** `checkout/services_gateway_router.py`
+
 **Variáveis Obrigatórias no `.env`:**
 ```bash
 # Desenvolvimento (services/django/.env)
@@ -660,12 +787,36 @@ BASE_URL=http://localhost:8005
 MERCHANT_URL = os.environ.get('MERCHANT_URL')  # Adicionar junto com outras URLs
 ```
 
-**Locais onde credenciais NUNCA devem aparecer:**
+**🚨 REGRA CRÍTICA: Credenciais NUNCA devem aparecer em:**
 - ❌ Código Python (.py)
-- ❌ Arquivos de configuração commitados (.env.production)
+- ❌ Arquivos de configuração commitados (YAML, JSON, .conf)
 - ❌ Documentação (.md)
 - ❌ Scripts (.sh, .sql)
 - ❌ Logs de aplicação
+- ❌ **FALLBACK de variáveis de ambiente** (ex: `os.environ.get('TOKEN', 'valor_real')`)
+
+**❌ PROIBIDO - Exemplos de código INSEGURO:**
+```python
+# NUNCA FAZER ISSO:
+EMAIL_HOST_USER = os.environ.get('MAILSERVER_USERNAME', 'AKIAXWHDLWAXPATSXOK6')
+bot_token = os.environ.get('TELEGRAM_TOKEN', '8352234743:AAELmuFIBsNeZ639dlUVOAozkUivpnKAj7w')
+```
+
+**✅ CORRETO - Usar ConfigManager ou variável obrigatória:**
+```python
+# Opção 1: ConfigManager (recomendado)
+from wallclub_core.utilitarios.config_manager import get_config_manager
+email_config = get_config_manager().get_email_config()
+EMAIL_HOST_USER = email_config.get('user')  # Sem fallback
+
+# Opção 2: Variável obrigatória (falha se não existir)
+TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']  # Sem fallback, levanta KeyError
+
+# Opção 3: Validação explícita
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+if not TELEGRAM_TOKEN:
+    raise ValueError("TELEGRAM_TOKEN não configurado")
+```
 
 **Usar:** AWS Secrets Manager (`wall/prod/db`, `wall/prod/oauth/*`, `wall/prod/integrations`)
 

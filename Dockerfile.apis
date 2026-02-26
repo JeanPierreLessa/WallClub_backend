@@ -32,6 +32,9 @@ RUN pip uninstall -y wallclub_core && pip install --no-cache-dir /core
 # Copiar código Django
 COPY services/django /app
 
+# Copiar módulo de monitoramento
+COPY monitoring /app/monitoring
+
 # Criar diretórios necessários e usuário não-root
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     adduser --disabled-password --gecos '' appuser && \

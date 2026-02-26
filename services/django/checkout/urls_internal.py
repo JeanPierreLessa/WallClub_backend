@@ -17,16 +17,19 @@ urlpatterns = [
     path('recorrencias/<int:recorrencia_id>/cobrar/', views_internal_api.cobrar_recorrencia, name='cobrar_recorrencia'),
     path('recorrencias/<int:recorrencia_id>/atualizar/', views_internal_api.atualizar_recorrencia, name='atualizar_recorrencia'),
     path('recorrencias/<int:recorrencia_id>/deletar/', views_internal_api.deletar_recorrencia, name='deletar_recorrencia'),
-    
+
     # Clientes (4 endpoints - TODOS POST)
     path('clientes/listar/', views_internal_api.listar_clientes, name='listar_clientes'),
     path('clientes/criar/', views_internal_api.criar_cliente, name='criar_cliente'),
     path('clientes/obter/', views_internal_api.obter_cliente, name='obter_cliente'),
     path('clientes/atualizar/', views_internal_api.atualizar_cliente, name='atualizar_cliente'),
-    
+
     # Links/Tokens (4 endpoints - TODOS POST)
     path('tokens/listar/', views_internal_api.listar_tokens, name='listar_tokens'),
     path('tokens/criar/', views_internal_api.criar_token, name='criar_token'),
     path('tokens/validar/', views_internal_api.validar_token, name='validar_token'),
     path('tokens/obter/', views_internal_api.obter_token, name='obter_token'),
+
+    # POS (1 endpoint)
+    path('transacao-pos/', views_internal_api.processar_transacao_pos, name='processar_transacao_pos'),
 ]

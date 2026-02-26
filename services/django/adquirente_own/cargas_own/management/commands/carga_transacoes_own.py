@@ -32,86 +32,115 @@ class Command(BaseCommand):
             type=str,
             help='Data final (YYYY-MM-DD)'
         )
+        parser.add_argument(
+            '--nsu',
+            type=str,
+            help='NSU específico da transação (identificadorTransacao)'
+        )
 
     def handle(self, *args, **options):
         from datetime import timedelta
-        service = CargaTransacoesOwnService()
-        
+        service = CargaExtratoOwnService()
+
         if options['diaria']:
             # Carga diária
             self.stdout.write(self.style.SUCCESS('🔄 Executando carga diária...'))
             resultado = service.executar_carga_diaria(cnpj_cliente=options.get('cnpj'))
-            
+
         else:
             # Determinar período
-            if options.get('dias'):
+            if options.get('nsu'):
+                # Se buscar por NSU, usar período amplo (últimos 30 dias)
+                data_final = datetime.now()
+                data_inicial = data_final - timedelta(days=30)
+                self.stdout.write(self.style.SUCCESS(f'🔍 Buscando NSU específico nos últimos 30 dias'))
+            elif options.get('dias'):
                 # Usar dias retroativos
                 data_final = datetime.now()
                 data_inicial = data_final - timedelta(days=options['dias'])
             elif options['data_inicial'] and options['data_final']:
-                # Usar datas específicas
+                # Usar datas específicas (dia completo: 00:00 até 23:59)
                 data_inicial = datetime.strptime(options['data_inicial'], '%Y-%m-%d')
-                data_final = datetime.strptime(options['data_final'], '%Y-%m-%d')
+                data_final = datetime.strptime(options['data_final'], '%Y-%m-%d').replace(hour=23, minute=59, second=59)
             else:
-                self.stdout.write(self.style.ERROR('❌ Informe --dias OU --data-inicial e --data-final'))
+                self.stdout.write(self.style.ERROR('❌ Informe --nsu OU --dias OU --data-inicial e --data-final'))
                 return
-            
-            # Buscar CNPJs cadastrados
-            from adquirente_own.cargas_own.models import CredenciaisExtratoContaOwn
-            cnpj_especifico = options.get('cnpj')
-            
-            if cnpj_especifico:
-                # Processar apenas um CNPJ
-                cnpjs = [cnpj_especifico]
+
+            # Buscar lojas OWN cadastradas
+            from adquirente_own.models_cadastro import LojaOwn
+            from wallclub_core.estr_organizacional.loja import Loja
+
+            # CNPJ WallClub (sempre usado como cnpjCliente)
+            CNPJ_WALLCLUB = '54430621000134'
+
+            cnpj_loja_especifico = options.get('cnpj')
+
+            if cnpj_loja_especifico:
+                # Processar apenas uma loja específica
+                lojas_cnpj = [cnpj_loja_especifico]
             else:
-                # Processar todos os CNPJs cadastrados
-                cnpjs = list(CredenciaisExtratoContaOwn.objects.filter(
-                    ativo=True
-                ).values_list('cnpj_white_label', flat=True))
-                
-                if not cnpjs:
-                    self.stdout.write(self.style.ERROR('❌ Nenhum CNPJ cadastrado na tabela credenciaisExtratoContaOwn'))
-                    return
-            
-            self.stdout.write(self.style.SUCCESS(f'🔄 Processando {len(cnpjs)} CNPJ(s): {data_inicial.date()} a {data_final.date()}'))
-            
+                # Processar todas as lojas OWN aprovadas
+                lojas_own_ids = LojaOwn.objects.filter(
+                    status_credenciamento='APROVADO',
+                    sincronizado=True
+                ).values_list('loja_id', flat=True)
+
+                lojas_cnpj = list(Loja.objects.filter(
+                    id__in=lojas_own_ids
+                ).values_list('cnpj', flat=True))
+
+                if not lojas_cnpj:
+                    self.stdout.write(self.style.WARNING('⚠️  Nenhuma loja OWN aprovada encontrada. Buscando todas as transações do WallClub...'))
+                    lojas_cnpj = [None]  # Buscar sem filtro de loja
+
+            self.stdout.write(self.style.SUCCESS(f'🔄 Processando {len(lojas_cnpj)} loja(s): {data_inicial.date()} a {data_final.date()}'))
+
             total_geral_transacoes = 0
             total_geral_processadas = 0
-            
-            # Processar cada CNPJ
-            for cnpj in cnpjs:
-                self.stdout.write(f'\n📋 CNPJ: {cnpj}')
-                
-                # Buscar transações
+
+            # Processar cada loja
+            for doc_parceiro in lojas_cnpj:
+                if doc_parceiro:
+                    self.stdout.write(f'\n📋 Loja: {doc_parceiro}')
+                else:
+                    self.stdout.write(f'\n📋 Todas as lojas WallClub')
+
+                # Buscar por NSU específico ou por período
+                nsu = options.get('nsu')
+                if nsu:
+                    self.stdout.write(f'🔍 Buscando NSU: {nsu}')
+
                 result = service.buscar_transacoes_gerais(
-                    cnpj_cliente=cnpj,
+                    cnpj_cliente=CNPJ_WALLCLUB,
+                    doc_parceiro=doc_parceiro,
                     data_inicial=data_inicial,
-                    data_final=data_final
+                    data_final=data_final,
+                    identificador_transacao=nsu
                 )
-                
+
                 if not result.get('sucesso'):
                     self.stdout.write(self.style.WARNING(f'   ⚠️  {result.get("mensagem")}'))
                     continue
-                
+
                 # Processar transações
-                total_processadas = 0
+                total_novas = 0
                 for transacao_data in result.get('transacoes', []):
                     transacao_obj = service.salvar_transacao(transacao_data)
-                    if not transacao_obj.processado:
-                        service.processar_para_base_gestao(transacao_obj)
-                        total_processadas += 1
-                
+                    # Contar apenas transações novas (created=True no update_or_create)
+                    if transacao_obj:
+                        total_novas += 1
+
                 total_transacoes = result.get('total', 0)
                 total_geral_transacoes += total_transacoes
-                total_geral_processadas += total_processadas
-                
-                self.stdout.write(f'   ✅ {total_transacoes} transações, {total_processadas} processadas')
-            
+                total_geral_processadas += total_novas
+
+                self.stdout.write(f'   ✅ {total_transacoes} transações encontradas, {total_novas} novas salvas')
+
             resultado = {
                 'total_transacoes': total_geral_transacoes,
                 'total_processadas': total_geral_processadas
             }
-        
+
         # Exibir resultado
         self.stdout.write(self.style.SUCCESS(f'✅ Carga concluída!'))
         self.stdout.write(f'   Total transações: {resultado.get("total_transacoes", 0)}')

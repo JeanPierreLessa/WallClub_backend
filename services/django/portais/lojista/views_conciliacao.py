@@ -180,18 +180,18 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     btu.authorization_code                             AS `Autorizacao`,
                     CAST(btu.var13 AS SIGNED)                          AS `Prazo_Total`,
                     CAST(btu.var19 AS DECIMAL(10,2))                   AS `Vl_Bruto`,
-                    CAST(btu.var37 AS DECIMAL(10,2))                   AS `Tx_Adm_R`,
+                    CAST(btu.var37 AS DECIMAL(10,4))                   AS `Tx_Adm_R`,
                     CAST(btu.var42 AS DECIMAL(10,2))                   AS `Vl_Liq`,
                     CASE
                         WHEN TRIM(btu.var70) = '0001-01-01T00:00:00' OR btu.var70 IS NULL OR TRIM(btu.var70) = ''
                              THEN 0
                         ELSE CAST(btu.var19 AS DECIMAL(10,2))
                     END                                                AS `Vl_Canc`,
-                    CAST(btu.var36 AS DECIMAL(10,2))*100               AS `Tx_Adm_Perc`,
+                    CAST(btu.var36 AS DECIMAL(10,4))*100               AS `Tx_Adm_Perc`,
                     CAST(btu.var44 AS DECIMAL(10,2))                   AS `Vl_Liq_Pago`,
-                    CAST(btu.var40 AS DECIMAL(10,2))*100               AS `Tx_Antec_Per`,
+                    CAST(btu.var40 AS DECIMAL(10,4))*100               AS `Tx_Antec_Per`,
                     CAST(btu.var41 AS DECIMAL(10,2))                   AS `Custo_Antec`,
-                    CAST(btu.var39 AS DECIMAL(10,2))*100               AS `Tx_Antec_AM`,
+                    CAST(btu.var39 AS DECIMAL(10,4))*100               AS `Tx_Antec_AM`,
                     btu.var121                                         AS `Status_Pagto`,
                     btu.var8                                           AS `Plano`,
                     btu.var12                                          AS `Bandeira`,

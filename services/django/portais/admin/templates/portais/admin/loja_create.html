@@ -291,18 +291,67 @@
                             </div>
                         </div>
 
-                        <!-- Cesta de Tarifas -->
+                        <!-- Modelo de Tarifação -->
                         <div class="row mb-3">
                             <div class="col-md-12">
-                                <label class="form-label required-field">Cesta de Tarifas</label>
-                                <select class="form-select" id="id_cesta" name="id_cesta">
-                                    <option value="">Carregando...</option>
-                                </select>
+                                <h5 class="mb-3">Modelo de Tarifação</h5>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="modelo_tarifacao"
+                                           id="modelo_flex" value="FLEX" checked>
+                                    <label class="form-check-label" for="modelo_flex">
+                                        <strong>FLEX</strong> - Tarifas individuais por modalidade
+                                        <small class="text-muted d-block">Tarifas específicas por bandeira, parcela, etc. Antecipação não permitida.</small>
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline ms-4">
+                                    <input class="form-check-input" type="radio" name="modelo_tarifacao"
+                                           id="modelo_mdr" value="MDR">
+                                    <label class="form-check-label" for="modelo_mdr">
+                                        <strong>MDR</strong> - Taxa única percentual
+                                        <small class="text-muted d-block">Taxa fixa aplicada sobre todas as transações. Permite antecipação.</small>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Preview das Tarifas -->
-                        <div id="tarifas_preview" class="mb-3"></div>
+                        <!-- Cestas de Tarifas (FLEX) -->
+                        <div id="secao_flex" class="row mb-3">
+                            <div class="col-md-12">
+                                <h5 class="mb-3">Tarifas Individuais (editáveis)</h5>
+                                <p class="text-muted small">As tarifas serão aplicadas automaticamente baseado nas cestas: POS (1+2) ou POS+E-commerce (1+2+3)</p>
+
+                                <!-- Cesta 1: Por Bandeira -->
+                                <div id="cesta_bandeira" class="mb-4">
+                                    <h6 class="text-primary">Cesta de Serviços - Por Bandeira</h6>
+                                    <div id="tarifas_cesta_bandeira"></div>
+                                </div>
+
+                                <!-- Cesta 2: Por Parcela POS -->
+                                <div id="cesta_parcela_pos" class="mb-4">
+                                    <h6 class="text-primary">Cesta de Serviços - Por Parcela (POS)</h6>
+                                    <div id="tarifas_cesta_parcela_pos"></div>
+                                </div>
+
+                                <!-- Cesta 3: Por Parcela E-commerce (só aparece se checkbox marcado) -->
+                                <div id="cesta_parcela_ecommerce" class="mb-4" style="display: none;">
+                                    <h6 class="text-primary">Cesta de Serviços - Por Parcela (E-commerce)</h6>
+                                    <div id="tarifas_cesta_parcela_ecommerce"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Taxa MDR (MDR) -->
+                        <div id="secao_mdr" class="row mb-3" style="display: none;">
+                            <div class="col-md-12">
+                                <h5 class="mb-3">Taxa MDR</h5>
+                                <div class="col-md-4">
+                                    <label class="form-label required-field">Taxa MDR (%)</label>
+                                    <input type="number" class="form-control" id="taxa_mdr"
+                                           name="taxa_mdr" step="0.01" min="0" max="100" value="2.50">
+                                    <small class="text-muted">Taxa percentual aplicada sobre todas as transações</small>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Configurações de Captura e Antecipação -->
                         <div class="row mb-3">

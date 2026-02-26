@@ -1,0 +1,82 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: wallclub_health
+    folder: WallClub
+    interval: 1m
+    rules:
+      - uid: service_down_alert
+        title: Service Down
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: up{job=~"wallclub-.*"} == 0
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: 'Serviço {{ $labels.service }} está DOWN'
+          description: 'O serviço {{ $labels.service }} ({{ $labels.container }}) não está respondendo há mais de 2 minutos.'
+        labels:
+          severity: critical
+          team: infra
+        isPaused: false
+
+      - uid: health_check_failed
+        title: Health Check Failed
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: health_check_status{job=~"wallclub-.*"} == 0
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'Health check falhou para {{ $labels.service }}'
+          description: 'O health check do serviço {{ $labels.service }} está falhando há mais de 5 minutos.'
+        labels:
+          severity: warning
+          team: infra
+        isPaused: false
+
+      - uid: high_db_latency
+        title: High Database Latency
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: db_latency_seconds{job=~"wallclub-.*"} > 1
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'Alta latência no banco de dados'
+          description: 'O serviço {{ $labels.service }} está com latência de banco acima de 1s há mais de 5 minutos.'
+        labels:
+          severity: warning
+          team: infra
+        isPaused: false

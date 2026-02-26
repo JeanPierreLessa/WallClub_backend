@@ -24,3 +24,4 @@ httpx[http2]==0.25.2
 redis==5.0.1
 django-redis==5.4.0
 celery==5.3.4
+django-prometheus==2.3.1

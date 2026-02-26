@@ -293,9 +293,9 @@ class CalculadoraBaseUnificada:
 
             # Variável 35 - Percentual baseado no valor 11
             if valores[11] > 0:
-                valores[35] = self._format_decimal(valores[34] / valores[11], 2)
+                valores[35] = self._format_decimal(valores[34] / valores[11], 4)
             else:
-                valores[35] = self._format_decimal(0, 2)
+                valores[35] = self._format_decimal(0, 4)
 
             # Variável 36 - Parâmetro 12
             param_12 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 12, wall)
@@ -315,12 +315,15 @@ class CalculadoraBaseUnificada:
             if param_13 is None:
                 param_13 = 0
             valores[39] = self._format_decimal(self._to_decimal(param_13, 4), 4)
+            registrar_log('parametros_wallclub', f"var39 = {valores[39]} (param_13={param_13})", nivel='DEBUG')
 
             # Variável 40 - Cálculo complexo baseado em 39 e 13
-            valores[40] = self._format_decimal(valores[39] * (1 + valores[13]) / 2, 2)
+            valores[40] = self._format_decimal(valores[39] * (1 + valores[13]) / 2, 4)
+            registrar_log('parametros_wallclub', f"var40 = {valores[40]} (var39={valores[39]} * (1 + var13={valores[13]}) / 2)", nivel='DEBUG')
 
-            # Variável 41 - Produto entre valor 38 e 40
-            valores[41] = self._format_decimal(valores[38] * valores[40], 2)
+            # Variável 41 - Produto entre valor 26 e 40
+            valores[41] = self._format_decimal(valores[26] * valores[40], 2)
+            registrar_log('parametros_wallclub', f"var41 = {valores[41]} (var26={valores[26]} * var40={valores[40]})", nivel='DEBUG')
 
             # Variável 46 - Soma dos valores 30 e 33
             if valores[30] is None or valores[33] is None:
@@ -330,6 +333,7 @@ class CalculadoraBaseUnificada:
 
             # Variável 42 - Diferença entre valor 38 e 41
             valores[42] = self._format_decimal(valores[38] - valores[41], 2)
+            registrar_log('parametros_wallclub', f"var42 = {valores[42]} (var38={valores[38]} - var41={valores[41]})", nivel='DEBUG')
 
             # Variável 43 - Data com dias adicionados (parâmetro 18)
             param_18 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 18, wall)
@@ -364,9 +368,9 @@ class CalculadoraBaseUnificada:
 
             # Variável 50 - Percentual baseado em 49 e 11
             if valores[11] > 0:
-                valores[50] = self._format_decimal(valores[49] / valores[11], 2)
+                valores[50] = self._format_decimal(valores[49] / valores[11], 4)
             else:
-                valores[50] = self._format_decimal(0, 2)
+                valores[50] = self._format_decimal(0, 4)
 
             # Variável 47 - Parâmetro 21
             param_21 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 21, wall)
@@ -376,9 +380,11 @@ class CalculadoraBaseUnificada:
 
             # Variável 87 - Parâmetro wall 1 (usa ID da loja, não do canal)
             param_wall_1 = ParametrosService.retornar_parametro_uptal(info_loja['id'], data_ref, id_plano, 1, wall)
+            registrar_log('parametros_wallclub', f"var87 DEBUG: loja_id={info_loja['id']}, data_ref={data_ref}, id_plano={id_plano}, wall={wall}, param_wall_1={param_wall_1}", nivel='DEBUG')
             if param_wall_1 is None:
                 param_wall_1 = 0
             valores[87] = self._format_decimal(self._to_decimal(param_wall_1, 4), 4)
+            registrar_log('parametros_wallclub', f"var87 = {valores[87]} (parametro_uptal_1={param_wall_1})", nivel='DEBUG')
 
             # Variável 88 - Valor 26 com taxa 87 aplicada
             if valores[26] is None or valores[87] is None:
@@ -400,10 +406,10 @@ class CalculadoraBaseUnificada:
 
             # Variável 94 - Array com produto (PHP: valores[94]["0"] apenas - var94["A"] calculada depois)
             if valores[26] is None:
-                valores[94] = {"0": self._format_decimal(0, 2)}
+                valores[94] = {"0": self._format_decimal(0, 4)}
             else:
                 valores[94] = {
-                    "0": self._format_decimal(valores[26] * valores[93]["0"], 2)
+                    "0": self._format_decimal(valores[26] * valores[93]["0"], 4)
                 }
 
             # Variável 95 - Diferença com taxas (PHP: usa var94["0"])
@@ -730,7 +736,7 @@ class CalculadoraBaseUnificada:
             # var94["A"] e var94["B"] - Calculadas como no PHP (linha 846-857)
             vrepasse = self._to_decimal(dados_linha.get('vRepasse') or 0, 2)
             var90 = self._to_decimal(valores.get(90) or 0, 2)
-            valores[94]["A"] = self._format_decimal(self._to_decimal(dados_linha['ValorBruto'], 2) - vrepasse - var90, 2)
+            valores[94]["A"] = self._format_decimal(self._to_decimal(dados_linha['ValorBruto'], 2) - vrepasse - var90, 4)
 
             if valores[69] == "Pendente":
                 valores[94]["B"] = "Não Recebido"
@@ -738,10 +744,13 @@ class CalculadoraBaseUnificada:
                 valores[94]["B"] = self._format_decimal(valores[94]["A"] - valores[94]["0"], 2)
 
             # var93["A"] - Calculada após var94["A"] como no PHP (linha 890)
-            if valores[26] is not None and valores[26] > valores[90]:
-                valores[93]["A"] = self._format_decimal(valores[94]["A"] / (valores[26] - valores[90]), 4)
+            registrar_log('parametros_wallclub', f"DEBUG var93[A]: var26={valores[26]}, var94[A]={valores[94].get('A')}", nivel='DEBUG')
+            if valores[26] is not None and valores[26] > 0:
+                valores[93]["A"] = self._format_decimal(valores[94]["A"] / valores[26], 4)
+                registrar_log('parametros_wallclub', f"DEBUG var93[A] = {valores[93]['A']} (var94[A]={valores[94]['A']} / var26={valores[26]})", nivel='DEBUG')
             else:
                 valores[93]["A"] = self._format_decimal(0, 4)
+                registrar_log('parametros_wallclub', f"DEBUG var93[A] = 0 (var26 é None ou zero)", nivel='DEBUG')
 
             # var98 - Lógica pendente/cálculo
             if valores[69] == "Pendente":

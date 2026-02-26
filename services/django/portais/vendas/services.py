@@ -302,6 +302,30 @@ class CheckoutVendasService:
     # Cliente autogerencia telefone via app no checkout 2FA
 
     @staticmethod
+    def atualizar_cliente_checkout(cliente_id: int, dados: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Atualiza dados do cliente no checkout
+
+        Args:
+            cliente_id: ID do cliente
+            dados: Dict com campos a atualizar
+
+        Returns:
+            Dict com sucesso e mensagem
+        """
+        try:
+            from checkout.services import ClienteService
+
+            cliente = ClienteService.atualizar_cliente(cliente_id, dados)
+
+            registrar_log('portais.vendas', f"Cliente atualizado: ID={cliente.id}")
+            return {'sucesso': True, 'mensagem': 'Cliente atualizado com sucesso!'}
+
+        except Exception as e:
+            registrar_log('portais.vendas', f"Erro ao atualizar cliente: {str(e)}", nivel='ERROR')
+            return {'sucesso': False, 'mensagem': f'Erro: {str(e)}'}
+
+    @staticmethod
     def buscar_clientes(vendedor_id: int, busca: Optional[str] = None) -> List[Any]:
         """Busca clientes das lojas do vendedor."""
         try:
@@ -528,9 +552,12 @@ class CheckoutVendasService:
             Dict com sucesso, mensagem e dados do link gerado
         """
         try:
+            registrar_log('portais.vendas', f"🔍 Iniciando geração de link - Cliente: {cliente_id}, Loja: {loja_id}, Valor: {valor}")
+
             # Buscar dados do cliente
             CheckoutCliente = apps.get_model('checkout', 'CheckoutCliente')
             cliente = CheckoutCliente.objects.get(id=cliente_id)
+            registrar_log('portais.vendas', f"✅ Cliente encontrado: {cliente.nome} (CPF: {cliente.cpf})")
 
             # Buscar telefone ativo do cliente (tabela separada)
             from checkout.link_pagamento_web.models_2fa import CheckoutClienteTelefone
@@ -546,10 +573,16 @@ class CheckoutVendasService:
                     ).first()
                     if telefone_obj:
                         telefone = telefone_obj.telefone
-                except Exception:
-                    pass
+                        registrar_log('portais.vendas', f"📱 Telefone encontrado: {telefone}")
+                    else:
+                        registrar_log('portais.vendas', f"⚠️ Nenhum telefone ativo encontrado para CPF {cpf_limpo}")
+                except Exception as e:
+                    registrar_log('portais.vendas', f"❌ Erro ao buscar telefone: {str(e)}", nivel='ERROR')
+            else:
+                registrar_log('portais.vendas', f"⚠️ Cliente sem CPF cadastrado")
 
             # Gerar token de checkout
+            registrar_log('portais.vendas', f"🎫 Gerando token de checkout...")
             from checkout.link_pagamento_web.models import CheckoutToken
             from django.conf import settings
 
@@ -560,12 +593,23 @@ class CheckoutVendasService:
                 nome_completo=cliente.nome,
                 cpf=cliente.cpf or '',
                 celular=telefone or '',
+                email=cliente.email or '',
+                data_nascimento=cliente.data_nascimento,
                 endereco_completo=cliente.endereco or '',
+                logradouro=cliente.logradouro or '',
+                numero=cliente.numero or '',
+                complemento=cliente.complemento or '',
+                bairro=cliente.bairro or '',
+                cidade=cliente.cidade or '',
+                estado=cliente.estado or '',
+                cep=cliente.cep or '',
                 created_by=f'Portal Vendas - Vendedor ID {vendedor_id}',
                 pedido_origem_loja=pedido_origem
             )
+            registrar_log('portais.vendas', f"✅ Token gerado: {token_obj.token}")
 
             # Criar transação inicial (PENDENTE)
+            registrar_log('portais.vendas', f"💾 Criando transação inicial...")
             from checkout.services import LinkPagamentoTransactionService
             LinkPagamentoTransactionService.criar_transacao_inicial(
                 token=token_obj.token,
@@ -954,11 +998,11 @@ class CheckoutVendasService:
             for rec in recorrencias:
                 total_exec = rec.total_execucoes
                 total_cob = float(rec.total_cobrado)
-                
+
                 # DEBUG
-                registrar_log('portais.vendas', 
+                registrar_log('portais.vendas',
                     f"Recorrencia ID={rec.id}: total_execucoes={total_exec}, total_cobrado={total_cob}")
-                
+
                 resultado.append({
                     'id': rec.id,
                     'cliente_nome': rec.cliente.nome if rec.cliente else 'N/A',

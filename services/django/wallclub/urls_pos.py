@@ -10,15 +10,22 @@ import logging
 logger = logging.getLogger(__name__)
 
 urlpatterns = [
+    # Métricas Prometheus
+    path('', include('django_prometheus.urls')),
+
+    # Monitoramento e Health Checks
+    path('health/', include('monitoring.urls')),
+
+    # Admin Django
     path('admin/', admin.site.urls),
-    
+
     # OAuth (necessário para autenticação POS)
     path('api/oauth/', include('apps.oauth.urls')),
-    
+
     # APIs POS
     path('api/v1/posp2/', include('posp2.urls')),
     path('api/v1/cupons/', include('apps.cupom.urls')),  # APIs de cupons
-    
+
     # Webhooks Own Financial
     path('', include('adquirente_own.urls_webhook')),
 ]

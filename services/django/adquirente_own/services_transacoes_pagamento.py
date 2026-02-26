@@ -1,6 +1,9 @@
 """
 Serviço para processamento de transações via API Own Financial (OPPWA)
-Baseado na documentação: https://own-financial.docs.oppwa.com/integrations/server-to-server
+
+Documentação oficial:
+- Server-to-Server: https://own-financial.docs.oppwa.com/integrations/server-to-server
+- API Reference (Parâmetros): https://docs.payments-own.financial/reference/parameters
 """
 
 import requests
@@ -27,14 +30,17 @@ class TransacoesOwnService:
         '000.100.112',  # Request successfully processed (please review manually)
     ]
 
-    def __init__(self, loja_id: int = None, environment: str = 'TEST'):
+    def __init__(self, loja_id: int = None, environment: str = None):
         """
         Inicializa o serviço de transações Own
 
         Args:
             loja_id: ID da loja
-            environment: 'TEST' ou 'LIVE'
+            environment: 'TEST' ou 'LIVE' (None = usa ENVIRONMENT do sistema)
         """
+        from adquirente_own.services_credenciais import CredenciaisOwnService
+        if environment is None:
+            environment = CredenciaisOwnService.obter_environment()
         self.loja_id = loja_id
         self.own_service = OwnService(environment=environment)
 
@@ -51,18 +57,20 @@ class TransacoesOwnService:
             cursor.execute(
                 """
                 SELECT
-                    url_loja,
-                    razao_social,
-                    mcc,
-                    logradouro,
-                    numero_endereco,
-                    municipio,
-                    uf,
-                    cep,
-                    ddd_telefone_comercial,
-                    telefone_comercial
-                FROM loja
-                WHERE id = %s
+                    l.url_loja,
+                    l.razao_social,
+                    lo.mcc,
+                    l.logradouro,
+                    l.numero_endereco,
+                    l.municipio,
+                    l.uf,
+                    l.cep,
+                    l.ddd_telefone_comercial,
+                    l.telefone_comercial,
+                    l.cnpj
+                FROM loja l
+                LEFT JOIN loja_own lo ON l.id = lo.loja_id
+                WHERE l.id = %s
                 """,
                 [id_loja]
             )
@@ -71,27 +79,35 @@ class TransacoesOwnService:
             if not row:
                 raise ValueError(f"Loja {id_loja} não encontrada")
 
-            # Montar telefone completo
+            # Montar telefone completo com código do país +55
             telefone = ''
             if row[8] and row[9]:  # ddd + telefone
-                telefone = f"{row[8]}{row[9]}"
+                telefone = f"+55{row[8]}{row[9]}"
             elif row[9]:  # só telefone
-                telefone = row[9]
+                telefone = f"+55{row[9]}"
 
             # Montar endereço
             endereco = row[3] or 'Av Paulista'  # logradouro
             if row[4]:  # numero_endereco
                 endereco = f"{endereco} {row[4]}"
 
+            # CNPJ limpo (apenas números)
+            cnpj = ''
+            if row[10]:
+                cnpj = ''.join(filter(str.isdigit, row[10]))
+
             return {
                 'url': row[0] or 'https://wallclub.com.br',
                 'name': row[1] or 'WallClub',
+                'id': row[1] or 'WallClub',  # merchant.id = razao_social
                 'mcc': row[2] or '5462',  # Fallback: Padarias
                 'street': endereco,
                 'city': row[5] or 'Sao Paulo',
                 'state': row[6] or 'SP',
                 'postcode': row[7] or '01310100',
+                'zipcode': row[7] or '01310100',  # merchant.zipcode = CEP
                 'phone': telefone or '1133334444',
+                'number': cnpj or '',  # merchant.number = CNPJ
             }
 
     def _obter_credenciais_loja(self, loja_id: int = None) -> Optional[Dict[str, Any]]:
@@ -162,7 +178,9 @@ class TransacoesOwnService:
         }
 
         try:
-            registrar_log('own.transacao', f'📡 {method} {endpoint}')
+            registrar_log('own.transacao', f'📡 {method} {url}')
+            registrar_log('own.transacao', f'🔑 Entity ID: {data.get("entityId") if data else "N/A"}')
+            registrar_log('own.transacao', f'🔐 Token (primeiros 20 chars): {access_token[:20]}...')
             registrar_log('own.transacao', f'📦 Payload: {data}')
 
             if method.upper() == 'POST':
@@ -195,7 +213,18 @@ class TransacoesOwnService:
             try:
                 if hasattr(e, 'response') and e.response is not None:
                     error_body = e.response.text
-                    registrar_log('own.transacao', f'📄 Resposta erro: {error_body}', nivel='ERROR')
+                    registrar_log('own.transacao', f'📄 Resposta erro (texto): {error_body}', nivel='ERROR')
+
+                    # Tentar parsear JSON
+                    try:
+                        error_json = e.response.json()
+                        registrar_log('own.transacao', f'📄 Resposta erro (JSON): {error_json}', nivel='ERROR')
+
+                        # Se Own retornou erro estruturado, retornar
+                        if 'result' in error_json:
+                            return error_json
+                    except:
+                        pass
             except:
                 pass
             return {
@@ -210,7 +239,11 @@ class TransacoesOwnService:
         card_data: Dict[str, str],
         amount: Decimal,
         parcelas: int = 1,
-        loja_id: int = None
+        loja_id: int = None,
+        customer_data: Optional[Dict[str, Any]] = None,
+        transaction_id: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Pagamento débito/crédito (captura imediata)
@@ -221,6 +254,10 @@ class TransacoesOwnService:
             amount: Valor da transação
             parcelas: Número de parcelas (padrão: 1)
             loja_id: ID da loja (opcional)
+            customer_data: Dados do cliente (nome, sobrenome, email, cpf, telefone, data_nascimento, endereço)
+            transaction_id: ID único da transação
+            ip_address: IP do cliente
+            user_agent: User agent do navegador
 
         Returns:
             Dict com sucesso, own_payment_id, nsu, codigo_autorizacao, mensagem
@@ -249,20 +286,96 @@ class TransacoesOwnService:
             'card.expiryMonth': card_data['expiry_month'],
             'card.expiryYear': expiry_year,
             'card.cvv': card_data['cvv'],
+            #'testMode': 'EXTERNAL',  # End-to-end testing com processador
             'transactionCategory': 'EC',
             'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
             'merchant.mcc': dados_loja['mcc'],
             'merchant.name': dados_loja['name'],
+            'merchant.id': dados_loja['id'],  # Razão social
+            'merchant.taxId': dados_loja['number'],  # CNPJ
             'merchant.street': dados_loja['street'],
             'merchant.city': dados_loja['city'],
             'merchant.state': dados_loja['state'],
             'merchant.countryCode': '076',
             'merchant.url': dados_loja['url'],
-            'merchant.postcode': dados_loja['postcode'],
+            'merchant.postcode': dados_loja['postcode'],  # CEP
             'merchant.phone': dados_loja['phone'],
             'merchant.customerContactPhone': dados_loja['phone'],
             'customParameters[PAYMENT_METHOD]': 'CREDIT',
         }
+
+        # Adicionar dados do cliente (customer) - CRÍTICO para aprovação
+        if customer_data:
+            # Nome e sobrenome
+            nome_completo = customer_data.get('nome_completo', '')
+            if nome_completo:
+                partes_nome = nome_completo.split(' ', 1)
+                data['customer.givenName'] = partes_nome[0]
+                data['customer.surname'] = partes_nome[1] if len(partes_nome) > 1 else partes_nome[0]
+
+            # Email
+            if customer_data.get('email'):
+                data['customer.email'] = customer_data['email']
+
+            # CPF
+            if customer_data.get('cpf'):
+                cpf_limpo = ''.join(filter(str.isdigit, customer_data['cpf']))
+                data['customer.identificationDocType'] = 'TAXSTATEMENT'  # Own aceita: IDCARD, PASSPORT, TAXSTATEMENT
+                data['customer.identificationDocId'] = cpf_limpo
+
+            # Telefone
+            if customer_data.get('telefone'):
+                telefone_limpo = ''.join(filter(str.isdigit, customer_data['telefone']))
+                # Adicionar código do país +55 para Brasil
+                data['customer.phone'] = f'+55{telefone_limpo}'
+
+            # Data de nascimento
+            if customer_data.get('data_nascimento'):
+                data['customer.birthDate'] = customer_data['data_nascimento']  # YYYY-MM-DD
+
+            # IP do cliente
+            if ip_address:
+                data['customer.ip'] = ip_address
+
+            # ID do cliente no sistema
+            if customer_data.get('cliente_id'):
+                data['customer.merchantCustomerId'] = str(customer_data['cliente_id'])
+
+            # Endereço de cobrança (billing) - IMPORTANTE
+            # Nota: billing.street NÃO é aceito pela API Own (erro 200.300.404)
+            if customer_data.get('cidade'):
+                data['billing.city'] = customer_data['cidade']
+
+            if customer_data.get('estado'):
+                data['billing.state'] = customer_data['estado']
+
+            if customer_data.get('cep'):
+                cep_limpo = ''.join(filter(str.isdigit, customer_data['cep']))
+                data['billing.postcode'] = cep_limpo
+
+            data['billing.country'] = 'BR'
+
+            # Endereço de entrega (shipping) - mesmo do billing para e-commerce
+            # Nota: shipping.street NÃO é aceito pela API Own (erro 200.300.404)
+            if customer_data.get('cidade'):
+                data['shipping.city'] = customer_data['cidade']
+
+            if customer_data.get('estado'):
+                data['shipping.state'] = customer_data['estado']
+
+            if customer_data.get('cep'):
+                cep_limpo = ''.join(filter(str.isdigit, customer_data['cep']))
+                data['shipping.postcode'] = cep_limpo
+
+            data['shipping.country'] = 'BR'
+
+        # ID da transação (merchantTransactionId)
+        if transaction_id:
+            data['merchantTransactionId'] = transaction_id
+            data['merchantInvoiceId'] = transaction_id
+
+        # Nota: threeDSecure.eci e recurringType removidos para modo EXTERNAL
+        # Esses campos causam FORMAT_ERROR no adquirente sem configuração específica
 
         # Parcelamento (se aplicável)
         if parcelas > 1:
@@ -279,9 +392,13 @@ class TransacoesOwnService:
             data=data
         )
 
+        # LOG TEMPORÁRIO: Resposta completa da OWN
+        import json
+        registrar_log('own.transacao', f'📋 RESPOSTA COMPLETA OWN: {json.dumps(response, indent=2, ensure_ascii=False)}')
+
         # Verificar sucesso
         result_code = response.get('result', {}).get('code', '')
-        acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '')
+        acquirer_response = response.get('resultDetails', {}).get('AcquirerResponse', '') if response.get('resultDetails') else ''
 
         # Sucesso se: código na lista OU acquirer aprovou (00)
         if result_code in self.SUCCESS_CODES or acquirer_response == '00':
@@ -294,7 +411,9 @@ class TransacoesOwnService:
                 'mensagem': response.get('result', {}).get('description', ''),
                 'card_bin': response.get('card', {}).get('bin'),
                 'card_last4': response.get('card', {}).get('last4Digits'),
-                'payment_brand': response.get('paymentBrand', '')
+                'payment_brand': response.get('paymentBrand', ''),
+                'result_code': result_code,
+                'tx_transaction_id': response.get('resultDetails', {}).get('TxTransactionId', '') if response.get('resultDetails') else ''
             }
         else:
             registrar_log('own.transacao', f'❌ Pagamento reprovado: {result_code} (Acquirer: {acquirer_response})', nivel='WARNING')
@@ -424,7 +543,6 @@ class TransacoesOwnService:
             'amount': f'{amount:.2f}',
             'currency': 'BRL',
             'paymentType': 'DB',
-            'registrationId': registration_id,
             'transactionCategory': 'EC',
             'standingInstruction.mode': 'REPEATED',
             'standingInstruction.type': 'INSTALLMENT' if parcelas > 1 else 'UNSCHEDULED',
@@ -752,12 +870,35 @@ class TransacoesOwnService:
         amount = Decimal(str(dados_transacao['valor']))
         parcelas = int(dados_transacao.get('quantidade_parcelas', 1))
 
+        # Extrair dados do cliente (se disponíveis)
+        customer_data = None
+        if dados_transacao.get('cpf_comprador') or dados_transacao.get('nome_comprador'):
+            customer_data = {
+                'nome_completo': dados_transacao.get('nome_comprador', ''),
+                'cpf': str(dados_transacao.get('cpf_comprador', '')),
+                'telefone': dados_transacao.get('telefone_comprador', ''),
+                'email': dados_transacao.get('email_comprador', ''),
+                'data_nascimento': dados_transacao.get('data_nascimento', ''),
+                'logradouro': dados_transacao.get('logradouro', ''),
+                'numero': dados_transacao.get('numero_endereco', ''),
+                'complemento': dados_transacao.get('complemento', ''),
+                'bairro': dados_transacao.get('bairro', ''),
+                'cidade': dados_transacao.get('cidade', ''),
+                'estado': dados_transacao.get('estado', ''),
+                'cep': dados_transacao.get('cep', ''),
+                'cliente_id': dados_transacao.get('cliente_id', '')
+            }
+
         # Chamar método Own
         resultado = self.create_payment_debit(
             card_data=card_data,
             amount=amount,
             parcelas=parcelas,
-            loja_id=self.loja_id
+            loja_id=self.loja_id,
+            customer_data=customer_data,
+            transaction_id=dados_transacao.get('transaction_id'),
+            ip_address=dados_transacao.get('ip_address_comprador'),
+            user_agent=dados_transacao.get('user_agent_comprador')
         )
 
         # Converter resposta Own → Pinbank

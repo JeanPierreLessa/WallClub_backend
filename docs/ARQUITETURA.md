@@ -1,8 +1,8 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 6.2
-**Data:** 24/01/2026
-**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (95% - Own Financial), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)**
+**Versão:** 6.4
+**Data:** 31/01/2026
+**Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (100% - **Own Financial Completo**), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)** + **Portal de Vendas com GatewayRouter (Pinbank/Own)** + **Arquitetura de URLs Refatorada (3 arquivos)** + **Sistema de Monitoramento Completo (Prometheus + Alertmanager)**
 
 ---
 
@@ -175,10 +175,14 @@ Internet (80/443)
   - Tabela: `transactiondata_pos` (gateway: PINBANK/OWN)
   - Service: `TRDataPosService` (parser específico por gateway)
 - `pinbank/` - Integração Pinbank + Cargas
-- `adquirente_own/` - Integração Own Financial
-  - OAuth 2.0 (token cache 4min)
-  - API OPPWA E-commerce (timeout 60s)
-  - API QA com problemas de performance (timeout >60s)
+- `adquirente_own/` - Integração Own Financial ✅ **COMPLETO (29/01/2026)**
+  - API OPPWA E-commerce (QA: eu-test.oppwa.com, PROD: eu-prod.oppwa.com)
+  - Tokenização de cartões (registration_id)
+  - Pagamento com token (MIT - Merchant Initiated Transaction)
+  - Pagamento direto (débito/crédito)
+  - Estorno de transações
+  - Exclusão de tokens
+  - Credenciais por loja (entity_id + access_token na tabela loja_own)
 - `parametros_wallclub/` - Parâmetros financeiros (3.840 configs)
 
 **Comunicação:**
@@ -201,10 +205,13 @@ Internet (80/443)
 - `apps/ofertas/` - Sistema de Ofertas Push
 - `apps/transacoes/` - Transações mobile
 - `apps/oauth/` - OAuth 2.0 Token Endpoint (centralizado)
-- `checkout/` - Checkout Web + 2FA WhatsApp + Link de Pagamento
+- `checkout/` - Checkout Web + 2FA WhatsApp + Link de Pagamento + **GatewayRouter**
   - ✅ `CheckoutTransaction` criada pelo portal de vendas (status PENDENTE)
   - ✅ `LinkPagamentoTransactionService` - Gerencia transações de link
   - ✅ Validação OTP integrada com processamento de pagamento
+  - ✅ **GatewayRouter** - Seleção dinâmica de gateway (Pinbank/Own) por loja
+  - ✅ Portal de Vendas integrado com Own Financial (29/01/2026)
+  - ✅ Suporte a tokenização, pagamento com token e pagamento direto em ambos gateways
 
 **API Interna (comunicação entre containers):**
 - `/api/internal/cliente/` - 6 endpoints para consulta de clientes
@@ -547,7 +554,71 @@ docker-compose logs -f riskengine
 - Admin: CRUD + grupos + disparo
 - Lojista: CRUD filtrado por canal + agendamento automático
 
-### 3. Autorização Uso Saldo (Wall Cashback)
+### 3. GatewayRouter - Multi-Gateway de Pagamentos ⭐
+
+**Status:** Implementado e validado (29/01/2026)
+
+**Objetivo:** Seleção dinâmica de gateway de pagamento (Pinbank ou Own Financial) por loja
+
+**Funcionamento:**
+- Campo `gateway_ativo` na tabela `loja` define o gateway ('PINBANK' ou 'OWN')
+- `GatewayRouter.obter_gateway_loja(loja_id)` retorna gateway ativo
+- `GatewayRouter.obter_service_transacao(loja_id)` retorna service correto
+
+**Métodos Suportados:**
+- **Pagamento direto:** Cartão digitado (débito/crédito)
+- **Tokenização:** Salvar cartão para uso futuro
+- **Pagamento com token:** Usar cartão salvo (MIT - Merchant Initiated Transaction)
+- **Estorno:** Cancelamento de transação
+- **Exclusão de token:** Remover cartão salvo
+
+**Integração Portal de Vendas:**
+- ✅ `CheckoutService.processar_pagamento_cartao_tokenizado()` - Usa GatewayRouter
+- ✅ `CheckoutService.processar_pagamento_cartao_direto()` - Usa GatewayRouter
+- ✅ `CheckoutService.incluir_cartao_tokenizado()` - Usa GatewayRouter
+- ✅ `CheckoutService.excluir_cartao_pinbank()` - Usa GatewayRouter (nome legado)
+
+**Own Financial (OPPWA API):**
+- **QA:** `https://eu-test.oppwa.com`
+- **Produção:** `https://eu-prod.oppwa.com`
+- **Credenciais:** `entity_id` + `access_token` por loja (tabela `loja_own`)
+- **Métodos:**
+  - `create_payment_debit()` - Pagamento direto
+  - `create_payment_with_tokenization()` - Pré-autorização + tokenização
+  - `create_payment_with_registration()` - Pagamento com token
+  - `refund_payment()` - Estorno
+  - `delete_registration()` - Exclusão de token
+  - `get_registration_details()` - Consulta token
+
+**Pinbank:**
+- Métodos legados mantidos para compatibilidade
+- `efetuar_transacao_cartao()` - Pagamento direto
+- `efetuar_transacao_cartao_tokenizado()` - Pagamento com token
+- `incluir_cartao()` - Tokenização
+- `excluir_cartao_tokenizado()` - Exclusão de token
+
+**Ativação por Loja:**
+```sql
+-- Ativar Own Financial para uma loja
+UPDATE loja SET gateway_ativo = 'OWN' WHERE id = 15;
+
+-- Garantir credenciais Own configuradas
+SELECT entity_id, access_token FROM loja_own WHERE loja_id = 15;
+```
+
+**Arquivos:**
+- `checkout/services_gateway_router.py` - Router principal
+- `adquirente_own/services_transacoes_pagamento.py` - Service Own
+- `pinbank/services_transacoes_pagamento.py` - Service Pinbank
+- `checkout/services.py` - CheckoutService refatorado
+
+**Validação:**
+- ✅ Testes automatizados (`teste_own_ecommerce.py`) - 7/8 testes passando
+- ✅ Transação real aprovada via portal de vendas (R$ 2,08 - NSU: 8ac7a4a29c0901d2019c0a3bb4181c03)
+- ✅ Antifraude integrado (score 30/100 - APROVADO)
+- ✅ Notificações WhatsApp e Push enviadas
+
+### 4. Autorização Uso Saldo (Wall Cashback)
 
 **Fluxo:**
 1. POS consulta saldo (CPF + senha) → auth_token 15min
@@ -781,14 +852,22 @@ wallclub_django/
 ├── pinbank/cargas_pinbank/     # Cargas automáticas Pinbank
 │   ├── services.py            # Extrato POS
 │   └── services_ajustes_manuais.py
-├── adquirente_own/             # Integração Own Financial ✅ NOVO
+├── adquirente_own/             # Integração Own Financial ✅ COMPLETO (05/02) + E-commerce (06/02)
 │   ├── services.py            # OwnService (OAuth 2.0)
-│   ├── services_transacoes_pagamento.py # E-commerce OPPWA
-│   ├── views_webhook.py       # Webhooks tempo real
+│   ├── services_credenciais.py # CredenciaisOwnService (ambiente centralizado)
+│   ├── services_transacoes_pagamento.py # E-commerce OPPWA (QA/PROD)
+│   ├── views_webhook.py       # Webhooks tempo real ✅ TESTADO (06/02)
+│   │   └── webhook_transacao  # Recebe identificadorTransacao (POS + E-commerce)
+│   ├── models_cadastro.py     # LojaOwn (credenciais por loja)
 │   └── cargas_own/            # Cargas automáticas Own
-│       ├── models.py          # OwnExtratoTransacoes, Liquidacoes
-│       ├── services_carga_transacoes.py
-│       └── services_carga_liquidacoes.py
+│       ├── models.py          # OwnExtratoTransacoes, OwnLiquidacoes
+│       ├── services_carga_extrato_pos.py # API /buscaTransacoesGerais (POS only - não retorna e-commerce)
+│       ├── services_carga_liquidacoes.py # API /consultaLiquidacoes
+│       ├── services_carga_base_unificada_checkout.py # checkout_transactions → base_transacoes_unificadas
+│       └── management/commands/
+│           ├── carga_transacoes_own.py # --nsu, --data-inicial, --data-final (POS only)
+│           ├── carga_liquidacoes_own.py
+│           └── carga_base_unificada_checkout_own.py
 ├── portais/                    # 4 Portais web
 │   ├── controle_acesso/       # Multi-portal
 │   ├── admin/                 # 45+ templates
@@ -3282,20 +3361,22 @@ docker exec -it wallclub-portais python scripts/test_email.py
 
 ## 🏦 INTEGRAÇÃO OWN FINANCIAL
 
-**Status:** ✅ 100% Concluído (Cadastro de Estabelecimentos + E-commerce)
-**Data:** 13/01/2026
+**Status:** ✅ 100% Concluído (Cadastro + E-commerce + Payload Otimizado)
+**Data:** 03/02/2026
 **Documentação Completa:**
 - [PLANO_REPLICACAO_ESTRUTURA.md](integradora%20own/PLANO_REPLICACAO_ESTRUTURA.md)
 - [PLANO_IMPLEMENTACAO_CADASTRO_OWN.md](integradora%20own/PLANO_IMPLEMENTACAO_CADASTRO_OWN.md)
+- **Documentação API:** https://docs.payments-own.financial/reference/parameters
 
 ### Visão Geral
 
 Integração completa com Own Financial replicando estrutura Pinbank, suportando:
 - **APIs Adquirência** (OAuth 2.0) - Consultas transações/liquidações ✅
 - **Webhooks Tempo Real** - Transações, liquidações, cadastro ✅
-- **API OPPWA E-commerce** - Pagamentos e tokenização ⏳
+- **API OPPWA E-commerce** - Pagamentos e tokenização ✅ **COMPLETO (03/02/2026)**
 - **Roteador Multi-Gateway** - Convivência Pinbank + Own ✅
-- **Cadastro de Estabelecimentos** - Portal Admin + APIs REST ✅ NOVO
+- **Cadastro de Estabelecimentos** - Portal Admin + APIs REST ✅
+- **Payload Otimizado** - Campos estruturados para maximizar aprovação ✅ **NOVO (03/02/2026)**
 
 ### Componentes Implementados
 
@@ -3346,6 +3427,13 @@ adquirente_own/
 **Métodos Adapter (Compatibilidade Pinbank):**
 - Interface 100% compatível com `TransacoesPinbankService`
 - Checkouts funcionam com ambos gateways sem modificação
+
+**Payload Otimizado (03/02/2026):**
+- **Merchant:** `taxId` (CNPJ), `id` (razão social), `postcode` (CEP)
+- **Customer:** `birthDate`, `email`, `phone`, `identificationDocType: TAXSTATEMENT` (CPF)
+- **Billing/Shipping:** `city`, `state`, `postcode`, `country`
+- **Campos removidos:** `customer.browserUserAgent`, `billing.street`, `shipping.street`
+- **Resultado:** Transação aprovada com payload completo (NSU: 8ac7a4a19c22cdec019c2357e13915e2)
 
 #### 4. APIs REST - Cadastro de Estabelecimentos ✅ NOVO
 **Endpoints Públicos:**
@@ -3408,7 +3496,7 @@ adquirente_own/
 
 ### Status Atual
 
-**✅ Concluído (92%):**
+**✅ Concluído (100%):**
 - Estrutura base e models
 - APIs Adquirência (OAuth 2.0)
 - Webhooks tempo real
@@ -3416,20 +3504,18 @@ adquirente_own/
 - Roteador multi-gateway
 - Checkouts adaptados
 - POS TRData Own
+- **API OPPWA E-commerce validada (03/02/2026)**
+- **Payload otimizado com campos estruturados**
+- **Transações aprovadas em ambiente de testes**
+- **Portal de Vendas com campos estruturados (logradouro, numero, bairro, cidade, estado, CEP, data_nascimento)**
 
-**⏳ Pendente (8%):**
-- Credenciais OPPWA da Own:
-  - `entity_id` - ID entidade OPPWA
-  - `access_token` - Bearer token fixo
-- Testes e-commerce em sandbox
-- Validação completa
+### Campos Estruturados - Checkout
 
-### Próximos Passos
-
-1. **Solicitar à Own Financial:**
-   - Credenciais OPPWA (`entity_id` + `access_token`)
-   - Cartões de teste ambiente sandbox
-   - Documentação específica (se houver)
+**CheckoutCliente e CheckoutToken:**
+- `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`
+- `data_nascimento`, `email`
+- Integração ViaCEP para preenchimento automático
+- Portal de Vendas: Formulários de cadastro/edição atualizados
 
 2. **Após receber credenciais:**
    - Executar `teste_own_ecommerce.py`
@@ -3562,3 +3648,278 @@ GROUP BY nome_operador
 ```
 
 **Status:** ✅ Implementado e funcional
+
+---
+
+## 🔀 ARQUITETURA DE URLS REFATORADA (31/01/2026)
+
+### Simplificação de Roteamento
+
+**Antes:** 8 arquivos de URLs
+- `wallclub/urls.py` (padrão não usado)
+- `wallclub/urls_portais.py`
+- `wallclub/urls_admin.py`
+- `wallclub/urls_vendas.py`
+- `wallclub/urls_lojista.py`
+- `wallclub/urls_corporativo.py`
+- `wallclub/urls_apis.py`
+- `wallclub/urls_pos.py`
+
+**Depois:** 3 arquivos de URLs (62% redução)
+- `wallclub/urls_portais.py` (com função helper dinâmica)
+- `wallclub/urls_apis.py`
+- `wallclub/urls_pos.py`
+
+### Função Helper Dinâmica
+
+**Arquivo:** `wallclub/urls_portais.py`
+
+```python
+def get_portal_urlpatterns(portal_name=None):
+    """
+    Gera URLpatterns dinamicamente baseado no portal.
+
+    Args:
+        portal_name: 'admin', 'vendas', 'lojista', 'corporativo' ou None
+
+    Returns:
+        Lista de URLpatterns configurados
+    """
+    # Rotas globais (todos os portais)
+    base_patterns = [
+        path('metrics', metrics_view),  # Prometheus
+        path('health/', include('monitoring.urls')),
+        path('admin/', admin.site.urls),
+    ]
+
+    # Portal específico ou todos com prefixos
+    if portal_name:
+        return base_patterns + [path('', include(f'portais.{portal_name}.urls'))]
+    else:
+        return base_patterns + [
+            path('portal_admin/', include('portais.admin.urls')),
+            path('portal_vendas/', include('portais.vendas.urls')),
+            # ...
+        ]
+```
+
+### Middleware Simplificado
+
+**Arquivo:** `wallclub/middleware/subdomain_router.py`
+
+```python
+class SubdomainRouterMiddleware:
+    """Gera URLpatterns dinamicamente baseado no subdomínio."""
+
+    subdomain_map = {
+        'admin': 'admin',
+        'vendas': 'vendas',
+        'lojista': 'lojista',
+        'www': 'corporativo',
+    }
+
+    def __call__(self, request):
+        subdomain = request.get_host().split('.')[0]
+
+        if subdomain in self.subdomain_map:
+            portal_name = self.subdomain_map[subdomain]
+            request.urlconf = type('DynamicURLConf', (), {
+                'urlpatterns': get_portal_urlpatterns(portal_name)
+            })
+
+        return self.get_response(request)
+```
+
+### Benefícios
+
+- ✅ **Zero duplicação** de código
+- ✅ **Subdomínios mantidos** (admin.wallclub.com.br, vendas.wallclub.com.br)
+- ✅ **Rotas globais** em um único lugar (/metrics, /health/)
+- ✅ **Manutenção simplificada** (1 função vs 5 arquivos)
+- ✅ **URLconf dinâmico** via middleware
+
+### Rotas Globais
+
+Disponíveis em todos os containers Django:
+
+| Rota | Descrição | Implementação |
+|------|-----------|---------------|
+| `/metrics` | Métricas Prometheus | `monitoring/metrics_view.py` |
+| `/health/` | Health check básico | `monitoring/health_checks.py` |
+| `/health/live/` | Liveness probe | `monitoring/health_checks.py` |
+| `/health/ready/` | Readiness probe | `monitoring/health_checks.py` |
+| `/admin/` | Django Admin | Django padrão |
+
+---
+
+## 📊 SISTEMA DE MONITORAMENTO (31/01/2026)
+
+### Stack Implementada
+
+**Coleta de Métricas:**
+- ✅ Prometheus (porta 9090)
+- ✅ Node Exporter (sistema - porta 9100)
+- ✅ Redis Exporter (porta 9121)
+
+**Alertas e Notificações:**
+- ✅ Alertmanager (porta 9093)
+- ✅ Telegram (@Wallclub_monitor_bot)
+- ✅ Email (AWS SES)
+
+**Visualização:**
+- ⚠️ Grafana (porta 3000 - opcional em dev)
+
+### Métricas Expostas
+
+**Containers Django (4):**
+```prometheus
+up 1
+django_db_connection_status 1
+django_info{version="4.2.23"} 1
+```
+
+**Redis:**
+- `redis_up`
+- `redis_memory_used_bytes`
+- `redis_connected_clients`
+
+**Sistema:**
+- `node_filesystem_avail_bytes`
+- `node_cpu_seconds_total`
+- `node_memory_MemAvailable_bytes`
+
+### Alertas Configurados (14)
+
+**Críticos:**
+- ServiceDown (30s)
+- RedisDown (1min)
+- MySQLDown (1min)
+- DiskSpaceLowCritical (<10%, 5min)
+
+**Warnings:**
+- HealthCheckFailing (5min)
+- HighCPUUsage (>80%, 10min)
+- HighMemoryUsage (>90%, 10min)
+- RedisMemoryHigh (>90%, 5min)
+- DiskSpaceLowWarning (<20%, 10min)
+- LowAvailability (<95%, 5min)
+
+### Retenção e Armazenamento
+
+**Atual:**
+- Retenção: 15 dias
+- Armazenamento: Volume Docker local
+- Scrape interval: 30 segundos
+
+**Evolução Futura:**
+- Thanos + S3 para retenção longa
+- CloudWatch Exporter para S3
+- Métricas customizadas de negócio
+
+### Documentação
+
+**Localização:** `monitoring/README.md`
+
+**Conteúdo:**
+- Métricas implementadas
+- Instruções Node Exporter para banco em produção
+
+---
+
+## 🛒 INTEGRAÇÃO OWN E-COMMERCE (06/02/2026)
+
+### Status Atual
+
+**Implementado:**
+- ✅ API OPPWA (QA/PROD) para pagamentos e-commerce
+- ✅ Webhook de transações testado e funcional
+- ✅ Campos adicionais em `checkout_transactions` (card_bin, card_last4, payment_brand_response, result_code, tx_transaction_id)
+- ✅ GatewayRouter integrado com Own Financial
+
+**Pendente (aguardando OWN):**
+- ⏳ Configuração do webhook de e-commerce na OWN
+- ⏳ Confirmação do payload do webhook para transações e-commerce
+- ⏳ Documentação sobre registro de webhook via API (se disponível)
+
+### Limitações Identificadas
+
+**API `buscaTransacoesGerais`:**
+- ❌ **NÃO retorna transações de e-commerce** (apenas POS físico)
+- ❌ `merchantTransactionId` não funciona como `identificadorTransacao`
+- ❌ `id` da transação OPPWA não funciona como `identificadorTransacao`
+- ✅ Apenas o `identificadorTransacao` do webhook funciona para consultas
+
+**Resposta OPPWA `/v1/payments`:**
+```json
+{
+  "id": "8acda4a49c2816b5019c33453cae5939",
+  "merchantTransactionId": "WC-nhtTzm68vDZ9dLv4",
+  "result": { "code": "000.000.000" },
+  "card": { "bin": "411049", "last4Digits": "4420" }
+}
+```
+- ✅ Campos disponíveis: `id`, `merchantTransactionId`, `card`, `result`
+- ❌ **NÃO contém:** `TxTransactionId`, `resultDetails`, `identificadorTransacao`
+
+### Arquitetura de Webhooks
+
+**Endpoint:** `https://wcapi.wallclub.com.br/webhook/own/transacao/`
+
+**Payload Esperado (POS):**
+```json
+{
+  "identificadorTransacao": "260206001862123456",
+  "tipoTransacao": "VENDA CONFIRMADA",
+  "cnpjCliente": "54430621000134",
+  "docParceiro": "42567249000123",
+  "valor": 1.15,
+  "data": "06/02/2026 11:05:05",
+  "bandeira": "VISA",
+  "modalide": "CREDITO"
+}
+```
+
+**Payload E-commerce (aguardando confirmação OWN):**
+- Deve incluir `merchantTransactionId` para correlação com `checkout_transactions`
+- Deve incluir `identificadorTransacao` para consultas posteriores via API
+
+**Processamento:**
+1. Webhook recebe notificação
+2. Salva em `OwnExtratoTransacoes` (tabela de staging)
+3. TODO: Atualizar `checkout_transactions.tx_transaction_id` usando `merchantTransactionId`
+
+### Campos Checkout Transactions
+
+**Novos campos (06/02/2026):**
+```sql
+ALTER TABLE checkout_transactions
+ADD COLUMN card_bin VARCHAR(6),
+ADD COLUMN card_last4 VARCHAR(4),
+ADD COLUMN payment_brand_response VARCHAR(50),
+ADD COLUMN result_code VARCHAR(20),
+ADD COLUMN tx_transaction_id VARCHAR(100);
+```
+
+**Mapeamento OWN → WallClub:**
+- `response.card.bin` → `card_bin`
+- `response.card.last4Digits` → `card_last4`
+- `response.paymentBrand` → `payment_brand_response`
+- `response.result.code` → `result_code`
+- `webhook.identificadorTransacao` → `tx_transaction_id` (via webhook)
+- `response.id` → `nsu` (ID OPPWA temporário)
+
+### Próximos Passos
+
+1. **Solicitar à OWN:**
+   - Configuração do webhook: `https://wcapi.wallclub.com.br/webhook/own/transacao/`
+   - Confirmação do payload para transações e-commerce
+   - Documentação sobre registro de webhook via API
+
+2. **Implementar:**
+   - Atualização de `checkout_transactions.tx_transaction_id` quando webhook chegar
+   - Correlação via `merchantTransactionId`
+
+3. **Deploy:**
+   - Código já corrigido (campos novos, gateway, etc.)
+   - Aguardando confirmação da OWN para deploy final
+- Evolução futura (Thanos, S3, retenção)

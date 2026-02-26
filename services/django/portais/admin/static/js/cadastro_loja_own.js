@@ -8,6 +8,8 @@ class CadastroLojaOwn {
         this.cnaeData = [];
         this.cestasData = [];
         this.tarifasData = [];
+        this.tarifaCounter = 0;
+        this.cestasCarregadas = false;
         this.csrfToken = this.getCsrfToken();
         this.init();
     }
@@ -81,10 +83,38 @@ class CadastroLojaOwn {
             inputCnae.addEventListener('input', (e) => this.buscarCNAE(e.target.value));
         }
 
-        // Seleção de cesta
-        const selectCesta = document.getElementById('id_cesta');
-        if (selectCesta) {
-            selectCesta.addEventListener('change', (e) => this.carregarTarifasCesta(e.target.value));
+        // Radio buttons modelo de tarifação - alternar entre FLEX e MDR
+        const radioFlex = document.getElementById('modelo_flex');
+        const radioMdr = document.getElementById('modelo_mdr');
+        if (radioFlex && radioMdr) {
+            const toggleModelo = () => {
+                const isFlex = radioFlex.checked;
+                const secaoFlex = document.getElementById('secao_flex');
+                const secaoMdr = document.getElementById('secao_mdr');
+                const camposAntecipacao = document.getElementById('antecipacao_automatica')?.closest('.col-md-3');
+                const campoTaxaAntecipacao = document.getElementById('taxa_antecipacao')?.closest('.col-md-3');
+
+                if (secaoFlex) secaoFlex.style.display = isFlex ? 'block' : 'none';
+                if (secaoMdr) secaoMdr.style.display = isFlex ? 'none' : 'block';
+
+                // Ocultar antecipação no modelo FLEX
+                if (camposAntecipacao) camposAntecipacao.style.display = isFlex ? 'none' : 'block';
+                if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = isFlex ? 'none' : 'block';
+            };
+
+            radioFlex.addEventListener('change', toggleModelo);
+            radioMdr.addEventListener('change', toggleModelo);
+        }
+
+        // Checkbox e-commerce - mostrar/ocultar cesta 3
+        const checkboxEcommerce = document.getElementById('aceita_ecommerce');
+        if (checkboxEcommerce) {
+            checkboxEcommerce.addEventListener('change', (e) => {
+                const cestaEcommerce = document.getElementById('cesta_parcela_ecommerce');
+                if (cestaEcommerce) {
+                    cestaEcommerce.style.display = e.target.checked ? 'block' : 'none';
+                }
+            });
         }
 
         // Busca CEP
@@ -107,7 +137,7 @@ class CadastroLojaOwn {
 
             // Marcar apenas campos específicos como obrigatórios (excluir campos de busca e readonly)
             const camposObrigatorios = ['cnae', 'mcc', 'faturamento_previsto', 'faturamento_contratado',
-                'id_cesta', 'responsavel_assinatura'];
+                'responsavel_assinatura'];
 
             camposObrigatorios.forEach(id => {
                 const campo = document.getElementById(id);
@@ -197,32 +227,63 @@ class CadastroLojaOwn {
             if (!response.ok) throw new Error('Erro ao carregar cestas');
 
             this.cestasData = await response.json();
-            this.renderizarCestas(this.cestasData);
+            this.carregarTodasAsCestas();
         } catch (error) {
             console.error('Erro ao carregar cestas:', error);
             this.mostrarErro('Erro ao carregar cestas de tarifas');
         }
     }
 
-    renderizarCestas(dados) {
-        const select = document.getElementById('id_cesta');
-        if (!select) return;
+    async carregarTodasAsCestas() {
+        // Identificar as 3 cestas por nome
+        const cestas = {
+            bandeira: null,
+            parcela_pos: null,
+            parcela_ecommerce: null
+        };
 
-        select.innerHTML = '<option value="">Selecione uma cesta</option>';
-
-        dados.forEach(cesta => {
-            const option = document.createElement('option');
-            option.value = cesta.cestaId;
-            option.textContent = cesta.nomeCesta;
-            select.appendChild(option);
+        this.cestasData.forEach(cesta => {
+            const nome = cesta.nomeCesta.toLowerCase();
+            if (nome.includes('bandeira')) {
+                cestas.bandeira = cesta.cestaId;
+            } else if (nome.includes('e-commerce') || nome.includes('ecommerce')) {
+                cestas.parcela_ecommerce = cesta.cestaId;
+            } else if (nome.includes('parcela')) {
+                cestas.parcela_pos = cesta.cestaId;
+            }
         });
+
+        // Carregar tarifas de cada cesta
+        if (cestas.bandeira) {
+            await this.carregarTarifasCesta(cestas.bandeira, 'cesta_bandeira');
+        }
+        if (cestas.parcela_pos) {
+            await this.carregarTarifasCesta(cestas.parcela_pos, 'cesta_parcela_pos');
+        }
+        if (cestas.parcela_ecommerce) {
+            await this.carregarTarifasCesta(cestas.parcela_ecommerce, 'cesta_parcela_ecommerce');
+        }
+
+        // Adicionar campo hidden com total de tarifas no formulário
+        const form = document.getElementById('form_cadastro_loja');
+        if (form) {
+            let totalInput = form.querySelector('input[name="total_tarifas"]');
+            if (!totalInput) {
+                totalInput = document.createElement('input');
+                totalInput.type = 'hidden';
+                totalInput.name = 'total_tarifas';
+                form.appendChild(totalInput);
+            }
+            totalInput.value = this.tarifaCounter;
+        }
+
+        // Marcar cestas como carregadas
+        this.cestasCarregadas = true;
+        console.log(`✅ Cestas carregadas: ${this.tarifaCounter} tarifas`);
     }
 
-    async carregarTarifasCesta(cestaId) {
-        if (!cestaId) {
-            document.getElementById('tarifas_preview').innerHTML = '';
-            return;
-        }
+    async carregarTarifasCesta(cestaId, containerId) {
+        if (!cestaId) return;
 
         try {
             const response = await fetch(`${this.apiBaseUrl}/cestas/${cestaId}/tarifas/`, {
@@ -234,16 +295,18 @@ class CadastroLojaOwn {
             if (!response.ok) throw new Error('Erro ao carregar tarifas');
 
             const data = await response.json();
-            this.tarifasData = data.tarifas || [];
-            this.renderizarTarifas(data);
+            this.renderizarTarifas(data, containerId, cestaId);
         } catch (error) {
             console.error('Erro ao carregar tarifas:', error);
             this.mostrarErro('Erro ao carregar tarifas da cesta');
         }
     }
 
-    renderizarTarifas(data) {
-        const container = document.getElementById('tarifas_preview');
+    renderizarTarifas(data, containerId, cestaId) {
+        const containerDiv = document.getElementById(containerId);
+        if (!containerDiv) return;
+
+        const container = containerDiv.querySelector('div');
         if (!container) return;
 
         if (!data.tarifas || data.tarifas.length === 0) {
@@ -252,13 +315,7 @@ class CadastroLojaOwn {
         }
 
         let html = `
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Tarifas da Cesta: ${data.nome_cesta}</h6>
-                    <small class="text-muted">Ajuste os valores conforme necessário (respeitando o valor mínimo)</small>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm">
+                    <table class="table table-sm table-bordered">
                         <thead>
                             <tr>
                                 <th>Descrição</th>
@@ -269,20 +326,22 @@ class CadastroLojaOwn {
                         <tbody>
         `;
 
-        data.tarifas.forEach((tarifa, index) => {
+        data.tarifas.forEach((tarifa) => {
             const valorMinimo = parseFloat(tarifa.valor_minimo || 0);
             const valorAtual = parseFloat(tarifa.valor || valorMinimo);
+            const currentIndex = this.tarifaCounter++;
 
             html += `
                 <tr>
                     <td>
                         ${tarifa.descricao || 'Tarifa'}
-                        <input type="hidden" name="tarifa_id_${index}" value="${tarifa.cesta_valor_id}">
+                        <input type="hidden" name="tarifa_id_${currentIndex}" value="${tarifa.cesta_valor_id}">
+                        <input type="hidden" name="tarifa_cesta_id_${currentIndex}" value="${cestaId}">
                     </td>
                     <td class="text-end">
                         <input type="number"
                                class="form-control form-control-sm text-end tarifa-valor"
-                               name="tarifa_valor_${index}"
+                               name="tarifa_valor_${currentIndex}"
                                data-tarifa-id="${tarifa.cesta_valor_id}"
                                data-valor-minimo="${valorMinimo}"
                                value="${valorAtual.toFixed(2)}"
@@ -300,9 +359,6 @@ class CadastroLojaOwn {
         html += `
                         </tbody>
                     </table>
-                    <input type="hidden" id="total_tarifas" name="total_tarifas" value="${data.tarifas.length}">
-                </div>
-            </div>
         `;
 
         container.innerHTML = html;
@@ -371,9 +427,15 @@ class CadastroLojaOwn {
             erros.push('CNAE é obrigatório para cadastro na Own');
         }
 
-        // Validar cesta
-        if (!document.getElementById('id_cesta').value) {
-            erros.push('Cesta de tarifas é obrigatória para cadastro na Own');
+        // Validar que as cestas foram carregadas
+        if (!this.cestasCarregadas) {
+            erros.push('Aguarde o carregamento das cestas de tarifas antes de salvar.');
+        }
+
+        // Validar que existem tarifas
+        const totalTarifas = parseInt(document.querySelector('input[name="total_tarifas"]')?.value || '0');
+        if (totalTarifas === 0) {
+            erros.push('Nenhuma tarifa carregada. Aguarde o carregamento das cestas.');
         }
 
         // Validar dados bancários

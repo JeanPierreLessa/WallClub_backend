@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'corsheaders',
+    'django_prometheus',
 
     # Local apps
     'wallclub_core',
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000  # Padrão é 1000, aumentado para suportar formulários de parâmetros com múltiplas configurações
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Servir arquivos estáticos com Gunicorn
     'wallclub.middleware.subdomain_router.SubdomainRouterMiddleware',  # Roteamento por subdomínio
@@ -69,9 +71,10 @@ MIDDLEWARE = [
     'wallclub_core.middleware.session_timeout.PortalSessionSecurityMiddleware',
     # Middleware para marca do canal no portal lojista
     'portais.lojista.middleware.MarcaCanalMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
-ROOT_URLCONF = 'wallclub.urls'
+ROOT_URLCONF = 'wallclub.urls_portais'
 
 TEMPLATES = [
     {

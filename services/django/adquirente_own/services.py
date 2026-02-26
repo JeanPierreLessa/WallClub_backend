@@ -233,6 +233,7 @@ class OwnService:
     def obter_credenciais_loja(self, loja_id: int) -> Optional[Dict[str, Any]]:
         """
         Obtém credenciais Own para uma loja específica
+        Busca entity_id e access_token da tabela loja_own se disponíveis
 
         Args:
             loja_id: ID da loja
@@ -240,6 +241,35 @@ class OwnService:
         Returns:
             Dict com credenciais ou None
         """
-        # Por enquanto, todas as lojas usam as mesmas credenciais White Label
-        # No futuro, pode-se implementar credenciais por loja
-        return self.obter_credenciais_white_label(self.environment)
+        from django.apps import apps
+
+        # Buscar credenciais White Label (client_id, client_secret, scope)
+        credenciais = self.obter_credenciais_white_label(self.environment)
+
+        if not credenciais:
+            return None
+
+        # Buscar entity_id e access_token específicos da loja
+        try:
+            from adquirente_own.models_cadastro import LojaOwn
+            registrar_log('adquirente_own', f'🔍 Buscando credenciais para loja {loja_id}')
+            loja_own = LojaOwn.objects.filter(loja_id=loja_id).first()
+
+            if loja_own:
+                registrar_log('adquirente_own', f'📋 Loja encontrada: entity_id={loja_own.entity_id}, access_token={loja_own.access_token[:20] if loja_own.access_token else None}...')
+                # Se loja tem entity_id e access_token próprios, usar
+                if loja_own.entity_id and loja_own.access_token:
+                    credenciais['entity_id'] = loja_own.entity_id
+                    credenciais['access_token'] = loja_own.access_token
+                    registrar_log('adquirente_own', f'✅ Usando entity_id e access_token da loja {loja_id}')
+                else:
+                    registrar_log('adquirente_own', f'⚠️ Loja {loja_id} sem entity_id/access_token - será gerado via OAuth')
+            else:
+                registrar_log('adquirente_own', f'⚠️ Loja {loja_id} não encontrada em loja_own - será gerado via OAuth')
+
+        except Exception as e:
+            registrar_log('adquirente_own', f'❌ Erro ao buscar credenciais da loja {loja_id}: {str(e)}', nivel='ERROR')
+            import traceback
+            registrar_log('adquirente_own', f'Stack trace: {traceback.format_exc()}', nivel='ERROR')
+
+        return credenciais

@@ -220,6 +220,7 @@ def exportar_transacoes_excel(request):
         filtros = {
             'data_inicial': request.GET.get('data_inicial', date.today().replace(day=1).strftime('%Y-%m-%d')),
             'data_final': request.GET.get('data_final', date.today().strftime('%Y-%m-%d')),
+            'canal': request.GET.get('canal', ''),
             'loja_id': request.GET.get('loja_id', ''),
             'nsu_filtro': request.GET.get('nsu_filtro', ''),
             'incluir_tef': request.GET.get('incluir_tef') == '1'
@@ -236,6 +237,11 @@ def exportar_transacoes_excel(request):
         if filtros['data_final']:
             where_conditions.append("data_transacao <= %s")
             params.append(f"{filtros['data_final']} 23:59:59")
+
+        # Filtro de canal
+        if filtros['canal']:
+            where_conditions.append("var4 = %s")
+            params.append(filtros['canal'])
 
         if filtros['nsu_filtro']:
             where_conditions.append("var9 LIKE %s")
@@ -465,6 +471,7 @@ def exportar_transacoes_csv(request):
     filtros = {
         'data_inicial': request.GET.get('data_inicial', date.today().replace(day=1).strftime('%Y-%m-%d')),
         'data_final': request.GET.get('data_final', date.today().strftime('%Y-%m-%d')),
+        'canal': request.GET.get('canal', ''),
         'loja_id': request.GET.get('loja_id', ''),
         'nsu_filtro': request.GET.get('nsu_filtro', ''),
         'incluir_tef': request.GET.get('incluir_tef') == '1'
@@ -482,7 +489,10 @@ def exportar_transacoes_csv(request):
         where_conditions.append("data_transacao <= %s")
         params.append(f"{filtros['data_final']} 23:59:59")
 
-    # Filtro de loja - removido para admin (deve ver todas as transações)
+    # Filtro de canal
+    if filtros['canal']:
+        where_conditions.append("var4 = %s")
+        params.append(filtros['canal'])
 
     if filtros['nsu_filtro']:
         where_conditions.append("var9 LIKE %s")
