@@ -814,8 +814,8 @@ class CheckoutService:
 
             if settings.ANTIFRAUDE_ENABLED and cliente.cpf:
                 try:
-                    # Determinar modalidade
-                    modalidade = 'CREDITO' if parcelas > 1 else 'DEBITO'
+                    # Determinar modalidade (sempre CRÉDITO para cartão de crédito)
+                    modalidade = 'CREDITO'
 
                     # Obter canal_id da loja
                     from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
