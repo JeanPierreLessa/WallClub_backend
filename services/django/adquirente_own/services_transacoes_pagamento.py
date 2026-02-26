@@ -213,7 +213,18 @@ class TransacoesOwnService:
             try:
                 if hasattr(e, 'response') and e.response is not None:
                     error_body = e.response.text
-                    registrar_log('own.transacao', f'📄 Resposta erro: {error_body}', nivel='ERROR')
+                    registrar_log('own.transacao', f'📄 Resposta erro (texto): {error_body}', nivel='ERROR')
+
+                    # Tentar parsear JSON
+                    try:
+                        error_json = e.response.json()
+                        registrar_log('own.transacao', f'📄 Resposta erro (JSON): {error_json}', nivel='ERROR')
+
+                        # Se Own retornou erro estruturado, retornar
+                        if 'result' in error_json:
+                            return error_json
+                    except:
+                        pass
             except:
                 pass
             return {

@@ -4,6 +4,7 @@ Lógica de negócio compartilhada entre link de pagamento e portal de vendas.
 """
 from typing import Dict, Any, Optional
 from decimal import Decimal
+from datetime import datetime
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
