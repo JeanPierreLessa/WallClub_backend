@@ -70,7 +70,7 @@ docker system df
 # Pull do código
 
 cd /var/www/WallClub_backend
-git pull origin release-2.2.1
+git pull origin release-2.2.2
 docker-compose build
 docker-compose down
 docker-compose up -d
