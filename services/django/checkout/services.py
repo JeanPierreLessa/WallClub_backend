@@ -883,11 +883,23 @@ class CheckoutService:
                     'cvv': cvv,
                     'brand': bandeira.upper()
                 }
+
+                # Preparar dados do cliente (obrigatório para Own)
+                customer_data = {
+                    'nome_completo': cliente.nome,
+                    'email': cliente.email,
+                    'cpf': cliente.cpf,
+                    'data_nascimento': cliente.data_nascimento.strftime('%Y-%m-%d') if cliente.data_nascimento else None
+                }
+
                 resultado = service.create_payment_debit(
                     card_data=card_data,
                     amount=valor,
                     parcelas=parcelas,
-                    loja_id=cliente.loja_id
+                    loja_id=cliente.loja_id,
+                    customer_data=customer_data,
+                    ip_address=ip_address,
+                    user_agent=user_agent
                 )
             else:
                 # Pinbank - pagamento direto com cartão
