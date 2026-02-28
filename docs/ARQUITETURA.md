@@ -1,7 +1,7 @@
 # ARQUITETURA - WALLCLUB ECOSYSTEM
 
-**Versão:** 6.4
-**Data:** 31/01/2026
+**Versão:** 6.5
+**Data:** 28/02/2026
 **Status:** 4 containers independentes, 32 APIs internas, Fases 1-7 (100% - **Own Financial Completo**), Sistema Cashback Centralizado + **Débito de Cashback Corrigido** + Compras Informativas + **Transactiondata_pos unificada (Pinbank + Own em produção)** + Sistema Cupom (POS + Checkout Web) + Migração Terminais DATETIME + Portal Admin com histórico + **Calculadoras Base Abstraídas (parâmetros obrigatórios)** + **Portal de Vendas com GatewayRouter (Pinbank/Own)** + **Arquitetura de URLs Refatorada (3 arquivos)** + **Sistema de Monitoramento Completo (Prometheus + Alertmanager)**
 
 ---
@@ -3687,8 +3687,8 @@ def get_portal_urlpatterns(portal_name=None):
     """
     # Rotas globais (todos os portais)
     base_patterns = [
-        path('metrics', metrics_view),  # Prometheus
-        path('health/', include('monitoring.urls')),
+        path('', include('django_prometheus.urls')),  # Métricas django-prometheus
+        path('', include('monitoring.urls')),  # /metrics + /health/*
         path('admin/', admin.site.urls),
     ]
 
@@ -3773,9 +3773,22 @@ Disponíveis em todos os containers Django:
 
 **Containers Django (4):**
 ```prometheus
+# Métricas básicas
 up 1
 django_db_connection_status 1
 django_info{version="4.2.23"} 1
+
+# Métricas HTTP (django-prometheus)
+django_http_requests_total_by_method_total
+django_http_responses_total_by_status_total
+django_http_requests_latency_including_middlewares_seconds
+django_http_requests_latency_seconds_by_view_method
+django_http_exceptions_total_by_type_total
+
+# Métricas de processo
+process_resident_memory_bytes
+process_cpu_seconds_total
+process_virtual_memory_bytes
 ```
 
 **Redis:**
