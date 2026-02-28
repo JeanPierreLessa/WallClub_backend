@@ -46,10 +46,10 @@ def login_biometrico(request):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Buscar cliente (filter + first para evitar MultipleObjectsReturned)
-        cliente = Cliente.objects.filter(cpf=cpf, is_active=True).first()
+        cliente = Cliente.objects.filter(cpf=cpf, canal_id=canal_id, is_active=True).first()
 
         if not cliente:
-            registrar_log('apps.cliente', f"Login biométrico falhou: CPF {cpf} não encontrado ou inativo", nivel='WARNING')
+            registrar_log('apps.cliente', f"Login biométrico falhou: CPF {cpf} não encontrado ou inativo no canal {canal_id}", nivel='WARNING')
             return Response({
                 'success': False,
                 'error': 'Cliente não encontrado'
