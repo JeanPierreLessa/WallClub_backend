@@ -2,9 +2,10 @@
 URLs para endpoints de monitoramento e health checks
 """
 from django.urls import path
-from monitoring import health_checks
+from monitoring import health_checks, metrics_view
 
 urlpatterns = [
+    path('metrics', metrics_view.metrics_view, name='metrics'),
     path('health/', health_checks.health_check, name='health'),
     path('health/live/', health_checks.health_live, name='health_live'),
     path('health/ready/', health_checks.health_ready, name='health_ready'),

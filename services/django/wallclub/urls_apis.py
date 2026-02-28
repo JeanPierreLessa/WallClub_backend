@@ -14,7 +14,7 @@ urlpatterns = [
     path('', include('django_prometheus.urls')),
 
     # Monitoramento e Health Checks
-    path('health/', include('monitoring.urls')),
+    path('', include('monitoring.urls')),
 
     # Admin Django
     path('admin/', admin.site.urls),
