@@ -262,7 +262,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m]))",
           "refId": "A",
           "legendFormat": "p95 - {{job}}"
         }
@@ -444,7 +444,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "process_resident_memory_bytes{job=~\"django-.*\"}",
+          "expr": "process_resident_memory_bytes{job=~\"wallclub-.*\"}",
           "refId": "A",
           "legendFormat": "{{job}}"
         }
@@ -535,7 +535,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(process_cpu_seconds_total{job=~\"django-.*\"}[5m]) * 100",
+          "expr": "rate(process_cpu_seconds_total{job=~\"wallclub-.*\"}[5m]) * 100",
           "refId": "A",
           "legendFormat": "{{job}}"
         }
@@ -599,7 +599,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up{job=\"django-portais\"}",
+          "expr": "up{job=\"wallclub-portais\"}",
           "refId": "A"
         }
       ],
@@ -662,7 +662,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up{job=\"django-apis\"}",
+          "expr": "up{job=\"wallclub-apis\"}",
           "refId": "A"
         }
       ],
@@ -725,7 +725,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up{job=\"django-pos\"}",
+          "expr": "up{job=\"wallclub-pos\"}",
           "refId": "A"
         }
       ],
@@ -788,7 +788,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up{job=\"django-riskengine\"}",
+          "expr": "up{job=\"wallclub-riskengine\"}",
           "refId": "A"
         }
       ],
