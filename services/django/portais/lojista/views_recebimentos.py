@@ -393,7 +393,7 @@ class LojistaRecebimentosPorLojaView(LojistaAccessMixin, LojistaDataMixin, Templ
                     incluir_tef=incluir_tef
                 )
 
-                # Agrupar por loja
+                # Agrupar por loja separando repasse, rebate e outros lançamentos
                 recebimentos_por_loja = {}
                 for transacao in transacoes_list:
                     loja_id = int(transacao['loja_id']) if transacao.get('loja_id') else None
@@ -408,12 +408,15 @@ class LojistaRecebimentosPorLojaView(LojistaAccessMixin, LojistaDataMixin, Templ
                         recebimentos_por_loja[loja_id] = {
                             'loja_id': loja_id,
                             'nome_loja': nome_loja,
-                            'valor_total': 0,
+                            'valor_repasse': 0,
+                            'valor_rebate': 0,
+                            'outros_lancamentos': 0,
                             'quantidade': 0
                         }
 
+                    # Valor de repasse (transações normais)
                     valor_recebimento = float(transacao.get('valor_recebimento', 0) or 0)
-                    recebimentos_por_loja[loja_id]['valor_total'] += valor_recebimento
+                    recebimentos_por_loja[loja_id]['valor_repasse'] += valor_recebimento
                     recebimentos_por_loja[loja_id]['quantidade'] += 1
 
                 # Buscar lançamentos manuais e agrupar por loja
@@ -435,12 +438,15 @@ class LojistaRecebimentosPorLojaView(LojistaAccessMixin, LojistaDataMixin, Templ
                         recebimentos_por_loja[loja_id] = {
                             'loja_id': loja_id,
                             'nome_loja': nome_loja,
-                            'valor_total': 0,
+                            'valor_repasse': 0,
+                            'valor_rebate': 0,
+                            'outros_lancamentos': 0,
                             'quantidade': 0
                         }
 
+                    # Lançamentos manuais vão para "Outros Lançamentos"
                     valor_lancamento = float(lancamento['valor'])
-                    recebimentos_por_loja[loja_id]['valor_total'] += valor_lancamento
+                    recebimentos_por_loja[loja_id]['outros_lancamentos'] += valor_lancamento
                     recebimentos_por_loja[loja_id]['quantidade'] += 1
 
                 # Converter para lista e ordenar por nome da loja
@@ -466,39 +472,70 @@ class LojistaRecebimentosPorLojaView(LojistaAccessMixin, LojistaDataMixin, Templ
         if not recebimentos_por_loja:
             return '<div class="alert alert-info mt-3">Nenhum recebimento encontrado para esta data.</div>'
 
-        # Calcular total geral
-        total_geral = sum(item['valor_total'] for item in recebimentos_por_loja)
+        # Calcular totais gerais
+        total_repasse = sum(item.get('valor_repasse', 0) for item in recebimentos_por_loja)
+        total_rebate = sum(item.get('valor_rebate', 0) for item in recebimentos_por_loja)
+        total_outros_lancamentos = sum(item.get('outros_lancamentos', 0) for item in recebimentos_por_loja)
+        total_liquido = total_repasse + total_rebate + total_outros_lancamentos
 
-        # Card de total
-        html = f'''
-        <div class="row mt-3 mb-3">
-            <div class="col-md-12">
-                <div class="card bg-info text-white">
+        # Cards de totais - padronizados com tela principal
+        html = '<div class="row mt-3 mb-3">'
+
+        cards = [
+            ('Total Repasse', total_repasse, 'bg-primary'),
+            ('Total Rebate', total_rebate, 'bg-success'),
+            ('Total Outros Lançamentos', total_outros_lancamentos, 'bg-warning text-dark'),
+            ('Total Líquido', total_liquido, 'bg-info')
+        ]
+
+        for titulo, valor, classe in cards:
+            valor_formatado = f"R$ {valor:,.2f}"
+
+            html += f'''
+            <div class="col-md-3">
+                <div class="card {classe} text-white">
                     <div class="card-body py-2 text-center">
-                        <h5 class="card-title" style="font-size: 14px; margin-bottom: 5px;">Total Geral do Dia</h5>
-                        <h3 class="card-text" style="font-size: 18px; margin-bottom: 0;">R$ {total_geral:,.2f}</h3>
+                        <h5 class="card-title" style="font-size: 14px; margin-bottom: 5px;">{titulo}</h5>
+                        <h3 class="card-text" style="font-size: 18px; margin-bottom: 0;">{valor_formatado}</h3>
                     </div>
                 </div>
             </div>
-        </div>
-        '''
+            '''
 
-        # Tabela agrupada por loja
+        html += '</div>'
+
+        # Tabela agrupada por loja - mesmas colunas da tela principal
         html += '''
         <div class="table-responsive">
             <table class="table table-striped table-hover">
                 <thead class="table-dark">
                     <tr>
                         <th>Loja</th>
-                        <th>Quantidade de Transações</th>
-                        <th>Valor Total Recebido (R$)</th>
+                        <th>Data Recebimento</th>
+                        <th>Valor Repasse (R$)</th>
+                        <th>Valor Rebate (R$)</th>
+                        <th>Outros Lançamentos (R$)</th>
+                        <th>Total Líquido (R$)</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
         '''
 
+        # Converter data para formato brasileiro
+        try:
+            from datetime import datetime
+            data_obj = datetime.strptime(data_recebimento, '%Y-%m-%d')
+            data_formatada_br = data_obj.strftime('%d/%m/%Y')
+        except:
+            data_formatada_br = data_recebimento
+
         for item in recebimentos_por_loja:
+            valor_repasse = item.get('valor_repasse', 0)
+            valor_rebate = item.get('valor_rebate', 0)
+            outros_lancamentos = item.get('outros_lancamentos', 0)
+            total_item = valor_repasse + valor_rebate + outros_lancamentos
+
             # Construir URL com parâmetros
             url_params = f"data={data_recebimento}&loja={item['loja_id']}"
             if incluir_tef:
@@ -507,8 +544,11 @@ class LojistaRecebimentosPorLojaView(LojistaAccessMixin, LojistaDataMixin, Templ
             html += f'''
             <tr>
                 <td><strong>{item['nome_loja']}</strong></td>
-                <td>{item['quantidade']}</td>
-                <td><strong>R$ {item['valor_total']:,.2f}</strong></td>
+                <td>{data_formatada_br}</td>
+                <td>R$ {valor_repasse:,.2f}</td>
+                <td>R$ {valor_rebate:,.2f}</td>
+                <td>R$ {outros_lancamentos:,.2f}</td>
+                <td><strong>R$ {total_item:,.2f}</strong></td>
                 <td>
                     <a href="/recebimentos/detalhes/?{url_params}"
                        class="btn btn-sm btn-outline-primary">
