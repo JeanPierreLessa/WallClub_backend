@@ -693,8 +693,8 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                 # Data pagamento
                 data_pgto = venda['var45'] if venda['var45'] else venda['var43']
 
-                # Truncar nome da loja em 10 caracteres
-                nome_loja = (venda['var5'] or '-')[:10] if venda['var5'] else '-'
+                # Nome completo da loja
+                nome_loja = venda['var5'] or '-'
 
                 row_dict = {
                     'Loja': nome_loja,
@@ -806,7 +806,7 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                         data_formatada = venda['data_transacao'].strftime('%d/%m/%Y') if venda['data_transacao'] else '-'
                         hora_formatada = venda['data_transacao'].strftime('%H:%M:%S') if venda['data_transacao'] else '-'
                         data_pgto = venda['var45'] if venda['var45'] else venda['var43']
-                        nome_loja = (venda['var5'] or '-')[:10] if venda['var5'] else '-'
+                        nome_loja = venda['var5'] or '-'
 
                         # Escrever linha CSV
                         linha = [

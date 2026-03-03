@@ -22,29 +22,29 @@ from .mixins import LojistaAccessMixin, LojistaDataMixin
 class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
     """View de recebimentos"""
     template_name = 'portais/lojista/recebimentos.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Obter lojas acessíveis usando serviço centralizado
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = self.request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
             lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
         except PortalUsuario.DoesNotExist:
             lojas_acessiveis = []
-        
+
         context.update({
             'current_page': 'recebimentos',
             'lojas_acessiveis': lojas_acessiveis,
             'mostrar_filtro_loja': len(lojas_acessiveis) > 1
         })
-        
+
         return context
-    
+
     def post(self, request):
         """Processar consulta AJAX de recebimentos - Nova versão com resumo por data"""
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -54,12 +54,12 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
             loja_selecionada = request.POST.get('loja', '')
             nsu = request.POST.get('nsu', '').strip()
             incluir_tef = request.POST.get('incluir_tef') == 'on'
-            
+
             # Validar acesso às lojas usando serviço centralizado
             from portais.controle_acesso.models import PortalUsuario
             from portais.controle_acesso.filtros import FiltrosAcessoService
             from .services_recebimentos import RecebimentoService
-            
+
             usuario_id = request.session.get('lojista_usuario_id')
             try:
                 usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -67,11 +67,11 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 loja_ids_acesso = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
             except PortalUsuario.DoesNotExist:
                 loja_ids_acesso = []
-            
+
             # Determinar lojas para consulta
             from wallclub_core.utilitarios.log_control import registrar_log
             registrar_log('portais.lojista', f"RECEBIMENTOS - Loja selecionada: '{loja_selecionada}' - Tipo: {type(loja_selecionada)}")
-            
+
             if loja_selecionada and loja_selecionada != 'todas' and loja_selecionada.strip() != '':
                 try:
                     loja_id = int(loja_selecionada)
@@ -86,7 +86,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
             else:
                 lojas_para_consulta = loja_ids_acesso
                 registrar_log('portais.lojista', f"RECEBIMENTOS - Usando todas as lojas: {lojas_para_consulta}")
-            
+
             try:
                 # Usar RecebimentoService para buscar recebimentos agrupados por data
                 recebimentos_por_data = RecebimentoService.obter_recebimentos_por_data(
@@ -96,7 +96,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                     nsu=nsu if nsu else None,
                     incluir_tef=incluir_tef
                 )
-                
+
                 # Converter para formato esperado pelo template
                 recebimentos_resumo = []
                 for data_key, dados in recebimentos_por_data.items():
@@ -104,13 +104,13 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                     valor_pago_repasse = 0
                     valor_pago_rebate = 0
                     outros_lancamentos = 0
-                    
+
                     for transacao in dados['transacoes']:
                         if transacao.get('tipo') == 'lancamento_manual':
                             outros_lancamentos += float(transacao['valor'])
                         # Lógica para separar repasse e rebate poderia vir aqui
                         # Por enquanto, soma tudo no valor total
-                    
+
                     recebimentos_resumo.append({
                         'data_recebimento': dados['data_formatada'],
                         'data_recebimento_raw': data_key,
@@ -118,45 +118,45 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                         'valor_pago_rebate': 0,  # Será calculado se necessário
                         'outros_lancamentos': outros_lancamentos
                     })
-                
+
                 # Renderizar HTML do resumo
                 html = self._render_resumo_recebimentos_html(recebimentos_resumo, loja_selecionada, incluir_tef)
-                
+
                 return JsonResponse({
                     'success': True,
                     'html': html,
                     'total': len(recebimentos_resumo)
                 })
-                
+
             except Exception as e:
                 return JsonResponse({'error': f'Erro na consulta: {str(e)}'}, status=500)
-        
+
         return self.get(request)
-    
+
     def _render_resumo_recebimentos_html(self, recebimentos_resumo, loja_selecionada='', incluir_tef=False):
         """Renderizar HTML do resumo de recebimentos por data"""
         if not recebimentos_resumo:
             return '<div class="alert alert-info mt-3">Nenhum recebimento encontrado com os filtros informados.</div>'
-        
+
         # Calcular totais gerais
         total_repasse = sum(item['valor_pago_repasse'] for item in recebimentos_resumo)
         total_rebate = sum(item['valor_pago_rebate'] for item in recebimentos_resumo)
         total_outros_lancamentos = sum(item['outros_lancamentos'] for item in recebimentos_resumo)
         total_liquido = total_repasse + total_rebate + total_outros_lancamentos
-        
+
         # Cards de totais
         html = '<div class="row mt-3 mb-3">'
-        
+
         cards = [
             ('Total Repasse', total_repasse, 'bg-primary'),
             ('Total Rebate', total_rebate, 'bg-success'),
             ('Total Outros Lançamentos', total_outros_lancamentos, 'bg-warning text-dark'),
             ('Total Líquido', total_liquido, 'bg-info')
         ]
-        
+
         for titulo, valor, classe in cards:
             valor_formatado = f"R$ {valor:,.2f}"
-            
+
             html += f'''
             <div class="col-md-3">
                 <div class="card {classe} text-white">
@@ -167,9 +167,9 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 </div>
             </div>
             '''
-        
+
         html += '</div>'
-        
+
         # Tabela de recebimentos por data
         html += '''
         <div class="table-responsive">
@@ -186,17 +186,42 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 </thead>
                 <tbody>
         '''
-        
+
         for item in recebimentos_resumo:
             total_item = item['valor_pago_repasse'] + item['valor_pago_rebate'] + item['outros_lancamentos']
-            
+
+            # Determinar URL de destino baseado em quantidade de lojas
+            # Se "todas" selecionado E mais de 1 loja acessível, vai para tela intermediária
+            # Senão, vai direto para detalhes
+            if loja_selecionada == 'todas' or not loja_selecionada:
+                # Verificar quantidade de lojas acessíveis
+                from portais.controle_acesso.models import PortalUsuario
+                from portais.controle_acesso.filtros import FiltrosAcessoService
+                usuario_id = self.request.session.get('lojista_usuario_id')
+                try:
+                    usuario = PortalUsuario.objects.get(id=usuario_id)
+                    lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+                    tem_multiplas_lojas = len(lojas_acessiveis) > 1
+                except:
+                    tem_multiplas_lojas = False
+
+                if tem_multiplas_lojas:
+                    # Redirecionar para tela intermediária agrupada por loja
+                    url_destino = "/recebimentos/por-loja/"
+                else:
+                    # Apenas 1 loja, vai direto para detalhes
+                    url_destino = "/recebimentos/detalhes/"
+            else:
+                # Loja específica selecionada, vai direto para detalhes
+                url_destino = "/recebimentos/detalhes/"
+
             # Construir URL com parâmetros
             url_params = f"data={item['data_recebimento_raw']}"
             if loja_selecionada and loja_selecionada != 'todas':
                 url_params += f"&loja={loja_selecionada}"
             if incluir_tef:
                 url_params += "&incluir_tef=on"
-            
+
             html += f'''
             <tr>
                 <td>{item['data_recebimento']}</td>
@@ -205,16 +230,16 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 <td>R$ {item['outros_lancamentos']:,.2f}</td>
                 <td><strong>R$ {total_item:,.2f}</strong></td>
                 <td>
-                    <a href="/recebimentos/detalhes/?{url_params}" 
+                    <a href="{url_destino}?{url_params}"
                        class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-eye me-1"></i>Ver Detalhes
                     </a>
                 </td>
             </tr>
             '''
-        
+
         html += '</tbody></table></div>'
-        
+
         return html
 
     def _render_recebimentos_html(self, recebimentos, totais):
@@ -231,20 +256,20 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 return float(value)
             except (ValueError, TypeError):
                 return 0
-        
+
         if not recebimentos:
             return '<div class="alert alert-info mt-3">Nenhum recebimento encontrado com os filtros informados.</div>'
-        
+
         # Cards de totais - ESPECÍFICOS PARA RECEBIMENTOS
         html = '<div class="row mt-3 mb-3">'
-        
+
         cards = [
             ('Total Bruto', totais['total_bruto'], 'bg-primary'),
             ('Total Líquido', totais['total_liquido'], 'bg-success'),
             ('Total Créditos', totais['total_creditos'], 'bg-info'),
             ('Total Débitos', totais['total_debitos'], 'bg-warning')
         ]
-        
+
         for titulo, valor, classe in cards:
             html += f'''
             <div class="col-md-3">
@@ -256,9 +281,9 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 </div>
             </div>
             '''
-        
+
         html += '</div>'
-        
+
         # Tabela de recebimentos
         html += '''
         <div class="table-responsive">
@@ -283,7 +308,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 </thead>
                 <tbody>
         '''
-        
+
         for recebimento in recebimentos:
             tipo_class = 'text-success' if recebimento.get("Tipo") == 'Crédito' else 'text-danger'
             html += f'''
@@ -304,31 +329,23 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 <td>{recebimento.get("Status Trans.", "-")}</td>
             </tr>
             '''
-        
+
         html += '</tbody></table></div>'
-        
+
         return html
 
 
-class LojistaRecebimentosDetalhesView(TemplateView):
-    """View para mostrar detalhes das transações de uma data específica"""
-    template_name = 'portais/lojista/recebimentos_detalhes.html'
-    
-    def dispatch(self, request, *args, **kwargs):
-        if not request.session.get('lojista_authenticated'):
-            return redirect('lojista:login')
-        return super().dispatch(request, *args, **kwargs)
-    
+class LojistaRecebimentosPorLojaView(LojistaAccessMixin, LojistaDataMixin, TemplateView):
+    """View intermediária para mostrar recebimentos agrupados por loja em uma data específica"""
+    template_name = 'portais/lojista/recebimentos_por_loja.html'
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Adicionar marca do canal se disponível
-        context['marca'] = self.request.session.get('marca_canal', '')
-        
-        # Obter data do parâmetro GET e converter para formato brasileiro
+
+        # Obter data do parâmetro GET
         data_recebimento = self.request.GET.get('data', '')
         data_formatada_br = data_recebimento
-        
+
         if data_recebimento:
             try:
                 from datetime import datetime
@@ -336,13 +353,209 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 data_formatada_br = data_obj.strftime('%d/%m/%Y')
             except ValueError:
                 pass
-        
+
         context['data_recebimento'] = data_formatada_br
-        
+        context['data_recebimento_raw'] = data_recebimento
+        context['incluir_tef'] = self.request.GET.get('incluir_tef', '') == 'on'
+        context['current_page'] = 'recebimentos'
+
+        return context
+
+    def post(self, request):
+        """Processar consulta AJAX de recebimentos agrupados por loja"""
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            data_recebimento = request.POST.get('data_recebimento', '')
+            incluir_tef = request.POST.get('incluir_tef') == 'on'
+
+            if not data_recebimento:
+                return JsonResponse({'error': 'Data de recebimento é obrigatória'}, status=400)
+
+            # Validar acesso às lojas
+            from portais.controle_acesso.models import PortalUsuario
+            from portais.controle_acesso.filtros import FiltrosAcessoService
+            from .services_recebimentos import RecebimentoService
+            from wallclub_core.utilitarios.log_control import registrar_log
+
+            usuario_id = request.session.get('lojista_usuario_id')
+            try:
+                usuario = PortalUsuario.objects.get(id=usuario_id)
+                lojas_acessiveis = FiltrosAcessoService.obter_lojas_acessiveis(usuario)
+                loja_ids_acesso = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
+            except PortalUsuario.DoesNotExist:
+                loja_ids_acesso = []
+                lojas_acessiveis = []
+
+            try:
+                # Buscar transações por data para todas as lojas
+                transacoes_list = RecebimentoService.obter_transacoes_por_data(
+                    lojas_ids=loja_ids_acesso,
+                    data_recebimento=data_recebimento,
+                    incluir_tef=incluir_tef
+                )
+
+                # Agrupar por loja
+                recebimentos_por_loja = {}
+                for transacao in transacoes_list:
+                    loja_id = int(transacao['loja_id']) if transacao.get('loja_id') else None
+                    if loja_id not in recebimentos_por_loja:
+                        # Buscar nome da loja
+                        nome_loja = f"Loja {loja_id}"
+                        for loja_info in lojas_acessiveis:
+                            if loja_info.get('id') == loja_id:
+                                nome_loja = loja_info.get('nome', nome_loja)
+                                break
+
+                        recebimentos_por_loja[loja_id] = {
+                            'loja_id': loja_id,
+                            'nome_loja': nome_loja,
+                            'valor_total': 0,
+                            'quantidade': 0
+                        }
+
+                    valor_recebimento = float(transacao.get('valor_recebimento', 0) or 0)
+                    recebimentos_por_loja[loja_id]['valor_total'] += valor_recebimento
+                    recebimentos_por_loja[loja_id]['quantidade'] += 1
+
+                # Buscar lançamentos manuais e agrupar por loja
+                lancamentos_list = RecebimentoService.obter_lancamentos_por_data(
+                    lojas_ids=loja_ids_acesso,
+                    data_lancamento=data_recebimento
+                )
+
+                for lancamento in lancamentos_list:
+                    loja_id = int(lancamento['loja_id']) if lancamento.get('loja_id') else None
+                    if loja_id not in recebimentos_por_loja:
+                        # Buscar nome da loja
+                        nome_loja = f"Loja {loja_id}"
+                        for loja_info in lojas_acessiveis:
+                            if loja_info.get('id') == loja_id:
+                                nome_loja = loja_info.get('nome', nome_loja)
+                                break
+
+                        recebimentos_por_loja[loja_id] = {
+                            'loja_id': loja_id,
+                            'nome_loja': nome_loja,
+                            'valor_total': 0,
+                            'quantidade': 0
+                        }
+
+                    valor_lancamento = float(lancamento['valor'])
+                    recebimentos_por_loja[loja_id]['valor_total'] += valor_lancamento
+                    recebimentos_por_loja[loja_id]['quantidade'] += 1
+
+                # Converter para lista e ordenar por nome da loja
+                recebimentos_lista = sorted(recebimentos_por_loja.values(), key=lambda x: x['nome_loja'])
+
+                # Renderizar HTML
+                html = self._render_recebimentos_por_loja_html(recebimentos_lista, data_recebimento, incluir_tef)
+
+                return JsonResponse({
+                    'success': True,
+                    'html': html,
+                    'total': len(recebimentos_lista)
+                })
+
+            except Exception as e:
+                registrar_log('portais.lojista', f"ERRO RECEBIMENTOS POR LOJA: {str(e)}", nivel='ERROR')
+                return JsonResponse({'error': f'Erro na consulta: {str(e)}'}, status=500)
+
+        return self.get(request)
+
+    def _render_recebimentos_por_loja_html(self, recebimentos_por_loja, data_recebimento, incluir_tef=False):
+        """Renderizar HTML dos recebimentos agrupados por loja"""
+        if not recebimentos_por_loja:
+            return '<div class="alert alert-info mt-3">Nenhum recebimento encontrado para esta data.</div>'
+
+        # Calcular total geral
+        total_geral = sum(item['valor_total'] for item in recebimentos_por_loja)
+
+        # Card de total
+        html = f'''
+        <div class="row mt-3 mb-3">
+            <div class="col-md-12">
+                <div class="card bg-info text-white">
+                    <div class="card-body py-2 text-center">
+                        <h5 class="card-title" style="font-size: 14px; margin-bottom: 5px;">Total Geral do Dia</h5>
+                        <h3 class="card-text" style="font-size: 18px; margin-bottom: 0;">R$ {total_geral:,.2f}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        '''
+
+        # Tabela agrupada por loja
+        html += '''
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Loja</th>
+                        <th>Quantidade de Transações</th>
+                        <th>Valor Total Recebido (R$)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+        '''
+
+        for item in recebimentos_por_loja:
+            # Construir URL com parâmetros
+            url_params = f"data={data_recebimento}&loja={item['loja_id']}"
+            if incluir_tef:
+                url_params += "&incluir_tef=on"
+
+            html += f'''
+            <tr>
+                <td><strong>{item['nome_loja']}</strong></td>
+                <td>{item['quantidade']}</td>
+                <td><strong>R$ {item['valor_total']:,.2f}</strong></td>
+                <td>
+                    <a href="/recebimentos/detalhes/?{url_params}"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>Ver Detalhes
+                    </a>
+                </td>
+            </tr>
+            '''
+
+        html += '</tbody></table></div>'
+
+        return html
+
+
+class LojistaRecebimentosDetalhesView(TemplateView):
+    """View para mostrar detalhes das transações de uma data específica"""
+    template_name = 'portais/lojista/recebimentos_detalhes.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.session.get('lojista_authenticated'):
+            return redirect('lojista:login')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Adicionar marca do canal se disponível
+        context['marca'] = self.request.session.get('marca_canal', '')
+
+        # Obter data do parâmetro GET e converter para formato brasileiro
+        data_recebimento = self.request.GET.get('data', '')
+        data_formatada_br = data_recebimento
+
+        if data_recebimento:
+            try:
+                from datetime import datetime
+                data_obj = datetime.strptime(data_recebimento, '%Y-%m-%d')
+                data_formatada_br = data_obj.strftime('%d/%m/%Y')
+            except ValueError:
+                pass
+
+        context['data_recebimento'] = data_formatada_br
+
         # Verificar se deve mostrar filtro de loja usando serviço centralizado
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = self.request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -350,9 +563,9 @@ class LojistaRecebimentosDetalhesView(TemplateView):
             context['mostrar_filtro_loja'] = len(lojas_acessiveis) > 1
         except PortalUsuario.DoesNotExist:
             context['mostrar_filtro_loja'] = False
-        
+
         return context
-    
+
     def post(self, request):
         """Processar consulta AJAX das transações de uma data específica"""
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -361,14 +574,14 @@ class LojistaRecebimentosDetalhesView(TemplateView):
             loja_selecionada = request.POST.get('loja', '')
             nsu = request.POST.get('nsu', '').strip()
             incluir_tef = request.POST.get('incluir_tef') == 'on'
-            
+
             if not data_recebimento:
                 return JsonResponse({'error': 'Data de recebimento é obrigatória'}, status=400)
-            
+
             # Validar acesso às lojas usando serviço centralizado
             from portais.controle_acesso.models import PortalUsuario
             from portais.controle_acesso.filtros import FiltrosAcessoService
-            
+
             usuario_id = request.session.get('lojista_usuario_id')
             try:
                 usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -376,7 +589,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 loja_ids_acesso = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
             except PortalUsuario.DoesNotExist:
                 loja_ids_acesso = []
-            
+
             # Determinar lojas para consulta
             if loja_selecionada and loja_selecionada != 'todas':
                 if int(loja_selecionada) in loja_ids_acesso:
@@ -385,30 +598,30 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                     return JsonResponse({'error': 'Acesso negado à loja selecionada'}, status=403)
             else:
                 lojas_para_consulta = loja_ids_acesso
-            
+
             try:
                 # Usar RecebimentoService para buscar transações por data
                 from .services_recebimentos import RecebimentoService
                 from wallclub_core.utilitarios.log_control import registrar_log
-                
+
                 registrar_log('portais.lojista', f"RECEBIMENTOS - Buscando detalhes para data: {data_recebimento}")
-                
+
                 # Buscar transações usando o service
                 transacoes_list = RecebimentoService.obter_transacoes_por_data(
                     lojas_ids=lojas_para_consulta,
                     data_recebimento=data_recebimento,
                     incluir_tef=incluir_tef
                 )
-                
+
                 # Converter para formato esperado pelo template
                 results = []
                 for transacao in transacoes_list:
                     vl_bruto = float(transacao.get('valor_transacao', 0) or 0)
                     vl_liquido = float(transacao.get('valor_recebimento', 0) or 0)
-                    
+
                     # Determinar tipo (Crédito/Débito)
                     tipo = 'Crédito' if vl_liquido >= 0 else 'Débito'
-                    
+
                     # Buscar nome da loja
                     loja_id = int(transacao['loja_id']) if transacao.get('loja_id') else None
                     nome_loja = f"Loja {loja_id}"
@@ -416,11 +629,11 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         if loja_info.get('id') == loja_id:
                             nome_loja = loja_info.get('nome', nome_loja)
                             break
-                    
+
                     # Buscar taxa e custo de antecipação
                     tx_antec = float(transacao.get('tx_antecipacao', 0) or 0) * 100
                     custo_antec = float(transacao.get('custo_antecipacao', 0) or 0)
-                    
+
                     row_dict = {
                         'Loja': nome_loja,
                         'Data': transacao.get('data_transacao', '-'),
@@ -438,13 +651,13 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         'NOP': '-'
                     }
                     results.append(row_dict)
-                
+
                 # Buscar lançamentos manuais usando o service
                 lancamentos_list = RecebimentoService.obter_lancamentos_por_data(
                     lojas_ids=lojas_para_consulta,
                     data_lancamento=data_recebimento
                 )
-                
+
                 lancamentos_manuais = []
                 for lancamento in lancamentos_list:
                     # Buscar nome da loja
@@ -454,7 +667,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         if loja_info.get('id') == loja_id:
                             nome_loja = loja_info.get('nome', nome_loja)
                             break
-                    
+
                     lancamentos_manuais.append({
                         'Loja': nome_loja,
                         'Data': lancamento['data_lancamento'].strftime('%d/%m/%Y'),
@@ -464,7 +677,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         'Status': lancamento['status'],
                         'Usuário': f"ID {lancamento['id']}"
                     })
-                
+
                 # Calcular totais específicos para recebimentos detalhados
                 def safe_float_convert(value):
                     if not value:
@@ -477,18 +690,18 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         return float(value)
                     except (ValueError, TypeError):
                         return 0
-                
+
                 # Totais das transações de venda
                 total_bruto = sum(safe_float_convert(row.get('Vl Bruto(R$)', 0)) for row in results)
                 total_liquido = sum(safe_float_convert(row.get('Vl Líq(R$)', 0)) for row in results)
                 total_creditos = sum(safe_float_convert(row.get('Vl Líq(R$)', 0)) for row in results if row.get('Tipo') == 'Crédito')
                 total_debitos = sum(abs(safe_float_convert(row.get('Vl Líq(R$)', 0))) for row in results if row.get('Tipo') == 'Débito')
-                
+
                 # Totais dos lançamentos manuais (valor já vem com sinal correto)
                 total_lancamentos = sum(safe_float_convert(row.get('Valor(R$)', 0)) for row in lancamentos_manuais)
                 total_lancamentos_creditos = sum(safe_float_convert(row.get('Valor(R$)', 0)) for row in lancamentos_manuais if row.get('Tipo') == 'Crédito')
                 total_lancamentos_debitos = sum(safe_float_convert(row.get('Valor(R$)', 0)) for row in lancamentos_manuais if row.get('Tipo') == 'Débito')
-                
+
                 totais = {
                     'total_bruto': total_bruto,
                     'total_liquido': total_liquido,
@@ -499,21 +712,21 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                     'total_lancamentos_debitos': total_lancamentos_debitos,
                     'total_geral': total_liquido + total_lancamentos
                 }
-                
+
                 # Renderizar HTML dos detalhes com ambas as listas
                 html = self._render_detalhes_recebimentos_html(results, lancamentos_manuais, totais)
-                
+
                 return JsonResponse({
                     'success': True,
                     'html': html,
                     'total': len(results)
                 })
-                
+
             except Exception as e:
                 return JsonResponse({'error': f'Erro na consulta: {str(e)}'}, status=500)
-        
+
         return self.get(request)
-    
+
     def _render_detalhes_recebimentos_html(self, recebimentos, lancamentos_manuais, totais):
         """Renderizar HTML dos detalhes de recebimentos com transações e lançamentos manuais"""
         # Função auxiliar para conversão segura de float
@@ -528,17 +741,17 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 return float(value)
             except (ValueError, TypeError):
                 return 0
-        
+
         # Cards de totais - padronizados com tela de vendas
         html = '<div class="row mt-3 mb-3">'
-        
+
         cards = [
             ('Total Repasse', totais['total_liquido'], 'bg-primary'),
             ('Total Rebate', 0, 'bg-success'),
             ('Total Outros Lançamentos', totais['total_lancamentos'], 'bg-warning text-dark'),
             ('Total Líquido', totais['total_geral'], 'bg-info'),
         ]
-        
+
         for titulo, valor, classe in cards:
             html += f'''
             <div class="col-md-3">
@@ -550,9 +763,9 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                 </div>
             </div>
             '''
-        
+
         html += '</div>'
-        
+
         # 1. TABELA DE TRANSAÇÕES DE VENDA
         html += '''
         <div class="row mb-4 mt-4">
@@ -584,7 +797,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                     </div>
                     <div class="card-body p-0">
         '''
-        
+
         if not recebimentos:
             html += '<div class="alert alert-info m-3">Nenhuma transação de venda encontrada para esta data.</div>'
         else:
@@ -610,7 +823,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                 </thead>
                                 <tbody>
             '''
-            
+
             for recebimento in recebimentos:
                 tipo_class = 'text-success' if recebimento.get("Tipo") == 'Crédito' else 'text-danger'
                 html += f'''
@@ -630,19 +843,19 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                         <td>{recebimento.get("NSU", "-")}</td>
                                     </tr>
                 '''
-        
+
             html += '''
                                 </tbody>
                             </table>
                         </div>'''
-        
+
         html += '''
                     </div>
                 </div>
             </div>
         </div>
         '''
-        
+
         # 2. TABELA DE OUTROS LANÇAMENTOS (LANÇAMENTOS MANUAIS)
         html += '''
         <div class="row mb-4">
@@ -674,7 +887,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                     </div>
                     <div class="card-body p-0">
         '''
-        
+
         if not lancamentos_manuais:
             html += '<div class="alert alert-info m-3">Nenhum lançamento manual encontrado para esta data.</div>'
         else:
@@ -694,7 +907,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                 </thead>
                                 <tbody>
             '''
-            
+
             for lancamento in lancamentos_manuais:
                 tipo_class = 'text-success' if lancamento.get("Tipo") == 'Crédito' else 'text-danger'
                 valor = safe_float_convert(lancamento.get("Valor(R$)", 0))
@@ -709,47 +922,47 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                         <td>{lancamento.get("Usuário", "-")}</td>
                                     </tr>
                 '''
-            
+
             html += '''
                                 </tbody>
                             </table>
                         </div>'''
-        
+
         html += '''
                     </div>
                 </div>
             </div>
         </div>
         '''
-        
+
         return html
 
 
 class LojistaRecebimentosExportView(View):
     """View para exportação de dados de recebimentos"""
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not request.session.get('lojista_authenticated'):
             return redirect('lojista:login')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def post(self, request):
         from wallclub_core.utilitarios.export_utils import exportar_excel, exportar_csv, exportar_pdf
         from django.http import JsonResponse
         from datetime import datetime
-        
+
         formato = request.POST.get('formato', 'excel')
-        
+
         # Usar EXATAMENTE a mesma lógica da view principal de recebimentos
         data_inicio = request.POST.get('data_inicio', '')
         data_fim = request.POST.get('data_fim', '')
         loja_selecionada = request.POST.get('loja', '')
         nsu = request.POST.get('nsu', '').strip()
-        
+
         # Validar acesso às lojas usando serviço centralizado
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -757,7 +970,7 @@ class LojistaRecebimentosExportView(View):
             loja_ids_acesso = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
         except PortalUsuario.DoesNotExist:
             loja_ids_acesso = []
-        
+
         # Determinar lojas para consulta
         if loja_selecionada and loja_selecionada != 'todas':
             if int(loja_selecionada) in loja_ids_acesso:
@@ -766,21 +979,21 @@ class LojistaRecebimentosExportView(View):
                 return JsonResponse({'error': 'Acesso negado à loja selecionada'}, status=403)
         else:
             lojas_para_consulta = loja_ids_acesso
-        
+
         try:
             from django.db.models import Sum, Q
             from gestao_financeira.models import LancamentoManual
-            
+
             # Usar RecebimentoService para buscar recebimentos agrupados
             from .services_recebimentos import RecebimentoService
-            
+
             recebimentos_por_data = RecebimentoService.obter_recebimentos_por_data(
                 lojas_ids=lojas_para_consulta,
                 data_inicio=data_inicio if data_inicio else None,
                 data_fim=data_fim if data_fim else None,
                 nsu=nsu if nsu else None
             )
-            
+
             # Converter para lista e ordenar
             results = []
             for data_key, dados in recebimentos_por_data.items():
@@ -788,13 +1001,13 @@ class LojistaRecebimentosExportView(View):
                 valor_pago_repasse = 0
                 valor_pago_rebate = 0
                 outros_lancamentos = 0
-                
+
                 for transacao in dados['transacoes']:
                     if transacao.get('tipo') == 'lancamento_manual':
                         outros_lancamentos += float(transacao['valor'])
-                
+
                 valor_pago_repasse = float(dados['valor_total']) - outros_lancamentos
-                
+
                 total_liquido = valor_pago_repasse + valor_pago_rebate + outros_lancamentos
                 results.append({
                     'Data Recebimento': dados['data_formatada'],
@@ -803,18 +1016,18 @@ class LojistaRecebimentosExportView(View):
                     'Outros Lançamentos (R$)': outros_lancamentos,
                     'Total Líquido (R$)': total_liquido
                 })
-            
+
             # Ordenar por data decrescente
             results.sort(key=lambda x: datetime.strptime(x['Data Recebimento'], '%d/%m/%Y'), reverse=True)
-            
+
             # Coletar nomes únicos das lojas para o rodapé
             lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
-            
+
             # Definir colunas monetárias para formatação
             colunas_monetarias = ['Valor Repasse (R$)', 'Valor Rebate (R$)', 'Outros Lançamentos (R$)', 'Total Líquido (R$)']
-            
+
             nome_arquivo = f"recebimentos_resumo_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            
+
             if formato == 'excel':
                 return exportar_excel(
                     nome_arquivo=nome_arquivo,
@@ -839,35 +1052,35 @@ class LojistaRecebimentosExportView(View):
                 )
             else:
                 return JsonResponse({'error': 'Formato não suportado'}, status=400)
-                    
+
         except Exception as e:
             return JsonResponse({'error': f'Erro na exportação: {str(e)}'}, status=500)
 
 
 class LojistaRecebimentosDetalhesTransacoesExportView(View):
     """View para exportação de transações de vendas da página de detalhes"""
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not request.session.get('lojista_authenticated'):
             return redirect('lojista:login')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def post(self, request):
         from wallclub_core.utilitarios.export_utils import exportar_excel, exportar_csv, exportar_pdf
         from django.http import JsonResponse
         from datetime import datetime
-        
+
         formato = request.POST.get('formato', 'excel')
         data_recebimento = request.POST.get('data_recebimento', '')
         incluir_tef = request.POST.get('incluir_tef') == 'on'
-        
+
         if not data_recebimento:
             return JsonResponse({'error': 'Data de recebimento é obrigatória'}, status=400)
-        
+
         # Validar acesso às lojas usando serviço centralizado
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -875,17 +1088,17 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
             lojas_para_consulta = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
         except PortalUsuario.DoesNotExist:
             lojas_para_consulta = []
-        
+
         try:
             # Usar RecebimentoService para buscar transações
             from .services_recebimentos import RecebimentoService
-            
+
             transacoes_list = RecebimentoService.obter_transacoes_por_data(
                 lojas_ids=lojas_para_consulta,
                 data_recebimento=data_recebimento,
                 incluir_tef=incluir_tef
             )
-            
+
             results = []
             for transacao in transacoes_list:
                 # Processar dados da transação
@@ -893,10 +1106,10 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 valor_liquido = float(transacao.get('valor_recebimento', 0) or 0)
                 tx_antec = float(transacao.get('tx_antecipacao', 0) or 0) * 100
                 custo_antec = float(transacao.get('custo_antecipacao', 0) or 0)
-                
+
                 # Determinar tipo
                 tipo = 'Crédito' if valor_liquido >= 0 else 'Débito'
-                
+
                 # Buscar nome da loja
                 loja_id = int(transacao['loja_id']) if transacao.get('loja_id') else None
                 nome_loja = f"Loja {loja_id}"
@@ -904,12 +1117,12 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                     if loja_info.get('id') == loja_id:
                         nome_loja = loja_info.get('nome', nome_loja)
                         break
-                
+
                 # Formatar data da transação
                 data_transacao = transacao.get('data_transacao', '-')
                 if data_transacao != '-' and hasattr(data_transacao, 'strftime'):
                     data_transacao = data_transacao.strftime('%d/%m/%Y')
-                
+
                 results.append({
                     'Loja': nome_loja,
                     'Data': data_transacao,
@@ -925,21 +1138,21 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                     'Bandeira': transacao.get('bandeira', '-') or '-',
                     'NSU': transacao.get('nsu', '-') or '-'
                 })
-            
+
             # Coletar nomes únicos das lojas para o rodapé
             lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
-            
+
             # Definir colunas monetárias para formatação
             colunas_monetarias = ['Vl Bruto(R$)', 'Vl Líq(R$)', 'Custo Antec(R$)']
-            
+
             # Verificar se há dados para exportar
             if not results:
                 return JsonResponse({'error': 'Nenhuma transação encontrada para a data especificada'}, status=404)
-            
+
             # Formatar data para nome do arquivo
             data_formatada = data_recebimento.replace('-', '').replace('/', '')
             nome_arquivo = f"detalhes_recebimentos_{data_formatada}_{datetime.now().strftime('%H%M%S')}"
-            
+
             if formato == 'excel':
                 return exportar_excel(
                     nome_arquivo=nome_arquivo,
@@ -964,35 +1177,35 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 )
             else:
                 return JsonResponse({'error': 'Formato não suportado'}, status=400)
-                    
+
         except Exception as e:
             return JsonResponse({'error': f'Erro na exportação: {str(e)}'}, status=500)
 
 
 class LojistaRecebimentosDetalhesLancamentosExportView(View):
     """View para exportação de lançamentos manuais da página de detalhes"""
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not request.session.get('lojista_authenticated'):
             return redirect('lojista:login')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def post(self, request):
         from wallclub_core.utilitarios.export_utils import exportar_excel, exportar_csv, exportar_pdf
         from django.http import JsonResponse
         from datetime import datetime
-        
+
         formato = request.POST.get('formato', 'excel')
         data_recebimento = request.POST.get('data_recebimento', '')
         incluir_tef = request.POST.get('incluir_tef') == 'on'
-        
+
         if not data_recebimento:
             return JsonResponse({'error': 'Data de recebimento é obrigatória'}, status=400)
-        
+
         # Validar acesso às lojas usando serviço centralizado
         from portais.controle_acesso.models import PortalUsuario
         from portais.controle_acesso.filtros import FiltrosAcessoService
-        
+
         usuario_id = request.session.get('lojista_usuario_id')
         try:
             usuario = PortalUsuario.objects.get(id=usuario_id)
@@ -1000,7 +1213,7 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
             loja_ids_acesso = [loja['id'] for loja in lojas_acessiveis] if lojas_acessiveis else []
         except PortalUsuario.DoesNotExist:
             loja_ids_acesso = []
-        
+
         # Determinar lojas para consulta
         loja_selecionada = request.POST.get('loja_selecionada', '')
         if loja_selecionada and loja_selecionada != 'todas':
@@ -1010,11 +1223,11 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
                 return JsonResponse({'error': 'Acesso negado à loja selecionada'}, status=403)
         else:
             lojas_para_consulta = loja_ids_acesso
-        
+
         try:
             from django.db.models import Q
             from gestao_financeira.models import LancamentoManual
-            
+
             # Converter data para formato datetime - aceitar tanto YYYY-MM-DD quanto DD/MM/YYYY
             try:
                 # Tentar formato YYYY-MM-DD primeiro (vem do frontend)
@@ -1022,25 +1235,25 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
             except ValueError:
                 # Se falhar, tentar formato DD/MM/YYYY
                 data_obj = datetime.strptime(data_recebimento, '%d/%m/%Y').date()
-            
+
             # Buscar lançamentos manuais para a data específica
             filtros = Q(loja_id__in=lojas_para_consulta) & Q(data_lancamento__date=data_obj) & Q(status='processado')
             lancamentos = LancamentoManual.objects.filter(filtros).order_by('-data_lancamento')
-            
+
             results = []
             for lancamento in lancamentos:
                 # Processar dados do lançamento
                 valor = float(lancamento.valor or 0)
                 if lancamento.tipo_lancamento == 'D':
                     valor = -valor
-                
+
                 # Buscar nome da loja pelo loja_id
                 nome_loja = '-'
                 if lancamento.loja_id:
                     loja_encontrada = next((loja for loja in lojas_acessiveis if loja['id'] == lancamento.loja_id), None)
                     if loja_encontrada:
                         nome_loja = loja_encontrada['nome']
-                
+
                 results.append({
                     'Data': lancamento.data_lancamento.strftime('%d/%m/%Y %H:%M'),
                     'Tipo': 'Crédito' if lancamento.tipo_lancamento == 'C' else 'Débito',
@@ -1049,15 +1262,15 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
                     'Status': lancamento.status or '-',
                     'Loja': nome_loja
                 })
-            
+
             # Coletar nomes únicos das lojas para o rodapé
             lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
-            
+
             # Definir colunas monetárias para formatação
             colunas_monetarias = ['Valor (R$)']
-            
+
             nome_arquivo = f"lancamentos_manuais_{data_recebimento.replace('/', '')}_{datetime.now().strftime('%H%M%S')}"
-            
+
             if formato == 'excel':
                 return exportar_excel(
                     nome_arquivo=nome_arquivo,
@@ -1082,6 +1295,6 @@ class LojistaRecebimentosDetalhesLancamentosExportView(View):
                 )
             else:
                 return JsonResponse({'error': 'Formato não suportado'}, status=400)
-                    
+
         except Exception as e:
             return JsonResponse({'error': f'Erro na exportação: {str(e)}'}, status=500)

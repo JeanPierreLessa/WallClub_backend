@@ -3,8 +3,9 @@ from . import views
 from .views_vendas import LojistaVendasView, LojistaVendasExportView
 from .views_vendas_operador import LojistaVendasOperadorView
 from .views_recebimentos import (
-    LojistaRecebimentosView, 
-    LojistaRecebimentosExportView, 
+    LojistaRecebimentosView,
+    LojistaRecebimentosExportView,
+    LojistaRecebimentosPorLojaView,
     LojistaRecebimentosDetalhesView,
     LojistaRecebimentosDetalhesTransacoesExportView,
     LojistaRecebimentosDetalhesLancamentosExportView
@@ -46,31 +47,32 @@ urlpatterns = [
     path('logout/', views.LojistaLogoutView.as_view(), name='logout'),
     path('primeiro_acesso/<str:token>/', views.LojistaPrimeiroAcessoView.as_view(), name='primeiro_acesso'),
     path('reset_senha/<str:token>/', views.LojistaResetSenhaView.as_view(), name='reset_senha'),
-    
+
     # Dashboard e Home
     path('home/', views.LojistaHomeView.as_view(), name='home'),
-    
+
     # Vendas
     path('vendas/', LojistaVendasView.as_view(), name='vendas'),
     path('vendas/ajax/', LojistaVendasView.as_view(), name='vendas_ajax'),
     path('vendas/export/', LojistaVendasExportView.as_view(), name='vendas_export'),
     path('vendas/operador/', LojistaVendasOperadorView.as_view(), name='vendas_operador'),
-    
+
     # Cancelamentos
     path('cancelamentos/', LojistaCancelamentosView.as_view(), name='cancelamentos'),
     path('cancelamentos/export/', LojistaCancelamentosExportView.as_view(), name='cancelamentos_export'),
-    
+
     # Recebimentos
     path('recebimentos/', LojistaRecebimentosView.as_view(), name='recebimentos'),
+    path('recebimentos/por-loja/', LojistaRecebimentosPorLojaView.as_view(), name='recebimentos_por_loja'),
     path('recebimentos/detalhes/', LojistaRecebimentosDetalhesView.as_view(), name='recebimentos_detalhes'),
     path('recebimentos/export/', LojistaRecebimentosExportView.as_view(), name='recebimentos_export'),
     path('recebimentos/detalhes/transacoes/export/', LojistaRecebimentosDetalhesTransacoesExportView.as_view(), name='recebimentos_detalhes_transacoes_export'),
     path('recebimentos/detalhes/lancamentos/export/', LojistaRecebimentosDetalhesLancamentosExportView.as_view(), name='recebimentos_detalhes_lancamentos_export'),
-    
+
     # Relatórios
     path('conciliacao/', LojistaConciliacaoView.as_view(), name='conciliacao'),
     path('conciliacao/export/', LojistaConciliacaoExportView.as_view(), name='conciliacao_export'),
-    
+
     # Configurações
     path('terminais/', LojistaTerminaisView.as_view(), name='terminais'),
     path('perfil/', views.LojistaPerfilView.as_view(), name='perfil'),
@@ -79,14 +81,14 @@ urlpatterns = [
     path('trocar_senha/', views.LojistaTrocarSenhaView.as_view(), name='trocar_senha'),
     path('confirmar_troca_senha/', views.LojistaConfirmarTrocaSenhaView.as_view(), name='confirmar_troca_senha'),
     path('validar_usuario/', views.LojistaValidarUsuarioView.as_view(), name='validar_usuario'),
-    
+
     # Ofertas
     path('ofertas/', OfertasListView.as_view(), name='ofertas_list'),
     path('ofertas/criar/', OfertasCreateView.as_view(), name='ofertas_create'),
     path('ofertas/<int:oferta_id>/editar/', OfertasEditView.as_view(), name='ofertas_edit'),
     path('ofertas/<int:oferta_id>/disparar/', OfertasDispararView.as_view(), name='ofertas_disparar'),
     path('ofertas/<int:oferta_id>/historico/', OfertasHistoricoView.as_view(), name='ofertas_historico'),
-    
+
     # Cupons
     path('cupons/', CupomListView.as_view(), name='cupom_list'),
     path('cupons/criar/', CupomCreateView.as_view(), name='cupom_create'),
@@ -94,7 +96,7 @@ urlpatterns = [
     path('cupons/<int:cupom_id>/editar/', CupomEditView.as_view(), name='cupom_edit'),
     path('cupons/<int:cupom_id>/toggle/', CupomToggleView.as_view(), name='cupom_toggle'),
     path('cupons/relatorio/', CupomRelatorioView.as_view(), name='cupom_relatorio'),
-    
+
     # Cashback
     path('cashback/', CashbackListView.as_view(), name='cashback_lista'),
     path('cashback/criar/', CashbackCreateView.as_view(), name='cashback_criar'),
@@ -102,13 +104,13 @@ urlpatterns = [
     path('cashback/<int:regra_id>/editar/', CashbackEditView.as_view(), name='cashback_editar'),
     path('cashback/<int:regra_id>/toggle/', CashbackToggleView.as_view(), name='cashback_toggle'),
     path('cashback/relatorio/', CashbackRelatorioView.as_view(), name='cashback_relatorio'),
-    
+
     # Operadores
     path('operadores/', views_operadores.listar_operadores, name='listar_operadores'),
     path('operadores/criar/', views_operadores.criar_operador, name='criar_operador'),
     path('operadores/<int:operador_id>/editar/', views_operadores.editar_operador, name='editar_operador'),
     path('operadores/<int:operador_id>/', views_operadores.visualizar_operador, name='visualizar_operador'),
-    
+
     # Vínculos
     path('operadores/vinculos/', views_operadores.listar_vinculos, name='listar_vinculos'),
     path('operadores/vinculos/criar/', views_operadores.criar_vinculo, name='criar_vinculo'),
