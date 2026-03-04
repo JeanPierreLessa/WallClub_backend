@@ -55,6 +55,8 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                 # Capturar parâmetros
                 data_inicio = request.POST.get('data_inicio')
                 data_fim = request.POST.get('data_fim')
+                data_pagamento_inicio = request.POST.get('data_pagamento_inicio')
+                data_pagamento_fim = request.POST.get('data_pagamento_fim')
                 loja_selecionada = request.POST.get('loja')
                 nsu = request.POST.get('nsu', '').strip()
                 incluir_tef = request.POST.get('incluir_tef') == 'on'
@@ -99,7 +101,7 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     where_conditions.append(f"btu.var6 IN ({placeholders})")
                     params.extend(lojas_para_consulta)
 
-                # Filtros de data - converter formato se necessário
+                # Filtros de data de transação - converter formato se necessário
                 if data_inicio:
                     try:
                         # Se data vem no formato YYYY-MM-DD, usar diretamente
@@ -131,6 +133,29 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     except ValueError:
                         where_conditions.append("btu.data_transacao <= %s")
                         params.append(f"{data_fim} 23:59:59")
+
+                # Filtros de data de pagamento (var45)
+                if data_pagamento_inicio:
+                    try:
+                        # Converter YYYY-MM-DD para DD/MM/YYYY (formato do var45)
+                        if '-' in data_pagamento_inicio and len(data_pagamento_inicio) == 10:
+                            data_obj = datetime.strptime(data_pagamento_inicio, '%Y-%m-%d')
+                            data_formatada_br = data_obj.strftime('%d/%m/%Y')
+                            where_conditions.append("STR_TO_DATE(btu.var45, '%%d/%%m/%%Y') >= STR_TO_DATE(%s, '%%d/%%m/%%Y')")
+                            params.append(data_formatada_br)
+                    except ValueError:
+                        pass
+
+                if data_pagamento_fim:
+                    try:
+                        # Converter YYYY-MM-DD para DD/MM/YYYY (formato do var45)
+                        if '-' in data_pagamento_fim and len(data_pagamento_fim) == 10:
+                            data_obj = datetime.strptime(data_pagamento_fim, '%Y-%m-%d')
+                            data_formatada_br = data_obj.strftime('%d/%m/%Y')
+                            where_conditions.append("STR_TO_DATE(btu.var45, '%%d/%%m/%%Y') <= STR_TO_DATE(%s, '%%d/%%m/%%Y')")
+                            params.append(data_formatada_br)
+                    except ValueError:
+                        pass
 
                 # Filtro de NSU
                 if nsu:
@@ -516,11 +541,11 @@ class LojistaConciliacaoExportView(View):
                          THEN 0
                     ELSE CAST(btu.var19 AS DECIMAL(10,2))
                 END                                          AS `Vl_Canc`,
-                CAST(btu.var36 AS DECIMAL(10,2))*100         AS `Tx_Adm_Perc`,
+                CAST(btu.var36 AS DECIMAL(10,4))*100         AS `Tx_Adm_Perc`,
                 CAST(btu.var44 AS DECIMAL(10,2))             AS `Vl_Liq_Pago`,
-                CAST(btu.var40 AS DECIMAL(10,2))*100         AS `Tx_Antec_Per`,
+                CAST(btu.var40 AS DECIMAL(10,4))*100         AS `Tx_Antec_Per`,
                 CAST(btu.var41 AS DECIMAL(10,2))             AS `Custo_Antec`,
-                CAST(btu.var39 AS DECIMAL(10,2))*100         AS `Tx_Antec_AM`,
+                CAST(btu.var39 AS DECIMAL(10,4))*100         AS `Tx_Antec_AM`,
                 btu.var121                                   AS `Status_Pagto`,
                 btu.var8                                     AS `Plano`,
                 btu.var12                                    AS `Bandeira`,
@@ -691,11 +716,11 @@ class LojistaConciliacaoExportView(View):
                                  THEN 0
                             ELSE CAST(btu.var19 AS DECIMAL(10,2))
                         END                                          AS `Vl_Canc`,
-                        CAST(btu.var36 AS DECIMAL(10,2))*100         AS `Tx_Adm_Perc`,
+                        CAST(btu.var36 AS DECIMAL(10,4))*100         AS `Tx_Adm_Perc`,
                         CAST(btu.var44 AS DECIMAL(10,2))             AS `Vl_Liq_Pago`,
-                        CAST(btu.var40 AS DECIMAL(10,2))*100         AS `Tx_Antec_Per`,
+                        CAST(btu.var40 AS DECIMAL(10,4))*100         AS `Tx_Antec_Per`,
                         CAST(btu.var41 AS DECIMAL(10,2))             AS `Custo_Antec`,
-                        CAST(btu.var39 AS DECIMAL(10,2))*100         AS `Tx_Antec_AM`,
+                        CAST(btu.var39 AS DECIMAL(10,4))*100         AS `Tx_Antec_AM`,
                         btu.var121                                   AS `Status_Pagto`,
                         btu.var8                                     AS `Plano`,
                         btu.var12                                    AS `Bandeira`,
