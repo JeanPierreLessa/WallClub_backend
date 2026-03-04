@@ -26,7 +26,7 @@ class TransacoesPinbankService:
 
     def _obter_credenciais_loja(self, loja_id: int = None) -> Dict[str, Any]:
         """Obtém credenciais da loja para autenticação na API Pinbank"""
-        from wallclub_core.estr_organizacional.loja import Loja
+        from adquirente_own.models_cadastro import LojaPinbank
 
         # Usar loja_id passado como parâmetro ou do construtor
         id_loja = loja_id or self.loja_id
@@ -35,23 +35,19 @@ class TransacoesPinbankService:
             raise ValueError("loja_id não fornecido. Informe no construtor ou como parâmetro.")
 
         try:
-            from wallclub_core.estr_organizacional.services import HierarquiaOrganizacionalService
-            loja = HierarquiaOrganizacionalService.get_loja(id_loja)
-
-            if not loja:
-                raise ValueError(f"Loja {id_loja} não encontrada")
+            loja_pinbank = LojaPinbank.objects.get(loja_id=id_loja, ativo=True)
 
             # Validar se loja tem credenciais Pinbank configuradas
-            if not all([loja.pinbank_codigo_loja, loja.pinbank_codigo_cliente, loja.pinbank_keyloja]):
+            if not all([loja_pinbank.codigo_canal, loja_pinbank.codigo_cliente, loja_pinbank.key_value_loja]):
                 raise ValueError(f"Loja {id_loja} não possui credenciais Pinbank configuradas")
 
             return {
-                'codigo_canal': loja.pinbank_codigo_loja,
-                'codigo_cliente': loja.pinbank_codigo_cliente,
-                'key_loja': loja.pinbank_keyloja
+                'codigo_canal': str(loja_pinbank.codigo_canal),
+                'codigo_cliente': str(loja_pinbank.codigo_cliente),
+                'key_loja': loja_pinbank.key_value_loja
             }
-        except Loja.DoesNotExist:
-            raise ValueError(f"Loja {id_loja} não encontrada")
+        except LojaPinbank.DoesNotExist:
+            raise ValueError(f"Loja {id_loja} não possui credenciais Pinbank configuradas")
 
     def _fazer_requisicao_criptografada(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -1407,7 +1403,7 @@ class TransacoesPinbankService:
             # 3. Processar resposta específica da captura
             resposta_descriptografada = resultado['dados']
             resposta_completa = resultado.get('resposta_completa', {})
-            
+
             # Adicionar ResultCode e Message da resposta original aos dados descriptografados
             resposta_para_processar = {
                 'ResultCode': resposta_completa.get('ResultCode', 0),
@@ -1528,7 +1524,7 @@ class TransacoesPinbankService:
             # 3. Processar resposta específica do cancelamento
             resposta_descriptografada = resultado['dados']
             resposta_completa = resultado.get('resposta_completa', {})
-            
+
             # Adicionar ResultCode e Message da resposta original aos dados descriptografados
             resposta_para_processar = {
                 'ResultCode': resposta_completa.get('ResultCode', 0),
