@@ -126,11 +126,11 @@ def exportar_excel(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, s
                         celula.value = float(valor)
                         celula.number_format = '0.00%'
                     else:
-                        celula.value = valor
+                        celula.value = '' if valor is None else valor
                 except:
-                    celula.value = str(valor)
+                    celula.value = '' if valor is None else str(valor)
             else:
-                celula.value = valor
+                celula.value = '' if valor is None else valor
 
             celula.border = border
 
@@ -257,7 +257,7 @@ def exportar_csv(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, str
                     except:
                         valor = str(valor)
                 else:
-                    valor = str(valor) if valor else ''
+                    valor = '' if valor is None else (str(valor) if valor else '')
 
                 # Remover acentos de todos os valores
                 valor = remover_acentos(valor)
@@ -352,14 +352,13 @@ def exportar_pdf(nome_arquivo: str, dados: List[Dict], titulo: str = None,
                 except:
                     valor = str(valor)
             else:
-                valor = str(valor)
+                valor = '' if valor is None else str(valor)
 
             row.append(valor)
         table_data.append(row)
 
     # Calcular larguras de colunas proporcionais
     # Largura disponível na página (landscape A4 com margens)
-    from reportlab.lib.pagesizes import A4
     largura_disponivel = landscape(A4)[0] - 1*inch  # Descontar margens
 
     # Calcular largura proporcional para cada coluna
@@ -491,11 +490,11 @@ def criar_excel_em_arquivo(caminho_arquivo: str, dados: List[Dict], cabecalhos: 
                         celula.value = float(valor)
                         celula.number_format = '0.00%'
                     else:
-                        celula.value = valor
+                        celula.value = '' if valor is None else valor
                 except:
-                    celula.value = str(valor)
+                    celula.value = '' if valor is None else str(valor)
             else:
-                celula.value = valor
+                celula.value = '' if valor is None else valor
 
             celula.border = border
 
