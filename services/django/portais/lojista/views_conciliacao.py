@@ -613,6 +613,10 @@ class LojistaConciliacaoExportView(View):
             lojas_incluidas = f"Lojas: {', '.join(map(str, lojas_query))}"
             nome_arquivo = f"conciliacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
+            # Definir colunas monetárias e percentuais para formatação
+            colunas_monetarias = ['Vl_Bruto', 'Tx_Adm_R', 'Vl_Liq', 'Vl_Canc', 'Vl_Liq_Pago', 'Custo_Antec']
+            colunas_percentuais = ['Tx_Adm_Perc', 'Tx_Antec_Per', 'Tx_Antec_AM']
+
             if formato == 'excel':
                 # Converter lista de colunas para dict de cabeçalhos
                 cabecalhos_dict = {col: col for col in columns}
@@ -621,12 +625,16 @@ class LojistaConciliacaoExportView(View):
                     dados=results,
                     titulo="Conciliação Portal Lojista",
                     cabecalhos=cabecalhos_dict,
+                    colunas_monetarias=colunas_monetarias,
+                    colunas_percentuais=colunas_percentuais,
                     lojas_incluidas=[lojas_incluidas]
                 )
             elif formato == 'csv':
                 return exportar_csv(
                     nome_arquivo=nome_arquivo,
                     dados=results,
+                    colunas_monetarias=colunas_monetarias,
+                    colunas_percentuais=colunas_percentuais,
                     lojas_incluidas=[lojas_incluidas]
                 )
             elif formato == 'pdf':
@@ -634,6 +642,8 @@ class LojistaConciliacaoExportView(View):
                     nome_arquivo=nome_arquivo,
                     dados=results,
                     titulo="Relatório de Conciliação - Portal Lojista",
+                    colunas_monetarias=colunas_monetarias,
+                    colunas_percentuais=colunas_percentuais,
                     lojas_incluidas=[lojas_incluidas]
                 )
             else:

@@ -146,15 +146,9 @@ def exportar_excel(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, s
                 if cell.value:
                     max_length = max(max_length, len(str(cell.value)))
 
-        ws.column_dimensions[column_letter].width = min(max_length + 2, 50)
-
-    # Adicionar rodapé com lojas incluídas
-    if lojas_incluidas:
-        linha_atual += 2  # Pular duas linhas
-        ws.merge_cells(f'A{linha_atual}:{get_column_letter(len(colunas))}{linha_atual}')
-        ws[f'A{linha_atual}'] = f"Lojas incluídas: {', '.join(lojas_incluidas)}"
-        ws[f'A{linha_atual}'].font = Font(italic=True, size=10)
-        ws[f'A{linha_atual}'].alignment = Alignment(horizontal="left")
+        # Aumentar largura mínima para evitar truncamento
+        largura_calculada = max(max_length + 4, len(cabecalhos.get(coluna, coluna)) + 4)
+        ws.column_dimensions[column_letter].width = min(largura_calculada, 60)
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -188,7 +182,8 @@ def remover_acentos(texto):
 
 
 def exportar_csv(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, str] = None,
-                 colunas_monetarias: List[str] = None, lojas_incluidas: List[str] = None) -> HttpResponse:
+                 colunas_monetarias: List[str] = None, colunas_percentuais: List[str] = None,
+                 lojas_incluidas: List[str] = None) -> HttpResponse:
     """Exportar dados para CSV com formatação adequada"""
     from wallclub_core.utilitarios.log_control import registrar_log
 
@@ -200,6 +195,7 @@ def exportar_csv(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, str
 
     cabecalhos = cabecalhos or {}
     colunas_monetarias = colunas_monetarias or []
+    colunas_percentuais = colunas_percentuais or []
 
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}.csv"'
@@ -243,6 +239,17 @@ def exportar_csv(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, str
                         valor = f"{valor_float:.2f}".replace('.', ',')
                     except:
                         valor = str(valor) if valor else ''
+                # Formatação especial para campos percentuais
+                elif col in colunas_percentuais and valor:
+                    try:
+                        if isinstance(valor, str) and '%' in valor:
+                            valor_limpo = valor.replace('%', '').strip().replace(',', '.')
+                            valor_float = float(valor_limpo)
+                        else:
+                            valor_float = float(valor)
+                        valor = f"{valor_float:.2f}".replace('.', ',')
+                    except:
+                        valor = str(valor) if valor else ''
                 # Formatação especial para data
                 elif col == 'data_transacao' and valor:
                     try:
@@ -258,16 +265,12 @@ def exportar_csv(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, str
 
             writer.writerow(linha)
 
-        # Adicionar rodapé com lojas incluídas
-        if lojas_incluidas:
-            response.write('\n\n')
-            response.write(f'"Lojas incluídas: {", ".join(lojas_incluidas)}"\n')
-
     return response
 
 
 def exportar_pdf(nome_arquivo: str, dados: List[Dict], titulo: str = None,
-                 colunas_monetarias: List[str] = None, lojas_incluidas: List[str] = None) -> HttpResponse:
+                 colunas_monetarias: List[str] = None, colunas_percentuais: List[str] = None,
+                 lojas_incluidas: List[str] = None) -> HttpResponse:
     """Exportar dados para PDF com formatação profissional"""
     if not REPORTLAB_AVAILABLE:
         raise ImportError("reportlab não está instalado")
@@ -276,7 +279,7 @@ def exportar_pdf(nome_arquivo: str, dados: List[Dict], titulo: str = None,
         raise ValueError("Nenhum dado fornecido para exportação")
 
     colunas_monetarias = colunas_monetarias or []
-    colunas_percentuais = []  # Inicializar como lista vazia
+    colunas_percentuais = colunas_percentuais or []
 
     # Criar buffer
     buffer = io.BytesIO()
@@ -337,18 +340,35 @@ def exportar_pdf(nome_arquivo: str, dados: List[Dict], titulo: str = None,
                     valor = f"R$ {valor_float:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
                 except:
                     valor = str(valor)
+            # Formatar valores percentuais
+            elif coluna in colunas_percentuais and valor:
+                try:
+                    if isinstance(valor, str) and '%' in valor:
+                        valor_limpo = valor.replace('%', '').strip().replace(',', '.')
+                        valor_float = float(valor_limpo)
+                    else:
+                        valor_float = float(valor)
+                    valor = f"{valor_float:.2f}%"
+                except:
+                    valor = str(valor)
             else:
                 valor = str(valor)
-
-            # Truncar texto muito longo
-            if len(str(valor)) > 20:
-                valor = str(valor)[:17] + "..."
 
             row.append(valor)
         table_data.append(row)
 
-    # Criar tabela
-    table = Table(table_data)
+    # Calcular larguras de colunas proporcionais
+    # Largura disponível na página (landscape A4 com margens)
+    from reportlab.lib.pagesizes import A4
+    largura_disponivel = landscape(A4)[0] - 1*inch  # Descontar margens
+
+    # Calcular largura proporcional para cada coluna
+    num_colunas = len(colunas)
+    largura_coluna = largura_disponivel / num_colunas
+    col_widths = [largura_coluna] * num_colunas
+
+    # Criar tabela com larguras definidas
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
 
     # Estilo da tabela
     table.setStyle(TableStyle([
@@ -375,20 +395,12 @@ def exportar_pdf(nome_arquivo: str, dados: List[Dict], titulo: str = None,
 
     elements.append(table)
 
-    # Rodapé com data e lojas
+    # Rodapé com data
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(
         f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}",
         styles['Normal']
     ))
-
-    # Adicionar lojas incluídas no rodapé
-    if lojas_incluidas:
-        elements.append(Spacer(1, 10))
-        elements.append(Paragraph(
-            f"Lojas incluídas: {', '.join(lojas_incluidas)}",
-            styles['Normal']
-        ))
 
     # Construir PDF
     doc.build(elements)
@@ -499,7 +511,9 @@ def criar_excel_em_arquivo(caminho_arquivo: str, dados: List[Dict], cabecalhos: 
                 if cell.value:
                     max_length = max(max_length, len(str(cell.value)))
 
-        ws.column_dimensions[column_letter].width = min(max_length + 2, 50)
+        # Aumentar largura mínima para evitar truncamento
+        largura_calculada = max(max_length + 4, len(cabecalhos.get(coluna, coluna)) + 4)
+        ws.column_dimensions[column_letter].width = min(largura_calculada, 60)
 
     # Salvar arquivo
     wb.save(caminho_arquivo)

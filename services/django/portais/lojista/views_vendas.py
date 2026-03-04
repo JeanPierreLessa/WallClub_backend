@@ -732,6 +732,7 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                 return exportar_csv(
                     nome_arquivo=nome_arquivo,
                     dados=results,
+                    colunas_monetarias=colunas_monetarias,
                     lojas_incluidas=lojas_incluidas
                 )
             elif formato == 'pdf':
