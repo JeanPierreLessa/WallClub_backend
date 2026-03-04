@@ -115,7 +115,6 @@ def cliente_form(request):
                 'nome': request.POST.get('nome'),
                 'email': request.POST.get('email'),
                 'data_nascimento': request.POST.get('data_nascimento') or None,
-                'endereco': request.POST.get('endereco'),
                 'cep': request.POST.get('cep', '').replace('-', ''),
                 'logradouro': request.POST.get('logradouro'),
                 'numero': request.POST.get('numero'),
@@ -208,7 +207,6 @@ def cliente_editar(request, cliente_id):
         dados = {
             'email': request.POST.get('email'),
             'data_nascimento': request.POST.get('data_nascimento') or None,
-            'endereco': request.POST.get('endereco'),
             'cep': request.POST.get('cep', '').replace('-', ''),
             'logradouro': request.POST.get('logradouro'),
             'numero': request.POST.get('numero'),

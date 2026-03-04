@@ -24,7 +24,6 @@ class CheckoutCliente(models.Model):
     data_nascimento = models.DateField(null=True, blank=True)
     email = models.EmailField(max_length=200)
     # celular removido - agora gerenciado por checkout_cliente_telefone (2FA)
-    endereco = models.CharField(max_length=300, null=True, blank=True)
     logradouro = models.CharField(max_length=200, null=True, blank=True)
     numero = models.CharField(max_length=20, null=True, blank=True)
     complemento = models.CharField(max_length=100, null=True, blank=True)

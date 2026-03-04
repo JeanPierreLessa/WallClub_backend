@@ -68,7 +68,13 @@ class ClienteService:
                 cnpj=cnpj,
                 nome=dados['nome'],
                 email=dados['email'],
-                endereco=dados.get('endereco'),
+                data_nascimento=dados.get('data_nascimento'),
+                logradouro=dados.get('logradouro'),
+                numero=dados.get('numero'),
+                complemento=dados.get('complemento'),
+                bairro=dados.get('bairro'),
+                cidade=dados.get('cidade'),
+                estado=dados.get('estado'),
                 cep=dados.get('cep'),
                 ip_address=ip_address,
                 user_agent=user_agent,
@@ -129,8 +135,6 @@ class ClienteService:
             if 'data_nascimento' in dados:
                 cliente.data_nascimento = dados['data_nascimento']
             # celular removido - gerenciado por checkout_cliente_telefone (2FA)
-            if 'endereco' in dados:
-                cliente.endereco = dados['endereco']
             if 'cep' in dados:
                 cliente.cep = dados['cep']
             if 'logradouro' in dados:
