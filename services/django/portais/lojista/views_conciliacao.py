@@ -212,11 +212,11 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                              THEN 0
                         ELSE CAST(btu.var19 AS DECIMAL(10,2))
                     END                                                AS `Vl_Canc`,
-                    CAST(btu.var36 AS DECIMAL(10,4))*100               AS `Tx_Adm_Perc`,
+                    CAST(btu.var36 AS DECIMAL(10,4))                   AS `Tx_Adm_Perc`,
                     CAST(btu.var44 AS DECIMAL(10,2))                   AS `Vl_Liq_Pago`,
-                    CAST(btu.var40 AS DECIMAL(10,4))*100               AS `Tx_Antec_Per`,
+                    CAST(btu.var40 AS DECIMAL(10,4))                   AS `Tx_Antec_Per`,
                     CAST(btu.var41 AS DECIMAL(10,2))                   AS `Custo_Antec`,
-                    CAST(btu.var39 AS DECIMAL(10,4))*100               AS `Tx_Antec_AM`,
+                    CAST(btu.var39 AS DECIMAL(10,4))                   AS `Tx_Antec_AM`,
                     btu.var121                                         AS `Status_Pagto`,
                     btu.var8                                           AS `Plano`,
                     btu.var12                                          AS `Bandeira`,
@@ -544,11 +544,11 @@ class LojistaConciliacaoExportView(View):
                          THEN 0
                     ELSE CAST(btu.var19 AS DECIMAL(10,2))
                 END                                          AS `Vl_Canc`,
-                CAST(btu.var36 AS DECIMAL(10,4))*100         AS `Tx_Adm_Perc`,
+                CAST(btu.var36 AS DECIMAL(10,4))             AS `Tx_Adm_Perc`,
                 CAST(btu.var44 AS DECIMAL(10,2))             AS `Vl_Liq_Pago`,
-                CAST(btu.var40 AS DECIMAL(10,4))*100         AS `Tx_Antec_Per`,
+                CAST(btu.var40 AS DECIMAL(10,4))             AS `Tx_Antec_Per`,
                 CAST(btu.var41 AS DECIMAL(10,2))             AS `Custo_Antec`,
-                CAST(btu.var39 AS DECIMAL(10,4))*100         AS `Tx_Antec_AM`,
+                CAST(btu.var39 AS DECIMAL(10,4))             AS `Tx_Antec_AM`,
                 btu.var121                                   AS `Status_Pagto`,
                 btu.var8                                     AS `Plano`,
                 btu.var12                                    AS `Bandeira`,
@@ -619,15 +619,49 @@ class LojistaConciliacaoExportView(View):
             nome_arquivo = f"conciliacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             # Definir colunas monetárias e percentuais para formatação
-            colunas_monetarias = ['Vl_Bruto', 'Tx_Adm_R', 'Vl_Liq', 'Vl_Canc', 'Vl_Liq_Pago', 'Custo_Antec']
-            colunas_percentuais = ['Tx_Adm_Perc', 'Tx_Antec_Per', 'Tx_Antec_AM']
+            colunas_monetarias = ['Vl.Bruto(R$)', 'Tx.Adm.(R$)', 'Vl.Líq.(R$)', 'Vl.Canc', 'Vl.Líq.Pago(R$)', 'Custo Antec(R$)']
+            colunas_percentuais = ['Tx.Adm(%)', 'Tx.Antec(% per)', 'Tx.Antec(%a.m.)']
+
+            # Mapeamento de nomes de colunas SQL para nomes da tela web
+            mapeamento_colunas = {
+                'Data': 'Data',
+                'Dt_credito': 'Dt Crédito',
+                'Dt_pagto': 'Dt Pagto',
+                'Dt_cancelamento': 'Dt Cancel.',
+                'Filial': 'Filial',
+                'Cod_Estab': 'Cód.Estab.',
+                'Terminal': 'Terminal',
+                'NSU': 'NSU',
+                'Autorizacao': 'Autorização',
+                'Prazo_Total': 'Prazo Total',
+                'Vl_Bruto': 'Vl.Bruto(R$)',
+                'Tx_Adm_R': 'Tx.Adm.(R$)',
+                'Vl_Liq': 'Vl.Líq.(R$)',
+                'Vl_Canc': 'Vl.Canc',
+                'Tx_Adm_Perc': 'Tx.Adm(%)',
+                'Vl_Liq_Pago': 'Vl.Líq.Pago(R$)',
+                'Tx_Antec_Per': 'Tx.Antec(% per)',
+                'Custo_Antec': 'Custo Antec(R$)',
+                'Tx_Antec_AM': 'Tx.Antec(%a.m.)',
+                'Status_Pagto': 'Status Pagto',
+                'Plano': 'Plano',
+                'Bandeira': 'Bandeira',
+                'Status_Trans': 'Status Trans',
+                'NOP': 'NOP'
+            }
+
+            # Renomear colunas nos dados para todos os formatos
+            results_renomeados = []
+            for row in results:
+                row_renomeado = {mapeamento_colunas.get(k, k): v for k, v in row.items()}
+                results_renomeados.append(row_renomeado)
 
             if formato == 'excel':
-                # Converter lista de colunas para dict de cabeçalhos
-                cabecalhos_dict = {col: col for col in columns}
+                # Aplicar mapeamento de nomes de colunas
+                cabecalhos_dict = {mapeamento_colunas.get(col, col): mapeamento_colunas.get(col, col) for col in columns}
                 return exportar_excel(
                     nome_arquivo=nome_arquivo,
-                    dados=results,
+                    dados=results_renomeados,
                     titulo="Conciliação Portal Lojista",
                     cabecalhos=cabecalhos_dict,
                     colunas_monetarias=colunas_monetarias,
@@ -637,7 +671,7 @@ class LojistaConciliacaoExportView(View):
             elif formato == 'csv':
                 return exportar_csv(
                     nome_arquivo=nome_arquivo,
-                    dados=results,
+                    dados=results_renomeados,
                     colunas_monetarias=colunas_monetarias,
                     colunas_percentuais=colunas_percentuais,
                     lojas_incluidas=[lojas_incluidas]
@@ -645,7 +679,7 @@ class LojistaConciliacaoExportView(View):
             elif formato == 'pdf':
                 return exportar_pdf(
                     nome_arquivo=nome_arquivo,
-                    dados=results,
+                    dados=results_renomeados,
                     titulo="Relatório de Conciliação - Portal Lojista",
                     colunas_monetarias=colunas_monetarias,
                     colunas_percentuais=colunas_percentuais,

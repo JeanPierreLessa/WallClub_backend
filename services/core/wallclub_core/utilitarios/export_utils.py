@@ -247,7 +247,7 @@ def exportar_csv(nome_arquivo: str, dados: List[Dict], cabecalhos: Dict[str, str
                             valor_float = float(valor_limpo)
                         else:
                             valor_float = float(valor)
-                        valor = f"{valor_float:.2f}".replace('.', ',')
+                        valor = f"{valor_float:.4f}".replace('.', ',')
                     except:
                         valor = str(valor) if valor else ''
                 # Formatação especial para data
