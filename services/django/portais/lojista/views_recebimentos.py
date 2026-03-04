@@ -296,7 +296,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                         <th>Tipo</th>
                         <th>Status</th>
                         <th>Vl Bruto(R$)</th>
-                        <th>Tx.Antec(R$)</th>
+                        <th>Tx Adm (R$)</th>
                         <th>Custo Antec(R$)</th>
                         <th>Parcela</th>
                         <th>Prazo Total</th>
@@ -319,7 +319,7 @@ class LojistaRecebimentosView(LojistaAccessMixin, LojistaDataMixin, TemplateView
                 <td><span class="{tipo_class}"><strong>{recebimento.get("Tipo", "-")}</strong></span></td>
                 <td>{recebimento.get("Status", "-")}</td>
                 <td>R$ {safe_float_convert(recebimento.get("Vl Bruto(R$)", 0)):,.2f}</td>
-                <td>R$ {safe_float_convert(recebimento.get("Tx.Antec(R$)", 0)):,.2f}</td>
+                <td>R$ {safe_float_convert(recebimento.get("Tx Adm (R$)", 0)):,.2f}</td>
                 <td>R$ {safe_float_convert(recebimento.get("Custo Antec(R$)", 0)):,.2f}</td>
                 <td>{recebimento.get("Parcela", "-")}</td>
                 <td>{recebimento.get("Prazo Total", "-")}</td>
@@ -670,8 +670,8 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                             nome_loja = loja_info.get('nome', nome_loja)
                             break
 
-                    # Buscar taxa e custo de antecipação
-                    tx_antec = float(transacao.get('tx_antecipacao', 0) or 0) * 100
+                    # Buscar taxa de administração (MDR) e custo de antecipação
+                    tx_adm = float(transacao.get('tx_adm', 0) or 0)
                     custo_antec = float(transacao.get('custo_antecipacao', 0) or 0)
 
                     row_dict = {
@@ -681,7 +681,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                         'Tipo': tipo,
                         'Status': '-',
                         'Vl Bruto(R$)': vl_bruto,
-                        'Tx.Antec(R$)': tx_antec,
+                        'Tx Adm (R$)': tx_adm,
                         'Custo Antec(R$)': custo_antec,
                         'Parcela': int(transacao.get('parcelas', 0) or 0),
                         'Prazo Total': int(transacao.get('parcelas', 0) or 0),
@@ -852,7 +852,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                         <th>Tipo</th>
                                         <th>Status</th>
                                         <th>Vl Bruto(R$)</th>
-                                        <th>Tx.Antec(R$)</th>
+                                        <th>Tx Adm (R$)</th>
                                         <th>Custo Antec(R$)</th>
                                         <th>Parcela</th>
                                         <th>Prazo Total</th>
@@ -874,7 +874,7 @@ class LojistaRecebimentosDetalhesView(TemplateView):
                                         <td><span class="{tipo_class}"><strong>{recebimento.get("Tipo", "-")}</strong></span></td>
                                         <td>{recebimento.get("Status", "-")}</td>
                                         <td>R$ {safe_float_convert(recebimento.get("Vl Bruto(R$)", 0)):,.2f}</td>
-                                        <td>R$ {safe_float_convert(recebimento.get("Tx.Antec(R$)", 0)):,.2f}</td>
+                                        <td>R$ {safe_float_convert(recebimento.get("Tx Adm (R$)", 0)):,.2f}</td>
                                         <td>R$ {safe_float_convert(recebimento.get("Custo Antec(R$)", 0)):,.2f}</td>
                                         <td>{recebimento.get("Parcela", "-")}</td>
                                         <td>{recebimento.get("Prazo Total", "-")}</td>
@@ -1145,7 +1145,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                 # Processar dados da transação
                 valor_bruto = float(transacao.get('valor_transacao', 0) or 0)
                 valor_liquido = float(transacao.get('valor_recebimento', 0) or 0)
-                tx_antec = float(transacao.get('tx_antecipacao', 0) or 0) * 100
+                tx_adm = float(transacao.get('tx_adm', 0) or 0)
                 custo_antec = float(transacao.get('custo_antecipacao', 0) or 0)
 
                 # Determinar tipo
@@ -1171,7 +1171,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
                     'Tipo': tipo,
                     'Status': '-',
                     'Vl Bruto(R$)': valor_bruto,
-                    'Tx.Antec(%)': tx_antec,
+                    'Tx Adm (R$)': tx_adm,
                     'Custo Antec(R$)': custo_antec,
                     'Parcela': int(transacao.get('parcelas', 0) or 0),
                     'Prazo Total': int(transacao.get('parcelas', 0) or 0),
@@ -1184,7 +1184,7 @@ class LojistaRecebimentosDetalhesTransacoesExportView(View):
             lojas_incluidas = [loja['nome'] for loja in lojas_acessiveis if loja['id'] in lojas_para_consulta]
 
             # Definir colunas monetárias para formatação
-            colunas_monetarias = ['Vl Bruto(R$)', 'Vl Líq(R$)', 'Custo Antec(R$)']
+            colunas_monetarias = ['Vl Bruto(R$)', 'Vl Líq(R$)', 'Tx Adm (R$)', 'Custo Antec(R$)']
 
             # Verificar se há dados para exportar
             if not results:
