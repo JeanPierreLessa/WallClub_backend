@@ -212,11 +212,11 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                              THEN 0
                         ELSE CAST(btu.var19 AS DECIMAL(10,2))
                     END                                                AS `Vl_Canc`,
-                    CAST(btu.var36 AS DECIMAL(10,4))                   AS `Tx_Adm_Perc`,
+                    CAST(btu.var36 AS DECIMAL(10,4))*100               AS `Tx_Adm_Perc`,
                     CAST(btu.var44 AS DECIMAL(10,2))                   AS `Vl_Liq_Pago`,
-                    CAST(btu.var40 AS DECIMAL(10,4))                   AS `Tx_Antec_Per`,
+                    CAST(btu.var40 AS DECIMAL(10,4))*100               AS `Tx_Antec_Per`,
                     CAST(btu.var41 AS DECIMAL(10,2))                   AS `Custo_Antec`,
-                    CAST(btu.var39 AS DECIMAL(10,4))                   AS `Tx_Antec_AM`,
+                    CAST(btu.var39 AS DECIMAL(10,4))*100               AS `Tx_Antec_AM`,
                     btu.var121                                         AS `Status_Pagto`,
                     btu.var8                                           AS `Plano`,
                     btu.var12                                          AS `Bandeira`,
