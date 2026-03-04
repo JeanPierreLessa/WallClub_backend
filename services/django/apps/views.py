@@ -49,8 +49,8 @@ def versao_minima(request):
     urls = urls_por_canal.get(canal_id, urls_por_canal[1])
 
     return Response({
-        "versao_minima_android": "3.1.8",
-        "versao_minima_ios": "3.1.8",
+        "versao_minima_android": "3.1.9",
+        "versao_minima_ios": "3.1.9",
         "forca_atualizacao": True,
         "mensagem": "Uma nova versão está disponível. Atualize para continuar usando o app.",
         "canal_id": canal_id,
