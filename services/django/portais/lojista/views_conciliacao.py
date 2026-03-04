@@ -237,6 +237,9 @@ class LojistaConciliacaoView(LojistaAccessMixin, LojistaDataMixin, TemplateView)
                     for row in cursor.fetchall():
                         row_dict = dict(zip(columns, row))
 
+                        # Substituir None por string vazia em todos os campos
+                        row_dict = {k: ('' if v is None else v) for k, v in row_dict.items()}
+
                         # Datas já vem formatadas do SQL
                         # Apenas copiar para campos _formatada para compatibilidade com template
                         for campo in ['Data', 'Dt_credito', 'Dt_pagto', 'Dt_cancelamento']:
@@ -605,6 +608,8 @@ class LojistaConciliacaoExportView(View):
 
                 for row in cursor.fetchall():
                     row_dict = dict(zip(columns, row))
+                    # Substituir None por string vazia em todos os campos
+                    row_dict = {k: ('' if v is None else v) for k, v in row_dict.items()}
                     results.append(row_dict)
 
             registrar_log('portais.lojista', f"CONCILIACAO - Exportação {formato} - {len(results)} registros")

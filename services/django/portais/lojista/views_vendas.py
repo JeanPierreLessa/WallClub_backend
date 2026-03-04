@@ -674,7 +674,7 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
             with connection.cursor() as cursor:
                 cursor.execute(sql, params)
                 columns = [col[0] for col in cursor.description]
-                vendas_queryset = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                vendas_queryset = [{k: ('' if v is None else v) for k, v in dict(zip(columns, row)).items()} for row in cursor.fetchall()]
 
             results = []
             for venda in vendas_queryset:
@@ -793,7 +793,7 @@ class LojistaVendasExportView(LojistaAccessMixin, LojistaDataMixin, View):
                     with connection.cursor() as cursor:
                         cursor.execute(sql_lote, params)
                         columns = [col[0] for col in cursor.description]
-                        vendas_lote = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                        vendas_lote = [{k: ('' if v is None else v) for k, v in dict(zip(columns, row)).items()} for row in cursor.fetchall()]
 
                     for venda in vendas_lote:
                         # Processar dados (mesma lógica da view principal)
