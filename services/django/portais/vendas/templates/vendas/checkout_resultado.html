@@ -22,9 +22,9 @@
                         <span class="fs-5">{{ transacao.codigo_autorizacao }}</span>
                     </div>
                 </div>
-                
+
                 <hr>
-                
+
                 <!-- Dados do Cliente -->
                 <h6 class="text-muted mb-3"><i class="fas fa-user me-2"></i>Dados do Cliente</h6>
                 <div class="row mb-3">
@@ -49,7 +49,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <strong>E-mail:</strong><br>
@@ -70,12 +70,16 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <strong>Endereço:</strong><br>
-                        {% if transacao.cliente and transacao.cliente.endereco %}
-                            {{ transacao.cliente.endereco }}
+                        {% if transacao.cliente %}
+                            {% if transacao.cliente.logradouro or transacao.cliente.cidade %}
+                                {{ transacao.cliente.logradouro|default:'' }}{% if transacao.cliente.numero %}, {{ transacao.cliente.numero }}{% endif %}{% if transacao.cliente.complemento %}, {{ transacao.cliente.complemento }}{% endif %}{% if transacao.cliente.bairro %}, {{ transacao.cliente.bairro }}{% endif %}{% if transacao.cliente.cidade %}, {{ transacao.cliente.cidade }}{% endif %}{% if transacao.cliente.estado %} - {{ transacao.cliente.estado }}{% endif %}
+                            {% else %}
+                                <span class="text-muted">Não disponível</span>
+                            {% endif %}
                         {% elif transacao.session and transacao.session.endereco %}
                             {{ transacao.session.endereco }}
                         {% else %}
@@ -83,12 +87,12 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <hr>
-                
+
                 <!-- Dados da Transação -->
                 <h6 class="text-muted mb-3"><i class="fas fa-receipt me-2"></i>Dados da Transação</h6>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <strong>Valor:</strong><br>
@@ -103,14 +107,14 @@
                         {{ transacao.forma_pagamento }}
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <strong>Data/Hora:</strong><br>
                         {{ transacao.processed_at|date:"d/m/Y H:i:s" }}
                     </div>
                 </div>
-                
+
                 <div class="d-grid gap-2 mt-4">
                     <a href="{% url 'vendas:checkout' %}" class="btn btn-success btn-lg">
                         <i class="fas fa-plus-circle me-2"></i>Nova Venda
@@ -132,7 +136,7 @@
                     <strong>Motivo:</strong><br>
                     {{ transacao.erro_pinbank|default:"Transação não aprovada pela operadora" }}
                 </div>
-                
+
                 <!-- Dados do Cliente -->
                 <h6 class="text-muted mb-3"><i class="fas fa-user me-2"></i>Dados do Cliente</h6>
                 <div class="row mb-3">
@@ -157,7 +161,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <strong>E-mail:</strong><br>
@@ -178,9 +182,9 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <hr>
-                
+
                 <!-- Dados da Transação -->
                 <h6 class="text-muted mb-3"><i class="fas fa-receipt me-2"></i>Dados da Transação</h6>
                 <div class="row mb-3">
@@ -193,14 +197,14 @@
                         {{ transacao.parcelas }}x
                     </div>
                 </div>
-                
+
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <strong>Data/Hora:</strong><br>
                         {{ transacao.processed_at|date:"d/m/Y H:i:s" }}
                     </div>
                 </div>
-                
+
                 <div class="d-grid gap-2 mt-4">
                     <a href="{% url 'vendas:checkout' %}" class="btn btn-primary btn-lg">
                         <i class="fas fa-redo me-2"></i>Tentar Novamente

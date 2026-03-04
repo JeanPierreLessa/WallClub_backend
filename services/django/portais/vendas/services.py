@@ -471,11 +471,28 @@ class CheckoutVendasService:
                 except Exception:
                     pass
 
+                # Construir endereço a partir dos campos desmembrados
+                endereco_parts = []
+                if cliente.logradouro:
+                    endereco_parts.append(cliente.logradouro)
+                if cliente.numero:
+                    endereco_parts.append(cliente.numero)
+                if cliente.complemento:
+                    endereco_parts.append(cliente.complemento)
+                if cliente.bairro:
+                    endereco_parts.append(cliente.bairro)
+                if cliente.cidade and cliente.estado:
+                    endereco_parts.append(f"{cliente.cidade} - {cliente.estado}")
+                elif cliente.cidade:
+                    endereco_parts.append(cliente.cidade)
+
+                endereco_completo = ', '.join(endereco_parts) if endereco_parts else ''
+
                 return {
                     'sucesso': True,
                     'cliente': {
                         'id': cliente.id, 'nome': cliente.nome, 'email': cliente.email,
-                        'endereco': cliente.endereco,
+                        'endereco': endereco_completo,
                         'telefone_obfuscado': telefone_obfuscado,
                     },
                     'cartoes': [{
@@ -586,6 +603,23 @@ class CheckoutVendasService:
             from checkout.link_pagamento_web.models import CheckoutToken
             from django.conf import settings
 
+            # Construir endereco_completo a partir dos campos desmembrados
+            endereco_parts = []
+            if cliente.logradouro:
+                endereco_parts.append(cliente.logradouro)
+            if cliente.numero:
+                endereco_parts.append(cliente.numero)
+            if cliente.complemento:
+                endereco_parts.append(cliente.complemento)
+            if cliente.bairro:
+                endereco_parts.append(cliente.bairro)
+            if cliente.cidade and cliente.estado:
+                endereco_parts.append(f"{cliente.cidade} - {cliente.estado}")
+            elif cliente.cidade:
+                endereco_parts.append(cliente.cidade)
+
+            endereco_completo = ', '.join(endereco_parts) if endereco_parts else ''
+
             token_obj = CheckoutToken.generate_token(
                 loja_id=loja_id,
                 item_nome=descricao,
@@ -595,7 +629,7 @@ class CheckoutVendasService:
                 celular=telefone or '',
                 email=cliente.email or '',
                 data_nascimento=cliente.data_nascimento,
-                endereco_completo=cliente.endereco or '',
+                endereco_completo=endereco_completo,
                 logradouro=cliente.logradouro or '',
                 numero=cliente.numero or '',
                 complemento=cliente.complemento or '',
