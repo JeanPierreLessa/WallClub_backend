@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class BiometriaConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'biometria'
+    verbose_name = 'Validação Biométrica'

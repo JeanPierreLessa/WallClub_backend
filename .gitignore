@@ -75,6 +75,7 @@ node_modules/
 WS/
 services/*/docs/backups/
 services/*/docs/executado/
+services/django/biometria/chaves/
 
 # Outros
 /vendor/
