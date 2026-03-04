@@ -41,7 +41,8 @@
                     <!-- Data de Nascimento -->
                     <div class="mb-3">
                         <label for="data_nascimento" class="form-label">Data de Nascimento</label>
-                        <input type="date" class="form-control" id="data_nascimento" name="data_nascimento" value="{{ cliente.data_nascimento|date:'Y-m-d'|default:'' }}">
+                        <input type="date" class="form-control bg-light" id="data_nascimento" name="data_nascimento" value="{{ cliente.data_nascimento|date:'Y-m-d'|default:'' }}" readonly>
+                        <small class="text-muted">Data de nascimento vem do Bureau e não pode ser editada.</small>
                     </div>
 
                     <h5 class="mt-4 mb-3"><i class="fas fa-map-marker-alt me-2"></i>Endereço</h5>
@@ -89,8 +90,6 @@
                         </div>
                     </div>
 
-                    <!-- Campo oculto para compatibilidade -->
-                    <input type="hidden" id="endereco" name="endereco" value="{{ cliente.endereco|default:'' }}">
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="{% url 'vendas:cliente_busca' %}" class="btn btn-secondary">
@@ -143,10 +142,6 @@ document.getElementById('btnBuscarCEP').addEventListener('click', function() {
             document.getElementById('bairro').value = data.bairro || '';
             document.getElementById('cidade').value = data.localidade || '';
             document.getElementById('estado').value = data.uf || '';
-
-            // Preencher campo oculto para compatibilidade
-            const endereco = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
-            document.getElementById('endereco').value = endereco;
         })
         .catch(error => {
             console.error('Erro ao buscar CEP:', error);

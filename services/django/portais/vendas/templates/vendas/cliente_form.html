@@ -90,7 +90,8 @@
                     <!-- Data de Nascimento -->
                     <div class="mb-3">
                         <label for="data_nascimento" class="form-label">Data de Nascimento</label>
-                        <input type="date" class="form-control" id="data_nascimento" name="data_nascimento">
+                        <input type="date" class="form-control bg-light" id="data_nascimento" name="data_nascimento" readonly>
+                        <small class="text-muted">Preenchido automaticamente pela busca de CPF/CNPJ.</small>
                     </div>
 
                     <h5 class="mt-4 mb-3"><i class="fas fa-map-marker-alt me-2"></i>Endereço</h5>
@@ -297,13 +298,22 @@
                     return;
                 }
 
-                // Cliente não existe, preencher nome do app/Bureau
+                // Cliente não existe, preencher nome e data_nascimento do app/Bureau
                 const nome = data.cliente && data.cliente.nome ? data.cliente.nome : '';
+                const dataNascimento = data.cliente && data.cliente.data_nascimento ? data.cliente.data_nascimento : '';
+
                 if (nome) {
                     const nomeInput = document.getElementById('nome');
                     nomeInput.value = nome;
-                    nomeInput.readOnly = true; // não pode ser editado
+                    nomeInput.readOnly = true;
                     nomeInput.classList.add('bg-light');
+                }
+
+                if (dataNascimento) {
+                    const dataNascimentoInput = document.getElementById('data_nascimento');
+                    dataNascimentoInput.value = dataNascimento;
+                    dataNascimentoInput.readOnly = true;
+                    dataNascimentoInput.classList.add('bg-light');
                 }
             } else {
                 alert(data.mensagem || 'Não foi possível obter o nome do cliente.');

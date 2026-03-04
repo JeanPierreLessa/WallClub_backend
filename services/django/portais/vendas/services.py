@@ -745,7 +745,11 @@ class CheckoutVendasService:
                 return {
                     'sucesso': True,
                     'cliente_existe': False,
-                    'cliente': {'id': app_cliente.id, 'nome': app_cliente.nome or ''}
+                    'cliente': {
+                        'id': app_cliente.id,
+                        'nome': app_cliente.nome or '',
+                        'data_nascimento': app_cliente.data_nascimento.strftime('%Y-%m-%d') if app_cliente.data_nascimento else None
+                    }
                 }
             except Cliente.DoesNotExist:
                 pass
@@ -765,7 +769,11 @@ class CheckoutVendasService:
                     return {
                         'sucesso': True,
                         'cliente_existe': False,
-                        'cliente': {'id': None, 'nome': dados_bureau.get('nome')}
+                        'cliente': {
+                            'id': None,
+                            'nome': dados_bureau.get('nome'),
+                            'data_nascimento': dados_bureau.get('nascimento')
+                        }
                     }
                 else:
                     return {'sucesso': False, 'mensagem': 'Nome não encontrado no Bureau'}
