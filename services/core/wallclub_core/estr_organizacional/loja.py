@@ -26,12 +26,7 @@ class Loja(models.Model):
     conta = models.CharField(max_length=256, null=True, blank=True)
     pix = models.CharField(max_length=256, null=True, blank=True)
     GrupoEconomicoId = models.PositiveIntegerField(null=True, blank=True)
-    
-    # Credenciais Pinbank
-    pinbank_codigo_loja = models.IntegerField(null=True, blank=True)
-    pinbank_codigo_cliente = models.IntegerField(null=True, blank=True)
-    pinbank_keyloja = models.CharField(max_length=256, null=True, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -220,9 +215,8 @@ class Loja(models.Model):
             # Campos comuns que podem ser atualizados
             campos_atualizaveis = [
                 'razao_social', 'cnpj', 'complemento', 'canal_id', 'gateway_ativo',
-                'email', 'celular', 'nomebanco', 'numerobanco', 'agencia', 
-                'conta', 'pix', 'GrupoEconomicoId',
-                'pinbank_CodigoCanal', 'pinbank_CodigoCliente', 'pinbank_KeyValueLoja'
+                'email', 'celular', 'nomebanco', 'numerobanco', 'agencia',
+                'conta', 'pix', 'GrupoEconomicoId'
             ]
 
             # Atualizar campos
