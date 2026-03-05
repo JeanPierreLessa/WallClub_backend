@@ -57,10 +57,10 @@ def download_template_csv(request):
     ]
 
     # Adicionar colunas dos parâmetros
-    for i in range(1, 31):  # Parâmetros Loja 1-30
+    for i in range(1, 34):  # Parâmetros Loja 1-33
         headers.append(f'parametro_loja_{i}')
 
-    for i in range(1, 7):   # Parâmetros Uptal 1-6
+    for i in range(1, 8):   # Parâmetros Uptal 1-7
         headers.append(f'parametro_uptal_{i}')
 
     for i in range(1, 5):   # Parâmetros Wall 1-4
@@ -83,7 +83,7 @@ def download_template_csv(request):
         ]
 
         # Valores zerados para todos os parâmetros
-        for i in range(40):  # 30 + 6 + 4 = 40 parâmetros
+        for i in range(44):  # 33 + 7 + 4 = 44 parâmetros
             linha.append('0.00')
 
         writer.writerow(linha)
@@ -100,7 +100,7 @@ def download_template_csv(request):
         ]
 
         # Valores zerados para todos os parâmetros
-        for i in range(40):  # 30 + 6 + 4 = 40 parâmetros
+        for i in range(44):  # 33 + 7 + 4 = 44 parâmetros
             linha.append('0.00')
 
         writer.writerow(linha)
@@ -306,8 +306,8 @@ def _processar_csv(arquivo, request, importacao):
                     # Contar parâmetros definidos
                     parametros_definidos = 0
 
-                    # Validar parâmetros Loja (1 a 30)
-                    for i in range(1, 31):
+                    # Validar parâmetros Loja (1 a 33)
+                    for i in range(1, 34):
                         campo = f'parametro_loja_{i}'
                         if campo in row and row[campo]:
                             try:
@@ -321,8 +321,8 @@ def _processar_csv(arquivo, request, importacao):
                             except (ValueError, decimal.InvalidOperation):
                                 linhas_com_erro.append(f"Linha {linha_num}: Valor inválido para {campo}: '{row[campo]}'")
 
-                    # Validar parâmetros Uptal (1 a 6)
-                    for i in range(1, 7):
+                    # Validar parâmetros Uptal (1 a 7)
+                    for i in range(1, 8):
                         campo = f'parametro_uptal_{i}'
                         if campo in row and row[campo]:
                             try:
@@ -388,7 +388,7 @@ def _processar_csv(arquivo, request, importacao):
 
                     # Definir parâmetros (sempre definir todos os campos, com 0 se vazio)
                     parametros_definidos = 0
-                    for i in range(1, 31):  # Parâmetros Loja (1 a 30)
+                    for i in range(1, 34):  # Parâmetros Loja (1 a 33)
                         campo = f'parametro_loja_{i}'
                         if campo in row and row[campo]:
                             # Campo 16 é CharField, outros são DecimalField
@@ -408,7 +408,7 @@ def _processar_csv(arquivo, request, importacao):
                         else:
                             setattr(config, campo, None)  # Define como None se vazio
 
-                    for i in range(1, 7):   # Parâmetros Uptal
+                    for i in range(1, 8):   # Parâmetros Uptal
                         campo = f'parametro_uptal_{i}'
                         if campo in row and row[campo]:
                             # CSV deve usar formato americano (0.00) - sem conversão

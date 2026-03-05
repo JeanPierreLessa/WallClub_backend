@@ -1,0 +1,13 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Verifique se o código contém Django/Python. Se sim, AVISE sobre:\n\n1. SEGURANÇA:\n   - Falta de decorator de autenticação (@require_oauth_apps, @require_oauth_web, @require_oauth_admin)\n   - Falta de validação de permissões por loja_id/grupo_economico_id\n   - Exposição de dados sensíveis em logs ou respostas\n\n2. DADOS:\n   - Uso de valores hardcoded ao invés de ConfigManager ou tabela parametros_wallclub\n   - Uso de float para valores monetários (deve ser Decimal)\n\n3. LOGS:\n   - Falta de registrar_log() em operações críticas (financeiras, autenticação, erros)\n   - Nível de log inadequado (DEBUG, INFO, WARNING, ERROR)\n\n4. TRANSAÇÕES:\n   - Operações de DB múltiplas sem @transaction.atomic\n   - Operações financeiras sem transação atômica\n\n5. DOCUMENTAÇÃO (se mudança significativa):\n   - MEMORY.md: Adicionar decisão técnica recente ou bug em investigação?\n   - CHANGELOG.md: Registrar mudança importante (nova feature, fix crítico, refactor arquitetural)?\n   - .claude/CLAUDE.md: Atualizar se mudou padrão fundamental do projeto?\n   - README.md: Atualizar estatísticas se mudou número de containers/APIs/services?\n\nApenas AVISE se encontrar problemas. Não bloqueie a operação."
+        }
+      ]
+    }
+  ]
+}

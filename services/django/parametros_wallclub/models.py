@@ -20,55 +20,56 @@ from wallclub_core.estr_organizacional.loja import Loja
 class ParametrosWall(models.Model):
     """
     Parâmetros financeiros do sistema WallClub.
-    
+
     ESTRUTURA REAL DA TABELA parametros_wallclub:
     - Campos id_plano, wall, id_desc obrigatórios
     - Todos os parâmetros individuais (loja 1-30, uptal 1-6, wall 1-4)
     - Controle de vigência temporal
     - Usado pelo ParametrosService para buscar configurações
     """
-    
+
     # Identificação
     loja_id = models.IntegerField(
         verbose_name="ID da Loja",
         help_text="Identificador único da loja no sistema"
     )
-    
+
     id_desc = models.CharField(
         max_length=100,
         null=True, blank=True,
         verbose_name="ID Desc (Legado)",
         help_text="Identificador da versão dos parâmetros no sistema legado"
     )
-    
+
     id_plano = models.IntegerField(
         verbose_name="ID do Plano",
         help_text="Identificador do plano de pagamento"
     )
-    
+
     wall = models.CharField(
         max_length=1,
         choices=[
             ('S', 'Com Wall'),
             ('N', 'Sem Wall'),
-            ('C', 'Cashback')
+            ('C', 'Cashback'),
+            ('K', 'Credenciadora')
         ],
         verbose_name="Modalidade Wall",
-        help_text="S=desconto aplicado no POS, N=sem desconto, C=desconto como cashback na conta digital"
+        help_text="S=desconto aplicado no POS, N=sem desconto, C=desconto como cashback na conta digital, K=credenciadora"
     )
-    
+
     # Controle de vigência
     vigencia_inicio = models.DateTimeField(
         verbose_name="Início da Vigência",
         help_text="Data e hora de início da vigência desta configuração"
     )
-    
+
     vigencia_fim = models.DateTimeField(
         null=True, blank=True,
-        verbose_name="Fim da Vigência", 
+        verbose_name="Fim da Vigência",
         help_text="Data e hora de fim da vigência (null = vigência indefinida)"
     )
-    
+
     # Parâmetros da loja (1-30)
     parametro_loja_1 = models.IntegerField(
         null=True, blank=True,
@@ -220,8 +221,23 @@ class ParametrosWall(models.Model):
         verbose_name="Dia Pagamento Rebate",
         help_text="Dia mês pagto Rebate Loja"
     )
-    
-    # Parâmetros uptal (1-6)
+    parametro_loja_31 = models.DecimalField(
+        max_digits=12, decimal_places=10, null=True, blank=True,
+        verbose_name="Rebate Parcelado Operador",
+        help_text="Rebate Parcelado a pagar Operador (%)"
+    )
+    parametro_loja_32 = models.DecimalField(
+        max_digits=12, decimal_places=10, null=True, blank=True,
+        verbose_name="Rebate Parcelado Loja",
+        help_text="Rebate Parcelado a pagar Loja (%)"
+    )
+    parametro_loja_33 = models.DecimalField(
+        max_digits=12, decimal_places=10, null=True, blank=True,
+        verbose_name="Tarifa Transação Loja",
+        help_text="Tarifa por Transação a pagar pela Loja (R$)"
+    )
+
+    # Parâmetros uptal (1-7)
     parametro_uptal_1 = models.DecimalField(
         max_digits=12, decimal_places=10, null=True, blank=True,
         verbose_name="MDR Uptal",
@@ -252,7 +268,12 @@ class ParametrosWall(models.Model):
         verbose_name="Alíquota Imposto Wall",
         help_text="Alíquota Imposto a pagar Wall - %"
     )
-    
+    parametro_uptal_7 = models.DecimalField(
+        max_digits=12, decimal_places=10, null=True, blank=True,
+        verbose_name="Tarifa Transação Wall",
+        help_text="Tarifa por Transação pagar pela Wall (R$)"
+    )
+
     # Parâmetros wall (1-4)
     parametro_wall_1 = models.DecimalField(
         max_digits=12, decimal_places=10, null=True, blank=True,
@@ -274,7 +295,7 @@ class ParametrosWall(models.Model):
         verbose_name="Encargos Financeiros",
         help_text="Encargos Financeiros Oper. Cartão - (% período)"
     )
-    
+
     # Campos de auditoria
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
@@ -286,7 +307,7 @@ class ParametrosWall(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="parametroswall_atualizado_set"
     )
-    
+
     class Meta:
         db_table = 'parametros_wallclub'
         ordering = ['-vigencia_inicio']
@@ -298,25 +319,25 @@ class ParametrosWall(models.Model):
             models.Index(fields=['wall']),
             models.Index(fields=['vigencia_inicio']),
         ]
-        
+
     def __str__(self):
         return f"Parâmetros Loja {self.loja_id} - Plano {self.id_plano} - {self.vigencia_inicio}"
-    
+
     def get_parametro(self, codigo):
         """
-        Busca um parâmetro pelo código (1-40).
-        
+        Busca um parâmetro pelo código (1-43).
+
         Args:
-            codigo (int): Código do parâmetro (1-40)
-            
+            codigo (int): Código do parâmetro (1-43)
+
         Returns:
             str: Valor do parâmetro ou None se não encontrado
         """
-        if 1 <= codigo <= 30:
-            # Parâmetros da loja (1-30)
+        if 1 <= codigo <= 33:
+            # Parâmetros da loja (1-33)
             return getattr(self, f'parametro_loja_{codigo}', None)
-        elif 31 <= codigo <= 36:
-            # Parâmetros uptal (31-36)
+        elif 31 <= codigo <= 37:
+            # Parâmetros uptal (31-37)
             uptal_num = codigo - 30
             return getattr(self, f'parametro_uptal_{uptal_num}', None)
         elif 37 <= codigo <= 40:
@@ -324,35 +345,35 @@ class ParametrosWall(models.Model):
             wall_num = codigo - 36
             return getattr(self, f'parametro_wall_{wall_num}', None)
         return None
-    
+
     @classmethod
     def get_configuracao_ativa(cls, loja_id: int, data_referencia=None):
         """
         Busca configuração ativa para uma loja em uma data específica.
-        
+
         Args:
             loja_id (int): ID da loja
             data_referencia (datetime, optional): Data de referência. Default: agora
-            
+
         Returns:
             ParametrosWall: Configuração ativa ou None
         """
         if data_referencia is None:
             from datetime import datetime
             data_referencia = datetime.now()
-            
+
         return cls.objects.filter(
             loja_id=loja_id,
             vigencia_inicio__lte=data_referencia
         ).filter(
-            models.Q(vigencia_fim__isnull=True) | 
+            models.Q(vigencia_fim__isnull=True) |
             models.Q(vigencia_fim__gte=data_referencia)
         ).first()
 
 class Plano(models.Model):
     """
     Planos de pagamento como tabela de lookup simples.
-    
+
     ESTRUTURA FINAL:
     - id: IDs 1-306 (apenas planos únicos)
     - Dados básicos: nome, prazo, bandeira
@@ -360,10 +381,10 @@ class Plano(models.Model):
     - Mapeamento: parâmetros Wall (1-306) → busca direta
     - Mapeamento: parâmetros Sem Wall (1000+) → busca (id_plano - 999)
     """
-    
+
     # ID 1-306 (planos únicos)
     id = models.IntegerField(primary_key=True)
-    
+
     # IDs originais para validação (TEMPORÁRIOS - remover após validação)
     id_original_wall = models.IntegerField(
         verbose_name="ID Original (Wall)",
@@ -371,43 +392,43 @@ class Plano(models.Model):
         null=True,
         blank=True
     )
-    
+
     id_original_sem_wall = models.IntegerField(
-        verbose_name="ID Original (Sem Wall)", 
+        verbose_name="ID Original (Sem Wall)",
         help_text="ID original da tabela 'planos_sem_club' - para validação",
         null=True,
         blank=True
     )
-    
+
     # Dados do plano
     nome = models.CharField(
         max_length=256,
         verbose_name="Nome do Plano",
         help_text="Descrição do plano (ex: PIX, A VISTA, PARCELADO SEM JUROS)"
     )
-    
+
     prazo_dias = models.IntegerField(
         verbose_name="Prazo em Dias",
         help_text="Número de parcelas (0 para à vista/PIX)"
     )
-    
+
     bandeira = models.CharField(
         max_length=256,
         verbose_name="Bandeira",
         help_text="Bandeira do cartão (MASTERCARD, VISA, PIX, etc.)"
     )
-    
+
     # Campo wall removido - diferenciação ocorre nos parâmetros através do id_plano
-    
+
     # Auditoria
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'parametros_wallclub_planos'
         verbose_name = 'Plano WallClub'
         verbose_name_plural = 'Planos WallClub'
-        
+
         # Índices para performance
         indexes = [
             models.Index(fields=['bandeira'], name='idx_plano_bandeira'),
@@ -415,11 +436,11 @@ class Plano(models.Model):
             models.Index(fields=['id_original_wall'], name='idx_plano_orig_wall'),
             models.Index(fields=['id_original_sem_wall'], name='idx_plano_orig_sem'),
         ]
-        
-    
+
+
     def __str__(self):
         return f"{self.nome} {self.prazo_dias}x {self.bandeira}"
-    
+
     @classmethod
     def buscar_por_id_parametro(cls, id_plano):
         """
@@ -433,7 +454,7 @@ class Plano(models.Model):
         else:
             # Parâmetros Wall: busca direta
             id_lookup = id_plano
-        
+
         return cls.objects.filter(id=id_lookup).first()
 
 # ESTRUTURA LIMPA - MODELO UNIFICADO ParametrosWall
@@ -443,10 +464,10 @@ class Plano(models.Model):
 class ImportacaoConfiguracoes(models.Model):
     """
     Controle de importações via planilha ou migração.
-    
+
     RASTREABILIDADE: Cada importação é registrada para auditoria.
     """
-    
+
     # Campos que correspondem à estrutura real da tabela no banco
     nome_arquivo = models.CharField(
         max_length=255,
@@ -506,12 +527,12 @@ class ImportacaoConfiguracoes(models.Model):
         auto_now=True,
         help_text="Data de última atualização"
     )
-    
+
     class Meta:
         db_table = 'parametros_wallclub_importacoes'
         verbose_name = 'Importação Parâmetros WallClub'
         verbose_name_plural = 'Importações Parâmetros WallClub'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"{self.nome_arquivo} - {self.status}"

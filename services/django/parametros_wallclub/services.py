@@ -198,7 +198,7 @@ class ParametrosService:
     @staticmethod
     def retornar_parametro_loja(id_loja: int, data_ref: int, id_plano: int,
                                parametro: int, wall: str = 'S') -> Optional[float]:
-        """Busca parâmetro da loja (1-30) - wclub.parametros_loja"""
+        """Busca parâmetro da loja (1-33) - wclub.parametros_loja"""
         try:
             # Usar datetime naive
             data_referencia = datetime.fromtimestamp(data_ref)
@@ -227,7 +227,7 @@ class ParametrosService:
     @staticmethod
     def retornar_parametro_uptal(id_loja: int, data_ref: int, id_plano: int,
                                 parametro: int, wall: str) -> Optional[float]:
-        """Busca parâmetro uptal (31-36) - wclub.parametros_wall"""
+        """Busca parâmetro uptal (1-7) - wclub.parametros_wall"""
         try:
             # Usar datetime naive
             data_referencia = datetime.fromtimestamp(data_ref)
@@ -244,7 +244,7 @@ class ParametrosService:
                 registrar_log('parametros_wallclub', f"DEBUG retornar_parametro_uptal: valor encontrado = {valor}", nivel='DEBUG')
 
                 # Log de todos os valores uptal para comparação
-                for i in range(1, 7):
+                for i in range(1, 8):
                     val = getattr(config, f'parametro_uptal_{i}', None)
                     registrar_log('parametros_wallclub', f"DEBUG config.parametro_uptal_{i} = {val}", nivel='DEBUG')
 
