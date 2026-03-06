@@ -7,6 +7,7 @@ Data: 27/10/2025
 from datetime import datetime
 import re
 from django.core.cache import cache
+from django.utils import timezone
 from apps.cliente.models import Cliente, ClienteAuth
 from wallclub_core.integracoes.whatsapp_service import WhatsAppService
 from wallclub_core.integracoes.sms_service import enviar_sms
@@ -241,7 +242,7 @@ class CadastroService:
 
                 # Atualizar senha
                 cliente.set_password(senha)
-                cliente.cadastro_iniciado_em = datetime.now()
+                cliente.cadastro_iniciado_em = timezone.now()
                 cliente.save()
 
                 registrar_log('apps.cliente',
@@ -261,7 +262,7 @@ class CadastroService:
                     nome=nome,
                     email=email or '',
                     celular=celular_limpo,
-                    cadastro_iniciado_em=datetime.now()
+                    cadastro_iniciado_em=timezone.now()
                 )
                 cliente.set_password(senha)
                 cliente.save()
@@ -331,7 +332,7 @@ class CadastroService:
             }
 
     @staticmethod
-    def validar_otp_cadastro(cpf: str, codigo: str, canal_id: int, device_fingerprint: str = None, 
+    def validar_otp_cadastro(cpf: str, codigo: str, canal_id: int, device_fingerprint: str = None,
                             ip_address: str = None, user_agent: str = None) -> dict:
         """
         Valida OTP + finaliza cadastro (marca cadastro_completo=TRUE)
@@ -387,7 +388,8 @@ class CadastroService:
             try:
                 cliente = Cliente.objects.get(cpf=cpf_limpo, canal_id=canal_id, is_active=True)
                 cliente.cadastro_completo = True
-                cliente.cadastro_concluido_em = datetime.now()
+                cliente.cadastro_concluido_em = timezone.now()
+                cliente.celular_validado_em = timezone.now()  # Validar celular no cadastro
                 cliente.save()
 
                 # Remover OTP do cache
@@ -402,7 +404,7 @@ class CadastroService:
                 # Registrar dispositivo como confiável (se fornecido)
                 if device_fingerprint:
                     from wallclub_core.seguranca.services_device import DeviceManagementService
-                    
+
                     try:
                         # Montar dados do dispositivo conforme esperado pelo service
                         dados_dispositivo = {
@@ -410,7 +412,7 @@ class CadastroService:
                             'user_agent': user_agent or '',
                             'nome_dispositivo': 'Dispositivo do Cadastro'
                         }
-                        
+
                         DeviceManagementService.registrar_dispositivo(
                             user_id=cliente.id,
                             tipo_usuario='cliente',
