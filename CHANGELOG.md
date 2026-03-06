@@ -16,6 +16,18 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-06] - Link de Recorrência - Otimização e Correção
+- **Remoção de pré-autorização de R$ 1,00:**
+  - Processo de validação de cartão com transação de R$ 1,00 removido
+  - Tokenização via gateway (Pinbank/OWN) já valida o cartão automaticamente
+  - Fluxo simplificado: validar token → tokenizar cartão → vincular à recorrência
+  - Arquivo: `checkout/link_recorrencia_web/services.py`
+- **Correção erro 500 na página de sucesso:**
+  - Lambda inline na URL causava Server Error 500
+  - Criada view adequada `sucesso_view()`
+  - Arquivos: `checkout/link_recorrencia_web/views.py`, `urls.py`
+- **Impacto:** Cadastro de cartão mais rápido e sem transações desnecessárias
+
 ### [2026-03-06] - Correção Crítica de Timezone em Autenticação 2FA
 - **Problema:** Dispositivos e celulares marcados como expirados imediatamente após validação
 - **Causa:** Uso de `datetime.now()` (UTC) ao invés de `timezone.now()` (timezone-aware)

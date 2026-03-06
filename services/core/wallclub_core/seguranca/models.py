@@ -155,7 +155,51 @@ class DispositivoConfiavel(models.Model):
         max_length=255,
         unique=True,
         db_index=True,
-        help_text="Hash MD5 do fingerprint do dispositivo"
+        help_text="Hash MD5 do fingerprint do dispositivo (calculado a partir dos componentes)"
+    )
+
+    native_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="ID nativo do dispositivo (IDFV para iOS, androidId para Android)"
+    )
+    screen_resolution = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Resolução da tela (ex: 1170x2532)"
+    )
+    device_model = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Modelo do dispositivo (ex: iPhone15,2 ou SM-G998B)"
+    )
+    os_version = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Versão do sistema operacional (ex: 17.2 ou 14)"
+    )
+    device_brand = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Fabricante do dispositivo (ex: Apple, Samsung)"
+    )
+    timezone = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Timezone do dispositivo (ex: America/Sao_Paulo)"
+    )
+    platform = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text="Plataforma (ios ou android)"
     )
     nome_dispositivo = models.CharField(
         max_length=100,
@@ -195,6 +239,8 @@ class DispositivoConfiavel(models.Model):
             models.Index(fields=['user_id', 'tipo_usuario', 'ativo']),
             models.Index(fields=['device_fingerprint', 'ativo']),
             models.Index(fields=['ultimo_acesso']),
+            models.Index(fields=['native_id', 'ativo']),
+            models.Index(fields=['user_id', 'native_id']),
         ]
 
     def __str__(self):

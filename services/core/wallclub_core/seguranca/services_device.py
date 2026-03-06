@@ -27,6 +27,112 @@ class DeviceManagementService:
     # Validade padrão de dispositivo confiável (30 dias)
     VALIDADE_DIAS = 30
 
+    # Pesos para cálculo de similaridade (total = 100 pontos)
+    PESOS_SIMILARIDADE = {
+        'native_id': 40,           # Mais importante
+        'screen_resolution': 20,   # Hardware imutável
+        'device_model': 20,        # Hardware imutável
+        'device_brand': 10,        # Hardware imutável
+        'os_version': 5,           # Pode mudar com updates
+        'timezone': 5,             # Fixo no app
+    }
+
+    @classmethod
+    def calcular_similaridade(cls, fp_antigo: DispositivoConfiavel, componentes_novos: Dict) -> int:
+        """
+        Calcula score de similaridade (0-100) entre dispositivo conhecido e novos componentes.
+
+        Pesos:
+        - native_id: 40 pontos (mais importante)
+        - screen_resolution: 20 pontos (hardware imutável)
+        - device_model: 20 pontos (hardware imutável)
+        - device_brand: 10 pontos (hardware imutável)
+        - os_version: 5 pontos (pode mudar com updates)
+        - timezone: 5 pontos (fixo no app)
+
+        Args:
+            fp_antigo: DispositivoConfiavel existente no banco
+            componentes_novos: Dict com componentes do novo fingerprint
+
+        Returns:
+            int: Score de 0 a 100
+        """
+        score = 0
+
+        try:
+            # 1. Native ID (40 pontos)
+            if fp_antigo.native_id and componentes_novos.get('native_id'):
+                if fp_antigo.native_id == componentes_novos['native_id']:
+                    score += cls.PESOS_SIMILARIDADE['native_id']
+
+            # 2. Screen Resolution (20 pontos)
+            if fp_antigo.screen_resolution and componentes_novos.get('screen_resolution'):
+                if fp_antigo.screen_resolution == componentes_novos['screen_resolution']:
+                    score += cls.PESOS_SIMILARIDADE['screen_resolution']
+
+            # 3. Device Model (20 pontos)
+            if fp_antigo.device_model and componentes_novos.get('device_model'):
+                if fp_antigo.device_model == componentes_novos['device_model']:
+                    score += cls.PESOS_SIMILARIDADE['device_model']
+
+            # 4. Device Brand (10 pontos)
+            if fp_antigo.device_brand and componentes_novos.get('device_brand'):
+                if fp_antigo.device_brand == componentes_novos['device_brand']:
+                    score += cls.PESOS_SIMILARIDADE['device_brand']
+
+            # 5. OS Version (5 pontos) - tolerante a updates
+            if fp_antigo.os_version and componentes_novos.get('os_version'):
+                if fp_antigo.os_version == componentes_novos['os_version']:
+                    score += cls.PESOS_SIMILARIDADE['os_version']
+                elif cls._versoes_proximas(fp_antigo.os_version, componentes_novos['os_version']):
+                    score += 3  # Pontuação parcial para versões próximas
+
+            # 6. Timezone (5 pontos)
+            if fp_antigo.timezone and componentes_novos.get('timezone'):
+                if fp_antigo.timezone == componentes_novos['timezone']:
+                    score += cls.PESOS_SIMILARIDADE['timezone']
+
+            registrar_log('comum.seguranca',
+                f"Similaridade calculada: {score} pontos (native_id: {fp_antigo.native_id[:8] if fp_antigo.native_id else 'N/A'}... vs {componentes_novos.get('native_id', 'N/A')[:8] if componentes_novos.get('native_id') else 'N/A'}...)",
+                nivel='DEBUG')
+
+            return score
+
+        except Exception as e:
+            registrar_log('comum.seguranca',
+                f"Erro ao calcular similaridade: {str(e)}", nivel='ERROR')
+            return 0
+
+    @staticmethod
+    def _versoes_proximas(versao1: str, versao2: str) -> bool:
+        """
+        Verifica se duas versões de SO são próximas (ex: 17.2 e 17.3).
+
+        Args:
+            versao1: Versão 1 (ex: "17.2")
+            versao2: Versão 2 (ex: "17.3")
+
+        Returns:
+            bool: True se versões são próximas
+        """
+        try:
+            # Extrair major version
+            v1_parts = versao1.split('.')
+            v2_parts = versao2.split('.')
+
+            if len(v1_parts) == 0 or len(v2_parts) == 0:
+                return False
+
+            # Comparar major version
+            v1_major = int(v1_parts[0])
+            v2_major = int(v2_parts[0])
+
+            # Versões próximas: mesmo major ou diferença de 1
+            return abs(v1_major - v2_major) <= 1
+
+        except (ValueError, IndexError):
+            return False
+
     @classmethod
     def calcular_fingerprint(cls, dados_dispositivo: Dict) -> str:
         """
@@ -93,6 +199,17 @@ class DeviceManagementService:
             Tuple[DispositivoConfiavel, bool, str]: (dispositivo, criado, mensagem)
         """
         try:
+            # Extrair componentes individuais do fingerprint
+            componentes = {
+                'native_id': dados_dispositivo.get('native_id'),
+                'screen_resolution': dados_dispositivo.get('screen_resolution'),
+                'device_model': dados_dispositivo.get('device_model'),
+                'os_version': dados_dispositivo.get('os_version'),
+                'device_brand': dados_dispositivo.get('device_brand'),
+                'timezone': dados_dispositivo.get('timezone', 'America/Sao_Paulo'),
+                'platform': dados_dispositivo.get('platform'),
+            }
+
             # CRÍTICO: NUNCA sobrescrever fingerprint fornecido pelo app
             # App já calcula o fingerprint corretamente no lado do cliente
             fingerprint = dados_dispositivo.get('device_fingerprint')
@@ -175,7 +292,7 @@ class DeviceManagementService:
 
             user_agent = dados_dispositivo.get('user_agent', '')
 
-            # Criar novo dispositivo
+            # Criar novo dispositivo com componentes individuais
             with transaction.atomic():
                 dispositivo = DispositivoConfiavel.objects.create(
                     user_id=user_id,
@@ -187,7 +304,15 @@ class DeviceManagementService:
                     ultimo_acesso=timezone.now(),
                     ativo=True,
                     confiavel_ate=confiavel_ate,
-                    ultima_revalidacao_2fa=ultima_revalidacao_2fa
+                    ultima_revalidacao_2fa=ultima_revalidacao_2fa,
+                    # Componentes individuais do fingerprint
+                    native_id=componentes.get('native_id'),
+                    screen_resolution=componentes.get('screen_resolution'),
+                    device_model=componentes.get('device_model'),
+                    os_version=componentes.get('os_version'),
+                    device_brand=componentes.get('device_brand'),
+                    timezone=componentes.get('timezone'),
+                    platform=componentes.get('platform'),
                 )
 
                 registrar_log(
@@ -213,7 +338,7 @@ class DeviceManagementService:
         fingerprint: str
     ) -> Tuple[bool, Optional[DispositivoConfiavel], str]:
         """
-        Valida se dispositivo é confiável e está ativo
+        Valida se dispositivo é confiável e está ativo (método legado - mantido para compatibilidade)
 
         Args:
             user_id: ID do usuário
@@ -265,6 +390,223 @@ class DeviceManagementService:
         except Exception as e:
             registrar_log('comum.seguranca', f"Erro ao validar dispositivo: {str(e)}", nivel='ERROR')
             return False, None, f"Erro ao validar dispositivo: {str(e)}"
+
+    @classmethod
+    def validar_dispositivo_com_similaridade(
+        cls,
+        user_id: int,
+        tipo_usuario: str,
+        dados_dispositivo: Dict
+    ) -> Dict[str, any]:
+        """
+        Valida dispositivo usando análise de similaridade.
+        Retorna decisão: 'allow', 'require_otp' ou 'block'.
+
+        Lógica de decisão:
+        - Hash exato encontrado e válido: 'allow'
+        - Similaridade >= 80: 'require_otp' (provável update legítimo)
+        - Similaridade 50-79: 'require_otp' (suspeito)
+        - Similaridade < 50: 'require_otp' (novo dispositivo) ou 'block' (limite atingido)
+
+        Args:
+            user_id: ID do usuário
+            tipo_usuario: Tipo do usuário
+            dados_dispositivo: Dict com fingerprint e componentes
+
+        Returns:
+            Dict: {
+                'decisao': 'allow' | 'require_otp' | 'block',
+                'motivo': str,
+                'similaridade_max': int (0-100),
+                'dispositivo_similar': DispositivoConfiavel ou None,
+                'novo_dispositivo': bool
+            }
+        """
+        try:
+            fingerprint = dados_dispositivo.get('device_fingerprint')
+
+            if not fingerprint:
+                return {
+                    'decisao': 'block',
+                    'motivo': 'Fingerprint não fornecido',
+                    'similaridade_max': 0,
+                    'dispositivo_similar': None,
+                    'novo_dispositivo': False
+                }
+
+            # Extrair componentes
+            componentes = {
+                'native_id': dados_dispositivo.get('native_id'),
+                'screen_resolution': dados_dispositivo.get('screen_resolution'),
+                'device_model': dados_dispositivo.get('device_model'),
+                'os_version': dados_dispositivo.get('os_version'),
+                'device_brand': dados_dispositivo.get('device_brand'),
+                'timezone': dados_dispositivo.get('timezone', 'America/Sao_Paulo'),
+                'platform': dados_dispositivo.get('platform'),
+            }
+
+            # CASO 1: Buscar hash exato (dispositivo conhecido)
+            dispositivo_exato = DispositivoConfiavel.objects.filter(
+                user_id=user_id,
+                tipo_usuario=tipo_usuario,
+                device_fingerprint=fingerprint,
+                ativo=True
+            ).first()
+
+            if dispositivo_exato:
+                # Verificar validade
+                if dispositivo_exato.confiavel_ate and timezone.now() > dispositivo_exato.confiavel_ate:
+                    registrar_log('comum.seguranca',
+                        f"Dispositivo expirado (hash exato): {tipo_usuario} ID:{user_id}",
+                        nivel='WARNING')
+                    return {
+                        'decisao': 'require_otp',
+                        'motivo': 'Dispositivo expirado. Necessário revalidar.',
+                        'similaridade_max': 100,
+                        'dispositivo_similar': dispositivo_exato,
+                        'novo_dispositivo': False
+                    }
+
+                # Atualizar último acesso
+                dispositivo_exato.ultimo_acesso = timezone.now()
+                dispositivo_exato.save()
+
+                registrar_log('comum.seguranca',
+                    f"✅ Dispositivo conhecido validado: {tipo_usuario} ID:{user_id}",
+                    nivel='INFO')
+
+                return {
+                    'decisao': 'allow',
+                    'motivo': 'Dispositivo conhecido e confiável',
+                    'similaridade_max': 100,
+                    'dispositivo_similar': dispositivo_exato,
+                    'novo_dispositivo': False
+                }
+
+            # CASO 2: Hash diferente - calcular similaridade com dispositivos conhecidos
+            dispositivos_conhecidos = DispositivoConfiavel.objects.filter(
+                user_id=user_id,
+                tipo_usuario=tipo_usuario,
+                ativo=True
+            ).order_by('-ultimo_acesso')
+
+            # Primeiro acesso do usuário
+            if not dispositivos_conhecidos.exists():
+                registrar_log('comum.seguranca',
+                    f"🆕 Primeiro dispositivo do usuário: {tipo_usuario} ID:{user_id}",
+                    nivel='INFO')
+                return {
+                    'decisao': 'require_otp',
+                    'motivo': 'Primeiro dispositivo. Necessário validar com OTP.',
+                    'similaridade_max': 0,
+                    'dispositivo_similar': None,
+                    'novo_dispositivo': True
+                }
+
+            # Calcular similaridade com cada dispositivo conhecido
+            max_similaridade = 0
+            dispositivo_mais_similar = None
+
+            for disp in dispositivos_conhecidos:
+                score = cls.calcular_similaridade(disp, componentes)
+                if score > max_similaridade:
+                    max_similaridade = score
+                    dispositivo_mais_similar = disp
+
+            registrar_log('comum.seguranca',
+                f"📊 Similaridade máxima: {max_similaridade} pontos (dispositivo: {dispositivo_mais_similar.nome_dispositivo if dispositivo_mais_similar else 'N/A'})",
+                nivel='INFO')
+
+            # CASO 3A: Similaridade MUITO ALTA (90-100) - Permitir login com monitoramento
+            # Apenas 1 componente mudou (ex: update iOS ou IDFV reset)
+            if max_similaridade >= 90:
+                registrar_log('comum.seguranca',
+                    f"✅ Similaridade muito alta ({max_similaridade}): permitindo login com monitoramento",
+                    nivel='WARNING')
+
+                # Atualizar último acesso do dispositivo similar
+                if dispositivo_mais_similar:
+                    dispositivo_mais_similar.ultimo_acesso = timezone.now()
+                    dispositivo_mais_similar.save()
+
+                return {
+                    'decisao': 'allow',
+                    'motivo': f'Dispositivo muito similar detectado (score: {max_similaridade}). Provável update legítimo.',
+                    'similaridade_max': max_similaridade,
+                    'dispositivo_similar': dispositivo_mais_similar,
+                    'novo_dispositivo': False,
+                    'requer_monitoramento': True  # Flag para análise posterior
+                }
+
+            # CASO 3B: Similaridade ALTA (80-89) - Pedir OTP por segurança
+            # 2 componentes mudaram (suspeito)
+            elif max_similaridade >= 80:
+                registrar_log('comum.seguranca',
+                    f"⚠️ Alta similaridade detectada ({max_similaridade}): possível update de SO ou comportamento suspeito",
+                    nivel='WARNING')
+                return {
+                    'decisao': 'require_otp',
+                    'motivo': f'Dispositivo similar detectado (score: {max_similaridade}). Validar com OTP por segurança.',
+                    'similaridade_max': max_similaridade,
+                    'dispositivo_similar': dispositivo_mais_similar,
+                    'novo_dispositivo': False
+                }
+
+            # CASO 4: Similaridade MÉDIA (50-79) - Suspeito
+            elif max_similaridade >= 50:
+                registrar_log('comum.seguranca',
+                    f"🚨 Similaridade média detectada ({max_similaridade}): comportamento suspeito",
+                    nivel='WARNING')
+                return {
+                    'decisao': 'require_otp',
+                    'motivo': f'Mudanças suspeitas detectadas (score: {max_similaridade}). Validar com OTP.',
+                    'similaridade_max': max_similaridade,
+                    'dispositivo_similar': dispositivo_mais_similar,
+                    'novo_dispositivo': False
+                }
+
+            # CASO 5: Similaridade BAIXA (0-49) - Novo dispositivo ou fraude
+            else:
+                # Verificar limite de dispositivos
+                limite = cls.LIMITES_DISPOSITIVOS.get(tipo_usuario)
+
+                if limite is not None:
+                    quantidade_ativos = dispositivos_conhecidos.count()
+
+                    if quantidade_ativos >= limite:
+                        registrar_log('comum.seguranca',
+                            f"🚫 Limite de dispositivos atingido: {tipo_usuario} ID:{user_id} ({quantidade_ativos}/{limite})",
+                            nivel='WARNING')
+                        return {
+                            'decisao': 'block',
+                            'motivo': f'Limite de {limite} dispositivo(s) atingido. Remova um dispositivo para adicionar novo.',
+                            'similaridade_max': max_similaridade,
+                            'dispositivo_similar': dispositivo_mais_similar,
+                            'novo_dispositivo': True
+                        }
+
+                # Novo dispositivo legítimo
+                registrar_log('comum.seguranca',
+                    f"🆕 Novo dispositivo detectado (baixa similaridade: {max_similaridade})",
+                    nivel='INFO')
+                return {
+                    'decisao': 'require_otp',
+                    'motivo': 'Novo dispositivo detectado. Validar com OTP.',
+                    'similaridade_max': max_similaridade,
+                    'dispositivo_similar': dispositivo_mais_similar,
+                    'novo_dispositivo': True
+                }
+
+        except Exception as e:
+            registrar_log('comum.seguranca',
+                f"Erro ao validar dispositivo com similaridade: {str(e)}", nivel='ERROR')
+            return {
+                'decisao': 'require_otp',
+                'motivo': f'Erro na validação: {str(e)}',
+                'similaridade_max': 0,
+                'dispositivo_similar': None,
+                'novo_dispositivo': False
+            }
 
     @classmethod
     def verificar_limite(

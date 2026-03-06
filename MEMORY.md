@@ -1,16 +1,26 @@
 # WallClub Backend - Memory
 
-**Última atualização:** 06/03/2026
+**Última atualização:** 06/03/2026 16:35
 
 ---
 
 ## 🎯 Contexto Atual de Desenvolvimento
 
 ### Features em Desenvolvimento Ativo
-- Sistema de parâmetros estabilizado (parametro_loja_31/32/33, parametro_uptal_7)
+- Sistema de recorrência operacional com Celery tasks agendadas
+- Link de pagamento para cadastro de cartão em recorrências funcionando
 - Portal Admin com correções de redirect
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **06/03/2026:** Link de Recorrência - Otimização e correção
+  - **Removida pré-autorização de R$ 1,00:** Tokenização do gateway já valida o cartão
+  - Fluxo simplificado: validar token → tokenizar → vincular à recorrência
+  - **Corrigido erro 500 na página de sucesso:** Lambda inline substituída por view adequada
+  - Arquivos: checkout/link_recorrencia_web/services.py, views.py, urls.py
+  - **Celery tasks configuradas:**
+    - `processar-recorrencias-do-dia`: 09:30 diariamente
+    - `retentar-cobrancas-falhadas`: 21:30 diariamente
+    - `notificar-recorrencias-hold`: 18:00 diariamente
 - **06/03/2026:** Correção crítica de timezone em autenticação 2FA
   - Problema: `datetime.now()` retorna UTC, causando diferença de 3h (UTC-3 Brasília)
   - Solução: Substituir por `timezone.now()` em 5 arquivos (18 ocorrências)
