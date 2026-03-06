@@ -1,16 +1,25 @@
 # WallClub Backend - Memory
 
-**Última atualização:** 04/03/2026
+**Última atualização:** 06/03/2026
 
 ---
 
 ## 🎯 Contexto Atual de Desenvolvimento
 
 ### Features em Desenvolvimento Ativo
-- Ajustes na calculadora credenciadora (wall='K')
-- Novos parâmetros: parametro_loja_31, parametro_loja_32, parametro_loja_33, parametro_uptal_7
+- Sistema de parâmetros estabilizado (parametro_loja_31/32/33, parametro_uptal_7)
+- Portal Admin com correções de redirect
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **06/03/2026:** Correção de redirects no portal admin para usar URLs relativas
+  - Problema: `redirect('portais_admin:login')` resolvia para `/portal_admin/` via subdomínio
+  - Solução: Usar `redirect('/')` em decorators.py e controle_acesso.py
+- **06/03/2026:** Download CSV de parâmetros atualizado
+  - Ranges corrigidos: parametro_loja_1-33 (antes 1-30), parametro_uptal_1-7 (antes 1-6)
+  - Arquivo: views_parametros.py
+- **06/03/2026:** Merge release-2.2.2 → main concluído
+  - Branch release-2.2.2 removida (local e remota)
+  - Ambiente de produção agora usa release/2.2.3
 - **04/03/2026:** Calculadora credenciadora agora força `wall='K'` para todos os parâmetros
 - **04/03/2026:** Variáveis alteradas para buscar de parametros ao invés de extrato Pinbank:
   - var39 = parametro_loja_12
@@ -31,11 +40,7 @@
 
 ## 🐛 Bugs Conhecidos em Investigação
 
-### Parâmetros wall='K' não carregados
-- **Status:** Em investigação
-- **Problema:** `get_configuracao_ativa` retorna 0 registros para wall='K'
-- **Causa:** Faltam dados na tabela `parametros_wallclub` para wall='K'
-- **Próximo passo:** Verificar se importação incluiu registros para wall='K' ou copiar de outra wall
+_Nenhum bug ativo no momento._
 
 ---
 
@@ -98,9 +103,9 @@ WHERE var9 = '170972868';
 
 ## 🔄 Próximos Passos
 
-1. Resolver problema de parâmetros wall='K' não encontrados
-2. Validar cálculos após correção de dados
-3. Testar com múltiplos NSUs
+1. Testar download de parâmetros ativos em produção
+2. Verificar erro 500 no template CSV (se persistir)
+3. Validar redirect após timeout de sessão
 
 ---
 

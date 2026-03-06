@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from django.db import transaction
 from django.core.cache import cache
+from django.utils import timezone
 from wallclub_core.seguranca.models import DispositivoConfiavel
 from wallclub_core.utilitarios.log_control import registrar_log
 
@@ -119,10 +120,10 @@ class DeviceManagementService:
 
             if dispositivo_existente:
                 # Dispositivo ativo encontrado: renovar validade
-                dispositivo_existente.ultimo_acesso = datetime.now()
+                dispositivo_existente.ultimo_acesso = timezone.now()
                 if marcar_confiavel:
-                    dispositivo_existente.confiavel_ate = datetime.now() + timedelta(days=cls.VALIDADE_DIAS)
-                    dispositivo_existente.ultima_revalidacao_2fa = datetime.now()
+                    dispositivo_existente.confiavel_ate = timezone.now() + timedelta(days=cls.VALIDADE_DIAS)
+                    dispositivo_existente.ultima_revalidacao_2fa = timezone.now()
                 dispositivo_existente.save()
 
                 registrar_log(
@@ -163,8 +164,8 @@ class DeviceManagementService:
             confiavel_ate = None
             ultima_revalidacao_2fa = None
             if marcar_confiavel:
-                confiavel_ate = datetime.now() + timedelta(days=cls.VALIDADE_DIAS)
-                ultima_revalidacao_2fa = datetime.now()
+                confiavel_ate = timezone.now() + timedelta(days=cls.VALIDADE_DIAS)
+                ultima_revalidacao_2fa = timezone.now()
 
             # Usar nome fornecido ou extrair do user-agent como fallback
             nome_dispositivo = dados_dispositivo.get('nome_dispositivo')
@@ -183,7 +184,7 @@ class DeviceManagementService:
                     nome_dispositivo=nome_dispositivo,
                     user_agent=user_agent,
                     ip_registro=ip_registro,
-                    ultimo_acesso=datetime.now(),
+                    ultimo_acesso=timezone.now(),
                     ativo=True,
                     confiavel_ate=confiavel_ate,
                     ultima_revalidacao_2fa=ultima_revalidacao_2fa
@@ -241,7 +242,7 @@ class DeviceManagementService:
 
             # Verificar se ainda está dentro da validade (30 dias)
             if dispositivo.confiavel_ate:
-                if datetime.now() > dispositivo.confiavel_ate:
+                if timezone.now() > dispositivo.confiavel_ate:
                     registrar_log(
                         'comum.seguranca',
                         f"Dispositivo expirado: {tipo_usuario} ID:{user_id} - {dispositivo.nome_dispositivo}",
@@ -250,7 +251,7 @@ class DeviceManagementService:
                     return False, dispositivo, "Dispositivo expirado. Necessário revalidar com 2FA."
 
             # Atualizar último acesso
-            dispositivo.ultimo_acesso = datetime.now()
+            dispositivo.ultimo_acesso = timezone.now()
             dispositivo.save()
 
             registrar_log(
@@ -336,7 +337,7 @@ class DeviceManagementService:
                         'nome_dispositivo': device_atual.nome_dispositivo,
                         'ultimo_acesso': device_atual.ultimo_acesso.isoformat(),
                         'criado_em': device_atual.criado_em.isoformat(),
-                        'dias_desde_acesso': (datetime.now() - device_atual.ultimo_acesso).days
+                        'dias_desde_acesso': (timezone.now() - device_atual.ultimo_acesso).days
                     },
                     'limite_maximo': limite
                 }
@@ -393,7 +394,7 @@ class DeviceManagementService:
                 dias_restantes = None
 
                 if disp.confiavel_ate:
-                    dias_restantes = (disp.confiavel_ate - datetime.now()).days
+                    dias_restantes = (disp.confiavel_ate - timezone.now()).days
                     expirado = dias_restantes < 0
 
                 resultado.append({
@@ -531,7 +532,7 @@ class DeviceManagementService:
             # Usar update() para evitar violação de constraint unique_user_device_ativo
             DispositivoConfiavel.objects.filter(id=dispositivo.id).update(
                 ativo=False,
-                revogado_em=datetime.now(),
+                revogado_em=timezone.now(),
                 revogado_por=revogado_por
             )
 
@@ -597,7 +598,7 @@ class DeviceManagementService:
             # Revogar todos
             dispositivos.update(
                 ativo=False,
-                revogado_em=datetime.now(),
+                revogado_em=timezone.now(),
                 revogado_por=revogado_por
             )
 

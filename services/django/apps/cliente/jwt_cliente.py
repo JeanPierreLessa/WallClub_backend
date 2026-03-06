@@ -6,6 +6,7 @@ import jwt
 from django.conf import settings
 from rest_framework import authentication, exceptions
 from datetime import datetime
+from django.utils import timezone
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
@@ -170,7 +171,7 @@ def refresh_cliente_access_token(refresh_token, device_fingerprint=None):
                     ativo=True
                 )
 
-                agora = datetime.now()
+                agora = timezone.now()
 
                 # 1. Verificar sliding window (30 dias de inatividade)
                 if dispositivo.confiavel_ate and agora > dispositivo.confiavel_ate:

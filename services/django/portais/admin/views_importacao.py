@@ -68,17 +68,17 @@ def download_template_csv(request):
 
     writer.writerow(headers)
 
-    # Buscar todos os planos via API
-    planos = parametros_api.listar_planos()
+    # Buscar todos os planos do banco de dados
+    planos = Plano.objects.all().order_by('id')
 
     # Primeiro: planos com wall='S'
     for plano in planos:
         linha = [
             '1',                           # loja_id (exemplo)
-            str(plano['id']),              # id_plano
-            plano['descricao'],            # nome_plano
-            plano['bandeira'],             # bandeira
-            str(plano.get('prazo_limite', '')),  # prazo_dias
+            str(plano.id),                 # id_plano
+            plano.nome,                    # nome_plano
+            plano.bandeira,                # bandeira
+            str(plano.prazo_dias),         # prazo_dias
             'S',                           # wall=S
         ]
 
@@ -92,10 +92,10 @@ def download_template_csv(request):
     for plano in planos:
         linha = [
             '1',                           # loja_id (exemplo)
-            str(plano['id']),              # id_plano
-            plano['descricao'],            # nome_plano
-            plano['bandeira'],             # bandeira
-            str(plano.get('prazo_limite', '')),  # prazo_dias
+            str(plano.id),                 # id_plano
+            plano.nome,                    # nome_plano
+            plano.bandeira,                # bandeira
+            str(plano.prazo_dias),         # prazo_dias
             'N',                           # wall=N
         ]
 

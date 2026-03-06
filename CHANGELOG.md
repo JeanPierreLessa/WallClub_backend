@@ -16,6 +16,18 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-06] - Parâmetros e Correções Portal Admin
+- **Novos parâmetros adicionados ao download CSV:**
+  - parametro_loja_31, parametro_loja_32, parametro_loja_33
+  - parametro_uptal_7
+- **Correção redirect sessão expirada:**
+  - Redirects alterados de `redirect('portais_admin:login')` para `redirect('/')`
+  - Corrige erro ao acessar via subdomínio admin.wallclub.com.br
+  - Arquivos: decorators.py, controle_acesso.py
+- **Merge release-2.2.2 → main:**
+  - Branch release-2.2.2 removida (local e remota)
+  - Documentação de deploy atualizada para release/2.2.3
+
 ### [2026-03-04] - Calculadora Credenciadora
 - **Alterações nas variáveis de cálculo:**
   - var39 = parametro_loja_12 (antes: ValorTaxaMes do extrato)
