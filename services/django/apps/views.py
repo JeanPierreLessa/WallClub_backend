@@ -40,7 +40,7 @@ def versao_minima(request):
         },
         6: {
             "url_android": "https://play.google.com/store/apps/details?id=com.agroclub.app",
-            "url_ios": "https://apps.apple.com/us/app/a-club/id6738631662"
+            "url_ios": "https://apps.apple.com/br/app/a-club/id6738631662"
         },
         # Adicionar outros canais conforme necessário
     }
