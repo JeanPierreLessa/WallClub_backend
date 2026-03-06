@@ -11,12 +11,24 @@
 - Portal Admin com correções de redirect
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **06/03/2026:** Correção crítica de timezone em autenticação 2FA
+  - Problema: `datetime.now()` retorna UTC, causando diferença de 3h (UTC-3 Brasília)
+  - Solução: Substituir por `timezone.now()` em 5 arquivos (18 ocorrências)
+  - Impacto: Dispositivos e celulares não expiram mais imediatamente
+  - Arquivos: services_device.py, jwt_cliente.py, services_revalidacao_celular.py, services_2fa_login.py, services_cadastro.py
+  - **IMPORTANTE:** Sempre usar `timezone.now()` ao invés de `datetime.now()` para datas do Django
+- **06/03/2026:** Campo `celular_validado_em` adicionado ao fluxo de cadastro
+  - Antes: Campo ficava NULL após cadastro, causando erro "celular_expirado"
+  - Agora: Atualizado automaticamente ao validar OTP do cadastro
+  - Arquivo: services_cadastro.py linha 392
 - **06/03/2026:** Correção de redirects no portal admin para usar URLs relativas
   - Problema: `redirect('portais_admin:login')` resolvia para `/portal_admin/` via subdomínio
   - Solução: Usar `redirect('/')` em decorators.py e controle_acesso.py
-- **06/03/2026:** Download CSV de parâmetros atualizado
-  - Ranges corrigidos: parametro_loja_1-33 (antes 1-30), parametro_uptal_1-7 (antes 1-6)
-  - Arquivo: views_parametros.py
+- **06/03/2026:** Download CSV de parâmetros corrigido
+  - Problema: Erro 500 ao acessar /parametros/template/
+  - Causa: Tentativa de buscar planos via API que estava falhando
+  - Solução: Buscar diretamente do banco com `Plano.objects.all()`
+  - Arquivo: views_importacao.py
 - **06/03/2026:** Merge release-2.2.2 → main concluído
   - Branch release-2.2.2 removida (local e remota)
   - Ambiente de produção agora usa release/2.2.3
@@ -41,6 +53,17 @@
 ## 🐛 Bugs Conhecidos em Investigação
 
 _Nenhum bug ativo no momento._
+
+### Bugs Resolvidos Recentemente
+- **[RESOLVIDO 06/03/2026]** Dispositivos marcados como expirados imediatamente após validação
+  - Causa: Uso de `datetime.now()` ao invés de `timezone.now()`
+  - Solução: 18 substituições em 5 arquivos
+- **[RESOLVIDO 06/03/2026]** Celular sempre pedindo revalidação após cadastro
+  - Causa: Campo `celular_validado_em` não era atualizado no cadastro
+  - Solução: Adicionada linha em services_cadastro.py:392
+- **[RESOLVIDO 06/03/2026]** Erro 500 em /parametros/template/
+  - Causa: API de planos falhando
+  - Solução: Buscar planos do banco ao invés da API
 
 ---
 
@@ -103,9 +126,10 @@ WHERE var9 = '170972868';
 
 ## 🔄 Próximos Passos
 
-1. Testar download de parâmetros ativos em produção
-2. Verificar erro 500 no template CSV (se persistir)
-3. Validar redirect após timeout de sessão
+1. ✅ ~~Testar download de parâmetros ativos em produção~~ (Concluído)
+2. ✅ ~~Verificar erro 500 no template CSV~~ (Resolvido)
+3. ✅ ~~Validar redirect após timeout de sessão~~ (Corrigido)
+4. Validar fluxo completo de cadastro + login em produção após deploy
 
 ---
 

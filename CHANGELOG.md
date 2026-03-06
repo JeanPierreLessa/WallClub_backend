@@ -16,6 +16,21 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-06] - Correção Crítica de Timezone em Autenticação 2FA
+- **Problema:** Dispositivos e celulares marcados como expirados imediatamente após validação
+- **Causa:** Uso de `datetime.now()` (UTC) ao invés de `timezone.now()` (timezone-aware)
+- **Arquivos corrigidos:**
+  - `wallclub_core/seguranca/services_device.py` (10 ocorrências)
+  - `apps/cliente/jwt_cliente.py` (1 ocorrência)
+  - `apps/cliente/services_revalidacao_celular.py` (2 ocorrências - Python + SQL)
+  - `apps/cliente/services_2fa_login.py` (1 ocorrência)
+  - `apps/cliente/services_cadastro.py` (4 ocorrências + adicionado `celular_validado_em`)
+- **Impacto:**
+  - Campo `confiavel_ate` agora define corretamente data + 30 dias
+  - Campo `celular_validado_em` atualizado no cadastro e login
+  - SQL `NOW()` substituído por parâmetro com `timezone.now()`
+- **Commits:** a57cce9, 8f28199
+
 ### [2026-03-06] - Parâmetros e Correções Portal Admin
 - **Novos parâmetros adicionados ao download CSV:**
   - parametro_loja_31, parametro_loja_32, parametro_loja_33
