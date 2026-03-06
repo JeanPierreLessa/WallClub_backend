@@ -36,7 +36,7 @@ class CalculadoraBaseCredenciadora:
         return Decimal(str(value)).quantize(Decimal(f'0.{"0" * casas}'), rounding=ROUND_HALF_UP)
 
     def calcular_valores_primarios(
-        self, 
+        self,
         dados_linha: Dict[str, Any],
         tipo_operacao: str,
         info_loja: Dict[str, Any],
@@ -44,13 +44,13 @@ class CalculadoraBaseCredenciadora:
     ) -> Dict[int, Any]:
         """
         Calcula os valores primários baseados nos dados da linha.
-        
+
         Args:
             dados_linha: Dict com dados da transação
             tipo_operacao: Tipo de operação ('Credenciadora', 'Wallet', etc)
             info_loja: Dict com informações da loja
             info_canal: Dict com informações do canal
-        
+
         Returns:
             Dict com valores calculados (var0-var130)
         """
@@ -59,14 +59,11 @@ class CalculadoraBaseCredenciadora:
             registrar_log('parametros_wallclub', f"Iniciando cálculo para NSU: {dados_linha.get('NsuOperacao', 'N/A')}")
             valores = {}
 
-            # Validar se a operação é Club (Wall S) ou Normal (Wall N)
-            cpf = dados_linha.get('cpf', '') or ''
-            if cpf and len(cpf) > 0:
-                wall = 's'
-                valores[130] = "Club"
-            else:
-                wall = 'n'
-                valores[130] = "Normal"
+            # Credenciadora sempre usa wall='K'
+            wall = 'K'
+
+            # Credenciadora sempre tem var130 = 'Credenciadora'
+            valores[130] = 'Credenciadora'
 
             # info_loja e info_canal são obrigatórios (passados pelo service de carga)
 
@@ -346,9 +343,12 @@ class CalculadoraBaseCredenciadora:
             else:
                 valores[38] = self._format_decimal(valores[19] - valores[37], 2)
 
-            # Variável 39 - ValorTaxaMes da Pinbank (CORRIGIDO - antes usava param_13)
-            # Valor vem em percentual (2.60 = 2.6%), dividir por 100 para obter decimal (0.026)
-            valores[39] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaMes'], 4) / 100, 4)
+            # Variável 39 - Parâmetro loja 12 (Taxa Antec. Wall %a.m.)
+            param_12 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 12, wall)
+            if param_12 is None:
+                param_12 = 0
+            self._validar_parametro(param_12, "param_12", f"loja {info_loja['id']}, plano {id_plano}")
+            valores[39] = self._format_decimal(self._to_decimal(param_12, 4), 4)
 
             # NOTA: var40, var41, var42 serão calculadas após var44 estar disponível
             # var41 = var19 - var37 - var44 (depende de var44)
@@ -361,25 +361,12 @@ class CalculadoraBaseCredenciadora:
             else:
                 valores[46] = self._format_decimal(valores[30] + valores[33], 2)
 
-            # Variável 43 - DataFuturaPagamento (converter ISO para DD/MM/YYYY)
-            # Formato entrada: 2025-10-25T22:19:47.706
-            # Formato saída: 25/10/2025 (10 caracteres - cabe em VARCHAR(20))
-            data_futura_pag = dados_linha.get('DataFuturaPagamento')
-            if data_futura_pag and str(data_futura_pag) not in ['None', '0001-01-01T00:00:00']:
-                try:
-                    if isinstance(data_futura_pag, str):
-                        # Pegar apenas a parte da data (YYYY-MM-DD)
-                        if data_futura_pag.startswith('0001-01-01'):
-                            valores[43] = ''
-                        else:
-                            data_obj = dt.strptime(data_futura_pag[:10], '%Y-%m-%d')
-                            valores[43] = data_obj.strftime('%d/%m/%Y')
-                    else:
-                        valores[43] = data_futura_pag.strftime('%d/%m/%Y')
-                except:
-                    valores[43] = ''
-            else:
-                valores[43] = ''
+            # Variável 43 - Parâmetro loja 18
+            param_18 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 18, wall)
+            if param_18 is None:
+                param_18 = 0
+            self._validar_parametro(param_18, "param_18", f"loja {info_loja['id']}, plano {id_plano}")
+            valores[43] = self._format_decimal(self._to_decimal(param_18, 4), 4)
 
             # Variável 50 - Parâmetro loja 23
             param_23 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 23, wall)
@@ -411,8 +398,8 @@ class CalculadoraBaseCredenciadora:
             else:
                 valores[88] = self._format_decimal(valores[87] * valores[19], 2)
 
-            # var89 - ValorTaxaAdm da Pinbank (dividir por 100 para converter percentual em decimal)
-            valores[89] = self._format_decimal(self._to_decimal(dados_linha['ValorTaxaAdm'], 4) / 100, 4)
+            # Variável 89 - Parâmetro uptal 1 (mesmo que var87)
+            valores[89] = self._format_decimal(self._to_decimal(param_wall_1, 4), 4)
 
             # var90 - var89 * var19
             if valores[19] is None:
@@ -432,42 +419,64 @@ class CalculadoraBaseCredenciadora:
             # Variável 78 - Cópia da 91
             valores[78] = valores[91]
 
-            # Calcular var44, var41, var40 ANTES de var94 (que usa var40)
-            # Variável 44 - Soma de ValorLiquidoRepasse
-            vrepasse = self._to_decimal(dados_linha.get('vRepasse') or 0, 2)
-            valores[44] = self._format_decimal(vrepasse, 2)
+            # Calcular var44, var40, var41, var42 ANTES de var94 (que usa var40)
+            # Variável 44 - var19
+            if valores[19] is None:
+                valores[44] = None
+            else:
+                valores[44] = self._format_decimal(valores[19], 2)
 
-            # Variável 42 - Igual a var44
-            valores[42] = valores[44]
+            # Variável 40 - Parâmetro loja 13 (calcular ANTES de var41)
+            param_13 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 13, wall)
+            if param_13 is None:
+                param_13 = 0
+            self._validar_parametro(param_13, "param_13", f"loja {info_loja['id']}, plano {id_plano}")
+            valores[40] = self._format_decimal(self._to_decimal(param_13, 4), 4)
 
-            # Variável 41 - var19 - var37 - var44
-            if valores[19] is None or valores[37] is None:
+            # Variável 41 - var40 * var26
+            if valores[40] is None or valores[26] is None:
                 valores[41] = None
             else:
-                valores[41] = self._format_decimal(valores[19] - valores[37] - valores[44], 2)
+                valores[41] = self._format_decimal(valores[40] * valores[26], 2)
 
-            # Variável 40 - var41 / var19
-            if valores[19] is None or valores[19] == 0 or valores[41] is None:
-                valores[40] = self._format_decimal(0, 2)
+            # Variável 42 - var26 - var37 - var41 - parametro_loja_31
+            param_31 = ParametrosService.retornar_parametro_loja(info_loja['id'], data_ref, id_plano, 31, wall)
+            if param_31 is None:
+                param_31 = 0
+            self._validar_parametro(param_31, "param_31", f"loja {info_loja['id']}, plano {id_plano}")
+
+            if valores[26] is None or valores[37] is None or valores[41] is None:
+                valores[42] = None
             else:
-                valores[40] = self._format_decimal(valores[41] / valores[19], 2)
+                valores[42] = self._format_decimal(valores[26] - valores[37] - valores[41] - self._to_decimal(param_31, 4), 2)
 
             # Variável 93 - Array com duas chaves
+            # var93[0] = parametro_uptal_5
+            param_uptal_5 = ParametrosService.retornar_parametro_uptal(info_loja['id'], data_ref, id_plano, 5, wall)
+            if param_uptal_5 is None:
+                param_uptal_5 = 0
+
             valores[93] = {
-                "0": self._format_decimal(valores[91] * (1 + valores[13]) / 2, 4),
+                "0": self._format_decimal(self._to_decimal(param_uptal_5, 4), 4),
                 "A": self._format_decimal(valores[92] * (1 + valores[13]) / 2, 4)
             }
 
             # Variável 94 - Array com duas chaves
-            if valores[19] is None:
+            # var94[0] = var93[0] * var26
+            # var94[A] = parametro_uptal_6
+            param_uptal_6 = ParametrosService.retornar_parametro_uptal(info_loja['id'], data_ref, id_plano, 6, wall)
+            if param_uptal_6 is None:
+                param_uptal_6 = 0
+
+            if valores[26] is None:
                 valores[94] = {
                     "0": None,
-                    "A": valores[40]
+                    "A": self._format_decimal(self._to_decimal(param_uptal_6, 4), 4)
                 }
             else:
                 valores[94] = {
-                    "0": self._format_decimal(valores[93]["0"] * valores[19], 2),
-                    "A": valores[40]
+                    "0": self._format_decimal(valores[93]["0"] * valores[26], 2),
+                    "A": self._format_decimal(self._to_decimal(param_uptal_6, 4), 4)
                 }
 
             # Variável 95 - var19 - var90 - var94["A"]
@@ -712,9 +721,9 @@ class CalculadoraBaseCredenciadora:
                 # Consultar base_transacoes_unificadas ao invés de BaseTransacoesGestao
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        SELECT var45 
-                        FROM base_transacoes_unificadas 
-                        WHERE var9 = %s 
+                        SELECT var45
+                        FROM base_transacoes_unificadas
+                        WHERE var9 = %s
                         LIMIT 1
                     """, [str(nsu_operacao)])
                     resultado = cursor.fetchone()
