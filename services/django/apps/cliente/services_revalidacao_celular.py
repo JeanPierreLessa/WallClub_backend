@@ -240,13 +240,14 @@ class RevalidacaoCelularService:
                 }
 
             # Atualizar data de validação
+            agora = timezone.now()
             with connection.cursor() as cursor:
                 cursor.execute("""
                     UPDATE wallclub.cliente
-                    SET celular_validado_em = NOW(),
+                    SET celular_validado_em = %s,
                         celular_revalidacao_solicitada = 0
                     WHERE id = %s
-                """, [cliente_id])
+                """, [agora, cliente_id])
 
             # Invalidar cache
             cache_key = f"celular_validade_{cliente_id}"
