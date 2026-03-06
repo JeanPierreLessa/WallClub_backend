@@ -14,6 +14,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from django.core.cache import cache
 from django.db import connection
+from django.utils import timezone
 from wallclub_core.utilitarios.log_control import registrar_log
 
 
@@ -78,22 +79,22 @@ class ClienteAuth2FAService:
                 if getattr(cliente_bypass, 'bypass_2fa', False):
                     # Cliente com bypass: gerar JWT diretamente
                     from apps.cliente.jwt_cliente import generate_cliente_jwt_token
-                    
+
                     cliente_completo = Cliente.objects.get(id=cliente_id)
-                    
+
                     class MockRequestBypass:
                         def __init__(self):
                             self.META = {
                                 'REMOTE_ADDR': '0.0.0.0',
                                 'HTTP_USER_AGENT': 'Apple Review Test Account'
                             }
-                    
+
                     mock_request = MockRequestBypass()
                     jwt_data = generate_cliente_jwt_token(cliente_completo, request=mock_request)
-                    
+
                     registrar_log('apps.cliente',
                         f"⚠️ BYPASS 2FA ATIVADO: cliente={cliente_id} ({cliente_bypass.nome})", nivel='WARNING')
-                    
+
                     return {
                         'necessario': False,
                         'motivo': 'bypass_2fa_teste',
@@ -113,10 +114,10 @@ class ClienteAuth2FAService:
             # 1. Verificar rate limit ANTES de exigir 2FA
             from wallclub_core.seguranca.services_2fa import OTPService
             from django.core.cache import cache
-            
+
             cache_key = f"otp_rate_limit_cliente_{cliente_id}"
             contador = cache.get(cache_key, 0)
-            
+
             if contador >= OTPService.MAX_CODIGOS_POR_HORA:
                 registrar_log('apps.cliente',
                     f"Rate limit atingido para cliente ID:{cliente_id}",
@@ -491,7 +492,7 @@ class ClienteAuth2FAService:
             # Atualizar celular_validado_em (revalida automaticamente ao validar OTP)
             from apps.cliente.models import Cliente
             try:
-                Cliente.objects.filter(id=cliente_id).update(celular_validado_em=datetime.now())
+                Cliente.objects.filter(id=cliente_id).update(celular_validado_em=timezone.now())
                 registrar_log('apps.cliente',
                     f"Celular revalidado automaticamente: cliente={cliente_id}", nivel='INFO')
             except Exception as e:
@@ -513,11 +514,11 @@ class ClienteAuth2FAService:
                     'device_fingerprint': device_fingerprint,
                     'user_agent': user_agent or ''
                 }
-                
+
                 # Adicionar nome_dispositivo se fornecido
                 if nome_dispositivo:
                     dados_dispositivo['nome_dispositivo'] = nome_dispositivo
-                
+
                 dispositivo, criado, mensagem_device = DeviceManagementService.registrar_dispositivo(
                     user_id=cliente_id,
                     tipo_usuario='cliente',
