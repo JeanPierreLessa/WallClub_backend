@@ -328,15 +328,13 @@ class CadastroService:
                 f"Erro ao finalizar cadastro: {str(e)}", nivel='ERROR')
             return {
                 'sucesso': False,
-                'mensagem': 'Erro ao processar cadastro'
+                'mensagem': 'Erro ao finalizar cadastro'
             }
 
     @staticmethod
-    def validar_otp_cadastro(cpf: str, codigo: str, canal_id: int, device_fingerprint: str = None,
-                            ip_address: str = None, user_agent: str = None) -> dict:
+    def validar_otp_cadastro(cpf, codigo, canal_id, device_fingerprint=None, ip_address=None, user_agent=None, dados_dispositivo=None):
         """
-        Valida OTP + finaliza cadastro (marca cadastro_completo=TRUE)
-        + Registra dispositivo como confiável
+        Valida código OTP e conclui cadastro.
 
         Args:
             cpf: CPF do cliente
@@ -345,6 +343,7 @@ class CadastroService:
             device_fingerprint: Fingerprint do dispositivo (opcional)
             ip_address: IP do cliente (opcional)
             user_agent: User agent do cliente (opcional)
+            dados_dispositivo: Componentes individuais do fingerprint (opcional)
 
         Returns:
             dict com resultado
@@ -406,12 +405,20 @@ class CadastroService:
                     from wallclub_core.seguranca.services_device import DeviceManagementService
 
                     try:
-                        # Montar dados do dispositivo conforme esperado pelo service
-                        dados_dispositivo = {
-                            'device_fingerprint': device_fingerprint,
-                            'user_agent': user_agent or '',
-                            'nome_dispositivo': 'Dispositivo do Cadastro'
-                        }
+                        # Usar dados_dispositivo se fornecido, senão montar básico
+                        if not dados_dispositivo:
+                            dados_dispositivo = {
+                                'device_fingerprint': device_fingerprint,
+                                'user_agent': user_agent or '',
+                                'nome_dispositivo': 'Dispositivo do Cadastro'
+                            }
+                        else:
+                            # Garantir que device_fingerprint e user_agent estão presentes
+                            dados_dispositivo['device_fingerprint'] = device_fingerprint
+                            if user_agent:
+                                dados_dispositivo['user_agent'] = user_agent
+                            if 'nome_dispositivo' not in dados_dispositivo:
+                                dados_dispositivo['nome_dispositivo'] = 'Dispositivo do Cadastro'
 
                         DeviceManagementService.registrar_dispositivo(
                             user_id=cliente.id,

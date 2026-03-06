@@ -16,6 +16,31 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-06] - Device Fingerprint com Análise de Similaridade
+- **Problema:** Sistema validava apenas hash exato do fingerprint, causando fricção em updates legítimos (iOS, reinstalação)
+- **Solução Híbrida:**
+  - Armazenar 7 componentes individuais do fingerprint no banco
+  - Algoritmo de similaridade com pesos (native_id: 40pts, screen_resolution: 20pts, device_model: 20pts, device_brand: 10pts, os_version: 5pts, timezone: 5pts)
+  - Lógica de decisão inteligente baseada em score 0-100
+- **Lógica de Decisão:**
+  - Score 100 (hash exato) → `allow` (login direto)
+  - Score ≥90 (1 componente mudou) → `allow` COM MONITORAMENTO (provável update iOS)
+  - Score 80-89 (2 componentes) → `require_otp` (suspeito)
+  - Score 50-79 → `require_otp` (comportamento suspeito)
+  - Score <50 → `require_otp` ou `block` (novo dispositivo ou limite atingido)
+- **Arquivos Modificados:**
+  - `wallclub_core/seguranca/models.py`: Campos native_id, screen_resolution, device_model, os_version, device_brand, timezone, platform
+  - `wallclub_core/seguranca/services_device.py`: Métodos calcular_similaridade(), validar_dispositivo_com_similaridade(), _versoes_proximas()
+- **Migration MySQL:**
+  - ALTER TABLE otp_dispositivo_confiavel ADD COLUMN (7 campos)
+  - Índices: idx_dispositivo_native_id_ativo, idx_dispositivo_user_native
+- **Benefícios:**
+  - Reduz fricção: permite login direto em updates legítimos do iOS
+  - Aumenta segurança: detecta mudanças suspeitas (IDFV reset, clonagem)
+  - Monitoramento: logs de WARNING para análise posterior
+- **Documentação:** `docs/seguranca/IMPLEMENTACAO_DEVICE_FINGERPRINT_BACKEND.md`
+- **Commits:** [pending]
+
 ### [2026-03-06] - Link de Recorrência - Otimização e Correção
 - **Remoção de pré-autorização de R$ 1,00:**
   - Processo de validação de cartão com transação de R$ 1,00 removido

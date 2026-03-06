@@ -23,7 +23,14 @@ def refresh_jwt_token(request):
     Request:
         {
             "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-            "device_fingerprint": "abc123..." (opcional mas recomendado)
+            "device_fingerprint": "abc123...",
+            "native_id": str (opcional),
+            "screen_resolution": str (opcional),
+            "device_model": str (opcional),
+            "os_version": str (opcional),
+            "device_brand": str (opcional),
+            "timezone": str (opcional),
+            "platform": str (opcional)
         }
 
     Response (200):
@@ -63,10 +70,24 @@ def refresh_jwt_token(request):
                 'mensagem': 'Device fingerprint é obrigatório para validação de segurança'
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        # Componentes individuais do fingerprint (opcionais)
+        dados_dispositivo = None
+        if request.data.get('native_id'):
+            dados_dispositivo = {
+                'device_fingerprint': device_fingerprint,
+                'native_id': request.data.get('native_id', ''),
+                'screen_resolution': request.data.get('screen_resolution', ''),
+                'device_model': request.data.get('device_model', ''),
+                'os_version': request.data.get('os_version', ''),
+                'device_brand': request.data.get('device_brand', ''),
+                'timezone': request.data.get('timezone', ''),
+                'platform': request.data.get('platform', '')
+            }
+
         # Validar e renovar token (com validação de dispositivo)
         from apps.cliente.jwt_cliente import refresh_cliente_access_token
 
-        resultado = refresh_cliente_access_token(refresh_token, device_fingerprint)
+        resultado = refresh_cliente_access_token(refresh_token, device_fingerprint, dados_dispositivo)
 
         if resultado:
             # Verificar se requer 2FA

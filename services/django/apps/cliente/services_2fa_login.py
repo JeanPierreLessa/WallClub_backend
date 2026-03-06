@@ -28,7 +28,8 @@ class ClienteAuth2FAService:
     def verificar_necessidade_2fa(
         auth_token: str,
         device_fingerprint: str,
-        contexto: str = 'login'
+        contexto: str = 'login',
+        dados_dispositivo: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Verifica se 2FA é necessário baseado no dispositivo e contexto.
@@ -133,12 +134,43 @@ class ClienteAuth2FAService:
             # 1. Verificar se dispositivo é confiável e válido
             from wallclub_core.seguranca.services_device import DeviceManagementService
 
-            # validar_dispositivo retorna tupla (bool, dispositivo, mensagem)
-            confiavel, dispositivo, mensagem = DeviceManagementService.validar_dispositivo(
-                user_id=cliente_id,
-                tipo_usuario='cliente',
-                fingerprint=device_fingerprint
-            )
+            # Se dados_dispositivo fornecidos, usar validação com similaridade
+            if dados_dispositivo:
+                resultado = DeviceManagementService.validar_dispositivo_com_similaridade(
+                    user_id=cliente_id,
+                    tipo_usuario='cliente',
+                    dados_dispositivo=dados_dispositivo
+                )
+
+                decisao = resultado.get('decisao')
+
+                if decisao == 'block':
+                    return {
+                        'necessario': True,
+                        'motivo': 'dispositivo_bloqueado',
+                        'dispositivo_confiavel': False,
+                        'mensagem': resultado['motivo']
+                    }
+
+                if decisao == 'require_otp':
+                    return {
+                        'necessario': True,
+                        'motivo': 'dispositivo_requer_validacao',
+                        'dispositivo_confiavel': False,
+                        'mensagem': resultado['motivo'],
+                        'similaridade': resultado.get('similaridade_max')
+                    }
+
+                # decisao == 'allow'
+                confiavel = True
+                dispositivo = resultado.get('dispositivo_similar')
+            else:
+                # Fallback: método legado
+                confiavel, dispositivo, mensagem = DeviceManagementService.validar_dispositivo(
+                    user_id=cliente_id,
+                    tipo_usuario='cliente',
+                    fingerprint=device_fingerprint
+                )
 
             # Se dispositivo não existe: registrar automaticamente (facilita onboarding)
             if dispositivo is None:
@@ -219,10 +251,11 @@ class ClienteAuth2FAService:
             # Registrar/renovar device automaticamente
             if dispositivo is None:
                 # Nunca deveria chegar aqui (foi validado acima), mas por segurança
+                dados_device = dados_dispositivo if dados_dispositivo else {'device_fingerprint': device_fingerprint}
                 dispositivo_criado, criado, mensagem_device = DeviceManagementService.registrar_dispositivo(
                     user_id=cliente_id,
                     tipo_usuario='cliente',
-                    dados_dispositivo={'device_fingerprint': device_fingerprint},
+                    dados_dispositivo=dados_device,
                     ip_registro='0.0.0.0',
                     marcar_confiavel=True
                 )
@@ -426,7 +459,8 @@ class ClienteAuth2FAService:
         marcar_confiavel: bool = True,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
-        nome_dispositivo: Optional[str] = None
+        nome_dispositivo: Optional[str] = None,
+        dados_dispositivo: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Valida código 2FA e registra dispositivo confiável.
@@ -510,10 +544,13 @@ class ClienteAuth2FAService:
             if marcar_confiavel:
                 # Registrar dispositivo como confiável
                 # O DeviceManagementService já faz a verificação de limite e renovação
-                dados_dispositivo = {
-                    'device_fingerprint': device_fingerprint,
-                    'user_agent': user_agent or ''
-                }
+                if not dados_dispositivo:
+                    dados_dispositivo = {}
+
+                # Garantir que device_fingerprint e user_agent estão presentes
+                dados_dispositivo['device_fingerprint'] = device_fingerprint
+                if user_agent:
+                    dados_dispositivo['user_agent'] = user_agent
 
                 # Adicionar nome_dispositivo se fornecido
                 if nome_dispositivo:

@@ -23,7 +23,14 @@ def verificar_necessidade_2fa(request):
     Body: {
         'auth_token': str,  # Token temporário do login
         'device_fingerprint': str,
-        'contexto': str  # 'login', 'transacao', 'alteracao_dados'
+        'contexto': str,  # 'login', 'transacao', 'alteracao_dados'
+        'native_id': str (opcional),
+        'screen_resolution': str (opcional),
+        'device_model': str (opcional),
+        'os_version': str (opcional),
+        'device_brand': str (opcional),
+        'timezone': str (opcional),
+        'platform': str (opcional)
     }
 
     Returns:
@@ -39,6 +46,20 @@ def verificar_necessidade_2fa(request):
         device_fingerprint = request.data.get('device_fingerprint')
         contexto = request.data.get('contexto', 'login')
 
+        # Componentes individuais do fingerprint (opcionais)
+        dados_dispositivo = None
+        if request.data.get('native_id'):
+            dados_dispositivo = {
+                'device_fingerprint': device_fingerprint,
+                'native_id': request.data.get('native_id', ''),
+                'screen_resolution': request.data.get('screen_resolution', ''),
+                'device_model': request.data.get('device_model', ''),
+                'os_version': request.data.get('os_version', ''),
+                'device_brand': request.data.get('device_brand', ''),
+                'timezone': request.data.get('timezone', ''),
+                'platform': request.data.get('platform', '')
+            }
+
         if not auth_token or not device_fingerprint:
             return Response({
                 'sucesso': False,
@@ -48,7 +69,8 @@ def verificar_necessidade_2fa(request):
         resultado = ClienteAuth2FAService.verificar_necessidade_2fa(
             auth_token=auth_token,
             device_fingerprint=device_fingerprint,
-            contexto=contexto
+            contexto=contexto,
+            dados_dispositivo=dados_dispositivo
         )
 
         return Response(resultado, status=status.HTTP_200_OK)
@@ -124,7 +146,15 @@ def validar_codigo_2fa_login(request):
         'auth_token': str,  # Token temporário do login
         'codigo': str,
         'device_fingerprint': str,
-        'marcar_confiavel': bool (opcional, default=True)
+        'marcar_confiavel': bool (opcional, default=True),
+        'nome_dispositivo': str (opcional),
+        'native_id': str (opcional),
+        'screen_resolution': str (opcional),
+        'device_model': str (opcional),
+        'os_version': str (opcional),
+        'device_brand': str (opcional),
+        'timezone': str (opcional),
+        'platform': str (opcional)
     }
 
     Returns:
@@ -142,10 +172,25 @@ def validar_codigo_2fa_login(request):
         device_fingerprint = request.data.get('device_fingerprint')
         marcar_confiavel = request.data.get('marcar_confiavel', True)
         nome_dispositivo = request.data.get('nome_dispositivo')  # Opcional
+
         # Capturar IP real considerando proxies/load balancers
         from .views import get_client_ip
         ip_address = get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT')
+
+        # Componentes individuais do fingerprint (opcionais)
+        dados_dispositivo = None
+        if request.data.get('native_id'):
+            dados_dispositivo = {
+                'device_fingerprint': device_fingerprint,
+                'native_id': request.data.get('native_id', ''),
+                'screen_resolution': request.data.get('screen_resolution', ''),
+                'device_model': request.data.get('device_model', ''),
+                'os_version': request.data.get('os_version', ''),
+                'device_brand': request.data.get('device_brand', ''),
+                'timezone': request.data.get('timezone', ''),
+                'platform': request.data.get('platform', '')
+            }
 
         if not all([auth_token, codigo, device_fingerprint]):
             return Response({
@@ -160,7 +205,8 @@ def validar_codigo_2fa_login(request):
             marcar_confiavel=marcar_confiavel,
             ip_address=ip_address,
             user_agent=user_agent,
-            nome_dispositivo=nome_dispositivo
+            nome_dispositivo=nome_dispositivo,
+            dados_dispositivo=dados_dispositivo
         )
 
         if resultado['sucesso']:

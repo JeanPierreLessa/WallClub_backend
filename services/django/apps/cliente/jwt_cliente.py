@@ -118,7 +118,7 @@ class ClienteUser:
 from wallclub_core.oauth.jwt_utils import validate_cliente_jwt_token
 
 
-def refresh_cliente_access_token(refresh_token, device_fingerprint=None):
+def refresh_cliente_access_token(refresh_token, device_fingerprint=None, dados_dispositivo=None):
     """
     Gera novo access token usando refresh token de cliente
     Implementa sliding window de 30 dias + revalidação forçada a cada 90 dias
@@ -126,6 +126,7 @@ def refresh_cliente_access_token(refresh_token, device_fingerprint=None):
     Args:
         refresh_token (str): Refresh token
         device_fingerprint (str): Fingerprint do dispositivo (opcional)
+        dados_dispositivo (dict): Componentes individuais do fingerprint (opcional)
 
     Returns:
         dict: Novo access token ou None se inválido

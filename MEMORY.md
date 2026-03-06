@@ -1,6 +1,6 @@
 # WallClub Backend - Memory
 
-**Última atualização:** 06/03/2026 16:35
+**Última atualização:** 06/03/2026 19:16
 
 ---
 
@@ -10,8 +10,24 @@
 - Sistema de recorrência operacional com Celery tasks agendadas
 - Link de pagamento para cadastro de cartão em recorrências funcionando
 - Portal Admin com correções de redirect
+- **Device Fingerprint com Análise de Similaridade** (IMPLEMENTADO 06/03/2026)
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **06/03/2026:** Device Fingerprint com Análise de Similaridade
+  - **Problema:** Sistema anterior validava apenas hash exato do fingerprint
+  - **Solução híbrida:** Armazenar componentes individuais + calcular similaridade
+  - **Componentes:** native_id (40pts), screen_resolution (20pts), device_model (20pts), device_brand (10pts), os_version (5pts), timezone (5pts), platform
+  - **Lógica de decisão:**
+    - Score 100 (hash exato) → `allow`
+    - Score ≥90 (1 componente mudou) → `allow` COM MONITORAMENTO
+    - Score 80-89 (2 componentes) → `require_otp`
+    - Score 50-79 (suspeito) → `require_otp`
+    - Score <50 (novo device) → `require_otp` ou `block`
+  - **Arquivos modificados:**
+    - `wallclub_core/seguranca/models.py`: 7 novos campos no modelo DispositivoConfiavel
+    - `wallclub_core/seguranca/services_device.py`: métodos `calcular_similaridade()`, `validar_dispositivo_com_similaridade()`, `_versoes_proximas()`
+  - **Migration:** ALTER TABLE executada com sucesso (MySQL)
+  - **Benefício:** Permite login direto em updates legítimos (iOS update) enquanto detecta fraudes
 - **06/03/2026:** Link de Recorrência - Otimização e correção
   - **Removida pré-autorização de R$ 1,00:** Tokenização do gateway já valida o cartão
   - Fluxo simplificado: validar token → tokenizar → vincular à recorrência

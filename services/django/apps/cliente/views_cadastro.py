@@ -20,13 +20,13 @@ from apps.cliente.services_cadastro import CadastroService
 def iniciar_cadastro(request):
     """
     Verifica se CPF existe e retorna dados faltantes
-    
+
     Request:
         {
             "cpf": "17653377807",
             "canal_id": 1
         }
-    
+
     Response - Cliente não existe (200):
         {
             "sucesso": true,
@@ -34,7 +34,7 @@ def iniciar_cadastro(request):
             "dados_necessarios": ["nome", "email", "celular", "senha"],
             "mensagem": "Preencha os dados para criar sua conta"
         }
-    
+
     Response - Cliente existe sem cadastro (200):
         {
             "sucesso": true,
@@ -48,7 +48,7 @@ def iniciar_cadastro(request):
             "dados_necessarios": ["celular", "senha"],
             "mensagem": "Complete seu cadastro"
         }
-    
+
     Response - Cliente já cadastrado (400):
         {
             "sucesso": false,
@@ -58,24 +58,24 @@ def iniciar_cadastro(request):
     try:
         cpf = request.data.get('cpf')
         canal_id = request.data.get('canal_id')
-        
+
         if not cpf or not canal_id:
             return Response({
                 'sucesso': False,
                 'mensagem': 'CPF e canal_id são obrigatórios'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         resultado = CadastroService.verificar_cpf_cadastro(cpf, canal_id)
-        
+
         if resultado['sucesso']:
             return Response(resultado, status=status.HTTP_200_OK)
         else:
             return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
-    
+
     except Exception as e:
-        registrar_log('apps.cliente', 
+        registrar_log('apps.cliente',
             f"Erro ao verificar cadastro: {str(e)}", nivel='ERROR')
-        
+
         return Response({
             'sucesso': False,
             'mensagem': 'Erro interno do servidor'
@@ -88,7 +88,7 @@ def iniciar_cadastro(request):
 def finalizar_cadastro(request):
     """
     Salva dados do cadastro + envia OTP para validação
-    
+
     Request - Cliente novo:
         {
             "cpf": "17653377807",
@@ -98,7 +98,7 @@ def finalizar_cadastro(request):
             "celular": "21987654321",
             "senha": "Senha@123"
         }
-    
+
     Request - Cliente existente (só faltam campos):
         {
             "cpf": "17653377807",
@@ -106,14 +106,14 @@ def finalizar_cadastro(request):
             "celular": "21987654321",
             "senha": "Senha@123"
         }
-    
+
     Response (200):
         {
             "sucesso": true,
             "mensagem": "Código de verificação enviado via SMS",
             "celular_mascarado": "(21) 9****-4321"
         }
-    
+
     Response - Erro validação (400):
         {
             "sucesso": false,
@@ -129,18 +129,18 @@ def finalizar_cadastro(request):
             'celular': request.data.get('celular'),
             'senha': request.data.get('senha')
         }
-        
+
         resultado = CadastroService.finalizar_cadastro(dados)
-        
+
         if resultado['sucesso']:
             return Response(resultado, status=status.HTTP_200_OK)
         else:
             return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
-    
+
     except Exception as e:
-        registrar_log('apps.cliente', 
+        registrar_log('apps.cliente',
             f"Erro ao finalizar cadastro: {str(e)}", nivel='ERROR')
-        
+
         return Response({
             'sucesso': False,
             'mensagem': 'Erro interno do servidor'
@@ -153,19 +153,19 @@ def finalizar_cadastro(request):
 def validar_otp_cadastro(request):
     """
     Valida OTP + finaliza cadastro (marca cadastro_completo=TRUE)
-    
+
     Request:
         {
             "cpf": "17653377807",
             "codigo": "123456"
         }
-    
+
     Response - Sucesso (200):
         {
             "sucesso": true,
             "mensagem": "Cadastro concluído com sucesso! Faça login para acessar sua conta."
         }
-    
+
     Response - OTP inválido (400):
         {
             "sucesso": false,
@@ -178,36 +178,51 @@ def validar_otp_cadastro(request):
         codigo = request.data.get('codigo')
         canal_id = request.data.get('canal_id')
         device_fingerprint = request.data.get('device_fingerprint')
-        
+
         if not cpf or not codigo or not canal_id:
             return Response({
                 'sucesso': False,
                 'mensagem': 'CPF, código e canal_id são obrigatórios'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Capturar IP e user agent para registrar dispositivo
         from .views import get_client_ip
         ip_address = get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT', '')
-        
+
+        # Componentes individuais do fingerprint (opcionais)
+        dados_dispositivo = None
+        if request.data.get('native_id'):
+            dados_dispositivo = {
+                'device_fingerprint': device_fingerprint,
+                'native_id': request.data.get('native_id', ''),
+                'screen_resolution': request.data.get('screen_resolution', ''),
+                'device_model': request.data.get('device_model', ''),
+                'os_version': request.data.get('os_version', ''),
+                'device_brand': request.data.get('device_brand', ''),
+                'timezone': request.data.get('timezone', ''),
+                'platform': request.data.get('platform', '')
+            }
+
         resultado = CadastroService.validar_otp_cadastro(
-            cpf, 
-            codigo, 
+            cpf,
+            codigo,
             canal_id,
             device_fingerprint=device_fingerprint,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
+            dados_dispositivo=dados_dispositivo
         )
-        
+
         if resultado['sucesso']:
             return Response(resultado, status=status.HTTP_200_OK)
         else:
             return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
-    
+
     except Exception as e:
-        registrar_log('apps.cliente', 
+        registrar_log('apps.cliente',
             f"Erro ao validar OTP cadastro: {str(e)}", nivel='ERROR')
-        
+
         return Response({
             'sucesso': False,
             'mensagem': 'Erro interno do servidor'

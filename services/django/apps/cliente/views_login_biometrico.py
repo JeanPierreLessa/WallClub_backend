@@ -23,7 +23,15 @@ def login_biometrico(request):
     {
         "cpf": "12345678901",
         "device_fingerprint": "hash_do_dispositivo",
-        "canal_id": 1
+        "canal_id": 1,
+        "native_id": "ABC123-DEF456",
+        "screen_resolution": "1170x2532",
+        "device_model": "iPhone15,2",
+        "os_version": "17.2",
+        "device_brand": "Apple",
+        "timezone": "America/Sao_Paulo",
+        "platform": "ios",
+        "device_name": "iPhone 14 Pro" (opcional)
     }
 
     Retorna:
@@ -38,6 +46,16 @@ def login_biometrico(request):
         cpf = request.data.get('cpf', '').strip()
         device_fingerprint = request.data.get('device_fingerprint', '').strip()
         canal_id = request.data.get('canal_id')
+
+        # Componentes individuais do fingerprint
+        native_id = request.data.get('native_id', '').strip()
+        screen_resolution = request.data.get('screen_resolution', '').strip()
+        device_model = request.data.get('device_model', '').strip()
+        os_version = request.data.get('os_version', '').strip()
+        device_brand = request.data.get('device_brand', '').strip()
+        timezone = request.data.get('timezone', '').strip()
+        platform = request.data.get('platform', '').strip()
+        device_name = request.data.get('device_name', '')
 
         if not cpf or not device_fingerprint or not canal_id:
             return Response({
@@ -55,19 +73,47 @@ def login_biometrico(request):
                 'error': 'Cliente não encontrado'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        # Verificar se dispositivo está cadastrado e confiável
-        valido, dispositivo, mensagem = DeviceManagementService.validar_dispositivo(
+        # Validar dispositivo com análise de similaridade
+        dados_dispositivo = {
+            'device_fingerprint': device_fingerprint,
+            'native_id': native_id,
+            'screen_resolution': screen_resolution,
+            'device_model': device_model,
+            'os_version': os_version,
+            'device_brand': device_brand,
+            'timezone': timezone,
+            'platform': platform,
+        }
+
+        resultado = DeviceManagementService.validar_dispositivo_com_similaridade(
             user_id=cliente.id,
             tipo_usuario='cliente',
-            fingerprint=device_fingerprint
+            dados_dispositivo=dados_dispositivo
         )
 
-        if not valido:
-            registrar_log('apps.cliente', f"Login biométrico falhou: {mensagem} - CPF {cpf}", nivel='WARNING')
+        decisao = resultado.get('decisao')
+
+        if decisao == 'block':
+            registrar_log('apps.cliente', f"Login biométrico bloqueado: {resultado['motivo']} - CPF {cpf}", nivel='WARNING')
             return Response({
                 'success': False,
-                'error': 'Dispositivo não autorizado para login biométrico'
+                'error': resultado['motivo']
             }, status=status.HTTP_403_FORBIDDEN)
+
+        if decisao == 'require_otp':
+            registrar_log('apps.cliente', f"Login biométrico requer 2FA: {resultado['motivo']} - CPF {cpf}", nivel='INFO')
+            return Response({
+                'success': False,
+                'require_otp': True,
+                'motivo': resultado['motivo'],
+                'similaridade': resultado.get('similaridade_max')
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # decisao == 'allow'
+        if resultado.get('requer_monitoramento'):
+            registrar_log('apps.cliente',
+                f"⚠️ Login biométrico permitido com monitoramento (similaridade: {resultado.get('similaridade_max')}) - CPF {cpf}",
+                nivel='WARNING')
 
         # Gerar tokens JWT
         jwt_data = generate_cliente_jwt_token(cliente, request=request)
