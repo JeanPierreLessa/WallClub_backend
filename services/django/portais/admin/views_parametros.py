@@ -165,8 +165,8 @@ def parametros_download_csv(request, loja_id):
                 'wall': config['wall']
             }
 
-            # Adicionar parâmetros loja (1-30)
-            for i in range(1, 31):
+            # Adicionar parâmetros loja (1-33)
+            for i in range(1, 34):
                 valor = config.get(f'parametro_loja_{i}')
                 # Formatar para evitar notação científica
                 if valor and valor not in ['', 'None']:
@@ -182,8 +182,8 @@ def parametros_download_csv(request, loja_id):
                 else:
                     linha_dados[f'parametro_loja_{i}'] = ''
 
-            # Parâmetros uptal (1-6)
-            for i in range(1, 7):
+            # Parâmetros uptal (1-7)
+            for i in range(1, 8):
                 valor = config.get(f'parametro_uptal_{i}')
                 # Formatar para evitar notação científica
                 if valor and valor not in ['', 'None']:
@@ -232,12 +232,12 @@ def parametros_download_csv(request, loja_id):
             'wall': 'wall'
         }
 
-        # Adicionar cabeçalhos para parâmetros loja (1-30)
-        for i in range(1, 31):
+        # Adicionar cabeçalhos para parâmetros loja (1-33)
+        for i in range(1, 34):
             cabecalhos[f'parametro_loja_{i}'] = f'parametro_loja_{i}'
 
-        # Adicionar cabeçalhos para parâmetros uptal (1-6)
-        for i in range(1, 7):
+        # Adicionar cabeçalhos para parâmetros uptal (1-7)
+        for i in range(1, 8):
             cabecalhos[f'parametro_uptal_{i}'] = f'parametro_uptal_{i}'
 
         # Adicionar cabeçalhos para parâmetros wall (1-4)

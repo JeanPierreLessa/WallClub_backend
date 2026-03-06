@@ -18,26 +18,26 @@ def admin_required(view_func):
         # Verificar se há sessão ativa
         if not request.session.get('portal_usuario_id'):
             messages.error(request, 'Acesso negado. Faça login para continuar.')
-            return redirect('portais_admin:login')
-        
+            return redirect('/')
+
         # Verificar se usuário tem permissão ao portal admin
         usuario_id = request.session.get('portal_usuario_id')
         try:
             from portais.controle_acesso.models import PortalUsuario
             from portais.controle_acesso.services import ControleAcessoService
-            
+
             usuario = PortalUsuario.objects.get(id=usuario_id, ativo=True)
             nivel_acesso = ControleAcessoService.obter_nivel_portal(usuario, 'admin')
-            
+
             if nivel_acesso == 'negado':
                 messages.error(request, 'Acesso negado. Permissões insuficientes.')
                 return redirect('portais_admin:dashboard')
         except PortalUsuario.DoesNotExist:
             messages.error(request, 'Sessão inválida. Faça login novamente.')
-            return redirect('portais_admin:login')
-        
+            return redirect('/')
+
         return view_func(request, *args, **kwargs)
-    
+
     return _wrapped_view
 
 
@@ -51,26 +51,26 @@ def admin_total_required(view_func):
         # Verificar se há sessão ativa
         if not request.session.get('portal_usuario_id'):
             messages.error(request, 'Acesso negado. Faça login para continuar.')
-            return redirect('portais_admin:login')
-        
+            return redirect('/')
+
         # Verificar se o usuário é admin total
         usuario_id = request.session.get('portal_usuario_id')
         try:
             from portais.controle_acesso.models import PortalUsuario
             from portais.controle_acesso.services import ControleAcessoService
-            
+
             usuario = PortalUsuario.objects.get(id=usuario_id, ativo=True)
             nivel_acesso = ControleAcessoService.obter_nivel_portal(usuario, 'admin')
-            
+
             if nivel_acesso != 'admin_total':
                 messages.error(request, 'Acesso negado. Apenas administradores totais podem acessar esta funcionalidade.')
                 return redirect('portais_admin:dashboard')
         except PortalUsuario.DoesNotExist:
             messages.error(request, 'Sessão inválida. Faça login novamente.')
-            return redirect('portais_admin:login')
-        
+            return redirect('/')
+
         return view_func(request, *args, **kwargs)
-    
+
     return _wrapped_view
 
 
@@ -82,8 +82,8 @@ def login_required_admin(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.session.get('portal_usuario_id'):
             messages.error(request, 'Sessão expirada. Faça login novamente.')
-            return redirect('portais_admin:login')
-        
+            return redirect('/')
+
         return view_func(request, *args, **kwargs)
-    
+
     return _wrapped_view
