@@ -97,7 +97,11 @@ class CupomCreateView(LojistaAccessMixin, LojistaDataMixin, View):
     def post(self, request):
         try:
             # Pegar loja_id do formulário ou da sessão
-            loja_id = request.POST.get('loja_id') or request.session.get('loja_id')
+            loja_id_raw = request.POST.get('loja_id', '').strip()
+            if loja_id_raw and loja_id_raw != 'None':
+                loja_id = int(loja_id_raw)
+            else:
+                loja_id = request.session.get('loja_id')
 
             # Validar código único
             codigo = request.POST.get('codigo', '').strip().upper()
@@ -107,8 +111,6 @@ class CupomCreateView(LojistaAccessMixin, LojistaDataMixin, View):
 
             # Criar cupom
             cliente_id_raw = request.POST.get('cliente_id', '').strip()
-            registrar_log('portais.lojista', f'DEBUG - cliente_id_raw: [{cliente_id_raw}] | type: {type(cliente_id_raw)} | repr: {repr(cliente_id_raw)}')
-            registrar_log('portais.lojista', f'DEBUG - POST completo: {dict(request.POST)}')
             cliente_id = int(cliente_id_raw) if cliente_id_raw and cliente_id_raw != 'None' else None
 
             cupom = Cupom.objects.create(

@@ -38,7 +38,7 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            {% else %}
+                            {% elif loja_id_atual %}
                             <input type="hidden" name="loja_id" value="{{ loja_id_atual }}">
                             {% endif %}
 
