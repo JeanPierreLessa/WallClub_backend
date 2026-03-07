@@ -26,21 +26,17 @@
                         {% csrf_token %}
 
                         <div class="row">
-                            <!-- Loja (se múltiplas lojas disponíveis) -->
-                            {% if lojas_acessiveis|length > 1 %}
+                            <!-- Loja -->
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Loja *</label>
                                 <select name="loja_id" class="form-select" required>
                                     {% for loja in lojas_acessiveis %}
-                                    <option value="{{ loja.id }}" {% if loja.id == loja_id_atual %}selected{% endif %}>
+                                    <option value="{{ loja.id }}" {% if cupom.loja_id == loja.id or loja_id_atual == loja.id %}selected{% endif %}>
                                         {{ loja.nome_fantasia }} - {{ loja.razao_social }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            {% elif loja_id_atual %}
-                            <input type="hidden" name="loja_id" value="{{ loja_id_atual }}">
-                            {% endif %}
 
                             <!-- Código -->
                             <div class="col-md-6 mb-3">

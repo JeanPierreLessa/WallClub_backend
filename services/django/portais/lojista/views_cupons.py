@@ -86,6 +86,10 @@ class CupomCreateView(LojistaAccessMixin, LojistaDataMixin, View):
         lojas_acessiveis = self.get_lojas_acessiveis()
         loja_id_atual = request.session.get('loja_id')
 
+        # Se não tem loja na sessão mas tem apenas uma loja acessível, usar essa
+        if not loja_id_atual and len(lojas_acessiveis) == 1:
+            loja_id_atual = lojas_acessiveis[0].id
+
         context = {
             'tipos_cupom': Cupom._meta.get_field('tipo_cupom').choices,
             'tipos_desconto': Cupom._meta.get_field('tipo_desconto').choices,
