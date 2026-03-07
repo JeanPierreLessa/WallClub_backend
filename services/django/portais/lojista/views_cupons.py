@@ -107,6 +107,8 @@ class CupomCreateView(LojistaAccessMixin, LojistaDataMixin, View):
 
             # Criar cupom
             cliente_id_raw = request.POST.get('cliente_id', '').strip()
+            registrar_log('portais.lojista', f'DEBUG - cliente_id_raw: [{cliente_id_raw}] | type: {type(cliente_id_raw)} | repr: {repr(cliente_id_raw)}')
+            registrar_log('portais.lojista', f'DEBUG - POST completo: {dict(request.POST)}')
             cliente_id = int(cliente_id_raw) if cliente_id_raw and cliente_id_raw != 'None' else None
 
             cupom = Cupom.objects.create(
