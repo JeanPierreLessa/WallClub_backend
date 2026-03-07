@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal
 import json
@@ -344,8 +345,8 @@ def validar_cupom(request):
 
         return JsonResponse(response_data)
 
-    except ValueError as e:
-        # Erro de validação do cupom
+    except ValidationError as e:
+        # Erro de validação do cupom (regra de negócio)
         return JsonResponse({
             'valido': False,
             'cupom_id': None,
