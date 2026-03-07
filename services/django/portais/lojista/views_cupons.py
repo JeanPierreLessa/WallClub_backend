@@ -103,6 +103,11 @@ class CupomCreateView(LojistaAccessMixin, LojistaDataMixin, View):
             else:
                 loja_id = request.session.get('loja_id')
 
+            # Validar se loja_id existe
+            if not loja_id:
+                messages.error(request, 'Loja não identificada. Faça login novamente.')
+                return redirect('lojista:home')
+
             # Validar código único
             codigo = request.POST.get('codigo', '').strip().upper()
             if Cupom.objects.filter(codigo=codigo).exists():
