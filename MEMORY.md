@@ -13,7 +13,7 @@
 - **Device Fingerprint com Análise de Similaridade** (IMPLEMENTADO 06/03/2026)
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
-- **06/03/2026:** Device Fingerprint com Análise de Similaridade
+- **06/03/2026:** Device Fingerprint com Análise de Similaridade - IMPLEMENTAÇÃO COMPLETA
   - **Problema:** Sistema anterior validava apenas hash exato do fingerprint
   - **Solução híbrida:** Armazenar componentes individuais + calcular similaridade
   - **Componentes:** native_id (40pts), screen_resolution (20pts), device_model (20pts), device_brand (10pts), os_version (5pts), timezone (5pts), platform
@@ -23,11 +23,21 @@
     - Score 80-89 (2 componentes) → `require_otp`
     - Score 50-79 (suspeito) → `require_otp`
     - Score <50 (novo device) → `require_otp` ou `block`
-  - **Arquivos modificados:**
+  - **Backend - Models & Services:**
     - `wallclub_core/seguranca/models.py`: 7 novos campos no modelo DispositivoConfiavel
     - `wallclub_core/seguranca/services_device.py`: métodos `calcular_similaridade()`, `validar_dispositivo_com_similaridade()`, `_versoes_proximas()`
-  - **Migration:** ALTER TABLE executada com sucesso (MySQL)
+  - **Backend - Endpoints Atualizados (6 endpoints):**
+    - `apps/cliente/views_login_biometrico.py`: Login biométrico com validação de similaridade
+    - `apps/cliente/views_2fa_login.py`: Endpoints 2FA (verificar_necessidade, validar_codigo)
+    - `apps/cliente/views_cadastro.py`: Validar OTP cadastro
+    - `apps/cliente/views_refresh_jwt.py`: Refresh token
+    - `apps/cliente/services_2fa_login.py`: Service 2FA com parâmetro dados_dispositivo
+    - `apps/cliente/services_cadastro.py`: Service cadastro com parâmetro dados_dispositivo
+    - `apps/cliente/jwt_cliente.py`: refresh_cliente_access_token() com dados_dispositivo
+  - **Retrocompatibilidade:** 100% compatível com apps antigos via fallback automático
+  - **Migration:** ALTER TABLE executada com sucesso (MySQL) - `docs/seguranca/migration_device_fingerprint_componentes.sql`
   - **Benefício:** Permite login direto em updates legítimos (iOS update) enquanto detecta fraudes
+  - **Status:** Pronto para produção. App mobile precisa enviar os 7 componentes nos payloads
 - **06/03/2026:** Link de Recorrência - Otimização e correção
   - **Removida pré-autorização de R$ 1,00:** Tokenização do gateway já valida o cartão
   - Fluxo simplificado: validar token → tokenizar → vincular à recorrência

@@ -154,7 +154,8 @@ def validar_codigo_2fa_login(request):
         'os_version': str (opcional),
         'device_brand': str (opcional),
         'timezone': str (opcional),
-        'platform': str (opcional)
+        'platform': str (opcional),
+        'user_agent': str (opcional)
     }
 
     Returns:
@@ -176,7 +177,7 @@ def validar_codigo_2fa_login(request):
         # Capturar IP real considerando proxies/load balancers
         from .views import get_client_ip
         ip_address = get_client_ip(request)
-        user_agent = request.META.get('HTTP_USER_AGENT')
+        user_agent = request.data.get('user_agent')  # Apenas do app, sem fallback
 
         # Componentes individuais do fingerprint (opcionais)
         dados_dispositivo = None

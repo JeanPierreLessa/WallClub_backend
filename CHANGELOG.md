@@ -28,18 +28,32 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
   - Score 80-89 (2 componentes) → `require_otp` (suspeito)
   - Score 50-79 → `require_otp` (comportamento suspeito)
   - Score <50 → `require_otp` ou `block` (novo dispositivo ou limite atingido)
-- **Arquivos Modificados:**
+- **Backend - Models & Services:**
   - `wallclub_core/seguranca/models.py`: Campos native_id, screen_resolution, device_model, os_version, device_brand, timezone, platform
   - `wallclub_core/seguranca/services_device.py`: Métodos calcular_similaridade(), validar_dispositivo_com_similaridade(), _versoes_proximas()
+- **Backend - Endpoints Atualizados (6 endpoints):**
+  - `apps/cliente/views_login_biometrico.py`: Login biométrico com validação de similaridade
+  - `apps/cliente/views_2fa_login.py`: Endpoints 2FA (verificar_necessidade, validar_codigo) com componentes
+  - `apps/cliente/views_cadastro.py`: Validar OTP cadastro com componentes
+  - `apps/cliente/views_refresh_jwt.py`: Refresh token com componentes
+  - `apps/cliente/services_2fa_login.py`: Service 2FA atualizado para aceitar dados_dispositivo
+  - `apps/cliente/services_cadastro.py`: Service cadastro atualizado para aceitar dados_dispositivo
+  - `apps/cliente/jwt_cliente.py`: refresh_cliente_access_token() com dados_dispositivo
+- **Retrocompatibilidade:**
+  - 100% compatível com apps antigos que não enviam componentes
+  - Fallback automático para método legado (validar_dispositivo) se componentes ausentes
+  - Verificação: `if request.data.get('native_id')` antes de usar similaridade
 - **Migration MySQL:**
   - ALTER TABLE otp_dispositivo_confiavel ADD COLUMN (7 campos)
   - Índices: idx_dispositivo_native_id_ativo, idx_dispositivo_user_native
+  - Script: `docs/seguranca/migration_device_fingerprint_componentes.sql`
 - **Benefícios:**
   - Reduz fricção: permite login direto em updates legítimos do iOS
   - Aumenta segurança: detecta mudanças suspeitas (IDFV reset, clonagem)
   - Monitoramento: logs de WARNING para análise posterior
+  - UX melhorada: menos OTPs desnecessários
 - **Documentação:** `docs/seguranca/IMPLEMENTACAO_DEVICE_FINGERPRINT_BACKEND.md`
-- **Commits:** [pending]
+- **Próximos Passos:** App mobile deve enviar os 7 componentes nos payloads de autenticação
 
 ### [2026-03-06] - Link de Recorrência - Otimização e Correção
 - **Remoção de pré-autorização de R$ 1,00:**
