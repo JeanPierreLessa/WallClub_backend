@@ -1,0 +1,75 @@
+# Continue Ignore - WallClub Backend
+# Evita envio desnecessário de arquivos como contexto para o Claude
+
+# Dependências e builds
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.venv/
+site-packages/
+
+# Docker e infraestrutura
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile*
+.dockerignore
+nginx.conf
+
+# Logs e dados temporários
+logs/
+*.log
+data/
+*.sqlite3
+*.db
+cache/
+.cache/
+
+# Documentação extensa (reduz tokens significativamente)
+docs/
+README.md
+CHANGELOG.md
+*.md
+
+# Arquivos de configuração grandes
+*.json
+*.yaml
+*.yml
+.env*
+requirements.txt
+
+# Git e versionamento  
+.git/
+.gitignore
+.github/
+
+# Monitoramento
+monitoring/
+grafana/
+prometheus/
+
+# Media e uploads
+media/
+uploads/
+static_collected/
+
+# Arquivos de lock
+*.lock
+Pipfile.lock
+package-lock.json
+
+# Coverage e testes
+coverage/
+.coverage
+htmlcov/
+
+# Arquivos grandes específicos
+services/django/wallclub.code-workspace
+wallclub.code-workspace
+
+# Backups e dumps
+*.sql
+*.dump
+*.bak

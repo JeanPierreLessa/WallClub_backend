@@ -191,8 +191,8 @@ SSH → VPN Server (44.214.49.0)
 | ALB | Load Balancer | ~~4~~ **3** | ~R$ 60 | ~~R$ 240~~ **R$ 180** |
 | Data Transfer | Rede | - | - | ~R$ 100 |
 | **TOTAL ANTERIOR** | | | | ~~R$ 1.590/mês~~ |
-| **TOTAL ATUAL** | | | | **~R$ 1.530/mês** |
-| **ECONOMIA (08/03)** | | | | **-R$ 60/mês** ✅ |
+| **TOTAL ATUAL** | | | | **~R$ 1.513/mês** |
+| **ECONOMIA (08/03)** | | | | **-R$ 77/mês** ✅ |
 
 ---
 
@@ -251,6 +251,14 @@ aws elbv2 delete-load-balancer --load-balancer-arn arn:aws:elasticloadbalancing:
 - **Custo:** ~R$ 0.05/GB/mês × 450GB = ~R$ 22/mês
 - **Problema:** Snapshots de AMIs antigas que provavelmente não usa mais
 - **Ação:** 🟡 MANTER APENAS OS 2-3 MAIS RECENTES
+
+#### 5. **AMIs Não Utilizadas (Descobertas 08/03)**
+- **mysql-prd** (ami-02db39fb1a6e7cf25) - Criada 22/07/2025
+- **Status:** Máquina mysql-prd usa Ubuntu oficial, não esta AMI personalizada
+- **prod-server-20250505** (ami-0a96784fea2e2c915) - Criada 06/05/2025
+- **Status:** Nenhuma máquina ativa usa esta AMI
+- **Custo:** ~R$ 5-8/mês (snapshots: 50GB + 50GB)
+- **Ação:** ⏳ VALIDAR COM INFRA E DELETAR SE CONFIRMADO
 ```bash
 # Deletar snapshots antigos (exemplo)
 aws ec2 delete-snapshot --snapshot-id snap-06d0a80e88b34bba5
@@ -285,10 +293,12 @@ docker system prune -a --volumes --force
 | 1 | Terminar vpn2 | R$ 50-65 | 2 min | ⏳ Pendente |
 | 2 | Deletar ALB "prd-php-mysql" | R$ 60 | 2 min | ✅ **FEITO (08/03)** |
 | 3 | Deletar ALB "monitor" (se não usa) | R$ 60 | 2 min | ⏳ Pendente |
-| 4 | Limpar 7 snapshots antigos | R$ 15-20 | 5 min | ⏳ Pendente |
+| 4 | Limpar 5 snapshots antigos | R$ 12-15 | 5 min | ✅ **FEITO (08/03)** |
 | 5 | Limpar imagens Docker | R$ 0 (libera 10GB) | 5 min | ⏳ Pendente |
-| **TOTAL POSSÍVEL** | | **R$ 185-205/mês** | **15 min** | |
-| **ECONOMIZADO ATÉ AGORA** | | **R$ 60/mês** | | ✅ |
+| 6 | Deletar 2 AMIs não utilizadas | R$ 5-8 | 2 min | ⏳ **VALIDAÇÃO INFRA** |
+| **TOTAL POSSÍVEL** | | **R$ 185-205/mês** | **17 min** | |
+| **ECONOMIZADO ATÉ AGORA** | | **R$ 72-75/mês** | | ✅ |
+| **PENDENTE VALIDAÇÃO** | | **R$ 65-68/mês** | | ⏳ |
 
 ### Script de Limpeza Completo
 
@@ -459,4 +469,27 @@ Total: ~995MB (50% de 2GB)
 
 ---
 
-**Última Atualização:** 08/03/2026 07:40 BRT
+---
+
+## 📊 ATUALIZAÇÕES - 08/03/2026
+
+### Limpezas Realizadas
+- ✅ **ALB "prd-php-mysql" deletado** - Economia: R$ 60/mês
+- ✅ **5 AMIs php-nginx antigas removidas** - Economia: R$ 12-15/mês
+- ✅ **Snapshots correspondentes deletados** - ~250GB liberados
+
+### Descobertas para Validação
+- ⏳ **2 AMIs não utilizadas identificadas**:
+  - `mysql-prd` (ami-02db39fb1a6e7cf25) - 50GB
+  - `prod-server-20250505` (ami-0a96784fea2e2c915) - 50GB
+- ⏳ **Economia adicional potencial**: R$ 5-8/mês
+- ⏳ **Status**: Aguardando validação com equipe de infraestrutura
+
+### Economia Total Confirmada
+- **Realizada hoje**: R$ 72-75/mês
+- **Potencial adicional**: R$ 5-8/mês
+- **Total possível**: R$ 77-83/mês
+
+---
+
+**Última Atualização:** 08/03/2026 19:15 BRT

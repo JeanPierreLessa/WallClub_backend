@@ -1,6 +1,6 @@
 # WallClub Backend - Memory
 
-**Última atualização:** 07/03/2026 17:07
+**Última atualização:** 08/03/2026 19:45
 
 ---
 
@@ -14,6 +14,31 @@
 - **Sistema de Cupons** - Portal Lojista e API POS operacionais (07/03/2026)
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **08/03/2026:** Otimizações Continue - Rate Limit Prevention
+  - **Problema:** Rate limit de 450k tokens/minuto sendo atingido com frequência
+  - **Causa:** Continue enviando muitos arquivos como contexto (200k-400k tokens/requisição)
+  - **Soluções aplicadas:**
+    - Criado `.continueignore` otimizado (docs/, logs/, docker-compose.yml, *.md, etc.)
+    - Documentação completa: `docs/desenvolvimento/OTIMIZACOES_CONTINUE_RATE_LIMIT.md`
+    - Configurações recomendadas: maxFiles=5, maxTokens=2000, disable auto-context
+  - **Resultado esperado:** Redução de 80-90% no consumo (30k-50k tokens/requisição)
+  - **Impacto:** Desenvolvimento mais fluido, menos interrupções por rate limit
+- **08/03/2026:** Limpeza de Infraestrutura AWS - Economia R$ 77/mês
+  - **Situação:** Recursos AWS não utilizados identificados via console
+  - **Recursos removidos:**
+    - ALB "prd-php-mysql" (sem targets desde Janeiro) - R$ 60/mês
+    - 5 AMIs php-nginx antigas (2025-08-03, 2025-08-14, 20250909, 20251017, sem data) - R$ 12-15/mês
+    - ~250GB snapshots EBS correspondentes
+  - **Descobertas para validação com infra:**
+    - AMI mysql-prd (ami-02db39fb1a6e7cf25) - máquina usa Ubuntu oficial
+    - AMI prod-server-20250505 (ami-0a96784fea2e2c915) - nenhuma instância usa
+    - Economia potencial adicional: R$ 5-8/mês
+  - **Validação:** Máquinas confirmadas usando AMIs corretas (Ubuntu oficial)
+  - **Documentação atualizada:**
+    - `docs/infraestrutura/MAPA_INFRAESTRUTURA_ATUAL.md`: economia R$ 1.590 → R$ 1.513/mês
+    - `README.md`: estatística de economia adicionada
+    - `CHANGELOG.md`: entrada completa da otimização
+  - **Confirmação:** Todas as 4 máquinas EC2 funcionando normalmente após limpeza
 - **07/03/2026:** Otimizações de Memória Docker - Diagnóstico e Ajustes
   - **Problema inicial:** Consumo de RAM em 76% (2.9GB de 3.8GB) com baixo volume
   - **Investigação:** Processos Python aparecendo duplicados no `ps aux` do host

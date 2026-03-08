@@ -103,6 +103,18 @@ Quando uma abordagem falhar:
 - Mudar estrutura de banco de dados
 - Implementar soluções que exijam ações manuais do usuário
 
+### 3.5 Aprovação de Alterações em Documentos
+**SEMPRE confirme antes de alterar documentos:**
+1. **Mostre exatamente** o que será alterado:
+   - ANTES: "texto atual"
+   - DEPOIS: "novo texto"
+2. **Aguarde aprovação** do usuário
+3. **SÓ DEPOIS** execute as mudanças
+
+**Exceção:** Correções óbvias de typos podem ser feitas diretamente.
+
+**Justificativa:** Usuário deve ter controle total sobre conteúdo dos documentos.
+
 ---
 
 ## 4. COMUNICAÇÃO E FORMATO

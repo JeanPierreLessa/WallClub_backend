@@ -16,6 +16,32 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-08] - Otimização de Infraestrutura AWS
+- **Limpeza de recursos não utilizados:**
+  - ALB "prd-php-mysql" removido (sem targets desde 29/01/2026)
+  - 5 AMIs php-nginx antigas removidas (versões 2025-08-03, 2025-08-14, 20250909, 20251017, sem data)
+  - ~250GB de snapshots EBS antigos deletados
+- **Descobertas para validação:**
+  - 2 AMIs não utilizadas identificadas: mysql-prd, prod-server-20250505
+  - Máquina mysql-prd usa Ubuntu oficial (ami-020cba7c55df1f615), não AMI personalizada
+  - Nenhuma instância ativa usa as AMIs identificadas
+- **Economia realizada:** R$ 72-75/mês
+- **Economia potencial adicional:** R$ 5-8/mês (aguardando validação equipe infraestrutura)
+- **Arquivos atualizados:**
+  - `docs/infraestrutura/MAPA_INFRAESTRUTURA_ATUAL.md`: Status de limpeza e economia
+- **Impacto:** Redução de custos mensais sem afetar operação
+
+### [2026-03-08] - Otimizações Continue - Rate Limit Prevention
+- **Problema identificado:** Rate limit de 450k tokens/minuto sendo atingido frequentemente
+- **Causa:** Continue enviando contexto excessivo (200k-400k tokens por requisição)
+- **Soluções implementadas:**
+  - Criado `.continueignore` otimizado (exclusão de docs/, logs/, Docker files, *.md)
+  - Configurações aplicadas: maxFiles=5, maxFileSize=20k, maxTokens=2000
+  - Desabilitado: autocomplete, codebase embeddings, auto-include relacionados
+- **Resultado esperado:** Redução de 80-90% no consumo de tokens (30k-50k por requisição)
+- **Documentação:** `docs/desenvolvimento/OTIMIZACOES_CONTINUE_RATE_LIMIT.md`
+- **Impacto:** Desenvolvimento mais fluido, menos interrupções por rate limit
+
 ### [2026-03-07] - Otimizações de Memória Docker
 - **Diagnóstico de consumo de RAM:**
   - Servidor em 76% de uso (2.9GB de 3.8GB total)
