@@ -1,0 +1,93 @@
+{
+  "backup_date": "2026-03-08T07:50:00-03:00",
+  "alb_name": "php-server",
+  "alb_arn": "arn:aws:elasticloadbalancing:us-east-1:528757796910:loadbalancer/app/php-server/80d1a738c60ec0b4",
+
+  "load_balancer": {
+    "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:528757796910:loadbalancer/app/php-server/80d1a738c60ec0b4",
+    "DNSName": "php-server-757864010.us-east-1.elb.amazonaws.com",
+    "CanonicalHostedZoneId": "Z35SXDOTRQ7X7K",
+    "CreatedTime": "2025-04-12T18:17:10.955000+00:00",
+    "LoadBalancerName": "php-server",
+    "Scheme": "internet-facing",
+    "VpcId": "vpc-0de4282590e373430",
+    "Type": "application",
+    "AvailabilityZones": [
+      {
+        "ZoneName": "us-east-1a",
+        "SubnetId": "subnet-03bb7c28932d7e5ba"
+      },
+      {
+        "ZoneName": "us-east-1b",
+        "SubnetId": "subnet-0edbb2cc519eb6c24"
+      }
+    ],
+    "SecurityGroups": ["sg-0b25ec38a73f7d871"],
+    "IpAddressType": "ipv4"
+  },
+
+  "target_groups": [
+    {
+      "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:528757796910:targetgroup/prd-php-mysql/7e60eacf55ecd3d7",
+      "TargetGroupName": "prd-php-mysql",
+      "Protocol": "HTTP",
+      "Port": 80,
+      "VpcId": "vpc-0de4282590e373430",
+      "HealthCheckProtocol": "HTTP",
+      "HealthCheckPort": "traffic-port",
+      "HealthCheckEnabled": true,
+      "HealthCheckIntervalSeconds": 15,
+      "HealthCheckTimeoutSeconds": 5,
+      "HealthyThresholdCount": 2,
+      "UnhealthyThresholdCount": 2,
+      "HealthCheckPath": "/",
+      "Matcher": {
+        "HttpCode": "200"
+      },
+      "TargetType": "instance",
+      "ProtocolVersion": "HTTP1",
+      "IpAddressType": "ipv4"
+    }
+  ],
+
+  "listeners": [
+    {
+      "ListenerArn": "arn:aws:elasticloadbalancing:us-east-1:528757796910:listener/app/php-server/80d1a738c60ec0b4/5c1efeb06ca61d67",
+      "Port": 80,
+      "Protocol": "HTTP",
+      "DefaultActions": [
+        {
+          "Type": "forward",
+          "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:528757796910:targetgroup/prd-php-mysql/7e60eacf55ecd3d7"
+        }
+      ]
+    },
+    {
+      "ListenerArn": "arn:aws:elasticloadbalancing:us-east-1:528757796910:listener/app/php-server/80d1a738c60ec0b4/cbfd569a3a1a49d9",
+      "Port": 443,
+      "Protocol": "HTTPS",
+      "Certificates": [
+        {
+          "CertificateArn": "arn:aws:acm:us-east-1:528757796910:certificate/07029944-61a4-41f0-a473-c5380988b075"
+        }
+      ],
+      "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+      "DefaultActions": [
+        {
+          "Type": "forward",
+          "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:528757796910:targetgroup/prd-php-mysql/7e60eacf55ecd3d7"
+        }
+      ]
+    }
+  ],
+
+  "restore_commands": {
+    "1_create_target_group": "aws elbv2 create-target-group --name prd-php-mysql --protocol HTTP --port 80 --vpc-id vpc-0de4282590e373430 --target-type instance --health-check-protocol HTTP --health-check-path / --health-check-interval-seconds 15 --health-check-timeout-seconds 5 --healthy-threshold-count 2 --unhealthy-threshold-count 2 --matcher HttpCode=200",
+
+    "2_create_load_balancer": "aws elbv2 create-load-balancer --name php-server --subnets subnet-03bb7c28932d7e5ba subnet-0edbb2cc519eb6c24 --security-groups sg-0b25ec38a73f7d871 --scheme internet-facing --type application --ip-address-type ipv4",
+
+    "3_create_listener_http": "aws elbv2 create-listener --load-balancer-arn <NEW_ALB_ARN> --protocol HTTP --port 80 --default-actions Type=forward,TargetGroupArn=<NEW_TG_ARN>",
+
+    "4_create_listener_https": "aws elbv2 create-listener --load-balancer-arn <NEW_ALB_ARN> --protocol HTTPS --port 443 --certificates CertificateArn=arn:aws:acm:us-east-1:528757796910:certificate/07029944-61a4-41f0-a473-c5380988b075 --ssl-policy ELBSecurityPolicy-TLS13-1-2-2021-06 --default-actions Type=forward,TargetGroupArn=<NEW_TG_ARN>"
+  }
+}

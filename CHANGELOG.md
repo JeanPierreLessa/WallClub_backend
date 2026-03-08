@@ -16,6 +16,44 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-07] - Otimizações de Memória Docker
+- **Diagnóstico de consumo de RAM:**
+  - Servidor em 76% de uso (2.9GB de 3.8GB total)
+  - Identificado: Processos Docker visíveis no host são comportamento normal (user namespace compartilhado)
+  - Confirmado: Não há duplicação de processos - PIDs do container = PIDs do host
+- **Otimizações implementadas:**
+  - Celery Beat: limite aumentado de 128MB → 256MB (estava em 89% de uso)
+  - Celery Worker: concurrency reduzida de 5 → 3 workers
+  - Gunicorn Portais: workers reduzidos de 3 → 2
+  - Gunicorn APIs: workers reduzidos de 4 → 2
+- **Economia estimada:** ~500MB (consumo projetado: 63% ao invés de 76%)
+- **Arquivos alterados:**
+  - `docker-compose.yml`: limites de memória e concurrency
+  - `Dockerfile.portais`: workers gunicorn
+  - `Dockerfile.apis`: workers gunicorn
+- **Próximo deploy:** Aplicar otimizações em produção
+
+### [2026-03-07] - Sistema de Cupons - Correções de Validação
+- **Correção formulário de criação de cupom:**
+  - Problema: Template enviando `loja_id='None'` como string causando erro "invalid literal for int()"
+  - Solução: Template padronizado com cashback - sempre mostra select de lojas
+  - Arquivo: `portais/lojista/templates/portais/lojista/cupons/form.html`
+- **Correção acesso a lojas acessíveis:**
+  - Problema: `lojas_acessiveis` retorna lista de dicts, código tentava acessar `.id`
+  - Solução: Acesso corrigido para `['id']` em `views_cupons.py:91`
+  - Erro 500 resolvido na página de criação de cupom
+- **Correção API de validação de cupom:**
+  - Problema: Validações de negócio (valor mínimo, cupom expirado) retornavam erro 500 genérico
+  - Causa: Captura de `ValueError` ao invés de `ValidationError` do Django
+  - Solução: Import adicionado + captura corrigida em `apps/cupom/api_views.py`
+  - Impacto: Mensagens claras ("Valor mínimo para usar este cupom: R$ 1000.00") ao invés de erro genérico
+- **API Endpoint:** `POST /api/v1/cupons/validar/`
+  - Autenticação: OAuth Token (POS)
+  - Rate limit: 30 requisições/minuto
+  - Payload: codigo, loja_id, cpf, valor_transacao
+  - Response: valido, cupom_id, valor_desconto, valor_final, mensagem
+- **Commits:** Correções aplicadas em release/2.2.3
+
 ### [2026-03-06] - Device Fingerprint com Análise de Similaridade
 - **Problema:** Sistema validava apenas hash exato do fingerprint, causando fricção em updates legítimos (iOS, reinstalação)
 - **Solução Híbrida:**

@@ -1,6 +1,6 @@
 # WallClub Backend - Memory
 
-**Última atualização:** 06/03/2026 19:16
+**Última atualização:** 07/03/2026 17:07
 
 ---
 
@@ -11,8 +11,38 @@
 - Link de pagamento para cadastro de cartão em recorrências funcionando
 - Portal Admin com correções de redirect
 - **Device Fingerprint com Análise de Similaridade** (IMPLEMENTADO 06/03/2026)
+- **Sistema de Cupons** - Portal Lojista e API POS operacionais (07/03/2026)
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **07/03/2026:** Otimizações de Memória Docker - Diagnóstico e Ajustes
+  - **Problema inicial:** Consumo de RAM em 76% (2.9GB de 3.8GB) com baixo volume
+  - **Investigação:** Processos Python aparecendo duplicados no `ps aux` do host
+  - **Descoberta crítica:** Processos NÃO estão duplicados - Docker compartilha user namespace com host
+  - **Confirmação:** PIDs do container = PIDs visíveis no host (comportamento normal do Docker)
+  - **Análise real:**
+    - wallclub-celery-beat: 114MB de 128MB (89% - crítico)
+    - wallclub-celery-worker: 368MB de 512MB (72%)
+    - wallclub-grafana: 239MB de 256MB (93% - crítico)
+    - wallclub-portais: 289MB (3 workers gunicorn)
+    - wallclub-apis: 353MB (4 workers gunicorn)
+  - **Otimizações aplicadas:**
+    - Celery Beat: limite 128MB → 256MB
+    - Celery Worker: concurrency 5 → 3
+    - Gunicorn Portais: 3 → 2 workers
+    - Gunicorn APIs: 4 → 2 workers
+  - **Resultado esperado:** Consumo de 76% → ~63% (~500MB economizados)
+  - **Arquivos:** docker-compose.yml, Dockerfile.portais, Dockerfile.apis
+  - **Lição aprendida:** Sempre verificar PIDs antes de assumir duplicação de processos
+- **07/03/2026:** Sistema de Cupons - Correções de Validação e Formulário
+  - **Problema 1:** Formulário de criação enviando `loja_id='None'` como string
+  - **Solução:** Template corrigido para sempre mostrar select de lojas (padrão cashback)
+  - **Problema 2:** `lojas_acessiveis` retorna lista de dicts, não objetos
+  - **Solução:** Acesso corrigido de `.id` para `['id']` em views_cupons.py
+  - **Problema 3:** API retornando erro genérico para validações de negócio
+  - **Solução:** Captura de `ValidationError` ao invés de `ValueError` em api_views.py
+  - **Impacto:** Mensagens de validação claras ("Valor mínimo: R$ 1000.00") ao invés de erro 500
+  - Arquivos: portais/lojista/views_cupons.py, templates/cupons/form.html, apps/cupom/api_views.py
+  - **API Endpoint:** `POST /api/v1/cupons/validar/` (OAuth POS, 30 req/min)
 - **06/03/2026:** Device Fingerprint com Análise de Similaridade - IMPLEMENTAÇÃO COMPLETA
   - **Problema:** Sistema anterior validava apenas hash exato do fingerprint
   - **Solução híbrida:** Armazenar componentes individuais + calcular similaridade
@@ -91,6 +121,12 @@
 _Nenhum bug ativo no momento._
 
 ### Bugs Resolvidos Recentemente
+- **[RESOLVIDO 07/03/2026]** Erro ao criar cupom: "invalid literal for int() with base 10: 'None'"
+  - Causa: Template enviando `loja_id='None'` como string quando não havia loja na sessão
+  - Solução: Template sempre mostra select de lojas + validação no POST
+- **[RESOLVIDO 07/03/2026]** API de cupom retornando erro 500 para validações de negócio
+  - Causa: Captura de `ValueError` ao invés de `ValidationError`
+  - Solução: Import e captura corrigidos em apps/cupom/api_views.py
 - **[RESOLVIDO 06/03/2026]** Dispositivos marcados como expirados imediatamente após validação
   - Causa: Uso de `datetime.now()` ao invés de `timezone.now()`
   - Solução: 18 substituições em 5 arquivos
@@ -107,8 +143,9 @@ _Nenhum bug ativo no momento._
 
 ### Credenciais de Teste
 - **Cliente teste:** CPF 17653377807, Canal ID: 1
-- **Loja teste:** loja_id=14, id_plano=3
+- **Loja teste:** loja_id=26 (cupons), loja_id=14 (parâmetros), id_plano=3
 - **NSUs para teste:** 170972868, 172562013
+- **Cupom teste:** PROMO_FERNANDO (loja 26, valor_minimo_compra: R$ 1000.00)
 
 ### Valores de Parâmetros (wall='K', loja=14, plano=3)
 ```sql

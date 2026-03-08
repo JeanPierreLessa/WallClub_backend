@@ -154,7 +154,7 @@ services:
       context: .
       dockerfile: Dockerfile.portais
     container_name: wallclub-celery-worker
-    command: celery -A wallclub worker --loglevel=info --concurrency=5 -E --max-tasks-per-child=100
+    command: celery -A wallclub worker --loglevel=info --concurrency=3 -E --max-tasks-per-child=100
     env_file:
       - ./services/django/.env
     environment:
@@ -199,7 +199,7 @@ services:
       - redis
       - wallclub-celery-worker
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 256m
     cpus: 0.25
     networks:
       - wallclub-network

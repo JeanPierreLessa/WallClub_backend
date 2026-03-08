@@ -6,9 +6,10 @@ Sistema fintech completo com gestão financeira, antifraude, portais web e APIs 
 
 ## 🚨 STATUS ATUAL
 
-**Última Atualização:** 10/02/2026
+**Última Atualização:** 07/03/2026
 
 ### Produção - 9 Containers Orquestrados
+- 🔧 **Otimizações de Memória (07/03):** Workers reduzidos, limites ajustados (economia ~500MB)
 - ✅ **Nginx Gateway** (porta 8005) - 14 subdomínios
   - Incluindo checkout.wallclub.com.br e flower.wallclub.com.br
 - ✅ **wallclub-portais** (Admin + Vendas + Lojista + Institucional)

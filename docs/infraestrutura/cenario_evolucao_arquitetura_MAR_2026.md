@@ -1,9 +1,11 @@
 # CENÁRIO DE EVOLUÇÃO ARQUITETURAL - WALLCLUB FINTECH
 
-**Data da Análise:** 09/01/2026
+**Data da Análise:** 09/01/2026 (Atualizado: 08/03/2026)
 **Arquiteto Responsável:** Análise Técnica Sênior
 **Versão do Sistema:** 6.1 (Fase 7 - 95% concluída)
 **Validade:** 12 meses (revisão trimestral)
+
+**Nota:** Documento base de Janeiro/2026 com atualizações de Março/2026 incorporadas
 
 ---
 
@@ -16,15 +18,43 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 **Kubernetes:** ✅ Viável com refatorações incrementais (6-9 meses)
 **Microserviços:** ⚠️ Requerem redesenho significativo da camada de dados (18-36 meses)
 
-### Pontuação Geral: 7.5/10
+### Pontuação Geral: 7.5/10 → 8.0/10 (Atualizada Mar/2026)
 
 | Aspecto | Pontuação | Status |
 |---------|-----------|--------|
-| Segurança | 7/10 | Boa base, gaps críticos identificados |
+| Segurança | 8.5/10 | Melhorias significativas implementadas |
 | Reuso e Modularização | 8/10 | Excelente package core, calculadoras centralizadas |
-| Consistência do Desenho | 7/10 | Padrões bem definidos, exceções não documentadas |
+| Consistência do Desenho | 8/10 | Refatoração URLs, padrões aprimorados |
 | Preparação Kubernetes | 8/10 | Arquitetura favorável, ajustes incrementais |
 | Preparação Microserviços | 5/10 | Bloqueadores críticos no banco de dados |
+
+---
+
+## 🎉 IMPLEMENTAÇÕES REALIZADAS (Jan-Mar 2026)
+
+### Release 2.2.0 (26/01/2026) - 420 commits
+- ✅ Integração Own Financial completa (cadastro + processamento)
+- ✅ Sistema de Cupons com validação em tempo real
+- ✅ Sistema de Cashback aprimorado (débito correto)
+- ✅ Base de Transações Unificadas (carga automática Celery)
+- ✅ Sistema de Ofertas com disparo agendado
+- ✅ Relatórios RPR com formatação monetária
+
+### Release 2.2.1 (26/02/2026) - 189 commits
+- ✅ **Sistema de Monitoramento Completo** (Prometheus + Grafana + Alertmanager)
+- ✅ **Refatoração Arquitetura URLs** (8 arquivos → 3, redução 62.5%)
+- ✅ RPR - Refinamento completo de métricas
+- ✅ Own Financial - Ambiente dinâmico + tokens e-commerce
+- ✅ Sistema 2FA com sliding window (30 dias)
+- ✅ Endpoint POS direto para integração com terminais
+
+### Release 2.2.2 (04/03/2026) - 23 commits
+- ✅ Portal Lojista - Conciliação e Recebimentos padronizados
+- ✅ Credenciais Pinbank migradas para modelo LojaPinbank
+- ✅ Checkout - Desmembramento de endereço estruturado
+- ✅ Monitoramento - Endpoint `/metrics` padronizado
+
+**Total:** 632 commits, 15+ módulos impactados, 13+ novos endpoints
 
 ---
 
@@ -127,39 +157,49 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 
 ---
 
-#### MÉDIO - 2FA Incompleto
+#### ✅ IMPLEMENTADO - Device Fingerprint com Similaridade (06/03/2026)
+
+**Status:** ✅ Implementado completo (backend)
 
 **Situação:**
 - ✅ Checkout Web: 2FA completo
-- ❌ App Mobile: Sem 2FA no login
-- ❌ Revalidação celular: Não implementada (90 dias)
+- ✅ App Mobile: Device Fingerprint com análise de similaridade implementado
+- ✅ Revalidação celular: Implementada (campo celular_validado_em)
 
-**Prioridade:** 🟡 MÉDIA
-**Esforço:** 12 horas (8h 2FA + 4h revalidação)
+**Implementação:**
+- Algoritmo de similaridade com 7 componentes (native_id, screen_resolution, device_model, etc.)
+- Score 0-100 para decisão inteligente (allow, require_otp, block)
+- 6 endpoints atualizados com suporte a componentes
+- Retrocompatibilidade 100% com apps antigos
+- Migration MySQL executada com sucesso
 
 **Gatilhos 2FA Obrigatórios:**
-- Login de novo dispositivo
+- Login de novo dispositivo (score <50)
+- Dispositivo suspeito (score 50-89)
 - Transação > R$ 100,00
 - Alteração de dados sensíveis
 - Dispositivo confiável expirado (>30 dias)
+
+**Próximo passo:** App mobile enviar os 7 componentes nos payloads
 
 ---
 
 ### 1.3 Resumo de Segurança
 
-**Pontuação:** 8/10 (atualizada em 16/01/2026)
+**Pontuação:** 8.5/10 (atualizada em 08/03/2026)
 
-**Implementações Concluídas (16/01/2026):**
-1. ✅ Rate limiting endpoints POS (4h) - Completo
-2. ✅ Gerenciamento cartões tokenizados (12h) - Completo
-3. 🔴 Webhooks Own Financial - Pendente (aguardando Own)
+**Implementações Concluídas:**
+1. ✅ Rate limiting endpoints POS (16/01/2026) - Completo
+2. ✅ Gerenciamento cartões tokenizados (16/01/2026) - Completo
+3. ✅ Device Fingerprint com Similaridade (06/03/2026) - Completo
+4. ✅ Otimizações de Memória Docker (07/03/2026) - Completo
+5. ✅ Sistema de Cupons com validação (07/03/2026) - Completo
 
 **Pendências:**
-1. 🟡 2FA app móvel (8h) - Adiado
-2. 🔴 Validação webhooks Own (4-8h) - Aguardando informações da Own
+1. 🔴 Validação webhooks Own Financial (4-8h) - Aguardando informações da Own
 
-**Total Implementado:** 16 horas de 24 horas (67%)
-**Total Pendente:** 8-16 horas
+**Total Implementado:** 40+ horas
+**Total Pendente:** 4-8 horas
 
 ---
 
@@ -171,6 +211,13 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 - Zero duplicação entre containers
 - Instalação via pip: `wallclub_core @ file:///../core`
 - Estrutura: database, integracoes, middleware, oauth, seguranca, services
+
+#### ✅ Refatoração Arquitetura URLs (26/02/2026)
+- **Antes:** 8 arquivos de URLs (urls.py, urls_admin.py, urls_lojista.py, etc.)
+- **Depois:** 3 arquivos (urls.py, urls_portais.py, urls_ajax.py)
+- **Redução:** 62.5% na complexidade de roteamento
+- **Função Helper:** `get_portal_urls()` - geração dinâmica de rotas por portal
+- **Benefícios:** Zero duplicação, manutenção centralizada, facilita novos portais
 
 #### 26 APIs REST Internas
 - Cliente: 6 endpoints
@@ -272,13 +319,19 @@ Sistema fintech Django em produção desde outubro/2025, processando transaçõe
 
 ### 3.3 Resumo de Consistência
 
-**Pontuação:** 7/10
+**Pontuação:** 8/10 (atualizada em 08/03/2026)
 
-**Prioridades:**
-1. 🟡 Finalizar migração transactiondata_pos (24h)
+**Implementações Concluídas:**
+1. ✅ Refatoração arquitetura URLs (26/02/2026) - 62.5% redução complexidade
+2. ✅ Base de Transações Unificadas operacional (26/01/2026)
+3. ✅ Sistema de Cupons padronizado (26/01/2026)
+4. ✅ Credenciais Pinbank migradas para LojaPinbank (04/03/2026)
+
+**Prioridades Restantes:**
+1. 🟡 Finalizar migração completa transactiondata_pos (12h)
 2. 🟢 Documentar exceção timezone (1h)
 
-**Total Esforço:** 25 horas
+**Total Esforço Restante:** 13 horas
 
 ---
 

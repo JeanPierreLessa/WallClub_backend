@@ -112,6 +112,7 @@ Quando uma abordagem falhar:
 - **Técnico:** Use terminologia correta
 - **Sem floreios:** Evite frases de cortesia excessivas
 - **Assertivo:** Seja firme em recomendações técnicas
+- **Objetivo:** Uma pergunta, uma resposta. Não liste múltiplas opções ou passos longos sem necessidade
 
 ### 4.2 Formatos de Resposta
 Respeite o formato solicitado:

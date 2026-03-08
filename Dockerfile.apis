@@ -46,4 +46,4 @@ USER appuser
 EXPOSE 8007
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["gunicorn", "wallclub.wsgi:application", "--bind", "0.0.0.0:8007", "--workers", "4", "--timeout", "120", "--log-level", "info", "--access-logfile", "-", "--error-logfile", "-"]
+CMD ["gunicorn", "wallclub.wsgi:application", "--bind", "0.0.0.0:8007", "--workers", "2", "--timeout", "120", "--log-level", "info", "--access-logfile", "-", "--error-logfile", "-"]
