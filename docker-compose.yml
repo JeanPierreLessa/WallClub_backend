@@ -257,6 +257,9 @@ services:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
     env_file:
       - ./services/django/.env
+    environment:
+      - TELEGRAM_MONITOR_BOT_TOKEN=${TELEGRAM_MONITOR_BOT_TOKEN}
+      - TELEGRAM_MONITOR_BOT_CHAT_ID=${TELEGRAM_MONITOR_BOT_CHAT_ID}
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
