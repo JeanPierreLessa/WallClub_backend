@@ -1,65 +1,43 @@
 global:
   resolve_timeout: 5m
-  telegram_api_url: "https://api.telegram.org"
 
 route:
-  group_by: ["alertname", "service", "instance"]
+  group_by: ["alertname", "service"]
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 1h
   receiver: "telegram"
   routes:
     - match:
-        severity: "critical"
+        severity: critical
       receiver: "telegram-critical"
       repeat_interval: 30m
-    - match:
-        severity: "warning"
-      receiver: "telegram-warning"
-      repeat_interval: 2h
 
 receivers:
   - name: "telegram"
     telegram_configs:
       - bot_token: "${TELEGRAM_MONITOR_BOT_TOKEN}"
-        chat_id: "${TELEGRAM_MONITOR_BOT_CHAT_ID}"
+        chat_id: ${TELEGRAM_MONITOR_BOT_CHAT_ID}
         send_resolved: true
-        title: "[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}"
         message: |
+          [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}
           Service: {{ .GroupLabels.service }}
-          Instance: {{ .GroupLabels.instance }}
           Status: {{ .Status }}
-          {{ range .Alerts }}Alert: {{ .Labels.alertname }}
-          Description: {{ .Annotations.description }}{{ end }}
 
   - name: "telegram-critical"
     telegram_configs:
       - bot_token: "${TELEGRAM_MONITOR_BOT_TOKEN}"
-        chat_id: "${TELEGRAM_MONITOR_BOT_CHAT_ID}"
+        chat_id: ${TELEGRAM_MONITOR_BOT_CHAT_ID}
         send_resolved: true
-        title: "🚨 CRÍTICO: {{ .GroupLabels.alertname }}"
         message: |
-          ⚠️ ALERTA CRÍTICO!
-          Serviço: {{ .GroupLabels.service }}
-          Instância: {{ .GroupLabels.instance }}
-          Status: {{ .Status }}
-          {{ range .Alerts }}Alert: {{ .Labels.alertname }}
-          Descrição: {{ .Annotations.description }}{{ end }}
-
-  - name: "telegram-warning"
-    telegram_configs:
-      - bot_token: "${TELEGRAM_MONITOR_BOT_TOKEN}"
-        chat_id: "${TELEGRAM_MONITOR_BOT_CHAT_ID}"
-        send_resolved: true
-        title: "⚠️ AVISO: {{ .GroupLabels.alertname }}"
-        message: |
+          🚨 CRÍTICO: {{ .GroupLabels.alertname }}
           Serviço: {{ .GroupLabels.service }}
           Status: {{ .Status }}
           {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
 
 inhibit_rules:
   - source_match:
-      severity: "critical"
+      severity: critical
     target_match:
-      severity: "warning"
+      severity: warning
     equal: ["alertname", "service"]
