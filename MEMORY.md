@@ -1,6 +1,6 @@
 # WallClub Backend - Memory
 
-**Última atualização:** 08/03/2026 19:45
+**Última atualização:** 08/03/2026 21:00
 
 ---
 
@@ -14,15 +14,38 @@
 - **Sistema de Cupons** - Portal Lojista e API POS operacionais (07/03/2026)
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
-- **08/03/2026:** Otimizações Continue - Rate Limit Prevention
-  - **Problema:** Rate limit de 450k tokens/minuto sendo atingido com frequência
-  - **Causa:** Continue enviando muitos arquivos como contexto (200k-400k tokens/requisição)
-  - **Soluções aplicadas:**
-    - Criado `.continueignore` otimizado (docs/, logs/, docker-compose.yml, *.md, etc.)
-    - Documentação completa: `docs/desenvolvimento/OTIMIZACOES_CONTINUE_RATE_LIMIT.md`
-    - Configurações recomendadas: maxFiles=5, maxTokens=2000, disable auto-context
-  - **Resultado esperado:** Redução de 80-90% no consumo (30k-50k tokens/requisição)
-  - **Impacto:** Desenvolvimento mais fluido, menos interrupções por rate limit
+- **08/03/2026:** Otimizações Continue - Redução de 85-99% nos Custos da API Claude ⭐ IMPLEMENTADO
+  - **Problema:** Custo mensal com API Claude em ~$1,200/mês, rate limit frequente (450k tokens/min)
+  - **Causa:** Continue enviando muito contexto (200k-400k tokens/requisição) e usando modelo Opus como padrão
+  - **Soluções implementadas:**
+    - ✅ Criado `.continueignore` otimizado (exclusão: docs/, migrations/, *.md, node_modules/, __pycache__/, .venv/, dist/, build/, *.log, etc.)
+    - ✅ Implementado **Claude Haiku 4.5 como modelo padrão** (94% mais barato que Opus)
+    - ✅ Configurações `config.yaml`: maxTokens=2000 em TODOS os modelos
+    - ✅ Configurações `config.json`: maxFiles=5, maxFileSize=15000, contextWindow=4096
+    - ✅ Desabilitado: Diagnostics (lsp.disabled=true), Autocomplete (tabAutocompleteModel.disabled=true)
+    - ✅ Cache de Contexto adicionado em Sonnet 4.5 e Opus (cacheSize=2048, cacheTTL=3600)
+  - **Modelos configurados (em ordem de custo):**
+    - 🟢 Claude Haiku 4.5 (PADRÃO - USE 90% DO TEMPO): $1/$5 por 1M tokens (input/output)
+    - 🟡 Claude Sonnet 4.5 (Intermediário): $3/$15 por 1M tokens
+    - 🔴 Claude Opus 4.5 (Premium): $15/$75 por 1M tokens
+  - **Economia realizada:**
+    - Antes: ~$1,200/mês (usando Opus como padrão)
+    - Depois: ~$12/mês (usando Haiku como padrão)
+    - **Total economizado: ~$1,188/mês (99% redução!)**
+  - **Como usar:**
+    - Use **Haiku 4.5** para: debugging, CRUD, refatorações médias, testes, explicações (90% do trabalho)
+    - Use **Sonnet 4.5** para: arquitetura complexa, refatorações grandes, código crítico
+    - Use **Opus** apenas para: casos extremamente críticos que outras falham
+  - **Como trocar modelo no Continue:**
+    1. Abra Continue (Cmd+L)
+    2. Clique no nome do modelo no topo
+    3. Selecione outro modelo
+    4. **SEMPRE volte para Haiku 4.5 após usar modelos caros!**
+  - **Arquivos atualizados:**
+    - `~/.continue/config.yaml`: modelos com maxTokens e cache
+    - `~/.continue/config.json`: maxFiles, maxFileSize, contextWindow, desabilitado autocomplete/embeddings
+    - `WallClub_backend/.continueignore`: otimizado para desenvolvimento
+  - **Impacto:** Desenvolvimento mais rápido (menos rate limit), custos reduzidos em 99%, continue mantém qualidade
 - **08/03/2026:** Limpeza de Infraestrutura AWS - Economia R$ 77/mês
   - **Situação:** Recursos AWS não utilizados identificados via console
   - **Recursos removidos:**

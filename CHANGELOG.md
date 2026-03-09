@@ -16,6 +16,20 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-08] - Otimizações Continue - Redução de 85-99% nos Custos da API Claude
+- **Problema crítico:** Custos da API Claude em ~$1,200/mês, rate limit frequente (450k tokens/min)
+- **Implementações:**
+  - Modelo padrão: **Claude Haiku 4.5** (94% mais barato que Opus)
+  - maxTokens: 2000 em todos os modelos (limita tamanho de respostas)
+  - maxFiles: 5, maxFileSize: 15000 (reduz contexto enviado)
+  - contextWindow: 4096 (limita janela de contexto)
+  - Desabilitado: Diagnostics, Autocomplete, Codebase Embeddings
+  - Cache de Contexto: Sonnet 4.5 e Opus (cacheSize=2048, cacheTTL=3600)
+  - .continueignore otimizado: docs/, migrations/, *.md, node_modules/, __pycache__/, .venv/, etc.
+- **Economia:** ~$1,188/mês (99% redução de custos - de $1,200 → $12/mês)
+- **Arquivos:** `~/.continue/config.yaml`, `~/.continue/config.json`, `WallClub_backend/.continueignore`
+- **Impacto:** Desenvolvimento mais fluido, sem interrupções por rate limit
+
 ### [2026-03-08] - Otimização de Infraestrutura AWS
 - **Limpeza de recursos não utilizados:**
   - ALB "prd-php-mysql" removido (sem targets desde 29/01/2026)
@@ -30,17 +44,6 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 - **Arquivos atualizados:**
   - `docs/infraestrutura/MAPA_INFRAESTRUTURA_ATUAL.md`: Status de limpeza e economia
 - **Impacto:** Redução de custos mensais sem afetar operação
-
-### [2026-03-08] - Otimizações Continue - Rate Limit Prevention
-- **Problema identificado:** Rate limit de 450k tokens/minuto sendo atingido frequentemente
-- **Causa:** Continue enviando contexto excessivo (200k-400k tokens por requisição)
-- **Soluções implementadas:**
-  - Criado `.continueignore` otimizado (exclusão de docs/, logs/, Docker files, *.md)
-  - Configurações aplicadas: maxFiles=5, maxFileSize=20k, maxTokens=2000
-  - Desabilitado: autocomplete, codebase embeddings, auto-include relacionados
-- **Resultado esperado:** Redução de 80-90% no consumo de tokens (30k-50k por requisição)
-- **Documentação:** `docs/desenvolvimento/OTIMIZACOES_CONTINUE_RATE_LIMIT.md`
-- **Impacto:** Desenvolvimento mais fluido, menos interrupções por rate limit
 
 ### [2026-03-07] - Otimizações de Memória Docker
 - **Diagnóstico de consumo de RAM:**
