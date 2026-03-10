@@ -259,9 +259,7 @@ services:
     env_file:
       - ./services/django/.env
     entrypoint: /entrypoint.sh
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+    command: []
     expose:
       - "9093"
     restart: unless-stopped
