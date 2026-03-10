@@ -1,0 +1,10 @@
+FROM prom/alertmanager:latest
+
+USER root
+
+# Instalar AWS CLI e jq para buscar secrets
+RUN apk add --no-cache aws-cli jq
+
+USER nobody
+
+ENTRYPOINT ["/entrypoint.sh"]

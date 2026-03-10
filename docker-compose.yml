@@ -250,7 +250,9 @@ services:
 
   # Alertmanager - Alert Notifications
   alertmanager:
-    image: prom/alertmanager:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.alertmanager
     container_name: wallclub-alertmanager
     volumes:
       - alertmanager-data:/alertmanager
