@@ -258,7 +258,7 @@ services:
       - ./monitoring/alertmanager-entrypoint.sh:/entrypoint.sh:ro
     env_file:
       - ./services/django/.env
-    entrypoint: /bin/bash /entrypoint.sh
+    entrypoint: /entrypoint.sh
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
