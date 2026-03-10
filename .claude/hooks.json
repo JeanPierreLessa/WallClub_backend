@@ -1,4 +1,7 @@
 {
+  "Rules": {
+    "NEVER_EDIT_ON_SERVER": "❌ NUNCA edite arquivos diretamente no servidor! ✅ SEMPRE edite localmente, commit e push via git"
+  },
   "PreToolUse": [
     {
       "matcher": "Write|Edit",

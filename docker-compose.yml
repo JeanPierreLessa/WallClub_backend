@@ -254,12 +254,11 @@ services:
     container_name: wallclub-alertmanager
     volumes:
       - alertmanager-data:/alertmanager
-      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./monitoring/alertmanager-entrypoint.sh:/entrypoint.sh:ro
     env_file:
       - ./services/django/.env
-    environment:
-      - TELEGRAM_MONITOR_BOT_TOKEN=${TELEGRAM_MONITOR_BOT_TOKEN}
-      - TELEGRAM_MONITOR_BOT_CHAT_ID=${TELEGRAM_MONITOR_BOT_CHAT_ID}
+    entrypoint: /bin/bash /entrypoint.sh
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
