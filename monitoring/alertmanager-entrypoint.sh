@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Expande variáveis de ambiente no arquivo de configuração
