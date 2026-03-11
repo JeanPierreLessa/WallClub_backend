@@ -81,7 +81,13 @@ class CadastroLojaOwn {
         if (radioFlex && radioMdr) {
             const toggleModelo = () => {
                 const isFlex = radioFlex.checked;
-                const aceitaEcommerce = document.getElementById('aceita_ecommerce')?.checked || false;
+                const checkboxFlex = document.getElementById('aceita_ecommerce');
+                const checkboxMdr = document.getElementById('aceita_ecommerce_mdr');
+                const aceitaEcommerce = checkboxFlex?.checked || checkboxMdr?.checked || false;
+
+                // Seções completas
+                const secaoFlex = document.getElementById('secao_flex');
+                const secaoMdr = document.getElementById('secao_mdr');
 
                 // Cestas FLEX
                 const cestaFlexPos = document.getElementById('cesta_parcela_pos');
@@ -96,25 +102,25 @@ class CadastroLojaOwn {
                 const campoTaxaAntecipacao = document.getElementById('taxa_antecipacao')?.closest('.col-md-3');
 
                 if (isFlex) {
-                    // FLEX: Mostrar cesta 333 (POS) + 1655 (E-commerce se marcado)
+                    // Mostrar seção FLEX, ocultar MDR
+                    if (secaoFlex) secaoFlex.style.display = 'block';
+                    if (secaoMdr) secaoMdr.style.display = 'none';
+
+                    // FLEX: Mostrar cesta 333 (POS) sempre + 1655 (E-commerce se marcado)
                     if (cestaFlexPos) cestaFlexPos.style.display = 'block';
                     if (cestaFlexEcommerce) cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
-
-                    // Ocultar cestas MDR
-                    if (cestaMdrPos) cestaMdrPos.style.display = 'none';
-                    if (cestaMdrEcommerce) cestaMdrEcommerce.style.display = 'none';
 
                     // Ocultar antecipação no FLEX
                     if (camposAntecipacao) camposAntecipacao.style.display = 'none';
                     if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = 'none';
                 } else {
-                    // MDR: Mostrar cesta 117 (POS) + 1608 (E-commerce se marcado)
+                    // Mostrar seção MDR, ocultar FLEX
+                    if (secaoFlex) secaoFlex.style.display = 'none';
+                    if (secaoMdr) secaoMdr.style.display = 'block';
+
+                    // MDR: Mostrar cesta 117 (POS) sempre + 1608 (E-commerce se marcado)
                     if (cestaMdrPos) cestaMdrPos.style.display = 'block';
                     if (cestaMdrEcommerce) cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
-
-                    // Ocultar cestas FLEX
-                    if (cestaFlexPos) cestaFlexPos.style.display = 'none';
-                    if (cestaFlexEcommerce) cestaFlexEcommerce.style.display = 'none';
 
                     // Mostrar antecipação no MDR
                     if (camposAntecipacao) camposAntecipacao.style.display = 'block';
@@ -126,31 +132,40 @@ class CadastroLojaOwn {
             radioMdr.addEventListener('change', toggleModelo);
 
             // Executar toggle inicial
-            toggleModelo();
+            setTimeout(toggleModelo, 100);
         }
 
-        // Checkbox e-commerce - mostrar/ocultar cestas de e-commerce baseado no modelo
-        const checkboxEcommerce = document.getElementById('aceita_ecommerce');
-        if (checkboxEcommerce) {
-            checkboxEcommerce.addEventListener('change', (e) => {
-                const isFlex = document.getElementById('modelo_flex')?.checked || false;
-                const aceitaEcommerce = e.target.checked;
+        // Sincronizar os dois checkboxes de e-commerce
+        const checkboxEcommerceFlex = document.getElementById('aceita_ecommerce');
+        const checkboxEcommerceMdr = document.getElementById('aceita_ecommerce_mdr');
 
-                if (isFlex) {
-                    // FLEX: Mostrar/ocultar cesta 1655
-                    const cestaFlexEcommerce = document.getElementById('cesta_parcela_ecommerce');
-                    if (cestaFlexEcommerce) {
-                        cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+        const syncCheckboxes = (source, target) => {
+            if (source && target) {
+                source.addEventListener('change', (e) => {
+                    target.checked = e.target.checked;
+
+                    const isFlex = document.getElementById('modelo_flex')?.checked || false;
+                    const aceitaEcommerce = e.target.checked;
+
+                    if (isFlex) {
+                        // FLEX: Mostrar/ocultar cesta 1655
+                        const cestaFlexEcommerce = document.getElementById('cesta_parcela_ecommerce');
+                        if (cestaFlexEcommerce) {
+                            cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+                        }
+                    } else {
+                        // MDR: Mostrar/ocultar cesta 1608
+                        const cestaMdrEcommerce = document.getElementById('cesta_ecommerce_mdr');
+                        if (cestaMdrEcommerce) {
+                            cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+                        }
                     }
-                } else {
-                    // MDR: Mostrar/ocultar cesta 1608
-                    const cestaMdrEcommerce = document.getElementById('cesta_ecommerce_mdr');
-                    if (cestaMdrEcommerce) {
-                        cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
-                    }
-                }
-            });
-        }
+                });
+            }
+        };
+
+        syncCheckboxes(checkboxEcommerceFlex, checkboxEcommerceMdr);
+        syncCheckboxes(checkboxEcommerceMdr, checkboxEcommerceFlex);
 
         // Busca CEP
         const inputCep = document.getElementById('cep');

@@ -377,18 +377,28 @@
                         <!-- Cestas de Tarifas (FLEX) -->
                         <div id="secao_flex" class="row mb-3">
                             <div class="col-md-12">
-                                <h5 class="mb-3">Modelo FLEX - Tarifas por Parcela</h5>
-                                <p class="text-muted small">Cestas aplicadas: 333 (POS) + 1655 (E-commerce, se marcado)</p>
+                                <!-- Checkbox E-commerce -->
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="aceita_ecommerce"
+                                           name="aceita_ecommerce" value="1" {% if loja_own.aceita_ecommerce %}checked{% endif %}>
+                                    <label class="form-check-label" for="aceita_ecommerce">
+                                        <strong>Aceita E-commerce</strong>
+                                        <small class="text-muted d-block">Marque para habilitar tarifas de e-commerce</small>
+                                    </label>
+                                </div>
+
+                                <h5 class="mb-2">Modelo FLEX - Tarifas por Parcela</h5>
+                                <p class="text-muted small mb-4">Cestas aplicadas: 333 (POS) + 1655 (E-commerce, se marcado)</p>
 
                                 <!-- Cesta 333: Por Parcela POS -->
                                 <div id="cesta_parcela_pos" class="mb-4">
-                                    <h6 class="text-primary">Cesta 333 - Por Parcela (POS)</h6>
+                                    <h6 class="text-primary bg-light p-2 rounded">📦 Cesta 333 - Por Parcela (POS)</h6>
                                     <div id="tarifas_cesta_parcela_pos"></div>
                                 </div>
 
                                 <!-- Cesta 1655: Por Parcela E-commerce (só aparece se checkbox marcado) -->
                                 <div id="cesta_parcela_ecommerce" class="mb-4" style="display: none;">
-                                    <h6 class="text-primary">Cesta 1655 - Por Parcela (E-commerce)</h6>
+                                    <h6 class="text-primary bg-light p-2 rounded">🛒 Cesta 1655 - Por Parcela (E-commerce)</h6>
                                     <div id="tarifas_cesta_parcela_ecommerce"></div>
                                 </div>
                             </div>
@@ -397,18 +407,28 @@
                         <!-- Tarifas MDR -->
                         <div id="secao_mdr" class="row mb-3" style="display: none;">
                             <div class="col-md-12">
-                                <h5 class="mb-3">Modelo MDR - Tarifas por Bandeira</h5>
-                                <p class="text-muted small">Cestas aplicadas: 117 (POS) + 1608 (E-commerce, se marcado)</p>
+                                <!-- Checkbox E-commerce -->
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="aceita_ecommerce_mdr"
+                                           name="aceita_ecommerce" value="1" {% if loja_own.aceita_ecommerce %}checked{% endif %}>
+                                    <label class="form-check-label" for="aceita_ecommerce_mdr">
+                                        <strong>Aceita E-commerce</strong>
+                                        <small class="text-muted d-block">Marque para habilitar tarifas de e-commerce</small>
+                                    </label>
+                                </div>
+
+                                <h5 class="mb-2">Modelo MDR - Tarifas por Bandeira</h5>
+                                <p class="text-muted small mb-4">Cestas aplicadas: 117 (POS) + 1608 (E-commerce, se marcado)</p>
 
                                 <!-- Cesta 117: Por Bandeira -->
                                 <div id="cesta_bandeira_mdr" class="mb-4">
-                                    <h6 class="text-primary">Cesta 117 - Por Bandeira (POS)</h6>
+                                    <h6 class="text-primary bg-light p-2 rounded">📦 Cesta 117 - Por Bandeira (POS)</h6>
                                     <div id="tarifas_cesta_bandeira_mdr"></div>
                                 </div>
 
                                 <!-- Cesta 1608: E-commerce -->
                                 <div id="cesta_ecommerce_mdr" class="mb-4" style="display: none;">
-                                    <h6 class="text-primary">Cesta 1608 - Por Bandeira (E-commerce)</h6>
+                                    <h6 class="text-primary bg-light p-2 rounded">🛒 Cesta 1608 - Por Bandeira (E-commerce)</h6>
                                     <div id="tarifas_cesta_ecommerce_mdr"></div>
                                 </div>
                             </div>
