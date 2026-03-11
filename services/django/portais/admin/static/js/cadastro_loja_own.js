@@ -338,6 +338,9 @@ class CadastroLojaOwn {
         // Marcar cestas como carregadas
         this.cestasCarregadas = true;
         console.log(`✅ Cestas carregadas: ${this.tarifaCounter} tarifas`);
+
+        // Re-aplicar visibilidade correta após carregamento
+        this.aplicarVisibilidadeCestas();
     }
 
     async carregarTarifasCesta(cestaId, containerId, isMDR = false) {
@@ -364,9 +367,9 @@ class CadastroLojaOwn {
 
             // Mapa de IDs de cesta para seus nomes descritivos
             const cestaNames = {
-                '117': 'Bandeira',
+                '117': 'Bandeira POS',
                 '333': 'Parcela POS',
-                '1608': 'E-commerce',
+                '1608': 'Bandeira E-commerce',
                 '1655': 'Parcela E-commerce'
             };
 
@@ -427,6 +430,8 @@ class CadastroLojaOwn {
 
             // Adicionar validação de valor mínimo
             this.adicionarValidacaoTarifas();
+
+            console.log(`✅ Cesta ${cestaId} (${cestaNome}) carregada com ${totalTarifas} tarifas`);
         } catch (error) {
             console.error('Erro ao carregar tarifas:', error);
             this.mostrarErro('Erro ao carregar tarifas da cesta');
@@ -446,6 +451,50 @@ class CadastroLojaOwn {
                 }
             });
         });
+    }
+
+    aplicarVisibilidadeCestas() {
+        const radioFlex = document.getElementById('modelo_flex');
+        const radioMdr = document.getElementById('modelo_mdr');
+        const checkboxFlex = document.getElementById('aceita_ecommerce');
+        const checkboxMdr = document.getElementById('aceita_ecommerce_mdr');
+
+        if (!radioFlex || !radioMdr) return;
+
+        const isFlex = radioFlex.checked;
+        const aceitaEcommerce = checkboxFlex?.checked || checkboxMdr?.checked || false;
+
+        // Seções completas
+        const secaoFlex = document.getElementById('secao_flex');
+        const secaoMdr = document.getElementById('secao_mdr');
+
+        // Cestas FLEX
+        const cestaFlexPos = document.getElementById('cesta_parcela_pos');
+        const cestaFlexEcommerce = document.getElementById('cesta_parcela_ecommerce');
+
+        // Cestas MDR
+        const cestaMdrPos = document.getElementById('cesta_bandeira_mdr');
+        const cestaMdrEcommerce = document.getElementById('cesta_ecommerce_mdr');
+
+        if (isFlex) {
+            // Mostrar seção FLEX, ocultar MDR
+            if (secaoFlex) secaoFlex.style.display = 'block';
+            if (secaoMdr) secaoMdr.style.display = 'none';
+
+            // FLEX: Mostrar cesta 333 (POS) sempre + 1655 (E-commerce se marcado)
+            if (cestaFlexPos) cestaFlexPos.style.display = 'block';
+            if (cestaFlexEcommerce) cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+        } else {
+            // Mostrar seção MDR, ocultar FLEX
+            if (secaoFlex) secaoFlex.style.display = 'none';
+            if (secaoMdr) secaoMdr.style.display = 'block';
+
+            // MDR: Mostrar cesta 117 (POS) sempre + 1608 (E-commerce se marcado)
+            if (cestaMdrPos) cestaMdrPos.style.display = 'block';
+            if (cestaMdrEcommerce) cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+        }
+
+        console.log(`✅ Visibilidade aplicada: ${isFlex ? 'FLEX' : 'MDR'}, E-commerce: ${aceitaEcommerce}`);
     }
 
     async buscarCEP(cep) {
