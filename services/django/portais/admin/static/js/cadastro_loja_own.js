@@ -460,10 +460,15 @@ class CadastroLojaOwn {
         const checkboxFlex = document.getElementById('aceita_ecommerce');
         const checkboxMdr = document.getElementById('aceita_ecommerce_mdr');
 
-        if (!radioFlex || !radioMdr) return;
+        if (!radioFlex || !radioMdr) {
+            console.warn('⚠️ Radio buttons não encontrados');
+            return;
+        }
 
         const isFlex = radioFlex.checked;
         const aceitaEcommerce = checkboxFlex?.checked || checkboxMdr?.checked || false;
+
+        console.log(`🔄 Aplicando visibilidade: Modelo=${isFlex ? 'FLEX' : 'MDR'}, E-commerce=${aceitaEcommerce}`);
 
         // Seções completas
         const secaoFlex = document.getElementById('secao_flex');
@@ -477,25 +482,61 @@ class CadastroLojaOwn {
         const cestaMdrPos = document.getElementById('cesta_bandeira_mdr');
         const cestaMdrEcommerce = document.getElementById('cesta_ecommerce_mdr');
 
+        // Campos de antecipação
+        const camposAntecipacao = document.getElementById('antecipacao_automatica')?.closest('.col-md-3');
+        const campoTaxaAntecipacao = document.getElementById('taxa_antecipacao')?.closest('.col-md-3');
+
         if (isFlex) {
             // Mostrar seção FLEX, ocultar MDR
-            if (secaoFlex) secaoFlex.style.display = 'block';
-            if (secaoMdr) secaoMdr.style.display = 'none';
+            if (secaoFlex) {
+                secaoFlex.style.display = 'block';
+                console.log('  ✓ Seção FLEX visível');
+            }
+            if (secaoMdr) {
+                secaoMdr.style.display = 'none';
+                console.log('  ✓ Seção MDR oculta');
+            }
 
             // FLEX: Mostrar cesta 333 (POS) sempre + 1655 (E-commerce se marcado)
-            if (cestaFlexPos) cestaFlexPos.style.display = 'block';
-            if (cestaFlexEcommerce) cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+            if (cestaFlexPos) {
+                cestaFlexPos.style.display = 'block';
+                console.log('  ✓ Cesta 333 (POS) visível');
+            }
+            if (cestaFlexEcommerce) {
+                cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+                console.log(`  ${aceitaEcommerce ? '✓' : '✗'} Cesta 1655 (E-commerce) ${aceitaEcommerce ? 'visível' : 'oculta'}`);
+            }
+
+            // Ocultar antecipação
+            if (camposAntecipacao) camposAntecipacao.style.display = 'none';
+            if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = 'none';
         } else {
             // Mostrar seção MDR, ocultar FLEX
-            if (secaoFlex) secaoFlex.style.display = 'none';
-            if (secaoMdr) secaoMdr.style.display = 'block';
+            if (secaoFlex) {
+                secaoFlex.style.display = 'none';
+                console.log('  ✓ Seção FLEX oculta');
+            }
+            if (secaoMdr) {
+                secaoMdr.style.display = 'block';
+                console.log('  ✓ Seção MDR visível');
+            }
 
             // MDR: Mostrar cesta 117 (POS) sempre + 1608 (E-commerce se marcado)
-            if (cestaMdrPos) cestaMdrPos.style.display = 'block';
-            if (cestaMdrEcommerce) cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+            if (cestaMdrPos) {
+                cestaMdrPos.style.display = 'block';
+                console.log('  ✓ Cesta 117 (POS) visível');
+            }
+            if (cestaMdrEcommerce) {
+                cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+                console.log(`  ${aceitaEcommerce ? '✓' : '✗'} Cesta 1608 (E-commerce) ${aceitaEcommerce ? 'visível' : 'oculta'}`);
+            }
+
+            // Mostrar antecipação
+            if (camposAntecipacao) camposAntecipacao.style.display = 'block';
+            if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = 'block';
         }
 
-        console.log(`✅ Visibilidade aplicada: ${isFlex ? 'FLEX' : 'MDR'}, E-commerce: ${aceitaEcommerce}`);
+        console.log(`✅ Visibilidade aplicada com sucesso`);
     }
 
     async buscarCEP(cep) {
