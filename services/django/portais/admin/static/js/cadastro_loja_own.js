@@ -131,8 +131,7 @@ class CadastroLojaOwn {
             radioFlex.addEventListener('change', toggleModelo);
             radioMdr.addEventListener('change', toggleModelo);
 
-            // Executar toggle inicial
-            setTimeout(toggleModelo, 100);
+            // NÃO executar toggle inicial aqui - será executado após carregamento das cestas
         }
 
         // Sincronizar os dois checkboxes de e-commerce
@@ -339,8 +338,10 @@ class CadastroLojaOwn {
         this.cestasCarregadas = true;
         console.log(`✅ Cestas carregadas: ${this.tarifaCounter} tarifas`);
 
-        // Re-aplicar visibilidade correta após carregamento
-        this.aplicarVisibilidadeCestas();
+        // Re-aplicar visibilidade correta após carregamento (com delay para garantir que DOM foi atualizado)
+        setTimeout(() => {
+            this.aplicarVisibilidadeCestas();
+        }, 200);
     }
 
     async carregarTarifasCesta(cestaId, containerId, isMDR = false) {
