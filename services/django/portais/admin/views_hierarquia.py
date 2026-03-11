@@ -998,23 +998,26 @@ def loja_create(request):
                 modelo_tarifacao = request.POST.get('modelo_tarifacao', 'FLEX')
 
                 if modelo_tarifacao == 'FLEX':
-                    # Coletar tarifas editadas do formulário
+                    # Coletar tarifas editadas do formulário - APENAS cestas FLEX (333 e 1655)
                     total_tarifas = int(request.POST.get('total_tarifas', 0))
                     tarifacao = []
                     cestas_ids_set = set()
+                    cestas_flex = {333, 1655}  # Apenas cestas FLEX
 
                     for i in range(total_tarifas):
                         tarifa_id = request.POST.get(f'tarifa_id_{i}')
                         tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
                         tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
 
-                        if tarifa_id and tarifa_valor:
-                            tarifacao.append({
-                                'id': int(tarifa_id),
-                                'valor': float(tarifa_valor)
-                            })
-                            if tarifa_cesta_id:
-                                cestas_ids_set.add(int(tarifa_cesta_id))
+                        # Filtrar: apenas tarifas das cestas FLEX
+                        if tarifa_id and tarifa_valor and tarifa_cesta_id:
+                            cesta_id_int = int(tarifa_cesta_id)
+                            if cesta_id_int in cestas_flex:
+                                tarifacao.append({
+                                    'id': int(tarifa_id),
+                                    'valor': float(tarifa_valor)
+                                })
+                                cestas_ids_set.add(cesta_id_int)
 
                     cestas_ids = list(cestas_ids_set)
                     antecipacao_automatica = 'N'
@@ -1024,23 +1027,26 @@ def loja_create(request):
                         f'📊 Modelo FLEX: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                         f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
                 else:
-                    # Modelo MDR - coletar tarifas editadas do formulário (cestas 117 e 1608)
+                    # Modelo MDR - coletar tarifas editadas do formulário - APENAS cestas MDR (117 e 1608)
                     total_tarifas = int(request.POST.get('total_tarifas', 0))
                     tarifacao = []
                     cestas_ids_set = set()
+                    cestas_mdr = {117, 1608}  # Apenas cestas MDR
 
                     for i in range(total_tarifas):
                         tarifa_id = request.POST.get(f'tarifa_id_{i}')
                         tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
                         tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
 
-                        if tarifa_id and tarifa_valor:
-                            tarifacao.append({
-                                'id': int(tarifa_id),
-                                'valor': float(tarifa_valor)
-                            })
-                            if tarifa_cesta_id:
-                                cestas_ids_set.add(int(tarifa_cesta_id))
+                        # Filtrar: apenas tarifas das cestas MDR
+                        if tarifa_id and tarifa_valor and tarifa_cesta_id:
+                            cesta_id_int = int(tarifa_cesta_id)
+                            if cesta_id_int in cestas_mdr:
+                                tarifacao.append({
+                                    'id': int(tarifa_id),
+                                    'valor': float(tarifa_valor)
+                                })
+                                cestas_ids_set.add(cesta_id_int)
 
                     cestas_ids = list(cestas_ids_set)
                     antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
@@ -1508,55 +1514,62 @@ def loja_edit(request, loja_id):
                             modelo_tarifacao = request.POST.get('modelo_tarifacao', 'FLEX')
 
                             if modelo_tarifacao == 'FLEX':
-                                # Coletar tarifas editadas do formulário
+                                # Coletar tarifas editadas do formulário - APENAS cestas FLEX (333 e 1655)
                                 total_tarifas = int(request.POST.get('total_tarifas', 0))
                                 tarifacao = []
                                 cestas_ids_set = set()
+                                cestas_flex = {333, 1655}  # Apenas cestas FLEX
 
                                 for i in range(total_tarifas):
                                     tarifa_id = request.POST.get(f'tarifa_id_{i}')
                                     tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
                                     tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
 
-                                    if tarifa_id and tarifa_valor:
-                                        tarifacao.append({
-                                            'id': int(tarifa_id),
-                                            'valor': float(tarifa_valor)
-                                        })
-                                        if tarifa_cesta_id:
-                                            cestas_ids_set.add(int(tarifa_cesta_id))
+                                    # Filtrar: apenas tarifas das cestas FLEX
+                                    if tarifa_id and tarifa_valor and tarifa_cesta_id:
+                                        cesta_id_int = int(tarifa_cesta_id)
+                                        if cesta_id_int in cestas_flex:
+                                            tarifacao.append({
+                                                'id': int(tarifa_id),
+                                                'valor': float(tarifa_valor)
+                                            })
+                                            cestas_ids_set.add(cesta_id_int)
 
                                 cestas_ids = list(cestas_ids_set)
                                 antecipacao_automatica = 'N'
+                                taxa_antecipacao = 0
 
                                 registrar_log('admin.hierarquia',
-                                    f'📊 Modelo FLEX (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                                    f'📊 Modelo FLEX: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                                     f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
                             else:
-                                # Modelo MDR - coletar tarifas editadas do formulário (cestas 117 e 1608)
+                                # Modelo MDR - coletar tarifas editadas do formulário - APENAS cestas MDR (117 e 1608)
                                 total_tarifas = int(request.POST.get('total_tarifas', 0))
                                 tarifacao = []
                                 cestas_ids_set = set()
+                                cestas_mdr = {117, 1608}  # Apenas cestas MDR
 
                                 for i in range(total_tarifas):
                                     tarifa_id = request.POST.get(f'tarifa_id_{i}')
                                     tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
                                     tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
 
-                                    if tarifa_id and tarifa_valor:
-                                        tarifacao.append({
-                                            'id': int(tarifa_id),
-                                            'valor': float(tarifa_valor)
-                                        })
-                                        if tarifa_cesta_id:
-                                            cestas_ids_set.add(int(tarifa_cesta_id))
+                                    # Filtrar: apenas tarifas das cestas MDR
+                                    if tarifa_id and tarifa_valor and tarifa_cesta_id:
+                                        cesta_id_int = int(tarifa_cesta_id)
+                                        if cesta_id_int in cestas_mdr:
+                                            tarifacao.append({
+                                                'id': int(tarifa_id),
+                                                'valor': float(tarifa_valor)
+                                            })
+                                            cestas_ids_set.add(cesta_id_int)
 
                                 cestas_ids = list(cestas_ids_set)
                                 antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
                                 taxa_antecipacao = 1.1 if antecipacao_automatica == 'S' else 0
 
                                 registrar_log('admin.hierarquia',
-                                    f'📊 Modelo MDR (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                                    f'📊 Modelo MDR: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                                     f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                             loja_data = {
