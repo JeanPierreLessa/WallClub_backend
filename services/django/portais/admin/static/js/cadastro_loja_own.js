@@ -81,30 +81,73 @@ class CadastroLojaOwn {
         if (radioFlex && radioMdr) {
             const toggleModelo = () => {
                 const isFlex = radioFlex.checked;
-                const secaoFlex = document.getElementById('secao_flex');
-                const secaoMdr = document.getElementById('secao_mdr');
+                const aceitaEcommerce = document.getElementById('aceita_ecommerce')?.checked || false;
+
+                // Cestas FLEX
+                const cestaFlexPos = document.getElementById('cesta_parcela_pos');
+                const cestaFlexEcommerce = document.getElementById('cesta_parcela_ecommerce');
+
+                // Cestas MDR
+                const cestaMdrPos = document.getElementById('cesta_bandeira_mdr');
+                const cestaMdrEcommerce = document.getElementById('cesta_ecommerce_mdr');
+
+                // Campos de antecipação
                 const camposAntecipacao = document.getElementById('antecipacao_automatica')?.closest('.col-md-3');
                 const campoTaxaAntecipacao = document.getElementById('taxa_antecipacao')?.closest('.col-md-3');
 
-                if (secaoFlex) secaoFlex.style.display = isFlex ? 'block' : 'none';
-                if (secaoMdr) secaoMdr.style.display = isFlex ? 'none' : 'block';
+                if (isFlex) {
+                    // FLEX: Mostrar cesta 333 (POS) + 1655 (E-commerce se marcado)
+                    if (cestaFlexPos) cestaFlexPos.style.display = 'block';
+                    if (cestaFlexEcommerce) cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
 
-                // Ocultar antecipação no modelo FLEX
-                if (camposAntecipacao) camposAntecipacao.style.display = isFlex ? 'none' : 'block';
-                if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = isFlex ? 'none' : 'block';
+                    // Ocultar cestas MDR
+                    if (cestaMdrPos) cestaMdrPos.style.display = 'none';
+                    if (cestaMdrEcommerce) cestaMdrEcommerce.style.display = 'none';
+
+                    // Ocultar antecipação no FLEX
+                    if (camposAntecipacao) camposAntecipacao.style.display = 'none';
+                    if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = 'none';
+                } else {
+                    // MDR: Mostrar cesta 117 (POS) + 1608 (E-commerce se marcado)
+                    if (cestaMdrPos) cestaMdrPos.style.display = 'block';
+                    if (cestaMdrEcommerce) cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+
+                    // Ocultar cestas FLEX
+                    if (cestaFlexPos) cestaFlexPos.style.display = 'none';
+                    if (cestaFlexEcommerce) cestaFlexEcommerce.style.display = 'none';
+
+                    // Mostrar antecipação no MDR
+                    if (camposAntecipacao) camposAntecipacao.style.display = 'block';
+                    if (campoTaxaAntecipacao) campoTaxaAntecipacao.style.display = 'block';
+                }
             };
 
             radioFlex.addEventListener('change', toggleModelo);
             radioMdr.addEventListener('change', toggleModelo);
+
+            // Executar toggle inicial
+            toggleModelo();
         }
 
-        // Checkbox e-commerce - mostrar/ocultar cesta 3
+        // Checkbox e-commerce - mostrar/ocultar cestas de e-commerce baseado no modelo
         const checkboxEcommerce = document.getElementById('aceita_ecommerce');
         if (checkboxEcommerce) {
             checkboxEcommerce.addEventListener('change', (e) => {
-                const cestaEcommerce = document.getElementById('cesta_parcela_ecommerce');
-                if (cestaEcommerce) {
-                    cestaEcommerce.style.display = e.target.checked ? 'block' : 'none';
+                const isFlex = document.getElementById('modelo_flex')?.checked || false;
+                const aceitaEcommerce = e.target.checked;
+
+                if (isFlex) {
+                    // FLEX: Mostrar/ocultar cesta 1655
+                    const cestaFlexEcommerce = document.getElementById('cesta_parcela_ecommerce');
+                    if (cestaFlexEcommerce) {
+                        cestaFlexEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+                    }
+                } else {
+                    // MDR: Mostrar/ocultar cesta 1608
+                    const cestaMdrEcommerce = document.getElementById('cesta_ecommerce_mdr');
+                    if (cestaMdrEcommerce) {
+                        cestaMdrEcommerce.style.display = aceitaEcommerce ? 'block' : 'none';
+                    }
                 }
             });
         }
@@ -248,7 +291,7 @@ class CadastroLojaOwn {
         });
 
         // Carrega todas as 4 cestas, mas mostra/oculta conforme modelo
-        // FLEX: Mostrar 333 (parcela POS) + 1655 (e-commerce)
+        // FLEX: 333 (parcela POS) + 1655 (parcela e-commerce)
         if (cestas[333]) {
             await this.carregarTarifasCesta(cestas[333], 'cesta_parcela_pos');
         }
@@ -256,17 +299,12 @@ class CadastroLojaOwn {
             await this.carregarTarifasCesta(cestas[1655], 'cesta_parcela_ecommerce');
         }
 
-        // MDR: Mostrar 117 (bandeira) + 1608 (e-commerce)
+        // MDR: 117 (bandeira POS) + 1608 (bandeira e-commerce)
         if (cestas[117]) {
             await this.carregarTarifasCesta(cestas[117], 'cesta_bandeira_mdr');
         }
         if (cestas[1608]) {
             await this.carregarTarifasCesta(cestas[1608], 'cesta_ecommerce_mdr');
-        }
-
-        // Se houver cesta 117, também carregar para FLEX como "bandeira comum"
-        if (cestas[117]) {
-            await this.carregarTarifasCesta(cestas[117], 'cesta_bandeira');
         }
 
         // Adicionar campo hidden com total de tarifas no formulário
@@ -309,16 +347,30 @@ class CadastroLojaOwn {
                 return;
             }
 
+            // Mapa de IDs de cesta para seus nomes descritivos
+            const cestaNames = {
+                '117': 'Bandeira',
+                '333': 'Parcela POS',
+                '1608': 'E-commerce',
+                '1655': 'Parcela E-commerce'
+            };
+
+            const cestaNome = cestaNames[cestaId] || `Cesta ${cestaId}`;
+            const totalTarifas = data.tarifas.length;
+
             let html = `
-                    <table class="table table-sm table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Descrição</th>
-                                <th class="text-end" style="width: 200px;">Valor</th>
-                                <th class="text-end" style="width: 150px;">Mínimo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="alert alert-light border mb-3">
+                    <strong>${cestaNome}</strong> <span class="badge bg-secondary">${totalTarifas} tarifa(s)</span>
+                </div>
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th class="text-end" style="width: 200px;">Valor</th>
+                            <th class="text-end" style="width: 150px;">Mínimo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
 
             data.tarifas.forEach((tarifa) => {
@@ -352,8 +404,8 @@ class CadastroLojaOwn {
             });
 
             html += `
-                        </tbody>
-                    </table>
+                    </tbody>
+                </table>
         `;
 
             container.innerHTML = html;

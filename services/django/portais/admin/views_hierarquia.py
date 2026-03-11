@@ -1167,6 +1167,8 @@ def loja_edit(request, loja_id):
         # Sincronizar dados cadastrais da Own (se loja tem credenciamento)
         if loja_own and loja_own.protocolo:
             from adquirente_own.services_consultas import ConsultasOwnService
+            from adquirente_own.services_cadastro import CadastroOwnService
+
             service = ConsultasOwnService(environment='LIVE')
             resultado_sync = service.sincronizar_dados_cadastrais(loja_id=loja_id)
 
@@ -1176,6 +1178,19 @@ def loja_edit(request, loja_id):
                 loja_own = LojaOwn.objects.get(loja_id=loja_id)
             else:
                 registrar_log('portais_admin', f'⚠️ Falha ao sincronizar dados Own: {resultado_sync.get("mensagem")}', nivel='WARNING')
+
+            # Sincronizar tarifas do banco com API (corrigir discrepâncias)
+            cadastro_service = CadastroOwnService(environment='LIVE')
+            resultado_tarifas = cadastro_service.sincronizar_tarifas_com_api(loja_id=loja_id)
+
+            if resultado_tarifas.get('sucesso'):
+                discrepancias = resultado_tarifas.get('discrepancias_encontradas', 0)
+                if discrepancias > 0:
+                    registrar_log('portais_admin', f'✅ {discrepancias} tarifas corrigidas no banco para loja {loja_id}')
+                else:
+                    registrar_log('portais_admin', f'✅ Tarifas do banco estão sincronizadas com API para loja {loja_id}', nivel='DEBUG')
+            else:
+                registrar_log('portais_admin', f'⚠️ Falha ao sincronizar tarifas: {resultado_tarifas.get("mensagem")}', nivel='WARNING')
 
     except LojaOwn.DoesNotExist:
         loja_own = None

@@ -377,44 +377,38 @@
                         <!-- Cestas de Tarifas (FLEX) -->
                         <div id="secao_flex" class="row mb-3">
                             <div class="col-md-12">
-                                <h5 class="mb-3">Tarifas Individuais (editáveis)</h5>
-                                <p class="text-muted small">As tarifas serão aplicadas automaticamente baseado nas cestas: POS (1+2) ou POS+E-commerce (1+2+3)</p>
+                                <h5 class="mb-3">Modelo FLEX - Tarifas por Parcela</h5>
+                                <p class="text-muted small">Cestas aplicadas: 333 (POS) + 1655 (E-commerce, se marcado)</p>
 
-                                <!-- Cesta 1: Por Bandeira -->
-                                <div id="cesta_bandeira" class="mb-4">
-                                    <h6 class="text-primary">Cesta de Serviços - Por Bandeira</h6>
-                                    <div id="tarifas_cesta_bandeira"></div>
-                                </div>
-
-                                <!-- Cesta 2: Por Parcela POS -->
+                                <!-- Cesta 333: Por Parcela POS -->
                                 <div id="cesta_parcela_pos" class="mb-4">
-                                    <h6 class="text-primary">Cesta de Serviços - Por Parcela (POS)</h6>
+                                    <h6 class="text-primary">Cesta 333 - Por Parcela (POS)</h6>
                                     <div id="tarifas_cesta_parcela_pos"></div>
                                 </div>
 
-                                <!-- Cesta 3: Por Parcela E-commerce (só aparece se checkbox marcado) -->
-                                <div id="cesta_parcela_ecommerce" class="mb-4" style="display: {% if loja_own.aceita_ecommerce %}block{% else %}none{% endif %};">
-                                    <h6 class="text-primary">Cesta de Serviços - Por Parcela (E-commerce)</h6>
+                                <!-- Cesta 1655: Por Parcela E-commerce (só aparece se checkbox marcado) -->
+                                <div id="cesta_parcela_ecommerce" class="mb-4" style="display: none;">
+                                    <h6 class="text-primary">Cesta 1655 - Por Parcela (E-commerce)</h6>
                                     <div id="tarifas_cesta_parcela_ecommerce"></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tarifas MDR (MDR) -->
+                        <!-- Tarifas MDR -->
                         <div id="secao_mdr" class="row mb-3" style="display: none;">
                             <div class="col-md-12">
-                                <h5 class="mb-3">Tarifas Individuais (editáveis)</h5>
-                                <p class="text-muted small">As tarifas serão aplicadas automaticamente baseado nas cestas: Bandeira (117) e E-commerce (1608)</p>
+                                <h5 class="mb-3">Modelo MDR - Tarifas por Bandeira</h5>
+                                <p class="text-muted small">Cestas aplicadas: 117 (POS) + 1608 (E-commerce, se marcado)</p>
 
                                 <!-- Cesta 117: Por Bandeira -->
                                 <div id="cesta_bandeira_mdr" class="mb-4">
-                                    <h6 class="text-primary">Cesta de Serviços - Por Bandeira (MDR)</h6>
+                                    <h6 class="text-primary">Cesta 117 - Por Bandeira (POS)</h6>
                                     <div id="tarifas_cesta_bandeira_mdr"></div>
                                 </div>
 
-                                <!-- Cesta 1608: Por E-commerce -->
-                                <div id="cesta_ecommerce_mdr" class="mb-4">
-                                    <h6 class="text-primary">Cesta de Serviços - E-commerce (MDR)</h6>
+                                <!-- Cesta 1608: E-commerce -->
+                                <div id="cesta_ecommerce_mdr" class="mb-4" style="display: none;">
+                                    <h6 class="text-primary">Cesta 1608 - Por Bandeira (E-commerce)</h6>
                                     <div id="tarifas_cesta_ecommerce_mdr"></div>
                                 </div>
                             </div>
