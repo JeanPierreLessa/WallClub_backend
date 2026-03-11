@@ -299,7 +299,9 @@ class CadastroOwnService:
 
             # Retornar lista vazia se não houver documentos reais
             # API Own em produção não aceita anexos em branco
-            return list(socios_dict.values())
+            resultado = list(socios_dict.values())
+            registrar_log('adquirente_own', f'📄 {len(resultado)} sócios com documentos preparados', nivel='DEBUG')
+            return resultado
 
         except Exception as e:
             registrar_log('adquirente_own', f'❌ Erro ao preparar documentos de sócios: {str(e)}', nivel='ERROR')
@@ -334,6 +336,7 @@ class CadastroOwnService:
                         'tipo': doc.tipo_documento
                     })
 
+            registrar_log('adquirente_own', f'📄 {len(anexos)} anexos da empresa preparados', nivel='DEBUG')
             return anexos
 
         except Exception as e:
@@ -374,7 +377,10 @@ class CadastroOwnService:
             payload = self.preparar_payload_cadastro(loja_data)
 
             registrar_log('adquirente_own', f'📦 Payload preparado: CNPJ={payload["cnpj"]}, Cesta={payload["idCesta"]}')
-            registrar_log('adquirente_own', f'📋 Payload completo: {json.dumps(payload, indent=2, ensure_ascii=False)}', nivel='DEBUG')
+
+            # Log do payload SEM conteúdo de arquivos (para não poluir logs com base64 grandes)
+            payload_sem_anexos = self._remover_conteudo_arquivos(payload)
+            registrar_log('adquirente_own', f'📋 Payload completo: {json.dumps(payload_sem_anexos, indent=2, ensure_ascii=False)}', nivel='DEBUG')
 
             # Fazer requisição
             resultado = self.own_service.fazer_requisicao_autenticada(
@@ -547,6 +553,48 @@ class CadastroOwnService:
                 'sucesso': False,
                 'mensagem': f'Erro ao montar tarifação: {str(e)}'
             }
+
+    def _remover_conteudo_arquivos(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Remove o conteúdo (base64) de arquivos do payload para logging
+        Mantém apenas nomeArquivo e tipo para debug
+
+        Args:
+            payload: Payload original com arquivos
+
+        Returns:
+            Payload sem conteúdo de arquivos (mais limpo para logs)
+        """
+        import copy
+        payload_limpo = copy.deepcopy(payload)
+
+        # Remover conteúdo de documentos de sócios
+        if 'documentosSocios' in payload_limpo:
+            for socio in payload_limpo['documentosSocios']:
+                if 'anexos' in socio:
+                    for anexo in socio['anexos']:
+                        # Manter apenas nome e tipo, remover conteúdo grande
+                        if 'conteudo' in anexo:
+                            # Mostrar apenas os primeiros 50 caracteres + "..."
+                            conteudo_original = anexo['conteudo']
+                            if len(conteudo_original) > 50:
+                                anexo['conteudo'] = f"{conteudo_original[:50]}... (base64 de {len(conteudo_original)} chars)"
+                            else:
+                                anexo['conteudo'] = f"(base64 de {len(conteudo_original)} chars)"
+
+        # Remover conteúdo de anexos da empresa
+        if 'anexos' in payload_limpo:
+            for anexo in payload_limpo['anexos']:
+                # Manter apenas nome e tipo, remover conteúdo grande
+                if 'conteudo' in anexo:
+                    # Mostrar apenas os primeiros 50 caracteres + "..."
+                    conteudo_original = anexo['conteudo']
+                    if len(conteudo_original) > 50:
+                        anexo['conteudo'] = f"{conteudo_original[:50]}... (base64 de {len(conteudo_original)} chars)"
+                    else:
+                        anexo['conteudo'] = f"(base64 de {len(conteudo_original)} chars)"
+
+        return payload_limpo
 
     def validar_dados_cadastro(self, loja_data: Dict[str, Any]) -> Dict[str, Any]:
         """

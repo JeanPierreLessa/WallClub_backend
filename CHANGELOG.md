@@ -16,6 +16,30 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-09] - Sistema de Alertas via Telegram
+- **Implementação completa de notificações via Telegram:**
+  - Dockerfile customizado para Alertmanager (Debian base + AWS CLI v2 + jq)
+  - Script de entrypoint busca credenciais do AWS Secrets Manager antes de iniciar
+  - Template alertmanager.yml com variáveis substituídas dinamicamente
+  - Bot Telegram: @Wallclub_monitor_bot (ID: 8352234743)
+- **14 Alertas configurados:**
+  - **Críticos (repeat 30min):** ServiceDown (30s), RedisDown (1m), MySQLDown (1m), DiskSpaceLowCritical (<10%)
+  - **Warning (repeat 1h):** HealthCheckFailing (5m), HighDatabaseLatency (>1s/5m), RedisMemoryHigh (>90%), MySQLConnectionsHigh (>80%), CeleryTasksFailing (5m), DiskSpaceLowWarning (<20%), HighCPUUsage (>80%/10m), HighMemoryUsage (>90%/10m), LowAvailability (<95%/1h)
+- **Arquivos criados:**
+  - `Dockerfile.alertmanager`: Multi-stage build com AWS CLI + alertmanager binário
+  - `monitoring/alertmanager-entrypoint.sh`: Busca secrets e substitui variáveis no template
+  - `monitoring/alertmanager.yml`: Template de configuração com placeholders
+- **Integração com stack de monitoramento:**
+  - Prometheus → Alertmanager → Telegram
+  - Grouping de alertas similares (10s)
+  - Rate limiting para evitar spam
+  - Notificações de "resolved" quando alertas se resolvem
+- **Secrets Manager:** Credenciais Telegram armazenadas em `wall/prod/db`
+  - TELEGRAM_MONITOR_BOT_TOKEN
+  - TELEGRAM_MONITOR_BOT_CHAT_ID
+- **Status:** Produção ativa, monitoramento 24/7
+- **Teste realizado:** Alerta manual enviado com sucesso via bot
+
 ### [2026-03-08] - Otimizações Continue - Redução de 85-99% nos Custos da API Claude
 - **Problema crítico:** Custos da API Claude em ~$1,200/mês, rate limit frequente (450k tokens/min)
 - **Implementações:**

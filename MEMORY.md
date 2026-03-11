@@ -12,8 +12,35 @@
 - Portal Admin com correções de redirect
 - **Device Fingerprint com Análise de Similaridade** (IMPLEMENTADO 06/03/2026)
 - **Sistema de Cupons** - Portal Lojista e API POS operacionais (07/03/2026)
+- **Sistema de Alertas via Telegram** (IMPLEMENTADO 09/03/2026)
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **09/03/2026:** Sistema de Alertas Telegram Operacional ⭐ IMPLEMENTADO
+  - **Problema:** Alertmanager não enviava notificações para Telegram - bot_token não era substituído
+  - **Causa raiz:** Arquivo `/etc/alertmanager/alertmanager.yml` montado read-only do host com variáveis não substituídas
+  - **Solução:**
+    - Script `alertmanager-entrypoint.sh` busca credenciais do AWS Secrets Manager
+    - Gera arquivo `/tmp/alertmanager.yml` com bot_token e chat_id substituídos
+    - Dockerfile customizado (Debian base + AWS CLI v2 + jq) igual ao Flower
+    - Alertmanager inicia com `--config.file=/tmp/alertmanager.yml`
+  - **Arquivos criados:**
+    - `Dockerfile.alertmanager`: Multi-stage build (Debian + alertmanager binário)
+    - `monitoring/alertmanager-entrypoint.sh`: Script que busca secrets e substitui variáveis
+    - `monitoring/alertmanager.yml`: Template com `${TELEGRAM_MONITOR_BOT_TOKEN}` e `${TELEGRAM_MONITOR_BOT_CHAT_ID}`
+  - **Bot Telegram:** @Wallclub_monitor_bot (ID: 8352234743)
+  - **Alertas configurados:**
+    - ServiceDown (30s), RedisDown (1m), MySQLDown (1m)
+    - DiskSpaceLow (10% critical, 20% warning)
+    - HighCPUUsage (>80% por 10min), HighMemoryUsage (>90% por 10min)
+    - LowAvailability (<95% na última hora)
+    - CeleryTasksFailing, RedisMemoryHigh, MySQLConnectionsHigh
+  - **Comportamento de envio:**
+    - `repeat_interval: 1h` para alertas warning (evita spam)
+    - `repeat_interval: 30m` para alertas critical
+    - `send_resolved: true` envia notificação quando alerta é resolvido
+    - `group_wait: 10s` agrupa alertas similares
+  - **Teste realizado:** Alerta manual enviado com sucesso via Telegram
+  - **Status:** Produção ativa, monitorando infraestrutura 24/7
 - **08/03/2026:** Otimizações Continue - Redução de 85-99% nos Custos da API Claude ⭐ IMPLEMENTADO
   - **Problema:** Custo mensal com API Claude em ~$1,200/mês, rate limit frequente (450k tokens/min)
   - **Causa:** Continue enviando muito contexto (200k-400k tokens/requisição) e usando modelo Opus como padrão
