@@ -290,6 +290,9 @@ class CadastroLojaOwn {
     async carregarTarifasCesta(cestaId, containerId, isMDR = false) {
         if (!cestaId) return;
 
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
         try {
             const response = await fetch(`${this.apiBaseUrl}/cestas/${cestaId}/tarifas/`, {
                 credentials: 'same-origin',
@@ -300,7 +303,6 @@ class CadastroLojaOwn {
             if (!response.ok) throw new Error('Erro ao carregar tarifas');
 
             const data = await response.json();
-            if (!container) return;
 
             if (!data.tarifas || data.tarifas.length === 0) {
                 container.innerHTML = '<p class="text-muted">Nenhuma tarifa encontrada</p>';
