@@ -1024,31 +1024,31 @@ def loja_create(request):
                         f'📊 Modelo FLEX: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                         f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
                 else:
-                    # Modelo MDR - usar cesta de bandeira com taxa fixa
-                    taxa_mdr = float(request.POST.get('taxa_mdr', 2.5))
-                    antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
-
-                    # Montar tarifação com todas as cestas (POS + E-commerce) usando taxa MDR fixa
-                    service = CadastroOwnService(environment='LIVE')
-                    resultado_tarifacao = service.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
-
-                    if not resultado_tarifacao.get('sucesso'):
-                        messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
-                        return redirect('portais_admin:loja_create')
-
-                    # Aplicar taxa MDR fixa em TODAS as tarifas de TODAS as cestas
+                    # Modelo MDR - coletar tarifas editadas do formulário (cestas 117 e 1608)
+                    total_tarifas = int(request.POST.get('total_tarifas', 0))
                     tarifacao = []
-                    for tarifa in resultado_tarifacao.get('tarifacao', []):
-                        tarifacao.append({
-                            'id': tarifa['id'],
-                            'valor': taxa_mdr  # Aplicar taxa MDR fixa
-                        })
+                    cestas_ids_set = set()
 
-                    cestas_ids = resultado_tarifacao.get('cestas_ids', [])  # TODAS as cestas
+                    for i in range(total_tarifas):
+                        tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                        tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                        tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
+
+                        if tarifa_id and tarifa_valor:
+                            tarifacao.append({
+                                'id': int(tarifa_id),
+                                'valor': float(tarifa_valor)
+                            })
+                            if tarifa_cesta_id:
+                                cestas_ids_set.add(int(tarifa_cesta_id))
+
+                    cestas_ids = list(cestas_ids_set)
+                    antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
+                    taxa_antecipacao = 1.1 if antecipacao_automatica == 'S' else 0
 
                     registrar_log('admin.hierarquia',
-                        f'📊 Modelo MDR: Taxa {taxa_mdr}% aplicada em {len(tarifacao)} tarifas de {len(cestas_ids)} cestas - '
-                        f'Antecipação: {antecipacao_automatica} (E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+                        f'📊 Modelo MDR: {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                        f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                 # Montar dados para Own
                 loja_data = {
@@ -1518,31 +1518,31 @@ def loja_edit(request, loja_id):
                                     f'📊 Modelo FLEX (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
                                     f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
                             else:
-                                # Modelo MDR - usar todas as cestas com taxa fixa
-                                taxa_mdr = float(request.POST.get('taxa_mdr', 2.5))
-                                antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
-
-                                # Montar tarifação com todas as cestas (POS + E-commerce) usando taxa MDR fixa
-                                service_tarif = CadastroOwnService(environment='LIVE')
-                                resultado_tarifacao = service_tarif.montar_tarifacao_completa(aceita_ecommerce=aceita_ecommerce)
-
-                                if not resultado_tarifacao.get('sucesso'):
-                                    messages.error(request, f'Erro ao montar tarifação: {resultado_tarifacao.get("mensagem")}')
-                                    return redirect('portais_admin:loja_detail', loja_id=loja_id)
-
-                                # Aplicar taxa MDR fixa em TODAS as tarifas de TODAS as cestas
+                                # Modelo MDR - coletar tarifas editadas do formulário (cestas 117 e 1608)
+                                total_tarifas = int(request.POST.get('total_tarifas', 0))
                                 tarifacao = []
-                                for tarifa in resultado_tarifacao.get('tarifacao', []):
-                                    tarifacao.append({
-                                        'id': tarifa['id'],
-                                        'valor': taxa_mdr
-                                    })
+                                cestas_ids_set = set()
 
-                                cestas_ids = resultado_tarifacao.get('cestas_ids', [])
+                                for i in range(total_tarifas):
+                                    tarifa_id = request.POST.get(f'tarifa_id_{i}')
+                                    tarifa_valor = request.POST.get(f'tarifa_valor_{i}')
+                                    tarifa_cesta_id = request.POST.get(f'tarifa_cesta_id_{i}')
+
+                                    if tarifa_id and tarifa_valor:
+                                        tarifacao.append({
+                                            'id': int(tarifa_id),
+                                            'valor': float(tarifa_valor)
+                                        })
+                                        if tarifa_cesta_id:
+                                            cestas_ids_set.add(int(tarifa_cesta_id))
+
+                                cestas_ids = list(cestas_ids_set)
+                                antecipacao_automatica = request.POST.get('antecipacao_automatica', 'N')
+                                taxa_antecipacao = 1.1 if antecipacao_automatica == 'S' else 0
 
                                 registrar_log('admin.hierarquia',
-                                    f'📊 Modelo MDR (edição): Taxa {taxa_mdr}% aplicada em {len(tarifacao)} tarifas de {len(cestas_ids)} cestas - '
-                                    f'Antecipação: {antecipacao_automatica} (E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+                                    f'📊 Modelo MDR (edição): {len(tarifacao)} tarifas de {len(cestas_ids)} cestas '
+                                    f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
                             loja_data = {
                                 'loja_id': loja_id,

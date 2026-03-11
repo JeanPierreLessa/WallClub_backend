@@ -459,16 +459,17 @@ class CadastroOwnService:
                 'mensagem': f'Erro ao cadastrar: {str(e)}'
             }
 
-    def montar_tarifacao_completa(self, aceita_ecommerce: bool = False) -> Dict[str, Any]:
+    def montar_tarifacao_completa(self, aceita_ecommerce: bool = False, modelo_tarifacao: str = 'FLEX') -> Dict[str, Any]:
         """
         Monta array de tarifação com TODAS as cestas aplicáveis
 
         Regra Own Financial:
-        - POS apenas: Cestas 1 (por bandeira) + 2 (por parcela)
-        - POS + E-commerce: Cestas 1 + 2 + 3 (por parcela e-commerce)
+        - FLEX: Todas as tarifas das cestas aplicáveis
+        - MDR: Apenas 25 tarifas por cesta aplicável (exceto bandeira)
 
         Args:
             aceita_ecommerce: Se aceita pagamentos e-commerce
+            modelo_tarifacao: 'FLEX' ou 'MDR'
 
         Returns:
             {
@@ -511,14 +512,18 @@ class CadastroOwnService:
                     if not cesta_parcela_pos:
                         cesta_parcela_pos = cesta.get('cestaId')
 
-            # Determinar quais cestas incluir
+            # Determinar quais cestas incluir baseado no modelo
             cestas_aplicaveis = []
-            if cesta_bandeira:
-                cestas_aplicaveis.append(cesta_bandeira)
-            if cesta_parcela_pos:
-                cestas_aplicaveis.append(cesta_parcela_pos)
-            if aceita_ecommerce and cesta_parcela_ecommerce:
-                cestas_aplicaveis.append(cesta_parcela_ecommerce)
+            if modelo_tarifacao == 'FLEX':
+                # FLEX: usa cestas de parcela (POS + e-commerce)
+                cestas_aplicaveis.append(333)  # CESTA DE SERVICO - POR PARCELA
+                if aceita_ecommerce:
+                    cestas_aplicaveis.append(1655)  # CESTA DE SERVICO - POR PARCELA-ECOMMERCE
+            else:  # MDR
+                # MDR: usa cestas de bandeira (POS + e-commerce)
+                cestas_aplicaveis.append(117)  # CESTA DE SERVICOS POR BANDEIRA
+                if aceita_ecommerce:
+                    cestas_aplicaveis.append(1608)  # CESTA DE SERVICOS POR BANDEIRA-ECOMMERCE
 
             if not cestas_aplicaveis:
                 return {
@@ -538,7 +543,7 @@ class CadastroOwnService:
 
             registrar_log('adquirente_own',
                 f'✅ Tarifação montada: {len(tarifacao)} tarifas de {len(cestas_aplicaveis)} cestas '
-                f'(E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
+                f'(Modelo: {modelo_tarifacao}, E-commerce: {"SIM" if aceita_ecommerce else "NÃO"})')
 
             return {
                 'sucesso': True,
