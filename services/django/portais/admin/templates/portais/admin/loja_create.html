@@ -479,9 +479,16 @@
 {% block extra_js %}
 <script src="{% static 'js/cadastro_loja_own.js' %}"></script>
 <script>
-    // Instanciar classe de cadastro Own quando o formulário estiver pronto
-    if (document.getElementById('cadastrar_own')) {
-        new CadastroLojaOwn();
-    }
+    // Instanciar classe de cadastro Own com timeout para garantir DOM pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('cadastrar_own')) {
+            const cadastro = new CadastroLojaOwn();
+            // Garantir que campos Own sejam mostrados se checkbox estiver checked
+            const checkbox = document.getElementById('cadastrar_own');
+            if (checkbox && checkbox.checked) {
+                setTimeout(() => cadastro.toggleCamposOwn(true), 150);
+            }
+        }
+    });
 </script>
 {% endblock %}

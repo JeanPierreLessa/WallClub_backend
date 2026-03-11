@@ -34,14 +34,6 @@ class CadastroLojaOwn {
         this.setupEventListeners();
         this.carregarCNAE();
         this.carregarCestas();
-
-        // Abrir seção Own se checkbox já estiver marcado (com delay para garantir renderização)
-        setTimeout(() => {
-            const checkboxOwn = document.getElementById('cadastrar_own');
-            if (checkboxOwn && checkboxOwn.checked) {
-                this.toggleCamposOwn(true);
-            }
-        }, 100);
     }
 
     setupEventListeners() {
