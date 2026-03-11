@@ -1214,7 +1214,6 @@ def loja_edit(request, loja_id):
             'loja_own': loja_own,
             'canais': canais,
             'grupos': grupos
-        }
         return render(request, 'portais/admin/loja_edit.html', context)
 
     # POST - processar edição

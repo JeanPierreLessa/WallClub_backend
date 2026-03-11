@@ -644,3 +644,168 @@ class CadastroOwnService:
             'valido': len(erros) == 0,
             'erros': erros
         }
+
+    def sincronizar_tarifas_com_api(self, loja_id: int) -> Dict[str, Any]:
+        """
+        Sincroniza tarifas do banco com a API Own
+
+        1. Busca tarifas do banco
+        2. Busca tarifas atuais da API
+        3. Compara valores
+        4. Corrige discrepâncias no banco
+
+        Chamado RARAMENTE (manual ou baixa frequência agendada)
+
+        Args:
+            loja_id: ID da loja
+
+        Returns:
+            Dict com resultado: {
+                'sucesso': bool,
+                'mensagem': str,
+                'discrepancias_encontradas': int,
+                'discrepancias': List[Dict]
+            }
+        """
+        from django.db import transaction
+
+        try:
+            # 1. Buscar LojaOwn
+            loja_own = LojaOwn.objects.get(loja_id=loja_id)
+            tarifas_banco = LojaOwnTarifacao.objects.filter(loja_own_id=loja_own.id)
+
+            if not tarifas_banco.exists():
+                return {
+                    'sucesso': True,
+                    'mensagem': 'Nenhuma tarifa configurada no banco para sincronizar',
+                    'discrepancias_encontradas': 0,
+                    'discrepancias': []
+                }
+
+            # 2. Buscar cestas da API
+            from adquirente_own.services_consultas import ConsultasOwnService
+            consultas_service = ConsultasOwnService(environment=self.environment)
+            cestas_resposta = consultas_service.listar_cestas()
+
+            if not cestas_resposta.get('sucesso'):
+                return {
+                    'sucesso': False,
+                    'mensagem': f"Erro ao buscar cestas da API: {cestas_resposta.get('mensagem')}",
+                    'discrepancias_encontradas': 0,
+                    'discrepancias': []
+                }
+
+            cestas = cestas_resposta.get('cestas', [])
+
+            # 3. Mapear cestas por ID (117, 333, 1608, 1655)
+            cesta_map = {int(c['cestaId']): c['cestaId'] for c in cestas}
+            cesta_ids_relevantes = [117, 333, 1608, 1655]
+
+            discrepancias = []
+            tarifas_api_cache = {}  # Cache para não fazer requisições duplicadas
+
+            # 4. Para cada tarifa no banco
+            for tarifa_banco in tarifas_banco:
+                cesta_valor_id = tarifa_banco.cesta_valor_id
+                valor_banco = float(tarifa_banco.valor)
+
+                # Descobrir qual cesta esta tarifa pertence (buscar em todas as cestas)
+                tarifa_encontrada_api = None
+
+                for cesta_id in cesta_ids_relevantes:
+                    cesta_id_str = str(cesta_id)
+
+                    # Usar cache se já consultamos esta cesta
+                    if cesta_id_str not in tarifas_api_cache:
+                        tarifas_resposta = consultas_service.listar_tarifas_cesta(cesta_id_str)
+                        if tarifas_resposta.get('sucesso'):
+                            tarifas_api_cache[cesta_id_str] = tarifas_resposta.get('tarifas', [])
+                        else:
+                            tarifas_api_cache[cesta_id_str] = []
+
+                    # Buscar tarifa nesta cesta
+                    for tarifa_api in tarifas_api_cache[cesta_id_str]:
+                        if int(tarifa_api.get('cesta_valor_id', 0)) == cesta_valor_id:
+                            tarifa_encontrada_api = tarifa_api
+                            break
+
+                    if tarifa_encontrada_api:
+                        break
+
+                # 5. Comparar valores se encontrou na API
+                if tarifa_encontrada_api:
+                    valor_api = float(tarifa_encontrada_api.get('valor', 0))
+
+                    # Permitir pequena margem de erro (0.001) para comparação de floats
+                    if abs(valor_banco - valor_api) > 0.001:
+                        discrepancia = {
+                            'cesta_valor_id': cesta_valor_id,
+                            'descricao': tarifa_banco.descricao,
+                            'valor_banco': valor_banco,
+                            'valor_api': valor_api,
+                            'diferenca': valor_api - valor_banco
+                        }
+                        discrepancias.append(discrepancia)
+                else:
+                    # Tarifa no banco mas não encontrada na API - possivelmente descontinuada
+                    discrepacia_missing = {
+                        'cesta_valor_id': cesta_valor_id,
+                        'descricao': tarifa_banco.descricao,
+                        'situacao': 'Não encontrada na API (pode estar descontinuada)'
+                    }
+                    discrepancias.append(discrepacia_missing)
+
+            # 6. Se houver discrepâncias, atualizar banco
+            if discrepancias:
+                registrar_log('adquirente_own',
+                    f'⚠️ {len(discrepancias)} discrepâncias encontradas para loja {loja_id}. Sincronizando...',
+                    nivel='WARNING')
+
+                with transaction.atomic():
+                    for disc in discrepancias:
+                        cesta_valor_id = disc['cesta_valor_id']
+
+                        # Se não encontrada na API, deletar do banco
+                        if 'situacao' in disc and 'descontinuada' in disc['situacao']:
+                            LojaOwnTarifacao.objects.filter(
+                                loja_own_id=loja_own.id,
+                                cesta_valor_id=cesta_valor_id
+                            ).delete()
+                            registrar_log('adquirente_own',
+                                f'🗑️ Tarifa {cesta_valor_id} removida do banco (descontinuada)',
+                                nivel='WARNING')
+                        else:
+                            # Atualizar valor
+                            novo_valor = disc.get('valor_api')
+                            LojaOwnTarifacao.objects.filter(
+                                loja_own_id=loja_own.id,
+                                cesta_valor_id=cesta_valor_id
+                            ).update(valor=novo_valor)
+                            registrar_log('adquirente_own',
+                                f'✏️ Tarifa {cesta_valor_id} atualizada de R$ {disc["valor_banco"]:.3f} pra R$ {novo_valor:.3f}',
+                                nivel='INFO')
+
+            return {
+                'sucesso': True,
+                'mensagem': f'{len(discrepancias)} discrepâncias sincronizadas' if discrepancias else 'Banco está sincronizado com API',
+                'discrepancias_encontradas': len(discrepancias),
+                'discrepancias': discrepancias
+            }
+
+        except LojaOwn.DoesNotExist:
+            return {
+                'sucesso': False,
+                'mensagem': f'Loja {loja_id} não tem cadastro Own',
+                'discrepancias_encontradas': 0,
+                'discrepancias': []
+            }
+        except Exception as e:
+            registrar_log('adquirente_own',
+                f'❌ Erro ao sincronizar tarifas: {str(e)}',
+                nivel='ERROR')
+            return {
+                'sucesso': False,
+                'mensagem': f'Erro: {str(e)}',
+                'discrepancias_encontradas': 0,
+                'discrepancias': []
+            }
