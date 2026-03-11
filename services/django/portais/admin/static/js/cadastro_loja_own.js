@@ -235,33 +235,46 @@ class CadastroLojaOwn {
     }
 
     async carregarTodasAsCestas() {
-        // Identificar as 3 cestas por nome
+        // Cestas por ID (conforme conversas com backend):
+        // 117: Bandeira POS (MDR)
+        // 333: Parcela POS (FLEX)
+        // 1608: Bandeira E-commerce (MDR)
+        // 1655: Parcela E-commerce (FLEX)
+
         const cestas = {
-            bandeira: null,
-            parcela_pos: null,
-            parcela_ecommerce: null
+            117: null,    // Bandeira para MDR
+            333: null,    // Parcela POS para FLEX
+            1608: null,   // E-commerce para MDR
+            1655: null    // E-commerce para FLEX
         };
 
         this.cestasData.forEach(cesta => {
-            const nome = cesta.nomeCesta.toLowerCase();
-            if (nome.includes('bandeira')) {
-                cestas.bandeira = cesta.cestaId;
-            } else if (nome.includes('e-commerce') || nome.includes('ecommerce')) {
-                cestas.parcela_ecommerce = cesta.cestaId;
-            } else if (nome.includes('parcela')) {
-                cestas.parcela_pos = cesta.cestaId;
+            const cestaId = parseInt(cesta.cestaId);
+            if (cestas.hasOwnProperty(cestaId)) {
+                cestas[cestaId] = cesta.cestaId;
             }
         });
 
-        // Carregar tarifas de cada cesta
-        if (cestas.bandeira) {
-            await this.carregarTarifasCesta(cestas.bandeira, 'cesta_bandeira');
+        // Carrega todas as 4 cestas, mas mostra/oculta conforme modelo
+        // FLEX: Mostrar 333 (parcela POS) + 1655 (e-commerce)
+        if (cestas[333]) {
+            await this.carregarTarifasCesta(cestas[333], 'cesta_parcela_pos');
         }
-        if (cestas.parcela_pos) {
-            await this.carregarTarifasCesta(cestas.parcela_pos, 'cesta_parcela_pos');
+        if (cestas[1655]) {
+            await this.carregarTarifasCesta(cestas[1655], 'cesta_parcela_ecommerce');
         }
-        if (cestas.parcela_ecommerce) {
-            await this.carregarTarifasCesta(cestas.parcela_ecommerce, 'cesta_parcela_ecommerce');
+
+        // MDR: Mostrar 117 (bandeira) + 1608 (e-commerce)
+        if (cestas[117]) {
+            await this.carregarTarifasCesta(cestas[117], 'cesta_bandeira_mdr');
+        }
+        if (cestas[1608]) {
+            await this.carregarTarifasCesta(cestas[1608], 'cesta_ecommerce_mdr');
+        }
+
+        // Se houver cesta 117, também carregar para FLEX como "bandeira comum"
+        if (cestas[117]) {
+            await this.carregarTarifasCesta(cestas[117], 'cesta_bandeira');
         }
 
         // Adicionar campo hidden com total de tarifas no formulário
@@ -282,7 +295,7 @@ class CadastroLojaOwn {
         console.log(`✅ Cestas carregadas: ${this.tarifaCounter} tarifas`);
     }
 
-    async carregarTarifasCesta(cestaId, containerId) {
+    async carregarTarifasCesta(cestaId, containerId, isMDR = false) {
         if (!cestaId) return;
 
         try {
@@ -295,14 +308,14 @@ class CadastroLojaOwn {
             if (!response.ok) throw new Error('Erro ao carregar tarifas');
 
             const data = await response.json();
-            this.renderizarTarifas(data, containerId, cestaId);
+            this.renderizarTarifas(data, containerId, cestaId, isMDR);
         } catch (error) {
             console.error('Erro ao carregar tarifas:', error);
             this.mostrarErro('Erro ao carregar tarifas da cesta');
         }
     }
 
-    renderizarTarifas(data, containerId, cestaId) {
+    renderizarTarifas(data, containerId, cestaId, isMDR = false) {
         const containerDiv = document.getElementById(containerId);
         if (!containerDiv) return;
 

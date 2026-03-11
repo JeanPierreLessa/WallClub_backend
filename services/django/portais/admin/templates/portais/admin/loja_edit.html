@@ -400,15 +400,22 @@
                             </div>
                         </div>
 
-                        <!-- Taxa MDR (MDR) -->
+                        <!-- Tarifas MDR (MDR) -->
                         <div id="secao_mdr" class="row mb-3" style="display: none;">
                             <div class="col-md-12">
-                                <h5 class="mb-3">Taxa MDR</h5>
-                                <div class="col-md-4">
-                                    <label class="form-label required-field">Taxa MDR (%)</label>
-                                    <input type="number" class="form-control" id="taxa_mdr"
-                                           name="taxa_mdr" step="0.01" min="0" max="100" value="2.50">
-                                    <small class="text-muted">Taxa percentual aplicada sobre todas as transações</small>
+                                <h5 class="mb-3">Tarifas Individuais (editáveis)</h5>
+                                <p class="text-muted small">As tarifas serão aplicadas automaticamente baseado nas cestas: Bandeira (117) e E-commerce (1608)</p>
+
+                                <!-- Cesta 117: Por Bandeira -->
+                                <div id="cesta_bandeira_mdr" class="mb-4">
+                                    <h6 class="text-primary">Cesta de Serviços - Por Bandeira (MDR)</h6>
+                                    <div id="tarifas_cesta_bandeira_mdr"></div>
+                                </div>
+
+                                <!-- Cesta 1608: Por E-commerce -->
+                                <div id="cesta_ecommerce_mdr" class="mb-4">
+                                    <h6 class="text-primary">Cesta de Serviços - E-commerce (MDR)</h6>
+                                    <div id="tarifas_cesta_ecommerce_mdr"></div>
                                 </div>
                             </div>
                         </div>
