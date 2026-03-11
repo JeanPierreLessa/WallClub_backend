@@ -307,18 +307,18 @@ class CadastroLojaOwn {
         // Carrega todas as 4 cestas, mas mostra/oculta conforme modelo
         // FLEX: 333 (parcela POS) + 1655 (parcela e-commerce)
         if (cestas[333]) {
-            await this.carregarTarifasCesta(cestas[333], 'cesta_parcela_pos');
+            await this.carregarTarifasCesta(cestas[333], 'tarifas_cesta_parcela_pos');
         }
         if (cestas[1655]) {
-            await this.carregarTarifasCesta(cestas[1655], 'cesta_parcela_ecommerce');
+            await this.carregarTarifasCesta(cestas[1655], 'tarifas_cesta_parcela_ecommerce');
         }
 
         // MDR: 117 (bandeira POS) + 1608 (bandeira e-commerce)
         if (cestas[117]) {
-            await this.carregarTarifasCesta(cestas[117], 'cesta_bandeira_mdr');
+            await this.carregarTarifasCesta(cestas[117], 'tarifas_cesta_bandeira_mdr');
         }
         if (cestas[1608]) {
-            await this.carregarTarifasCesta(cestas[1608], 'cesta_ecommerce_mdr');
+            await this.carregarTarifasCesta(cestas[1608], 'tarifas_cesta_ecommerce_mdr');
         }
 
         // Adicionar campo hidden com total de tarifas no formulário
