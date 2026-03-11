@@ -358,168 +358,172 @@ class CadastroLojaOwn {
 
             // Adicionar validação de valor mínimo
             this.adicionarValidacaoTarifas();
+        } catch (error) {
+            console.error('Erro ao carregar tarifas:', error);
+            this.mostrarErro('Erro ao carregar tarifas da cesta');
         }
+    }
 
     adicionarValidacaoTarifas() {
-            const inputs = document.querySelectorAll('.tarifa-valor');
-            inputs.forEach(input => {
-                input.addEventListener('change', function () {
-                    const valorMinimo = parseFloat(this.dataset.valorMinimo);
-                    const valorAtual = parseFloat(this.value);
+        const inputs = document.querySelectorAll('.tarifa-valor');
+        inputs.forEach(input => {
+            input.addEventListener('change', function () {
+                const valorMinimo = parseFloat(this.dataset.valorMinimo);
+                const valorAtual = parseFloat(this.value);
 
-                    if (valorAtual < valorMinimo) {
-                        alert(`O valor não pode ser menor que o mínimo: R$ ${valorMinimo.toFixed(2)}`);
-                        this.value = valorMinimo.toFixed(2);
-                    }
-                });
+                if (valorAtual < valorMinimo) {
+                    alert(`O valor não pode ser menor que o mínimo: R$ ${valorMinimo.toFixed(2)}`);
+                    this.value = valorMinimo.toFixed(2);
+                }
             });
-        }
+        });
+    }
 
     async buscarCEP(cep) {
-            cep = cep.replace(/\D/g, '');
+        cep = cep.replace(/\D/g, '');
 
-            if (cep.length !== 8) return;
+        if (cep.length !== 8) return;
 
-            try {
-                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                if (!response.ok) throw new Error('CEP não encontrado');
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            if (!response.ok) throw new Error('CEP não encontrado');
 
-                const data = await response.json();
+            const data = await response.json();
 
-                if (data.erro) {
-                    this.mostrarErro('CEP não encontrado');
-                    return;
-                }
-
-                // Preencher campos
-                document.getElementById('logradouro').value = data.logradouro || '';
-                document.getElementById('bairro').value = data.bairro || '';
-                document.getElementById('municipio').value = data.localidade || '';
-                document.getElementById('uf').value = data.uf || '';
-
-                // Focar no número
-                document.getElementById('numero_endereco').focus();
-            } catch (error) {
-                console.error('Erro ao buscar CEP:', error);
-                this.mostrarErro('Erro ao buscar CEP');
-            }
-        }
-
-        validarFormulario(event) {
-            const cadastrarOwn = document.getElementById('cadastrar_own').checked;
-
-            if (!cadastrarOwn) {
-                return true; // Validação normal do HTML5
-            }
-
-            // Validações específicas para Own
-            const erros = [];
-
-            // Validar CNAE
-            if (!document.getElementById('cnae').value) {
-                erros.push('CNAE é obrigatório para cadastro na Own');
-            }
-
-            // Validar que as cestas foram carregadas
-            if (!this.cestasCarregadas) {
-                erros.push('Aguarde o carregamento das cestas de tarifas antes de salvar.');
-            }
-
-            // Validar que existem tarifas
-            const totalTarifas = parseInt(document.querySelector('input[name="total_tarifas"]')?.value || '0');
-            if (totalTarifas === 0) {
-                erros.push('Nenhuma tarifa carregada. Aguarde o carregamento das cestas.');
-            }
-
-            // Validar dados bancários
-            if (!document.getElementById('codigo_banco').value) {
-                erros.push('Código do banco é obrigatório');
-            }
-
-            if (!document.getElementById('agencia').value) {
-                erros.push('Agência é obrigatória');
-            }
-
-            if (!document.getElementById('numero_conta').value) {
-                erros.push('Número da conta é obrigatório');
-            }
-
-            if (!document.getElementById('digito_conta').value) {
-                erros.push('Dígito da conta é obrigatório');
-            }
-
-            if (erros.length > 0) {
-                event.preventDefault();
-                this.mostrarErro(erros.join('<br>'));
-                return false;
-            }
-
-            return true;
-        }
-
-        mostrarErro(mensagem) {
-            // Criar toast de erro
-            const toast = document.createElement('div');
-            toast.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            toast.innerHTML = `
-            ${mensagem}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-
-        mostrarSucesso(mensagem) {
-            const toast = document.createElement('div');
-            toast.className = 'alert alert-success alert-dismissible fade show position-fixed';
-            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            toast.innerHTML = `
-            ${mensagem}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-
-    async consultarProtocolo() {
-            const btn = document.getElementById('btn-consultar-protocolo');
-            const resultadoDiv = document.getElementById('resultado-protocolo');
-
-            // Pegar loja_id da URL
-            const urlParts = window.location.pathname.split('/');
-            const lojaId = urlParts[urlParts.indexOf('loja') + 1];
-
-            if (!lojaId) {
-                alert('Erro ao identificar loja');
+            if (data.erro) {
+                this.mostrarErro('CEP não encontrado');
                 return;
             }
 
-            // Desabilitar botão e mostrar loading
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
-            resultadoDiv.innerHTML = '';
+            // Preencher campos
+            document.getElementById('logradouro').value = data.logradouro || '';
+            document.getElementById('bairro').value = data.bairro || '';
+            document.getElementById('municipio').value = data.localidade || '';
+            document.getElementById('uf').value = data.uf || '';
 
-            try {
-                const response = await fetch(`${this.apiBaseUrl}/protocolo/?loja_id=${lojaId}`);
-                const data = await response.json();
+            // Focar no número
+            document.getElementById('numero_endereco').focus();
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error);
+            this.mostrarErro('Erro ao buscar CEP');
+        }
+    }
 
-                if (response.ok && data.sucesso) {
-                    // Montar HTML com resultado
-                    const statusClass = this.getStatusClass(data.status);
-                    const podeReenviar = data.podeReenviar ?
-                        '<span class="badge bg-warning">Pode reenviar</span>' :
-                        '<span class="badge bg-info">Aguardando processamento</span>';
+    validarFormulario(event) {
+        const cadastrarOwn = document.getElementById('cadastrar_own').checked;
 
-                    resultadoDiv.innerHTML = `
+        if (!cadastrarOwn) {
+            return true; // Validação normal do HTML5
+        }
+
+        // Validações específicas para Own
+        const erros = [];
+
+        // Validar CNAE
+        if (!document.getElementById('cnae').value) {
+            erros.push('CNAE é obrigatório para cadastro na Own');
+        }
+
+        // Validar que as cestas foram carregadas
+        if (!this.cestasCarregadas) {
+            erros.push('Aguarde o carregamento das cestas de tarifas antes de salvar.');
+        }
+
+        // Validar que existem tarifas
+        const totalTarifas = parseInt(document.querySelector('input[name="total_tarifas"]')?.value || '0');
+        if (totalTarifas === 0) {
+            erros.push('Nenhuma tarifa carregada. Aguarde o carregamento das cestas.');
+        }
+
+        // Validar dados bancários
+        if (!document.getElementById('codigo_banco').value) {
+            erros.push('Código do banco é obrigatório');
+        }
+
+        if (!document.getElementById('agencia').value) {
+            erros.push('Agência é obrigatória');
+        }
+
+        if (!document.getElementById('numero_conta').value) {
+            erros.push('Número da conta é obrigatório');
+        }
+
+        if (!document.getElementById('digito_conta').value) {
+            erros.push('Dígito da conta é obrigatório');
+        }
+
+        if (erros.length > 0) {
+            event.preventDefault();
+            this.mostrarErro(erros.join('<br>'));
+            return false;
+        }
+
+        return true;
+    }
+
+    mostrarErro(mensagem) {
+        // Criar toast de erro
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            ${mensagem}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+
+    mostrarSucesso(mensagem) {
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            ${mensagem}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+
+    async consultarProtocolo() {
+        const btn = document.getElementById('btn-consultar-protocolo');
+        const resultadoDiv = document.getElementById('resultado-protocolo');
+
+        // Pegar loja_id da URL
+        const urlParts = window.location.pathname.split('/');
+        const lojaId = urlParts[urlParts.indexOf('loja') + 1];
+
+        if (!lojaId) {
+            alert('Erro ao identificar loja');
+            return;
+        }
+
+        // Desabilitar botão e mostrar loading
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+        resultadoDiv.innerHTML = '';
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/protocolo/?loja_id=${lojaId}`);
+            const data = await response.json();
+
+            if (response.ok && data.sucesso) {
+                // Montar HTML com resultado
+                const statusClass = this.getStatusClass(data.status);
+                const podeReenviar = data.podeReenviar ?
+                    '<span class="badge bg-warning">Pode reenviar</span>' :
+                    '<span class="badge bg-info">Aguardando processamento</span>';
+
+                resultadoDiv.innerHTML = `
                     <div class="alert alert-${statusClass} mb-0">
                         <h6 class="mb-2"><strong>Status do Protocolo ${data.protocolo}</strong></h6>
                         <p class="mb-1"><strong>Status:</strong> ${data.status} ${podeReenviar}</p>
@@ -534,58 +538,58 @@ class CadastroLojaOwn {
                     </div>
                 `;
 
-                } else {
-                    resultadoDiv.innerHTML = `
+            } else {
+                resultadoDiv.innerHTML = `
                     <div class="alert alert-warning mb-0">
                         <i class="fas fa-exclamation-triangle"></i> ${data.erro || 'Protocolo não encontrado'}
                     </div>
                 `;
-                }
-            } catch (error) {
-                console.error('Erro ao consultar protocolo:', error);
-                resultadoDiv.innerHTML = `
+            }
+        } catch (error) {
+            console.error('Erro ao consultar protocolo:', error);
+            resultadoDiv.innerHTML = `
                 <div class="alert alert-danger mb-0">
                     <i class="fas fa-times-circle"></i> Erro ao consultar protocolo: ${error.message}
                 </div>
             `;
-            } finally {
-                // Reabilitar botão
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-search"></i> Consultar Status do Protocolo';
-            }
-        }
-
-        getStatusClass(status) {
-            const statusMap = {
-                'EM ANALISE': 'info',
-                'PENDENTE': 'info',
-                'SUCESSO': 'success',
-                'APPROVED': 'success',
-                'ERRO': 'danger',
-                'REPROVED': 'danger'
-            };
-            return statusMap[status] || 'secondary';
-        }
-
-        formatMoney(value) {
-            // Remove tudo que não é dígito
-            value = value.toString().replace(/\D/g, '');
-
-            // Se vazio, retorna 0,00
-            if (!value || value === '0') {
-                return '0,00';
-            }
-
-            // Converte para número e divide por 100 para ter centavos
-            const numValue = parseInt(value) / 100;
-
-            // Formata com separador de milhar e decimal
-            return numValue.toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+        } finally {
+            // Reabilitar botão
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search"></i> Consultar Status do Protocolo';
         }
     }
+
+    getStatusClass(status) {
+        const statusMap = {
+            'EM ANALISE': 'info',
+            'PENDENTE': 'info',
+            'SUCESSO': 'success',
+            'APPROVED': 'success',
+            'ERRO': 'danger',
+            'REPROVED': 'danger'
+        };
+        return statusMap[status] || 'secondary';
+    }
+
+    formatMoney(value) {
+        // Remove tudo que não é dígito
+        value = value.toString().replace(/\D/g, '');
+
+        // Se vazio, retorna 0,00
+        if (!value || value === '0') {
+            return '0,00';
+        }
+
+        // Converte para número e divide por 100 para ter centavos
+        const numValue = parseInt(value) / 100;
+
+        // Formata com separador de milhar e decimal
+        return numValue.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+}
 
 // Inicializar quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
