@@ -16,6 +16,27 @@ Todas as mudanças notáveis do projeto serão documentadas neste arquivo.
 
 ## Atualizações Recentes
 
+### [2026-03-11] - Correções na Página de Edição de Loja (Own Financial)
+- **Problema:** Interface de edição de loja com cestas de tarifas misturadas e enviando dados incorretos para API Own
+- **Correções implementadas:**
+  - **Separação visual das cestas por modelo:**
+    - FLEX: Cesta 333 (POS) + Cesta 1655 (E-commerce)
+    - MDR: Cesta 117 (POS) + Cesta 1608 (E-commerce)
+  - **Checkbox E-commerce movido para cima dos títulos** das seções FLEX e MDR
+  - **Sincronização de checkboxes:** Dois checkboxes (FLEX e MDR) sincronizados via JavaScript
+  - **Filtro de tarifas no backend:** Envia apenas tarifas do modelo selecionado
+    - FLEX: Filtra cestas {333, 1655}, ignora {117, 1608}
+    - MDR: Filtra cestas {117, 1608}, ignora {333, 1655}
+  - **Remoção de checkbox duplicado** que estava ao lado dos campos de antecipação
+  - **Correção de IDs dos containers:** JavaScript agora carrega tarifas nos containers corretos
+  - **Visibilidade corrigida:** Cestas permanecem visíveis após carregamento assíncrono
+  - **Sincronização automática de tarifas:** Ao carregar página, compara dados do banco com API e corrige discrepâncias
+- **Arquivos modificados:**
+  - `services/django/portais/admin/templates/portais/admin/loja_edit.html`
+  - `services/django/portais/admin/static/js/cadastro_loja_own.js`
+  - `services/django/portais/admin/views_hierarquia.py`
+- **Status:** Testado e funcionando, aguardando validação de envio de tarifas para API Own
+
 ### [2026-03-09] - Sistema de Alertas via Telegram
 - **Implementação completa de notificações via Telegram:**
   - Dockerfile customizado para Alertmanager (Debian base + AWS CLI v2 + jq)

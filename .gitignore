@@ -76,6 +76,9 @@ WS/
 services/*/docs/backups/
 services/*/docs/executado/
 
+# Claude Code - overrides locais
+CLAUDE.local.md
+
 # Outros
 /vendor/
 *.bak

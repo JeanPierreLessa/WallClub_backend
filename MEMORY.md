@@ -1,6 +1,6 @@
 # WallClub Backend - Memory
 
-**Última atualização:** 08/03/2026 21:00
+**Última atualização:** 11/03/2026 00:54
 
 ---
 
@@ -13,8 +13,41 @@
 - **Device Fingerprint com Análise de Similaridade** (IMPLEMENTADO 06/03/2026)
 - **Sistema de Cupons** - Portal Lojista e API POS operacionais (07/03/2026)
 - **Sistema de Alertas via Telegram** (IMPLEMENTADO 09/03/2026)
+- **Integração Own Financial** - Página de edição de loja corrigida (11/03/2026)
 
 ### Decisões Técnicas Recentes (Últimos 7 dias)
+- **11/03/2026:** Correções na Página de Edição de Loja (Own Financial) ⭐ IMPLEMENTADO
+  - **Problema:** Interface de edição de loja com cestas de tarifas misturadas e enviando dados incorretos para API Own
+  - **Causa raiz:**
+    - JavaScript carregava 4 cestas (333, 1655, 117, 1608) mas IDs dos containers estavam errados
+    - Backend coletava TODAS as tarifas do formulário independente do modelo escolhido
+    - Cestas ficavam ocultas após carregamento assíncrono
+  - **Soluções implementadas:**
+    - **Frontend (JavaScript):**
+      - Corrigidos IDs dos containers: `tarifas_cesta_parcela_pos`, `tarifas_cesta_parcela_ecommerce`, `tarifas_cesta_bandeira_mdr`, `tarifas_cesta_ecommerce_mdr`
+      - Método `aplicarVisibilidadeCestas()` executado após carregamento completo das 4 cestas
+      - Dois checkboxes sincronizados (FLEX e MDR) via JavaScript
+      - Logs detalhados para debug
+    - **Backend (Python):**
+      - Filtro de tarifas por modelo: FLEX filtra apenas {333, 1655}, MDR filtra apenas {117, 1608}
+      - Sincronização automática de tarifas ao carregar página (compara banco vs API)
+      - Aplicado em 2 locais: cadastro inicial e reenvio com protocolo
+    - **Template (HTML):**
+      - Checkbox E-commerce movido para cima dos títulos das seções
+      - Removido checkbox duplicado ao lado dos campos de antecipação
+      - Separação visual clara: FLEX (333 + 1655) vs MDR (117 + 1608)
+  - **Arquivos modificados:**
+    - `services/django/portais/admin/templates/portais/admin/loja_edit.html`
+    - `services/django/portais/admin/static/js/cadastro_loja_own.js`
+    - `services/django/portais/admin/views_hierarquia.py`
+  - **Estrutura das cestas Own Financial:**
+    - **FLEX (sem antecipação):**
+      - Cesta 333: Tarifas por parcela POS
+      - Cesta 1655: Tarifas por parcela E-commerce
+    - **MDR (com antecipação):**
+      - Cesta 117: Tarifas por bandeira POS
+      - Cesta 1608: Tarifas por bandeira E-commerce
+  - **Status:** Testado e funcionando, aguardando validação de envio de tarifas para API Own
 - **09/03/2026:** Sistema de Alertas Telegram Operacional ⭐ IMPLEMENTADO
   - **Problema:** Alertmanager não enviava notificações para Telegram - bot_token não era substituído
   - **Causa raiz:** Arquivo `/etc/alertmanager/alertmanager.yml` montado read-only do host com variáveis não substituídas
