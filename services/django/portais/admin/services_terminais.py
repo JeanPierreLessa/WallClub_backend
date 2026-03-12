@@ -8,6 +8,18 @@ from django.db import connection
 from django.apps import apps
 from wallclub_core.utilitarios.log_control import registrar_log
 
+# Modelos de POS aceitos pela Own Financial
+MODELOS_POS_OWN = [
+    'POS GPOS 700',
+    'POS GPOS 700 MINI',
+    'POS GPOS 760',
+    'POS IWL251',
+    'POS MOVE 2500',
+    'POS PAX D195',
+    'POS PAX Q92X',
+    'POS PAX S920',
+]
+
 
 class TerminaisService:
     """Service para gestão de terminais POS"""
@@ -30,7 +42,7 @@ class TerminaisService:
             canal_filter = ""
         
         query = f"""
-            SELECT 
+            SELECT
                 t.id,
                 t.loja_id,
                 t.terminal,
@@ -40,18 +52,20 @@ class TerminaisService:
                 t.inicio,
                 t.fim,
                 l.razao_social as loja_nome,
-                c.nome as canal_nome
+                c.nome as canal_nome,
+                tow.numero_contrato as own_contrato
             FROM terminais t
             LEFT JOIN loja l ON t.loja_id = l.id
             LEFT JOIN canal c ON l.canal_id = c.id
+            LEFT JOIN terminais_own tow ON tow.terminal_id = t.id AND tow.ativo = 1
             WHERE (t.fim IS NULL OR t.fim > NOW()) {canal_filter}
             ORDER BY t.id DESC
         """
-        
+
         with connection.cursor() as cursor:
             cursor.execute(query)
             terminais = cursor.fetchall()
-        
+
         return [{
             'id': t[0],
             'loja_id': t[1],
@@ -62,7 +76,8 @@ class TerminaisService:
             'inicio': t[6],
             'fim': t[7],
             'loja_nome': t[8],
-            'canal_nome': t[9]
+            'canal_nome': t[9],
+            'own_contrato': t[10]
         } for t in terminais]
     
     @staticmethod
@@ -375,3 +390,222 @@ class TerminaisService:
             lojas = cursor.fetchall()
         
         return [{'id': l[0], 'razao_social': l[1]} for l in lojas]
+
+    @staticmethod
+    def obter_lojas_own_para_select() -> List[Dict[str, Any]]:
+        """
+        Obtém lojas cadastradas na Own com contrato aprovado para dropdown.
+
+        Returns:
+            Lista de dicts com loja_id, razao_social e contrato
+        """
+        query = """
+            SELECT lo.loja_id, l.razao_social, lo.contrato
+            FROM loja_own lo
+            INNER JOIN loja l ON lo.loja_id = l.id
+            WHERE lo.contrato IS NOT NULL
+              AND lo.contrato != ''
+              AND lo.status_credenciamento = 'APROVADO'
+            ORDER BY l.razao_social
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            lojas = cursor.fetchall()
+
+        return [{
+            'loja_id': l[0],
+            'razao_social': l[1],
+            'contrato': l[2]
+        } for l in lojas]
+
+    @staticmethod
+    def configurar_equipamento_own(
+        terminal_id: int,
+        numero_serie: str,
+        modelo: str,
+        numero_contrato: str,
+        usuario: str = "N/A"
+    ) -> Dict[str, Any]:
+        """
+        Cadastra equipamento POS na Own Financial via API configuraEquipamento
+        e salva o vínculo na tabela terminal_own.
+
+        Args:
+            terminal_id: ID do terminal na tabela terminais
+            numero_serie: Número de série do POS
+            modelo: Modelo do equipamento (ex: POS PAX D195)
+            numero_contrato: Número do contrato do estabelecimento na Own
+            usuario: Nome do usuário que está realizando a operação
+        """
+        try:
+            from adquirente_own.services import OwnService
+            from adquirente_own.models_cadastro import TerminalOwn
+
+            own_service = OwnService()
+            credenciais = own_service.obter_credenciais_white_label()
+
+            if not credenciais:
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Credenciais Own não encontradas'
+                }
+
+            payload = {
+                "terminais": [{
+                    "numeroSerie": numero_serie,
+                    "modelo": modelo,
+                    "numeroSerieAntigo": ""
+                }],
+                "numeroContrato": numero_contrato
+            }
+
+            registrar_log(
+                'portais.admin',
+                f'TERMINAIS OWN - Configurando equipamento: serie={numero_serie}, modelo={modelo}, contrato={numero_contrato} - Por: {usuario}'
+            )
+
+            resultado = own_service.fazer_requisicao_autenticada(
+                method='POST',
+                endpoint='/parceiro/configuraEquipamento',
+                client_id=credenciais['client_id'],
+                client_secret=credenciais['client_secret'],
+                scope=credenciais['scope'],
+                data=payload
+            )
+
+            if resultado.get('sucesso'):
+                # Salvar vínculo na tabela terminal_own
+                terminal_own, created = TerminalOwn.objects.update_or_create(
+                    terminal_id=terminal_id,
+                    defaults={
+                        'numero_contrato': numero_contrato,
+                        'modelo': modelo,
+                        'numero_serie': numero_serie,
+                        'ativo': True,
+                    }
+                )
+
+                registrar_log(
+                    'portais.admin',
+                    f'TERMINAIS OWN - Equipamento configurado com sucesso: serie={numero_serie}, contrato={numero_contrato} - Por: {usuario}'
+                )
+                return {
+                    'sucesso': True,
+                    'mensagem': 'Equipamento configurado na Own com sucesso'
+                }
+            else:
+                mensagem = resultado.get('mensagem', 'Erro desconhecido')
+                registrar_log(
+                    'portais.admin',
+                    f'TERMINAIS OWN - Erro ao configurar equipamento: {mensagem} - Por: {usuario}',
+                    nivel='ERROR'
+                )
+                return {
+                    'sucesso': False,
+                    'mensagem': f'Erro ao configurar na Own: {mensagem}'
+                }
+
+        except Exception as e:
+            registrar_log(
+                'portais.admin',
+                f'TERMINAIS OWN - Exceção ao configurar equipamento: {str(e)} - Por: {usuario}',
+                nivel='ERROR'
+            )
+            return {
+                'sucesso': False,
+                'mensagem': f'Erro ao configurar na Own: {str(e)}'
+            }
+
+    @staticmethod
+    def desativar_equipamento_own(
+        terminal_id: int,
+        usuario: str = "N/A"
+    ) -> Dict[str, Any]:
+        """
+        Desativa equipamento POS na Own Financial via API configuraEquipamento.
+        Busca dados do vínculo na tabela terminal_own.
+
+        Args:
+            terminal_id: ID do terminal na tabela terminais
+            usuario: Nome do usuário que está realizando a operação
+        """
+        try:
+            from adquirente_own.services import OwnService
+            from adquirente_own.models_cadastro import TerminalOwn
+
+            # Buscar vínculo ativo
+            terminal_own = TerminalOwn.objects.filter(
+                terminal_id=terminal_id, ativo=True
+            ).first()
+
+            if not terminal_own:
+                return {
+                    'sucesso': True,
+                    'mensagem': 'Terminal não possui vínculo ativo com a Own'
+                }
+
+            own_service = OwnService()
+            credenciais = own_service.obter_credenciais_white_label()
+
+            if not credenciais:
+                return {
+                    'sucesso': False,
+                    'mensagem': 'Credenciais Own não encontradas'
+                }
+
+            payload = {
+                "terminais": [{
+                    "numeroSerieAntigo": terminal_own.numero_serie
+                }],
+                "numeroContrato": terminal_own.numero_contrato
+            }
+
+            registrar_log(
+                'portais.admin',
+                f'TERMINAIS OWN - Desativando equipamento: serie={terminal_own.numero_serie}, contrato={terminal_own.numero_contrato} - Por: {usuario}'
+            )
+
+            resultado = own_service.fazer_requisicao_autenticada(
+                method='POST',
+                endpoint='/parceiro/configuraEquipamento',
+                client_id=credenciais['client_id'],
+                client_secret=credenciais['client_secret'],
+                scope=credenciais['scope'],
+                data=payload
+            )
+
+            if resultado.get('sucesso'):
+                terminal_own.ativo = False
+                terminal_own.save()
+
+                registrar_log(
+                    'portais.admin',
+                    f'TERMINAIS OWN - Equipamento desativado com sucesso: serie={terminal_own.numero_serie}, contrato={terminal_own.numero_contrato} - Por: {usuario}'
+                )
+                return {
+                    'sucesso': True,
+                    'mensagem': 'Equipamento desativado na Own com sucesso'
+                }
+            else:
+                mensagem = resultado.get('mensagem', 'Erro desconhecido')
+                registrar_log(
+                    'portais.admin',
+                    f'TERMINAIS OWN - Erro ao desativar equipamento: {mensagem} - Por: {usuario}',
+                    nivel='ERROR'
+                )
+                return {
+                    'sucesso': False,
+                    'mensagem': f'Erro ao desativar na Own: {mensagem}'
+                }
+
+        except Exception as e:
+            registrar_log(
+                'portais.admin',
+                f'TERMINAIS OWN - Exceção ao desativar equipamento: {str(e)} - Por: {usuario}',
+                nivel='ERROR'
+            )
+            return {
+                'sucesso': False,
+                'mensagem': f'Erro ao desativar na Own: {str(e)}'
+            }

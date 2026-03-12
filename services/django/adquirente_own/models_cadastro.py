@@ -80,6 +80,34 @@ class LojaOwn(models.Model):
         return f"LojaOwn {self.loja_id} - Status: {self.status_credenciamento or 'Não cadastrado'}"
 
 
+class TerminalOwn(models.Model):
+    """Vínculo entre terminal POS e cadastro na Own Financial"""
+
+    id = models.AutoField(primary_key=True)
+    terminal_id = models.IntegerField(unique=True, db_index=True, help_text='FK para tabela terminais')
+    numero_contrato = models.CharField(max_length=50, help_text='Número do contrato Own')
+    modelo = models.CharField(max_length=50, help_text='Modelo do equipamento POS')
+    numero_serie = models.CharField(max_length=256, help_text='Número de série enviado à Own')
+    ativo = models.BooleanField(default=True, help_text='Vínculo ativo na Own')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'adquirente_own'
+        db_table = 'terminais_own'
+        verbose_name = 'Terminal Own'
+        verbose_name_plural = 'Terminais Own'
+        indexes = [
+            models.Index(fields=['terminal_id']),
+            models.Index(fields=['numero_contrato']),
+            models.Index(fields=['ativo']),
+        ]
+
+    def __str__(self):
+        return f"TerminalOwn {self.terminal_id} - Contrato: {self.numero_contrato}"
+
+
 class LojaPinbank(models.Model):
     """Dados específicos da integração com Pinbank"""
 

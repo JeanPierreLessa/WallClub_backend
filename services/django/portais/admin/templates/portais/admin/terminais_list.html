@@ -51,6 +51,7 @@
                                     <th>Id do Terminal</th>
                                     <th>Endereço</th>
                                     <th>Contato</th>
+                                    <th>Own</th>
                                     <th>Início operação</th>
                                     <th>Fim operação</th>
                                     <th>Ações</th>
@@ -79,6 +80,15 @@
                                     </td>
                                     <td>
                                         <small>{{ terminal.contato|default:"-" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if terminal.own_contrato %}
+                                            <span class="badge bg-success" title="Contrato: {{ terminal.own_contrato }}">
+                                                <i class="fas fa-check-circle me-1"></i>{{ terminal.own_contrato }}
+                                            </span>
+                                        {% else %}
+                                            <small class="text-muted">-</small>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if terminal.inicio %}
@@ -128,7 +138,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted">
+                                    <td colspan="11" class="text-center text-muted">
                                         <i class="fas fa-inbox me-2"></i>
                                         Nenhum terminal cadastrado
                                     </td>
