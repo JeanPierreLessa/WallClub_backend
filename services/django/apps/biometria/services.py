@@ -12,7 +12,15 @@ from wallclub_core.utilitarios.log_control import registrar_log
 class VeriffService:
     """Service para criar sessões e processar webhooks Veriff"""
 
-    VERIFF_API_URL = 'https://stationapi.veriff.com/v1/sessions'
+    @staticmethod
+    def _get_veriff_config():
+        """Busca configurações Veriff do secret principal no AWS Secrets Manager"""
+        import json
+        config = get_config_manager()
+        secret_string = config.get_secret(config._get_secret_name())
+        if not secret_string:
+            raise Exception('Não foi possível carregar secrets do AWS')
+        return json.loads(secret_string)
 
     @staticmethod
     def criar_sessao(cliente):
@@ -20,9 +28,10 @@ class VeriffService:
         Cria sessão no Veriff para o cliente.
         Retorna sessionUrl + sessionId.
         """
-        config = get_config_manager()
-        api_key = config.get_secret('VERIFF_API_KEY')
-        webhook_url = config.get_secret('VERIFF_WEBHOOK_URL')
+        secrets = VeriffService._get_veriff_config()
+        api_key = secrets.get('VERIFF_API_KEY')
+        base_url = secrets.get('VERIFF_BASE_URL', 'https://stationapi.veriff.com')
+        webhook_url = secrets.get('VERIFF_WEBHOOK_URL', '')
 
         partes_nome = cliente.nome.split(' ', 1) if cliente.nome else ['Cliente', 'WallClub']
         first_name = partes_nome[0]
@@ -46,7 +55,7 @@ class VeriffService:
         )
 
         response = requests.post(
-            VeriffService.VERIFF_API_URL,
+            f'{base_url}/v1/sessions',
             headers={
                 'X-AUTH-CLIENT': api_key,
                 'Content-Type': 'application/json',
@@ -139,8 +148,8 @@ class VeriffService:
         """
         Valida assinatura HMAC-SHA256 do webhook Veriff.
         """
-        config = get_config_manager()
-        shared_secret = config.get_secret('VERIFF_SHARED_SECRET')
+        secrets = VeriffService._get_veriff_config()
+        shared_secret = secrets.get('VERIFF_SHARED_SECRET')
 
         expected = hmac.new(
             shared_secret.encode('utf-8'),
