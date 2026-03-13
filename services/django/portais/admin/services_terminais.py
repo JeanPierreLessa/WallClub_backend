@@ -146,7 +146,14 @@ class TerminaisService:
                 terminal_obj.fim = datetime.combine(fim, datetime.min.time())
             
             terminal_obj.save()
-            
+
+            # Model usa PositiveIntegerField como PK (não AutoField),
+            # então o Django não popula o id após save. Buscar manualmente.
+            if not terminal_obj.id:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT LAST_INSERT_ID()")
+                    terminal_obj.id = cursor.fetchone()[0]
+
             registrar_log(
                 'portais.admin',
                 f'TERMINAIS - Criado - ID: {terminal_obj.id}, Loja: {loja_id}, Terminal: {terminal} - Por: {usuario_criador}'
