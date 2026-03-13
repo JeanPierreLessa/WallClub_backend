@@ -4,9 +4,21 @@ Service para integração com Veriff (verificação de identidade)
 import hmac
 import hashlib
 import requests
+from datetime import datetime
 from django.utils import timezone
 from wallclub_core.utilitarios.config_manager import get_config_manager
 from wallclub_core.utilitarios.log_control import registrar_log
+
+
+def _parse_datetime_naive(value):
+    """Converte string ISO 8601 do Veriff para datetime naive (sem timezone)."""
+    if not value:
+        return None
+    if isinstance(value, str):
+        value = value.replace('Z', '+00:00')
+        dt = datetime.fromisoformat(value)
+        return dt.replace(tzinfo=None)
+    return value
 
 
 class VeriffService:
@@ -181,8 +193,8 @@ class VeriffService:
         sessao.attempt_id = verification.get('attemptId')
 
         # Timestamps Veriff
-        sessao.acceptance_time = verification.get('acceptanceTime')
-        sessao.submission_time = verification.get('submissionTime')
+        sessao.acceptance_time = _parse_datetime_naive(verification.get('acceptanceTime'))
+        sessao.submission_time = _parse_datetime_naive(verification.get('submissionTime'))
 
         sessao.save()
 
