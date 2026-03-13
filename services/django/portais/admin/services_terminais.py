@@ -10,7 +10,7 @@ from wallclub_core.utilitarios.log_control import registrar_log
 
 # Modelos de POS aceitos pela Own Financial
 MODELOS_POS_OWN = [
-    'POS GPOS 700X',
+    'POS GPOS 700',
 ]
 
 
