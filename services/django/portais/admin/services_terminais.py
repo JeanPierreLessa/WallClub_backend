@@ -10,14 +10,7 @@ from wallclub_core.utilitarios.log_control import registrar_log
 
 # Modelos de POS aceitos pela Own Financial
 MODELOS_POS_OWN = [
-    'POS GPOS 700',
-    'POS GPOS 700 MINI',
-    'POS GPOS 760',
-    'POS IWL251',
-    'POS MOVE 2500',
-    'POS PAX D195',
-    'POS PAX Q92X',
-    'POS PAX S920',
+    'POS GPOS 700X',
 ]
 
 

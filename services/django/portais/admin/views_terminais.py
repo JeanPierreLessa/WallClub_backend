@@ -113,8 +113,8 @@ def terminal_novo(request):
 
             # Validar campos Own se checkbox marcado
             if own_cadastrar:
-                if not own_modelo or not own_contrato:
-                    messages.error(request, 'Para cadastrar na Own, selecione o modelo e o contrato.')
+                if not own_modelo:
+                    messages.error(request, 'Para cadastrar na Own, selecione o modelo do equipamento.')
                     # Re-render com dados preenchidos
                     nivel_usuario = ControleAcessoService.obter_nivel_portal(usuario_logado, 'admin')
                     canais_usuario = ControleAcessoService.obter_canais_usuario(usuario_logado) if nivel_usuario == 'admin_canal' else None
