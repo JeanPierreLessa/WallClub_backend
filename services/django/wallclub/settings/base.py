@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'adquirente_own',
     'adquirente_own.cargas_own',
     'posp2',
+    'apps.biometria',
 ]
 
 # Configurações de upload para formulários com muitos campos

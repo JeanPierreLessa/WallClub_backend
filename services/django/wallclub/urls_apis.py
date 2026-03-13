@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/oauth/', include('apps.oauth.urls')),
     path('api/v1/', include('apps.urls')),  # Health check
     path('api/v1/cliente/', include('apps.cliente.urls')),
+    path('api/v1/cliente/veriff/', include('apps.biometria.urls')),
     path('api/v1/transacoes/', include('apps.transacoes.urls')),
     path('api/v1/conta_digital/', include('apps.conta_digital.urls')),
     path('api/v1/ofertas/', include('apps.ofertas.urls')),
