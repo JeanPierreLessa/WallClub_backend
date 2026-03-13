@@ -145,7 +145,45 @@ class VeriffService:
 
         sessao.status = status
         sessao.veriff_reason = reason
+        sessao.veriff_reason_code = verification.get('reasonCode')
+        sessao.veriff_code = verification.get('code')
         sessao.decision_time = timezone.now()
+
+        # Dados da pessoa
+        person = verification.get('person', {})
+        if person:
+            nome_partes = [person.get('firstName', ''), person.get('lastName', '')]
+            sessao.pessoa_nome = ' '.join(p for p in nome_partes if p).strip() or None
+            sessao.pessoa_cpf = person.get('idNumber')
+            sessao.pessoa_nascimento = person.get('dateOfBirth')
+            sessao.pessoa_nacionalidade = person.get('nationality')
+            sessao.pessoa_genero = person.get('gender')
+            sessao.pessoa_pep_sanction = person.get('pepSanctionMatch')
+
+        # Dados do documento
+        document = verification.get('document', {})
+        if document:
+            sessao.doc_tipo = document.get('type')
+            sessao.doc_numero = document.get('number')
+            sessao.doc_pais = document.get('country')
+            sessao.doc_validade = document.get('validUntil')
+
+        # Risco
+        risk_score = verification.get('riskScore', {})
+        if risk_score:
+            sessao.risk_score = risk_score.get('score')
+        sessao.risk_labels = verification.get('riskLabels')
+
+        # Dados técnicos
+        tech_data = payload.get('technicalData', {})
+        if tech_data:
+            sessao.ip_verificacao = tech_data.get('ip')
+        sessao.attempt_id = verification.get('attemptId')
+
+        # Timestamps Veriff
+        sessao.acceptance_time = verification.get('acceptanceTime')
+        sessao.submission_time = verification.get('submissionTime')
+
         sessao.save()
 
         registrar_log(

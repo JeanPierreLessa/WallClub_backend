@@ -118,6 +118,14 @@ class MinhaViewSet(viewsets.ViewSet):
 
 ---
 
+## Migrations
+
+**NUNCA use `makemigrations` ou gere arquivos de migration Django.**
+
+Alterações de schema devem ser feitas via SQL puro (ALTER TABLE, CREATE TABLE, etc.).
+
+---
+
 ## Regras Invioláveis
 
 - ❌ Nunca hardcode valores de negócio — use ConfigManager ou tabela de parâmetros
@@ -125,6 +133,7 @@ class MinhaViewSet(viewsets.ViewSet):
 - ❌ Nunca exponha dados sensíveis em logs ou respostas
 - ❌ Nunca crie código não solicitado
 - ❌ Nunca assuma estruturas não visíveis no código
+- ❌ Nunca gere migrations Django — sempre SQL puro
 - ✅ Sempre use decorator de autenticação nas views
 - ✅ Sempre valide permissões por loja/grupo
 - ✅ Sempre valide saldo antes de débitos
