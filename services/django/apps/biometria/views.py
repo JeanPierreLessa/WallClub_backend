@@ -5,14 +5,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from wallclub_core.oauth.decorators import require_oauth_apps
+from apps.conta_digital.decorators import require_jwt_only
 from wallclub_core.utilitarios.log_control import registrar_log
 from .services import VeriffService
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-@require_oauth_apps
+@require_jwt_only
 def criar_sessao_veriff(request):
     """
     POST /api/v1/cliente/veriff/criar_sessao/
@@ -72,7 +72,7 @@ def webhook_veriff(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-@require_oauth_apps
+@require_jwt_only
 def status_veriff(request, session_id):
     """
     GET /api/v1/cliente/veriff/status/{session_id}/
