@@ -101,15 +101,35 @@ class VeriffService:
     def processar_webhook(payload):
         """
         Processa webhook recebido do Veriff.
-        Atualiza status da sessão no banco.
+        Suporta dois formatos:
+        - Decision webhook: {"verification": {"id": "...", "status": "approved"}}
+        - Event webhook: {"id": "...", "action": "started", "code": 7001}
         """
+        import json
+        registrar_log(
+            'biometria',
+            f'[VERIFF] Webhook payload recebido: {json.dumps(payload, default=str)}',
+            nivel='DEBUG'
+        )
+
+        # Tentar formato decision webhook (verification.id)
         verification = payload.get('verification', {})
         session_id = verification.get('id')
         status = verification.get('status')
         reason = verification.get('reason')
 
+        # Fallback: formato event webhook (id no root)
         if not session_id:
-            registrar_log('biometria', '[VERIFF] Webhook sem session_id', nivel='ERROR')
+            session_id = payload.get('id')
+            status = payload.get('action', payload.get('status'))
+            reason = payload.get('reason')
+
+        if not session_id:
+            registrar_log(
+                'biometria',
+                f'[VERIFF] Webhook sem session_id - payload: {json.dumps(payload, default=str)}',
+                nivel='ERROR'
+            )
             return False
 
         from apps.biometria.models import VeriffSession

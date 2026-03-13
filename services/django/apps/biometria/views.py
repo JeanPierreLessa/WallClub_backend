@@ -53,6 +53,12 @@ def webhook_veriff(request):
     Recebe decisão do Veriff via webhook.
     Valida assinatura HMAC antes de processar.
     """
+    registrar_log(
+        'biometria',
+        f'[VERIFF] Webhook recebido - headers: {dict(request.headers)}, body: {request.body.decode("utf-8", errors="replace")[:2000]}',
+        nivel='DEBUG'
+    )
+
     signature = request.headers.get('X-HMAC-SIGNATURE', '')
     if not signature:
         registrar_log('biometria', '[VERIFF] Webhook sem assinatura HMAC', nivel='WARNING')
